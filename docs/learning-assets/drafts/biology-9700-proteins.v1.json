@@ -1,0 +1,286 @@
+{
+  "asset_key": "biology-9700-proteins",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Proteins",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "2",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 2.3, syllabus pp. 18–20, learning outcomes 1–8. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "2.3.1",
+      "2.3.2",
+      "2.3.3",
+      "2.3.4",
+      "2.3.5",
+      "2.3.6",
+      "2.3.7",
+      "2.3.8"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Draw the general structure of an amino acid and explain peptide bond formation and hydrolysis.",
+      "Explain primary, secondary, tertiary and quaternary protein structure.",
+      "Describe hydrophobic interactions, hydrogen bonds, ionic bonds and covalent disulfide bonds in protein structure.",
+      "Distinguish globular and fibrous proteins.",
+      "Describe haemoglobin structure and relate it to oxygen transport.",
+      "Describe collagen molecules and their arrangement into fibres and relate this structure to their structural role."
+    ],
+    "sections": [
+      {
+        "heading": "Amino acids: the monomers of proteins",
+        "body": "An amino acid has a central (alpha) carbon bonded to four groups: an amino group (–NH2), a carboxyl group (–COOH), a hydrogen atom and a variable R group. The R group differs between amino acids and gives each amino acid its distinctive chemical properties. The general formula is H2N–CH(R)–COOH. At physiological pH, amino and carboxyl groups are commonly ionised, but the conventional general structural formula is sufficient for this syllabus outcome."
+      },
+      {
+        "heading": "Peptide bond formation",
+        "body": "A peptide bond forms between the carboxyl group of one amino acid and the amino group of another. A condensation reaction removes –OH from the carboxyl group and –H from the amino group, releasing water and forming a covalent peptide bond (–CO–NH–). Repeated condensation reactions produce a polypeptide chain with an amino (N) terminus and a carboxyl (C) terminus. The sequence of amino acids is determined by the order in which they are joined."
+      },
+      {
+        "heading": "Peptide bond hydrolysis",
+        "body": "Hydrolysis breaks a peptide bond by adding water across the bond. The –OH from water restores the carboxyl group and the –H restores the amino group. Proteases and peptidases catalyse peptide-bond hydrolysis during protein digestion and intracellular protein turnover. Condensation joins amino acids and releases water; hydrolysis separates them and uses water."
+      },
+      {
+        "heading": "Primary structure",
+        "body": "The primary structure is the specific sequence and number of amino acids in a polypeptide, joined by peptide bonds. The order of amino acids determines which interactions can form as the chain folds. A change in amino-acid sequence can therefore alter folding, shape and function."
+      },
+      {
+        "heading": "Secondary structure",
+        "body": "Secondary structure is local folding of the polypeptide backbone into regular arrangements, mainly α-helices and β-pleated sheets. Hydrogen bonds form between the C=O and N–H groups in the peptide backbone and stabilise these arrangements. These hydrogen bonds are not the peptide bonds that join amino acids; they are interactions that stabilise the folded chain."
+      },
+      {
+        "heading": "Tertiary structure",
+        "body": "Tertiary structure is the overall three-dimensional folding of one polypeptide chain. It is stabilised by interactions between R groups, including hydrophobic interactions, hydrogen bonds, ionic bonds and covalent disulfide bonds. Hydrophobic R groups tend to cluster away from water; polar or charged groups can form hydrogen or ionic interactions; disulfide bonds form between the sulfur-containing side chains of cysteine residues. The precise arrangement creates a protein's functional shape."
+      },
+      {
+        "heading": "Quaternary structure",
+        "body": "Quaternary structure is the association of two or more polypeptide chains (subunits) into one functional protein, sometimes with an additional non-polypeptide component. Not all proteins have quaternary structure. Haemoglobin is an example: four globin polypeptide chains associate with four haem groups."
+      },
+      {
+        "heading": "Interactions that hold protein shape",
+        "body": "Hydrophobic interactions arise when non-polar R groups cluster away from water. Hydrogen bonds form between suitable polar groups, including peptide-backbone groups. Ionic bonds are attractions between oppositely charged R groups. Covalent disulfide bonds form between sulfur atoms in cysteine side chains and are stronger than the non-covalent interactions listed. Several types of interaction can act together to stabilise the tertiary structure."
+      },
+      {
+        "heading": "Globular and fibrous proteins",
+        "body": "Globular proteins are generally compact and approximately spherical, with hydrophilic regions often exposed to water; they are generally soluble and have physiological roles such as transport, catalysis and signalling. Fibrous proteins are generally elongated, repetitive and insoluble; they have structural roles and provide mechanical strength. These are broad structural patterns rather than absolute rules for every protein."
+      },
+      {
+        "heading": "Haemoglobin: a globular transport protein",
+        "body": "Adult haemoglobin A is a globular protein with quaternary structure formed from two α-globin chains and two β-globin chains. Each globin chain is associated with a haem prosthetic group. Each haem group contains an iron ion (Fe2+) that can bind oxygen reversibly, so one haemoglobin molecule can bind up to four oxygen molecules. The iron in haem is essential for oxygen binding. The globin chains create the specific environment that supports reversible oxygen binding and transport. In the lungs, haemoglobin loads oxygen; in respiring tissues, it releases oxygen as conditions favour unloading."
+      },
+      {
+        "heading": "Collagen: a fibrous structural protein",
+        "body": "A collagen molecule consists of three polypeptide chains wound around one another to form a triple helix. The chains have a repeating amino-acid pattern, commonly glycine at every third position, allowing the chains to pack closely. Hydrogen bonds help stabilise the triple helix. Collagen molecules are arranged in a staggered, parallel fashion and are cross-linked to form fibrils; fibrils bundle to form collagen fibres. This hierarchical arrangement gives collagen high tensile strength, allowing connective tissues such as tendons, ligaments, skin and bone matrix to resist pulling forces."
+      },
+      {
+        "heading": "Structure-function comparison",
+        "body": "Haemoglobin is compact and soluble so it can be transported in red blood cells; its four subunits and four haem groups enable reversible oxygen binding. Collagen is elongated, insoluble and assembled into cross-linked fibres, making it suitable for resisting tensile forces. In both cases, the amino-acid sequence determines folding and assembly, and the resulting structure supports the protein's function."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Draw and label the general structure of an amino acid.",
+        "answer": "A central carbon is bonded to an amino group, a carboxyl group, a hydrogen atom and an R group.",
+        "mark_points": [
+          "Central/alpha carbon",
+          "Amino group",
+          "Carboxyl group",
+          "Hydrogen and variable R group"
+        ]
+      },
+      {
+        "question": "Explain how a peptide bond forms between two amino acids.",
+        "answer": "The carboxyl group of one amino acid reacts with the amino group of another in a condensation reaction. Water is released and a covalent –CO–NH– peptide bond forms.",
+        "mark_points": [
+          "Carboxyl group of one amino acid",
+          "Amino group of another",
+          "Condensation reaction",
+          "Water released",
+          "Covalent peptide bond formed"
+        ]
+      },
+      {
+        "question": "Distinguish between primary, secondary, tertiary and quaternary protein structure.",
+        "answer": "Primary is amino-acid sequence; secondary is local α-helix or β-pleated sheet folding stabilised by hydrogen bonds; tertiary is the overall three-dimensional folding of one polypeptide; quaternary is the association of two or more polypeptide subunits.",
+        "mark_points": [
+          "Primary sequence",
+          "Secondary local folding and hydrogen bonds",
+          "Tertiary overall 3D folding of one chain",
+          "Quaternary association of multiple chains"
+        ]
+      },
+      {
+        "question": "Describe four types of interaction that can stabilise protein shape.",
+        "answer": "Hydrophobic interactions cluster non-polar R groups away from water; hydrogen bonds form between polar groups; ionic bonds attract oppositely charged R groups; covalent disulfide bonds form between cysteine side chains.",
+        "mark_points": [
+          "Hydrophobic interactions correctly described",
+          "Hydrogen bonding correctly described",
+          "Ionic bonding correctly described",
+          "Disulfide covalent bonds correctly described"
+        ]
+      },
+      {
+        "question": "Describe the structure of haemoglobin as required for this syllabus.",
+        "answer": "Haemoglobin is a globular protein with quaternary structure made from two α-globin and two β-globin polypeptide chains, with a haem group associated with each chain.",
+        "mark_points": [
+          "Globular protein",
+          "Quaternary structure/four subunits",
+          "Two α-globin chains",
+          "Two β-globin chains",
+          "Haem group associated with each chain"
+        ]
+      },
+      {
+        "question": "Explain the importance of iron in haemoglobin.",
+        "answer": "Each haem group contains an Fe2+ ion that binds oxygen reversibly. Four haem groups allow one haemoglobin molecule to bind up to four oxygen molecules.",
+        "mark_points": [
+          "Iron is in haem group",
+          "Fe2+ binds oxygen reversibly",
+          "Up to four oxygen molecules per haemoglobin"
+        ]
+      },
+      {
+        "question": "Describe how collagen molecules are arranged to form collagen fibres.",
+        "answer": "Three polypeptide chains form a triple helix. Collagen molecules are arranged in staggered parallel arrays and cross-linked to form fibrils; fibrils bundle into fibres.",
+        "mark_points": [
+          "Three polypeptide chains",
+          "Triple helix",
+          "Staggered parallel arrangement",
+          "Cross-linked fibrils",
+          "Fibrils bundle into fibres"
+        ]
+      },
+      {
+        "question": "Relate collagen structure to its function.",
+        "answer": "The triple helix and cross-links between staggered collagen molecules form strong fibrils and fibres with high tensile strength, allowing connective tissues to resist stretching and pulling forces.",
+        "mark_points": [
+          "Triple helix",
+          "Staggered arrangement/cross-links",
+          "Strong fibrils/fibres",
+          "High tensile strength/resist pulling forces"
+        ]
+      },
+      {
+        "question": "A mutation changes one amino acid in a polypeptide. Explain how this could alter protein function.",
+        "answer": "The altered R group may change interactions such as hydrophobic, hydrogen or ionic interactions. This can change folding and tertiary structure, altering the shape of an active or binding site and therefore protein function. The effect depends on the location and properties of the replacement amino acid.",
+        "mark_points": [
+          "Amino-acid/R-group properties change",
+          "Interactions may change",
+          "Folding/tertiary structure may change",
+          "Binding/active site or function may change",
+          "Recognises effect is not inevitable and depends on context"
+        ]
+      },
+      {
+        "question": "Compare haemoglobin and collagen in terms of structure and function.",
+        "answer": "Haemoglobin is a soluble globular protein with four subunits and four haem groups, adapted for reversible oxygen transport. Collagen is an insoluble fibrous protein made from triple-helical molecules assembled into cross-linked fibrils and fibres, adapted for high tensile strength and structural support.",
+        "mark_points": [
+          "Haemoglobin globular/soluble",
+          "Two α and two β chains with haem groups",
+          "Oxygen transport/reversible binding",
+          "Collagen fibrous/insoluble triple helix",
+          "Fibrils/fibres and tensile strength"
+        ]
+      }
+    ],
+    "visual_tasks": [
+      {
+        "type": "label_diagram",
+        "image": "/learning-assets/biology/9700/biological-molecules/amino-acid-peptide-bond.svg",
+        "alt": "General amino acid structure and condensation forming a peptide bond.",
+        "instruction": "Label the amino group, carboxyl group, central carbon, R group, peptide bond and water released.",
+        "expected_features": [
+          "Correct general amino acid structure",
+          "Peptide bond between carbonyl carbon and nitrogen",
+          "Water released during condensation"
+        ]
+      },
+      {
+        "type": "structure_hierarchy",
+        "image": "/learning-assets/biology/9700/biological-molecules/protein-structure-levels.svg",
+        "alt": "Primary, secondary, tertiary and quaternary protein structure schematic.",
+        "instruction": "Name each level and state the interactions or associations responsible for stabilising it.",
+        "expected_features": [
+          "Primary amino-acid sequence",
+          "Secondary α-helix/β-sheet with hydrogen bonds",
+          "Tertiary 3D folding with R-group interactions",
+          "Quaternary association of multiple subunits"
+        ]
+      },
+      {
+        "type": "structure_function",
+        "image": "/learning-assets/biology/9700/biological-molecules/haemoglobin-collagen.svg",
+        "alt": "Schematic comparison of haemoglobin subunits and collagen triple helix/fibre assembly.",
+        "instruction": "Annotate haemoglobin's two alpha chains, two beta chains and haem groups; trace collagen from triple helix to fibril and fibre.",
+        "expected_features": [
+          "Two α and two β globin chains",
+          "Haem group on each chain with iron",
+          "Three collagen chains form triple helix",
+          "Staggered molecules form fibrils and fibres"
+        ]
+      }
+    ],
+    "common_mistakes": [
+      "Calling the R group the same in every amino acid.",
+      "Confusing peptide bonds with hydrogen bonds in secondary structure.",
+      "Defining tertiary structure as the joining of several polypeptides; that is quaternary structure.",
+      "Claiming every protein has quaternary structure.",
+      "Saying disulfide bonds are hydrogen bonds; they are covalent bonds.",
+      "Claiming haemoglobin has two chains rather than four.",
+      "Omitting the haem group or the iron ion when explaining oxygen binding.",
+      "Describing collagen as a globular soluble transport protein.",
+      "Saying collagen fibres are simply one long polypeptide; they are assembled from many triple-helical molecules."
+    ],
+    "retrieval_check": {
+      "questions": [
+        "What four groups attach to the central carbon of an amino acid?",
+        "What bond joins amino acids?",
+        "Which level is the amino-acid sequence?",
+        "Which interactions stabilise secondary structure?",
+        "What is quaternary structure?",
+        "What are the haemoglobin subunits?",
+        "What does iron do in haem?",
+        "How are collagen fibres assembled?"
+      ],
+      "answers": [
+        "Amino group, carboxyl group, hydrogen and R group.",
+        "Peptide bond.",
+        "Primary structure.",
+        "Hydrogen bonds between peptide-backbone groups.",
+        "Association of two or more polypeptide subunits.",
+        "Two α-globin and two β-globin chains.",
+        "Fe2+ binds oxygen reversibly.",
+        "Three chains form a triple helix; staggered molecules cross-link into fibrils, which bundle into fibres."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025",
+        "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+        "use": "Controlling Topic 2.3 outcomes and required haemoglobin/collagen details, syllabus pp. 19–20."
+      },
+      {
+        "title": "OpenStax Biology 2e, Proteins",
+        "url": "https://openstax.org/books/biology-2e/pages/3-4-proteins",
+        "use": "Supplementary explanation and independent structural cross-check."
+      }
+    ]
+  }
+}
