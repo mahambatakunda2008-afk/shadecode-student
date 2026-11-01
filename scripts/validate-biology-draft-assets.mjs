@@ -23,7 +23,7 @@ export function validateBiologyDraftAsset(asset, fileName = "asset.json") {
   require(curriculum.syllabus_version === "2028-2030", "syllabus_version must be 2028-2030");
   require(curriculum.status === "draft", "curriculum.status must remain draft");
   require(curriculum.objective_mapping_status === "unmapped_to_database_objective_uuids", "objective UUID mapping must remain explicitly unmapped");
-  require(typeof curriculum.expected_topic_key === "string" && /^\\d+$/.test(curriculum.expected_topic_key), "expected_topic_key must be a numeric topic key");
+  require(typeof curriculum.expected_topic_key === "string" && /^\d+$/.test(curriculum.expected_topic_key), "expected_topic_key must be a numeric topic key");
   require(typeof curriculum.source_reference === "string" && curriculum.source_reference.includes("744622-2028-2030-syllabus.pdf"), "source_reference must cite the controlling 2028-2030 syllabus");
   const codes = curriculum.syllabus_outcome_codes;
   require(Array.isArray(codes) && codes.length > 0, "syllabus_outcome_codes must be non-empty");
@@ -62,7 +62,7 @@ export function validateVisualAsset(visual, fileName = "asset.json") {
   const target = resolve(PUBLIC_ROOT, relative);
   if (target !== PUBLIC_ROOT && !target.startsWith(PUBLIC_ROOT + sep)) errors.push(`${fileName}: visual path escapes public/`);
   else if (!existsSync(target)) errors.push(`${fileName}: referenced visual does not exist: ${visual.path}`);
-  else if (!/\\.svg$/i.test(target)) errors.push(`${fileName}: only reviewed SVG visuals are currently accepted by this validator`);
+  else if (!/\.svg$/i.test(target)) errors.push(`${fileName}: only reviewed SVG visuals are currently accepted by this validator`);
   else {
     // Read is handled by the async directory runner below; this check protects path/type.
   }
@@ -72,7 +72,7 @@ export function validateVisualAsset(visual, fileName = "asset.json") {
 
 async function main() {
   const files = process.argv.slice(2);
-  const candidates = files.length ? files : (await readdir(DRAFT_ROOT)).filter(name => /^biology-9700-.*\\.json$/.test(name)).map(name => join(DRAFT_ROOT, name));
+  const candidates = files.length ? files : (await readdir(DRAFT_ROOT)).filter(name => /^biology-9700-.*\.json$/.test(name)).map(name => join(DRAFT_ROOT, name));
   let checked = 0;
   const errors = [];
   for (const path of candidates) {
@@ -85,9 +85,9 @@ async function main() {
       errors.push(...validateVisualAsset(visual, path));
       if (typeof visual.path === "string" && visual.path.startsWith("/")) {
         const target = resolve(PUBLIC_ROOT, visual.path.slice(1));
-        if (target.startsWith(PUBLIC_ROOT + sep) && existsSync(target) && /\\.svg$/i.test(target)) {
+        if (target.startsWith(PUBLIC_ROOT + sep) && existsSync(target) && /\.svg$/i.test(target)) {
           const svg = await readFile(target, "utf8");
-          if (!/<svg(?:\\s|>)/i.test(svg)) errors.push(`${path}: referenced visual is not valid SVG markup: ${visual.path}`);
+          if (!/<svg(?:\s|>)/i.test(svg)) errors.push(`${path}: referenced visual is not valid SVG markup: ${visual.path}`);
         }
       }
     }
