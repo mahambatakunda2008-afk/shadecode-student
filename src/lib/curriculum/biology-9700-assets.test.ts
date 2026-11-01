@@ -114,6 +114,12 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(map).toContain("2025–2027");
     expect(map).toContain("Authentic, permission-cleared photomicrograph still required");
     expect(map).toContain("Do not invent UUIDs");
+    expect(map).toContain("Expected ratios for different types of epistasis are not required knowledge.");
+    expect(map).toContain("| 16.2.5 | Use the chi-squared test");
+    expect(map).toContain("| 16.2.6 | Explain the relationship between the specified genes");
+    expect(map).toContain("| 16.2.7 | Explain gibberellin");
+    expect(map).toContain("| 16.3.2 | Explain genetic control of protein production in a prokaryote");
+    expect(map).toContain("| 16.3.3 | State that transcription factors bind to DNA");
   });
 
 
@@ -151,7 +157,8 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(pack).toContain("Original practice questions");
     expect(pack).toContain("(84−90)²/90 + (36−30)²/30 + (40−40)²/40");
     expect(pack).toContain("χ² = 36/90 + 36/30 + 0 = **1.6**");
-    expect(pack).toContain("9 coloured : 3 unpigmented : 4 white");
+    expect(pack).toContain("This ratio is supplied as context; candidates are not expected to memorise epistasis ratios.");
+    expect(pack).toContain("The 9:3:4 model is supplied in the question and is not a ratio candidates are expected to memorise.");
     expect(pack).toContain("Five original questions, 38 marks");
     expect(pack).toContain("Cambridge past-paper questions");
     expect(pack).toContain("Do not import or publish");
