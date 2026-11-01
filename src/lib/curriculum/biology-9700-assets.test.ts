@@ -129,6 +129,28 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
   });
 
 
+  it("covers F1 and F2 generation terminology in the inheritance lesson", () => {
+    const asset = JSON.parse(
+      readFileSync(
+        join(process.cwd(), "docs/learning-assets/drafts/biology-9700-inheritance-genetic-crosses.v1.json"),
+        "utf8",
+      ),
+    ) as {
+      content: {
+        learning_objectives: string[];
+        sections: Array<{ heading: string; body: string }>;
+      };
+    };
+
+    expect(asset.content.learning_objectives[0]).toContain("F1");
+    expect(asset.content.learning_objectives[0]).toContain("F2");
+    const generations = asset.content.sections.find(
+      (section) => section.heading === "Parental, F1 and F2 generations",
+    );
+    expect(generations?.body).toContain("first filial generation");
+    expect(generations?.body).toContain("second filial generation");
+  });
+
   it("connects the meiosis-II branch to all four haploid products", () => {
     const diagram = readFileSync(
       join(process.cwd(), "public/learning-assets/biology/9700/inheritance/meiosis-overview.svg"),
