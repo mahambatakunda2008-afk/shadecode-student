@@ -53,6 +53,11 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Fetch axe-core (accessibility scanner, no npm dependency)
+        run: |
+          mkdir -p e2e/vendor
+          curl -fsSL https://cdn.jsdelivr.net/npm/axe-core@4.10.2/axe.min.js -o e2e/vendor/axe.min.js || echo "axe-core unavailable; the accessibility scan will be skipped"
+
       - name: Run mobile layout checks (production)
         if: inputs.mode == 'production'
         env:
@@ -88,16 +93,43 @@ jobs:
           BASE_URL: http://127.0.0.1:3000
         run: npx playwright test e2e/mobile --reporter=github,list --retries=0
 
-      - name: Publish measurements as annotations
+      - name: Publish layout measurements
         if: always()
         run: |
           node -e "
           const fs=require('fs');
-          const files=['mobile-metrics/metrics.json','mobile-metrics/style-probe.json'].filter(f=>fs.existsSync(f));
-          if(!files.length){console.log('::warning title=Mobile metrics::no metrics file was written');process.exit(0)}
+          const files=['mobile-metrics/metrics.json'].filter(f=>fs.existsSync(f));
+          let n=0;
           for(const m of files.flatMap(f=>JSON.parse(fs.readFileSync(f,'utf8')))){
+            if(n++>=10)break;
             const {page,...rest}=m;
             console.log('::notice title=mobile '+page+'::'+JSON.stringify(rest).replace(/%/g,'%25').replace(/\r/g,'%0D').replace(/\n/g,'%0A'));
+          }"
+
+      - name: Publish style probe
+        if: always()
+        run: |
+          node -e "
+          const fs=require('fs');
+          const files=['mobile-metrics/style-probe.json'].filter(f=>fs.existsSync(f));
+          let n=0;
+          for(const m of files.flatMap(f=>JSON.parse(fs.readFileSync(f,'utf8')))){
+            if(n++>=10)break;
+            const {page,...rest}=m;
+            console.log('::notice title=mobile '+page+'::'+JSON.stringify(rest).replace(/%/g,'%25').replace(/\r/g,'%0D').replace(/\n/g,'%0A'));
+          }"
+
+      - name: Publish accessibility findings
+        if: always()
+        run: |
+          node -e "
+          const fs=require('fs');
+          const files=['mobile-metrics/a11y.json'].filter(f=>fs.existsSync(f));
+          let n=0;
+          for(const m of files.flatMap(f=>JSON.parse(fs.readFileSync(f,'utf8')))){
+            if(n++>=10)break;
+            const {page,...rest}=m;
+            console.log('::notice title=a11y '+page+'::'+JSON.stringify(rest).replace(/%/g,'%25').replace(/\r/g,'%0D').replace(/\n/g,'%0A'));
           }"
 
       - name: Upload screenshots and report

@@ -57,3 +57,4 @@ public/worker-*.js.map
 
 # Playwright mobile layout output
 /mobile-metrics
+/e2e/vendor
