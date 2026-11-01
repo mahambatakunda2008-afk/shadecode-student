@@ -1,0 +1,212 @@
+{
+  "asset_key": "biology-9700-mode-of-action-enzymes",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Mode of action of enzymes",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "3",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 3, syllabus p. 21. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 3.1.1–3.1.4.",
+    "syllabus_outcome_codes": [
+      "3.1.1",
+      "3.1.2",
+      "3.1.3",
+      "3.1.4"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "State that enzymes are globular proteins and distinguish intracellular from extracellular enzymes.",
+      "Explain enzyme action using active sites, enzyme–substrate complexes, activation energy, specificity, lock-and-key and induced-fit hypotheses.",
+      "Investigate catalase activity by measuring product formation and amylase activity by measuring substrate disappearance.",
+      "Outline how a colorimeter follows the progress of enzyme-catalysed reactions involving colour changes."
+    ],
+    "sections": [
+      {
+        "heading": "Enzymes are biological catalysts",
+        "body": "Enzymes are biological catalysts: they increase the rate of chemical reactions without being used up overall. Most enzymes are globular proteins. Their specific three-dimensional shape creates an active site where substrate molecules bind. Enzymes work under the conditions found in living organisms and can catalyse reactions inside or outside cells."
+      },
+      {
+        "heading": "Intracellular and extracellular enzymes",
+        "body": "Intracellular enzymes catalyse reactions inside cells. Examples include enzymes involved in respiration in the cytoplasm or mitochondria, and enzymes involved in DNA replication. Extracellular enzymes are secreted from cells and catalyse reactions outside them. Examples include amylase secreted into the digestive tract and proteases secreted by the pancreas. The location is defined by where catalysis occurs, not simply where the enzyme was made."
+      },
+      {
+        "heading": "Active site and enzyme–substrate complex",
+        "body": "A substrate is the reactant molecule on which an enzyme acts. The active site is a small region of the enzyme with a particular shape and chemical properties. A substrate binds temporarily to the active site, forming an enzyme–substrate complex. The reaction occurs, products are released, and the enzyme remains available to catalyse another reaction. A simplified sequence is E + S ⇌ ES → E + P. The enzyme does not change the overall energy difference between reactants and products or the equilibrium position; it changes how quickly equilibrium is approached."
+      },
+      {
+        "heading": "Activation energy",
+        "body": "Activation energy is the minimum energy that reacting particles must have for a reaction to proceed. Enzymes lower the activation energy by providing an alternative reaction pathway. Binding at the active site can bring substrates into a suitable orientation, strain particular bonds, create a favourable microenvironment and stabilise the transition state. At a given temperature, a greater proportion of collisions can then lead to reaction, increasing reaction rate."
+      },
+      {
+        "heading": "Lock-and-key hypothesis",
+        "body": "The lock-and-key hypothesis proposes that the active site has a shape complementary to the substrate before binding. The substrate fits into the active site, forming an enzyme–substrate complex. This model helps explain specificity: only substrates with a suitable complementary shape and chemical properties bind effectively. It is a simplified model because active sites are not completely rigid."
+      },
+      {
+        "heading": "Induced-fit hypothesis",
+        "body": "The induced-fit hypothesis proposes that the active site is flexible. When the substrate binds, interactions between substrate and enzyme cause the active site to change shape slightly so that it fits the substrate more closely. This can position catalytic groups, strain substrate bonds and stabilise the transition state. Induced fit is a more realistic explanation of many enzyme interactions than a perfectly rigid lock-and-key model."
+      },
+      {
+        "heading": "Enzyme specificity",
+        "body": "An enzyme is specific because the shape and chemical properties of its active site allow particular substrate(s) to bind and undergo a particular reaction. Specificity is not only a simple shape match: charge, polarity, hydrophobic interactions and the positions of catalytic amino-acid groups also matter. A change to the enzyme's structure may alter the active site and reduce or prevent substrate binding or catalysis."
+      },
+      {
+        "heading": "Measuring reaction progress: catalase",
+        "body": "Catalase catalyses the breakdown of hydrogen peroxide into water and oxygen: 2H₂O₂ → 2H₂O + O₂. The rate can be investigated by measuring oxygen produced per unit time, for example using a gas syringe or an inverted measuring cylinder where appropriate. Use a fixed volume and concentration of hydrogen peroxide, a measured amount of catalase source, controlled temperature and pH, and consistent mixing. Record oxygen volume at regular time intervals. The initial rate is estimated from the gradient at the start of the product-versus-time graph, where substrate concentration has changed least."
+      },
+      {
+        "heading": "Measuring substrate disappearance: amylase",
+        "body": "Amylase catalyses hydrolysis of starch into smaller carbohydrates. The disappearance of starch can be followed by taking samples at timed intervals and adding each to iodine solution. Iodine turns blue-black when starch is present; as starch is hydrolysed, the colour becomes less intense and eventually remains yellow-brown. A standardised iodine test or colorimeter can make comparisons more objective. Keep starch concentration, amylase concentration, temperature, pH, sample volume and sampling interval controlled."
+      },
+      {
+        "heading": "Using a colorimeter",
+        "body": "A colorimeter measures how much light of a selected wavelength is absorbed or transmitted by a coloured solution. For an enzyme reaction involving a colour change, take readings at regular intervals using the same wavelength, cuvette orientation, volume and blanking procedure. A calibration curve can relate absorbance to concentration if the relationship is established for the relevant range. Plot absorbance or estimated concentration against time. Interpret the direction correctly: increasing absorbance may indicate product formation or substrate disappearance depending on which substance is coloured. A colorimeter does not directly measure enzyme activity; it measures an optical property used as a proxy for reaction progress."
+      },
+      {
+        "heading": "Initial rate and fair testing",
+        "body": "Initial rate is often the most useful measure because substrate concentration is near its starting value and product accumulation is low. Use repeats and calculate a mean, identify anomalous results transparently, and compare gradients over the same initial time interval. A valid investigation changes one independent variable while controlling other factors that could affect rate. Include a suitable control, such as a reaction mixture without active enzyme, where appropriate."
+      }
+    ],
+    "questions": [
+      {
+        "question": "State two characteristics of enzymes and distinguish intracellular from extracellular enzymes.",
+        "answer": "Enzymes are biological catalysts and most are globular proteins. Intracellular enzymes catalyse reactions inside cells; extracellular enzymes are secreted and catalyse reactions outside cells.",
+        "mark_points": [
+          "Biological catalysts / increase reaction rate without being used up overall",
+          "Most are globular proteins",
+          "Intracellular: catalysis inside cell",
+          "Extracellular: catalysis outside cell after secretion"
+        ]
+      },
+      {
+        "question": "Explain enzyme action using the terms active site, substrate and enzyme–substrate complex.",
+        "answer": "The substrate binds to a complementary active site, forming an enzyme–substrate complex. The reaction occurs, products are released, and the enzyme remains available for further reactions.",
+        "mark_points": [
+          "Substrate binds to active site",
+          "Enzyme–substrate complex formed",
+          "Reaction converts substrate to product(s)",
+          "Product(s) released and enzyme remains unchanged overall"
+        ]
+      },
+      {
+        "question": "Explain how an enzyme increases reaction rate.",
+        "answer": "The enzyme provides an alternative pathway with lower activation energy. At the same temperature, a greater proportion of particles have sufficient energy to react, so more successful reactions occur per unit time.",
+        "mark_points": [
+          "Provides alternative pathway",
+          "Lowers activation energy",
+          "Greater proportion of particles can react successfully",
+          "Rate increases"
+        ]
+      },
+      {
+        "question": "Compare the lock-and-key and induced-fit hypotheses.",
+        "answer": "Lock-and-key describes a relatively fixed active site complementary to the substrate before binding. Induced fit describes a flexible active site that changes shape slightly when the substrate binds, improving fit and helping catalysis.",
+        "mark_points": [
+          "Lock-and-key: pre-existing complementary active-site shape",
+          "Lock-and-key is a simplified rigid model",
+          "Induced fit: active site is flexible",
+          "Binding causes conformational change that supports catalysis"
+        ]
+      },
+      {
+        "question": "Describe how catalase activity can be investigated by measuring product formation.",
+        "answer": "Mix a measured amount of catalase with a fixed volume and concentration of hydrogen peroxide at controlled temperature and pH. Measure oxygen volume at regular time intervals using a gas syringe. Plot oxygen volume against time and use the initial gradient to estimate rate.",
+        "mark_points": [
+          "Catalase and hydrogen peroxide identified",
+          "Measure oxygen product",
+          "Timed measurements with suitable apparatus",
+          "Control temperature, pH and reactant amounts",
+          "Initial gradient gives initial rate"
+        ]
+      },
+      {
+        "question": "Describe how amylase activity can be investigated by measuring substrate disappearance.",
+        "answer": "Mix amylase with starch under controlled conditions. At timed intervals, test samples with iodine. The decreasing blue-black colour indicates starch disappearance. Keep temperature, pH, volumes and concentrations controlled and use a consistent sampling method.",
+        "mark_points": [
+          "Amylase hydrolyses starch",
+          "Timed samples taken",
+          "Iodine detects starch (blue-black)",
+          "Declining colour indicates starch disappearance",
+          "Relevant variables controlled"
+        ]
+      },
+      {
+        "question": "Outline how a colorimeter can be used to follow an enzyme-catalysed reaction involving a colour change.",
+        "answer": "Blank the colorimeter with an appropriate reference, select a suitable wavelength and measure absorbance of reaction samples at regular intervals. Use a calibration curve if converting absorbance to concentration, then plot the measured optical signal or estimated concentration against time.",
+        "mark_points": [
+          "Appropriate blank and wavelength",
+          "Readings at regular intervals",
+          "Consistent cuvette/sample handling",
+          "Calibration curve if concentration is required",
+          "Plot signal/concentration against time"
+        ]
+      },
+      {
+        "question": "A student measures oxygen volume every 20 seconds in a catalase reaction. Explain why the initial gradient is used to compare enzyme activity.",
+        "answer": "At the start, substrate concentration is close to its initial value and product accumulation is low, so the rate is less affected by substrate depletion or product effects. The initial gradient therefore provides a comparable estimate of initial rate.",
+        "mark_points": [
+          "Substrate concentration initially near starting value",
+          "Less substrate depletion/product accumulation",
+          "Rate changes less during initial interval",
+          "Gradient estimates initial rate"
+        ]
+      }
+    ],
+    "visual_tasks": [],
+    "common_mistakes": [
+      "Saying enzymes supply energy rather than lower activation energy.",
+      "Claiming enzymes change the equilibrium position or overall energy released.",
+      "Treating the lock-and-key model as a literal rigid fit and ignoring induced fit.",
+      "Confusing where an enzyme is produced with where it catalyses a reaction.",
+      "Using total product at the end rather than a rate or graph gradient.",
+      "Assuming every colorimeter reading directly equals concentration without a calibration relationship.",
+      "Forgetting that iodine detects starch, not amylase."
+    ],
+    "retrieval_check": {
+      "questions": [
+        "What is a biological catalyst?",
+        "What is the active site?",
+        "What is an enzyme–substrate complex?",
+        "What happens to activation energy?",
+        "What is the key difference between lock-and-key and induced fit?",
+        "What gas does catalase produce from hydrogen peroxide?",
+        "What does iodine detect in an amylase investigation?",
+        "What does the gradient of product against time represent?"
+      ],
+      "answers": [
+        "A substance that increases reaction rate without being used up overall.",
+        "The region of an enzyme where substrate binds and catalysis occurs.",
+        "A temporary complex formed when substrate binds to enzyme.",
+        "It is lowered by an alternative reaction pathway.",
+        "Induced fit includes a shape change in the flexible active site on substrate binding.",
+        "Oxygen.",
+        "Starch.",
+        "Reaction rate; the initial gradient estimates initial rate."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030",
+        "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+        "use": "Controlling Topic 3.1 outcomes 1–4, syllabus p. 21."
+      }
+    ]
+  }
+}
