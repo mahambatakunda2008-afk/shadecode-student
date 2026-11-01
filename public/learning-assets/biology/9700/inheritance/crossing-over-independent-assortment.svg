@@ -38,23 +38,31 @@
 
 <rect x="610" y="85" width="555" height="625" rx="20" fill="#fff" stroke="#64748b" stroke-width="2"/>
 <text x="887" y="128" text-anchor="middle" font-size="25" font-weight="bold">2. Independent assortment</text>
-<text x="887" y="160" text-anchor="middle" font-size="17">Metaphase I: each homologous pair orients randomly</text>
+<text x="887" y="160" text-anchor="middle" font-size="17">Metaphase I: two homologous pairs orient independently</text>
 <text x="745" y="205" text-anchor="middle" font-size="18" font-weight="bold">Orientation A</text>
 <text x="1030" y="205" text-anchor="middle" font-size="18" font-weight="bold">Orientation B</text>
-<!-- two cells with equator -->
+<!-- two homologous chromosome pairs shown at the metaphase equator -->
 <ellipse cx="745" cy="355" rx="105" ry="125" fill="#f8fafc" stroke="#334155" stroke-width="3"/>
 <ellipse cx="1030" cy="355" rx="105" ry="125" fill="#f8fafc" stroke="#334155" stroke-width="3"/>
 <path d="M745 245 V465 M1030 245 V465" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 6"/>
-<!-- chromosome pair 1 long: blue maternal, red paternal -->
-<path d="M680 285 V335 M695 285 V335 M795 375 V425 M810 375 V425" stroke="#2563eb" stroke-width="9" stroke-linecap="round"/>
-<path d="M680 375 V425 M695 375 V425 M795 285 V335 M810 285 V335" stroke="#dc2626" stroke-width="9" stroke-linecap="round"/>
-<!-- orientation B reverse one pair -->
-<path d="M965 285 V335 M980 285 V335 M1080 375 V425 M1095 375 V425" stroke="#2563eb" stroke-width="9" stroke-linecap="round"/>
-<path d="M965 375 V425 M980 375 V425 M1080 285 V335 M1095 285 V335" stroke="#dc2626" stroke-width="9" stroke-linecap="round"/>
-<text x="745" y="505" text-anchor="middle" font-size="15">Maternal / paternal</text><text x="745" y="525" text-anchor="middle" font-size="15">combination 1</text>
-<text x="1030" y="505" text-anchor="middle" font-size="15">Alternative</text><text x="1030" y="525" text-anchor="middle" font-size="15">combination 2</text>
+<!-- Orientation A: maternal homologues of both pairs face the same pole -->
+<g fill="none" stroke-linecap="round" stroke-width="8">
+ <path d="M695 275 L715 315 M715 275 L695 315 M775 275 L795 315 M795 275 L775 315" stroke="#2563eb"/>
+ <path d="M695 385 L715 425 M715 385 L695 425 M775 385 L795 425 M795 385 L775 425" stroke="#16a34a"/>
+ <path d="M695 325 L715 365 M715 325 L695 365 M775 325 L795 365 M795 325 L775 365" stroke="#dc2626"/>
+ <path d="M695 435 L715 475 M715 435 L695 475 M775 435 L795 475 M795 435 L775 475" stroke="#9333ea"/>
+</g>
+<!-- Orientation B: the second homologous pair is reversed -->
+<g fill="none" stroke-linecap="round" stroke-width="8">
+ <path d="M980 275 L1000 315 M1000 275 L980 315 M1060 275 L1080 315 M1080 275 L1060 315" stroke="#2563eb"/>
+ <path d="M980 325 L1000 365 M1000 325 L980 365 M1060 325 L1080 365 M1080 325 L1060 365" stroke="#dc2626"/>
+ <path d="M980 385 L1000 425 M1000 385 L980 425 M1060 385 L1080 425 M1080 385 L1060 425" stroke="#9333ea"/>
+ <path d="M980 435 L1000 475 M1000 435 L980 475 M1060 435 L1080 475 M1080 435 L1060 475" stroke="#16a34a"/>
+</g>
+<text x="745" y="505" text-anchor="middle" font-size="15">Maternal + maternal</text><text x="745" y="525" text-anchor="middle" font-size="15">towards same pole</text>
+<text x="1030" y="505" text-anchor="middle" font-size="15">Second pair reversed:</text><text x="1030" y="525" text-anchor="middle" font-size="15">mixed parental origins</text>
 <rect x="645" y="565" width="485" height="90" rx="14" fill="#eff6ff"/>
-<text x="665" y="600" font-size="17">Different orientations produce different combinations</text>
+<text x="665" y="600" font-size="17">Independent orientations produce different combinations</text>
 <text x="665" y="628" font-size="17">of maternal and paternal chromosomes in gametes.</text>
 <text x="600" y="740" text-anchor="middle" font-size="15" fill="#475569">Schematic only, not to scale. Blue and red indicate homologous chromosome origins.</text>
 </g></svg>
