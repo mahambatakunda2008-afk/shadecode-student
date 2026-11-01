@@ -3,6 +3,7 @@
 **Asset status:** Draft, teacher/editor review required.  
 **Syllabus boundary:** Cambridge International AS & A Level Biology 9700, 2025–2027, Topic 16 only.  
 **Purpose:** Original practice questions written to exercise syllabus knowledge and data-handling skills. These are **not** Cambridge past-paper questions and the mark guidance is not an official Cambridge mark scheme.  
+**Assessment length:** Five original questions, 38 marks.  
 **Publication:** Do not import or publish until subject-editor approval, objective UUID reconciliation, accessibility review and source/version checks are complete.
 
 ---
