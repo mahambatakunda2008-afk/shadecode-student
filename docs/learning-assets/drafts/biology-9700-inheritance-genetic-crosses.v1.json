@@ -46,7 +46,8 @@
       "Predict outcomes involving multiple alleles, codominance, sex linkage, autosomal linkage and epistasis.",
       "Explain and interpret test crosses.",
       "Use chi-squared to assess whether differences between observed and expected results are statistically significant.",
-      "Explain how selected genes influence proteins and phenotypes, using the examples in the syllabus."
+      "Explain how selected genes influence proteins and phenotypes, using the examples in the syllabus.",
+      "Explain how the Le and le alleles affect the enzyme involved in gibberellin synthesis and how this influences stem elongation."
     ],
     "sections": [
       {
@@ -300,6 +301,18 @@
           "F1 correctly identified as first filial generation",
           "F2 correctly identified as offspring of an F1 cross or self-fertilisation",
           "Recognises generation labels do not specify genotype"
+        ]
+      },
+      {
+        "question": "In a plant species, Le codes for a functional enzyme involved in gibberellin synthesis, while le codes for a non-functional form. A plant heterozygous Lele is crossed with a lele plant. (a) State the gametes produced by each parent. (2) (b) Give the expected genotypes and proportions of the offspring. (2) (c) Explain why lele plants show reduced stem elongation. (2)",
+        "answer": "(a) Lele produces Le and le gametes; lele produces le gametes only. (b) Expected offspring: 1/2 Lele and 1/2 lele. (c) lele plants produce the non-functional enzyme, reducing gibberellin synthesis through this pathway; lower gibberellin availability reduces stem elongation.",
+        "mark_points": [
+          "Lele parent produces Le and le gametes",
+          "lele parent produces le gametes only",
+          "1/2 Lele and 1/2 lele",
+          "le allele codes for a non-functional enzyme",
+          "Reduced gibberellin synthesis",
+          "Reduced stem elongation"
         ]
       }
     ],
