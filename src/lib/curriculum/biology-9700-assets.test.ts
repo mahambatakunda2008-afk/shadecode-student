@@ -151,6 +151,31 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(generations?.body).toContain("second filial generation");
   });
 
+  it("does not ask learners to label lacI on a schematic that does not draw the regulatory gene", () => {
+    const asset = JSON.parse(
+      readFileSync(
+        join(process.cwd(), "docs/learning-assets/drafts/biology-9700-gene-control.v1.json"),
+        "utf8",
+      ),
+    ) as {
+      content: {
+        sections: Array<{ heading: string; body: string }>;
+        visual_tasks: Array<{ type: string; instruction: string; expected_features: string[] }>;
+      };
+    };
+
+    const components = asset.content.sections.find(
+      (section) => section.heading === "The lac operon: components",
+    );
+    const diagramTask = asset.content.visual_tasks.find(
+      (task) => task.type === "label_diagram",
+    );
+    expect(components?.body).toContain("lacI regulatory gene");
+    expect(diagramTask?.instruction).toContain("In a separate key, identify lacI");
+    expect(diagramTask?.instruction).toContain("not drawn as part of the operon");
+    expect(diagramTask?.expected_features.join(" ")).toContain("regulatory gene encoding the repressor");
+  });
+
   it("connects the meiosis-II branch to all four haploid products", () => {
     const diagram = readFileSync(
       join(process.cwd(), "public/learning-assets/biology/9700/inheritance/meiosis-overview.svg"),
