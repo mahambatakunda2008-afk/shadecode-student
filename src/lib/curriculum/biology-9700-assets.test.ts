@@ -150,7 +150,7 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(pack).toContain("all offspring Pp and purple");
     expect(pack).toContain("Original practice questions");
     expect(pack).toContain("(84−90)²/90 + (36−30)²/30 + (40−40)²/40");
-    expect(pack).toContain("χ² = 1.6");
+    expect(pack).toContain("χ² = 36/90 + 36/30 + 0 = **1.6**");
     expect(pack).toContain("9 coloured : 3 unpigmented : 4 white");
     expect(pack).toContain("Five original questions, 38 marks");
     expect(pack).toContain("Cambridge past-paper questions");
