@@ -51,7 +51,7 @@ describe("Biology 9700 Topic 8 draft packages", () => {
   });
   it("provides every referenced original SVG with accessible title and description", () => {
     const referenced = packages.flatMap((item) => item.data.content.visual_assets.map((asset) => asset.path));
-    expect(referenced).toHaveLength(8);
+    expect(referenced).toHaveLength(10);
     for (const publicPath of referenced) {
       const relativePath = path.join("public", publicPath.substring(1));
       expect(fs.existsSync(path.join(root, relativePath))).toBe(true);
