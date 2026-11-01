@@ -235,4 +235,19 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(diagram).toContain("not to scale");
   });
 
+
+  it("makes crossing over and independent assortment visually distinguishable", () => {
+    const diagram = readFileSync(
+      join(process.cwd(), "public/learning-assets/biology/9700/inheritance/crossing-over-independent-assortment.svg"),
+      "utf8",
+    );
+
+    expect(diagram).toContain("non-sister chromatids exchange DNA");
+    expect(diagram).toContain("Chiasma between");
+    expect(diagram).toContain("two recombinant");
+    expect(diagram).toContain("orients randomly");
+    expect(diagram).toContain("maternal and paternal chromosomes");
+    expect(diagram).toContain("not to scale");
+  });
+
 });
