@@ -240,6 +240,18 @@
         "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
         "use": "Controlling Topic 3.2 outcomes 1–4, syllabus p. 21."
       }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/enzymes/substrate-saturation.svg",
+        "caption": "Conceptual Michaelis–Menten saturation curve showing Vmax and Km.",
+        "alt": "Initial rate rises with substrate concentration and approaches Vmax; Km is marked at half Vmax."
+      },
+      {
+        "path": "/learning-assets/biology/9700/enzymes/inhibitor-effects.svg",
+        "caption": "Conceptual comparison of competitive and pure non-competitive inhibition.",
+        "alt": "Rate curves show competitive inhibition reaching the same Vmax at higher substrate concentration and pure non-competitive inhibition reaching a lower Vmax."
+      }
     ]
   }
 }
