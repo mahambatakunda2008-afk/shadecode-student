@@ -30,7 +30,8 @@
       "Draft covers all four Topic 16.3 outcomes. Lac operon diagram is an original vector schematic. Requires subject-editor review and objective-key reconciliation before import or publication.",
       "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved.",
       "Expanded Topic 16.3 assessment with operator and repressor mutation analysis, eukaryotic transcription-factor mutation, quantitative gibberellin/DELLA data interpretation, and a comparative causal-chain response. Questions are original draft exercises and require independent subject review.",
-      "Added an experimental-reasoning section and a data-analysis visual task that distinguish measured growth from inferred molecular mechanism; includes percentage-change calculation and limits of inference."
+      "Added an experimental-reasoning section and a data-analysis visual task that distinguish measured growth from inferred molecular mechanism; includes percentage-change calculation and limits of inference.",
+      "Aligned the lac-operon diagram task with the actual schematic: lacI is now explicitly identified in a separate key because the figure shows the repressor protein and operon control regions, not the lacI DNA locus itself."
     ]
   },
   "content": {
@@ -233,11 +234,12 @@
         "type": "label_diagram",
         "image": "/learning-assets/biology/9700/inheritance/lac-operon.svg",
         "alt": "Two-state lac operon schematic, with repressor bound in the absence of lactose and inducer-bound repressor unable to bind operator when lactose is present.",
-        "instruction": "Label lacI, repressor, promoter, operator, lacZYA, RNA polymerase and allolactose. Annotate the transcription state in each condition.",
+        "instruction": "On the diagram, label the repressor, promoter, operator, lacZYA structural genes, RNA polymerase and allolactose. In a separate key, identify lacI as the regulatory gene that encodes the repressor; make clear that lacI is not the operator and is not drawn as part of the operon in this schematic. Annotate the transcription state in each condition.",
         "expected_features": [
           "Repressor bound to operator without lactose",
           "Allolactose changes repressor shape",
-          "RNA polymerase transcribes structural genes when repressor is not bound"
+          "RNA polymerase transcribes structural genes when repressor is not bound",
+          "lacI is identified separately as the regulatory gene encoding the repressor, not confused with the operator or lacZYA structural genes"
         ]
       },
       {
