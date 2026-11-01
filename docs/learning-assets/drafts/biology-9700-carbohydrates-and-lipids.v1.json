@@ -270,6 +270,23 @@
         "url": "https://openstax.org/books/biology-2e/pages/3-2-carbohydrates",
         "use": "Supplementary structural explanations; Cambridge syllabus controls scope."
       }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/biological-molecules/glucose-anomers.svg",
+        "caption": "Comparison of the C1 hydroxyl orientation in α-D-glucose and β-D-glucose.",
+        "alt": "Two glucose ring schematics showing the C1 hydroxyl group below the ring in alpha and above the ring in beta."
+      },
+      {
+        "path": "/learning-assets/biology/9700/biological-molecules/storage-and-structural-polysaccharides.svg",
+        "caption": "Structural comparison of amylose, amylopectin, glycogen and cellulose.",
+        "alt": "Schematic comparison of unbranched amylose, branched amylopectin, highly branched glycogen and straight hydrogen-bonded cellulose chains."
+      },
+      {
+        "path": "/learning-assets/biology/9700/biological-molecules/triglyceride-phospholipid.svg",
+        "caption": "Triglyceride and phospholipid component comparison.",
+        "alt": "Triglyceride with glycerol and three fatty acid tails compared with a phospholipid with a phosphate head and two fatty acid tails."
+      }
     ]
   }
 }
