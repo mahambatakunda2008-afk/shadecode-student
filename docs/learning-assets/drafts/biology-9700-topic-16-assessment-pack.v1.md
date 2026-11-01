@@ -117,7 +117,7 @@ In a plant, pigment production requires a functional enzyme coded for by gene P.
 
 **(a)** Explain why this is an example of epistasis. (2)
 
-**(b)** A cross PpCc × PpCc is carried out. State the expected phenotypic ratio and identify the genotype classes that produce each phenotype. (2)
+**(b)** A cross PpCc × PpCc is carried out. The proposed model predicts a 9:3:4 ratio of coloured : unpigmented : white offspring, corresponding to the expected numbers in the table. This ratio is supplied as context; candidates are not expected to memorise epistasis ratios. Identify the genotype classes that produce each phenotype. (2)
 
 A sample of 160 offspring gives the following results:
 
@@ -135,11 +135,11 @@ A sample of 160 offspring gives the following results:
 ### Mark guidance
 
 - **(a)** The cc genotype masks the effect of the P gene (1); the interaction is between two different gene loci (1).
-- **(b)** 9 coloured : 3 unpigmented : 4 white (1); P_C_ = coloured, ppC_ = unpigmented, and __cc = white (1).
+- **(b)** P_C_ = coloured, ppC_ = unpigmented, and __cc = white (2). The 9:3:4 model is supplied in the question and is not a ratio candidates are expected to memorise.
 - **(c)** χ² = (84−90)²/90 + (36−30)²/30 + (40−40)²/40 (1); χ² = 36/90 + 36/30 + 0 = **1.6** (1).
 - **(d)** 1.6 is below 5.99, so the difference is not statistically significant at p = 0.05 (1); do not reject the null hypothesis, and do not claim that the genetic model has been proved (1).
 
-**Interpretation check:** There are three phenotype categories, so degrees of freedom = 3 − 1 = 2 for this goodness-of-fit test. The result is consistent with the expected 9:3:4 ratio, but it does not prove the model is true.
+**Interpretation check:** There are three phenotype categories, so degrees of freedom = 3 − 1 = 2 for this goodness-of-fit test. The result is consistent with the expected frequencies supplied in the question, but it does not prove the model is true.
 
 ---
 
