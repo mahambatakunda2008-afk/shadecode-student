@@ -221,4 +221,18 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(pack).toContain("Cambridge past-paper questions");
     expect(pack).toContain("Do not import or publish");
   });
+
+  it("distinguishes homologous-chromosome separation from sister-chromatid separation in the stage diagram", () => {
+    const diagram = readFileSync(
+      join(process.cwd(), "public/learning-assets/biology/9700/inheritance/meiosis-stage-recognition.svg"),
+      "utf8",
+    );
+
+    expect(diagram).toContain("Homologous pair at equator");
+    expect(diagram).toContain("Homologues separate; centromeres intact");
+    expect(diagram).toContain("Single replicated chromosome at equator");
+    expect(diagram).toContain("Sister chromatids separate");
+    expect(diagram).toContain("not to scale");
+  });
+
 });
