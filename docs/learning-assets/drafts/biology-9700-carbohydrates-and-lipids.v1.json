@@ -1,0 +1,275 @@
+{
+  "asset_key": "biology-9700-carbohydrates-and-lipids",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Carbohydrates and lipids",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "2",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 2.2, syllabus pp. 18–20, learning outcomes 1–11. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "2.2.1",
+      "2.2.2",
+      "2.2.3",
+      "2.2.4",
+      "2.2.5",
+      "2.2.6",
+      "2.2.7",
+      "2.2.8",
+      "2.2.9",
+      "2.2.10",
+      "2.2.11"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Draw the ring forms of α-glucose and β-glucose and distinguish their anomeric forms.",
+      "Define monomer, polymer, macromolecule, monosaccharide, disaccharide and polysaccharide.",
+      "Explain the role of covalent bonds in joining smaller molecules to form polymers.",
+      "Identify glucose, fructose and maltose as reducing sugars and sucrose as a non-reducing sugar.",
+      "Explain glycosidic bond formation by condensation and bond breakage by hydrolysis.",
+      "Relate the structures of starch, glycogen and cellulose to their biological functions.",
+      "Describe triglyceride and phospholipid structures and relate triglyceride structure to biological functions."
+    ],
+    "sections": [
+      {
+        "heading": "Monomers, polymers and macromolecules",
+        "body": "A monomer is a small molecule that can be joined to other molecules. A polymer is a large molecule made from many repeating or related monomer units joined by covalent bonds. A macromolecule is a very large molecule; many biological polymers are macromolecules. A monosaccharide is a single sugar unit; a disaccharide contains two monosaccharides joined by a glycosidic bond; a polysaccharide contains many monosaccharide units joined by glycosidic bonds. Not every macromolecule is a polymer of one identical monomer."
+      },
+      {
+        "heading": "α-glucose and β-glucose",
+        "body": "Glucose has molecular formula C6H12O6 and commonly forms a six-membered ring in aqueous solution. α-glucose and β-glucose differ in the orientation of the hydroxyl group attached to carbon 1 (the anomeric carbon). In the conventional Haworth representation of D-glucose, the C1 hydroxyl group is below the ring in α-glucose and above the ring in β-glucose. The difference changes how glucose units can link and therefore the shape and properties of the resulting polysaccharides. Be consistent about the ring orientation and carbon numbering when drawing."
+      },
+      {
+        "heading": "Reducing and non-reducing sugars",
+        "body": "Glucose and fructose are reducing monosaccharides; maltose is a reducing disaccharide. Sucrose is a non-reducing disaccharide because the glycosidic link joins the anomeric carbons of glucose and fructose, leaving no free anomeric carbon available for the usual reducing reaction. This distinction explains why sucrose does not give the normal positive Benedict’s result unless hydrolysed first. Do not assume that every disaccharide is non-reducing: maltose is reducing."
+      },
+      {
+        "heading": "Glycosidic bonds: condensation and hydrolysis",
+        "body": "A glycosidic bond is a covalent bond joining monosaccharides. During condensation, hydroxyl groups on two monosaccharides react; a molecule of water is released and a glycosidic bond forms. During hydrolysis, water is used to break the glycosidic bond, producing smaller carbohydrate units. Hydrolysis of sucrose produces glucose and fructose, both reducing sugars. Hydrolysis of polysaccharides releases smaller sugars that can be further digested."
+      },
+      {
+        "heading": "Starch: amylose and amylopectin",
+        "body": "Starch is a plant storage polysaccharide made from α-glucose. Amylose consists of long, unbranched chains with α-1,4 glycosidic bonds; the chain coils into a helix. Amylopectin contains α-1,4 glycosidic bonds along chains and α-1,6 glycosidic bonds at branch points. Starch is insoluble and compact, so it can be stored without greatly affecting cell water potential and does not readily diffuse out of cells. Amylopectin branches provide many ends where enzymes can act to release glucose."
+      },
+      {
+        "heading": "Glycogen",
+        "body": "Glycogen is the main storage polysaccharide in animals and is also found in fungi. It is made from α-glucose and has α-1,4 links along chains and α-1,6 links at branch points. It is more highly branched than amylopectin. Its compact, insoluble structure is suitable for storage, while the numerous ends allow rapid enzymatic hydrolysis when glucose is required for respiration."
+      },
+      {
+        "heading": "Cellulose and plant cell walls",
+        "body": "Cellulose is a structural polysaccharide made from β-glucose. β-1,4 glycosidic bonds join the glucose units; alternate glucose molecules are inverted, producing long, straight, unbranched chains. Hydrogen bonds form between hydroxyl groups on adjacent chains. Many chains associate into microfibrils, which provide high tensile strength. Cellulose microfibrils reinforce plant cell walls and help resist stretching when water enters the cell."
+      },
+      {
+        "heading": "Triglycerides: structure and ester bonds",
+        "body": "A triglyceride contains one glycerol molecule joined to three fatty acid molecules. Glycerol has three hydroxyl groups; each fatty acid has a carboxyl group and a hydrocarbon chain. Each of the three condensation reactions forms an ester bond and releases one water molecule, so three water molecules are released per triglyceride. Hydrolysis reverses this reaction, using three water molecules to release glycerol and three fatty acids. Triglycerides are non-polar hydrophobic molecules and are insoluble in water."
+      },
+      {
+        "heading": "Saturated and unsaturated fatty acids",
+        "body": "A saturated fatty acid has no carbon-carbon double bonds in its hydrocarbon chain. An unsaturated fatty acid has one or more carbon-carbon double bonds; one double bond is monounsaturated and more than one is polyunsaturated. Cis double bonds introduce bends that prevent close packing, usually lowering melting point. Avoid claiming that all unsaturated chains are kinked: trans double bonds do not produce the same pronounced bend."
+      },
+      {
+        "heading": "Triglyceride functions",
+        "body": "Triglycerides are energy stores because their fatty acid chains contain many carbon-hydrogen bonds that release substantial energy when oxidised. They release more energy per unit mass than carbohydrates and are stored without increasing cell water potential because they are hydrophobic and insoluble. Adipose tissue also provides thermal insulation and cushioning around organs. Oxidation produces metabolic water, which is useful to some animals in dry environments. Link each function to the relevant structural property rather than listing functions without explanation."
+      },
+      {
+        "heading": "Phospholipids",
+        "body": "A phospholipid contains glycerol, two fatty acid tails and a phosphate-containing head group. The phosphate head is polar and hydrophilic; the fatty acid tails are non-polar and hydrophobic. Phospholipids are amphipathic. In water they can arrange into a bilayer with heads facing the aqueous environments and tails directed inwards away from water. The bilayer forms the basic structural framework of cell surface and organelle membranes; membrane transport and the wider fluid mosaic model are developed in Topic 4."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Define the terms monomer, polymer and macromolecule.",
+        "answer": "A monomer is a small molecule that can join to others; a polymer is a large molecule made from monomer units joined by covalent bonds; a macromolecule is a very large molecule.",
+        "mark_points": [
+          "Monomer definition",
+          "Polymer definition including covalent joining",
+          "Macromolecule defined as very large molecule"
+        ]
+      },
+      {
+        "question": "State the structural difference between α-glucose and β-glucose.",
+        "answer": "They differ in the orientation of the hydroxyl group attached to carbon 1: below the ring in the conventional Haworth drawing of α-D-glucose and above the ring in β-D-glucose.",
+        "mark_points": [
+          "Difference at carbon 1/anomeric carbon",
+          "Correct opposite OH orientation"
+        ]
+      },
+      {
+        "question": "Explain why sucrose is non-reducing but maltose is reducing.",
+        "answer": "In sucrose, the glycosidic bond joins the anomeric carbons of glucose and fructose, so neither has a free anomeric carbon for the usual reducing reaction. Maltose has a free anomeric carbon at one glucose unit and is reducing.",
+        "mark_points": [
+          "Sucrose link involves both anomeric carbons",
+          "No free anomeric carbon in sucrose",
+          "Maltose has a free anomeric carbon",
+          "Maltose is reducing"
+        ]
+      },
+      {
+        "question": "Compare amylose and amylopectin.",
+        "answer": "Both are made from α-glucose and contain α-1,4 glycosidic bonds. Amylose is unbranched and coils into a helix. Amylopectin is branched and has α-1,6 glycosidic bonds at branch points.",
+        "mark_points": [
+          "Both α-glucose",
+          "Both α-1,4 links",
+          "Amylose unbranched/helical",
+          "Amylopectin α-1,6 branch points"
+        ]
+      },
+      {
+        "question": "Explain how cellulose structure contributes to plant cell-wall strength.",
+        "answer": "β-glucose units joined by β-1,4 bonds produce straight, unbranched chains with alternate glucose molecules inverted. Hydrogen bonds form between adjacent chains; many chains form microfibrils with high tensile strength.",
+        "mark_points": [
+          "β-glucose",
+          "β-1,4 glycosidic bonds",
+          "Alternate glucose orientation gives straight chains",
+          "Hydrogen bonds between chains",
+          "Microfibrils provide tensile strength"
+        ]
+      },
+      {
+        "question": "Describe the formation of one triglyceride and state the number of water molecules released.",
+        "answer": "One glycerol molecule reacts with three fatty acid molecules. Three condensation reactions form three ester bonds and release three water molecules.",
+        "mark_points": [
+          "One glycerol",
+          "Three fatty acids",
+          "Three ester bonds formed by condensation",
+          "Three water molecules released"
+        ]
+      },
+      {
+        "question": "Explain why triglycerides are effective energy stores.",
+        "answer": "They contain many carbon-hydrogen bonds and release substantial energy on oxidation; they release more energy per unit mass than carbohydrates; they are hydrophobic and insoluble so they do not significantly affect water potential; they are compact.",
+        "mark_points": [
+          "Many C-H bonds",
+          "High energy yield on oxidation/per unit mass",
+          "Insoluble/hydrophobic, little effect on water potential",
+          "Compact"
+        ]
+      },
+      {
+        "question": "Describe the structure of a phospholipid and explain why it is amphipathic.",
+        "answer": "It has glycerol, two fatty acid tails and a phosphate-containing head. The phosphate head is polar and hydrophilic; the hydrocarbon tails are non-polar and hydrophobic, so the molecule has both water-attracting and water-avoiding regions.",
+        "mark_points": [
+          "Glycerol",
+          "Two fatty acids",
+          "Phosphate-containing head",
+          "Polar hydrophilic head and non-polar hydrophobic tails"
+        ]
+      },
+      {
+        "question": "A student claims that all disaccharides are non-reducing. Evaluate this statement.",
+        "answer": "The statement is incorrect. Sucrose is non-reducing, but maltose is reducing because it has a free anomeric carbon. The reducing property depends on the glycosidic linkage and availability of a reducing group, not simply on being a disaccharide.",
+        "mark_points": [
+          "Rejects statement",
+          "Sucrose non-reducing",
+          "Maltose reducing",
+          "Explains free anomeric carbon/structure"
+        ]
+      },
+      {
+        "question": "Distinguish between a glycosidic bond and an ester bond.",
+        "answer": "A glycosidic bond joins monosaccharide units in carbohydrates. An ester bond links glycerol to fatty acids in triglycerides and is formed by condensation.",
+        "mark_points": [
+          "Glycosidic bond joins monosaccharides",
+          "Ester bond links glycerol and fatty acid"
+        ]
+      }
+    ],
+    "visual_tasks": [
+      {
+        "type": "label_diagram",
+        "image": "/learning-assets/biology/9700/biological-molecules/glucose-anomers.svg",
+        "alt": "Haworth ring diagrams comparing alpha-D-glucose and beta-D-glucose.",
+        "instruction": "Label carbon 1 and the hydroxyl group that distinguishes the α and β forms.",
+        "expected_features": [
+          "Correct carbon 1 identification",
+          "Opposite C1 hydroxyl orientations",
+          "Ring forms drawn with consistent numbering"
+        ]
+      },
+      {
+        "type": "structure_comparison",
+        "image": "/learning-assets/biology/9700/biological-molecules/storage-and-structural-polysaccharides.svg",
+        "alt": "Schematic comparison of amylose, amylopectin, glycogen and cellulose.",
+        "instruction": "Annotate monomer type, glycosidic bonds, branching and biological function for each polysaccharide.",
+        "expected_features": [
+          "Amylose α-1,4 unbranched helix",
+          "Amylopectin α-1,4 and α-1,6 branches",
+          "Glycogen more highly branched",
+          "Cellulose β-1,4 straight chains and microfibrils"
+        ]
+      },
+      {
+        "type": "label_diagram",
+        "image": "/learning-assets/biology/9700/biological-molecules/triglyceride-phospholipid.svg",
+        "alt": "Schematic triglyceride and phospholipid structures.",
+        "instruction": "Label glycerol, fatty acids, ester bonds and the hydrophilic phosphate head and hydrophobic tails.",
+        "expected_features": [
+          "Triglyceride has three fatty acids",
+          "Phospholipid has two fatty acids and phosphate head",
+          "Correct hydrophilic/hydrophobic labels"
+        ]
+      }
+    ],
+    "common_mistakes": [
+      "Confusing α-glucose with β-glucose or failing to identify carbon 1.",
+      "Claiming all disaccharides are non-reducing.",
+      "Saying condensation uses water rather than releases water.",
+      "Saying hydrolysis releases water rather than uses water.",
+      "Giving amylose α-1,6 branches; amylose is unbranched.",
+      "Giving cellulose α-glucose or α-1,4 bonds.",
+      "Saying glycogen is less branched than amylopectin.",
+      "Claiming triglycerides are polar or water-soluble.",
+      "Calling a phospholipid a triglyceride with a phosphate added but retaining three fatty acid tails."
+    ],
+    "retrieval_check": {
+      "questions": [
+        "Which carbon differs in α- and β-glucose?",
+        "Which named sugars are reducing in this syllabus?",
+        "Which bond joins monosaccharides?",
+        "What are the two components of starch?",
+        "Which glucose form makes cellulose?",
+        "How many ester bonds and water molecules form one triglyceride?",
+        "What makes a phospholipid amphipathic?"
+      ],
+      "answers": [
+        "Carbon 1, the anomeric carbon.",
+        "Glucose, fructose and maltose; sucrose is non-reducing.",
+        "Glycosidic bond.",
+        "Amylose and amylopectin.",
+        "β-glucose.",
+        "Three ester bonds and three water molecules.",
+        "A polar hydrophilic phosphate head and non-polar hydrophobic fatty acid tails."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025",
+        "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+        "use": "Controlling Topic 2.2 learning outcomes and required molecular detail, syllabus pp. 18–19."
+      },
+      {
+        "title": "OpenStax Biology 2e, Carbohydrates",
+        "url": "https://openstax.org/books/biology-2e/pages/3-2-carbohydrates",
+        "use": "Supplementary structural explanations; Cambridge syllabus controls scope."
+      }
+    ]
+  }
+}
