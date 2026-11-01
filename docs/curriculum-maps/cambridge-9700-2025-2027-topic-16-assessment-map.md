@@ -9,7 +9,9 @@
 - `biology-9700-inheritance-genetic-crosses`
 - `biology-9700-gene-control`
 
-The outcome codes below are the syllabus identifiers recorded in the three draft lessons. The teaching and assessment evidence column points to the current draft content, not to a claim that every possible exam command word or mark-scheme variation has been exhausted.
+The outcome codes below are the syllabus identifiers recorded in the three draft lessons.
+**Forward-version surveillance (checked 2026-11-01):** Cambridge has published the official Biology 9700 syllabus for exams in 2028–2030 (Version 1, September 2025). Its change notice says there are no significant changes affecting teaching, and a direct comparison of Topic 16 outcomes 16.1.1–16.3.4 confirms the same outcome structure and wording used here. This is a surveillance finding, not a change to this map's scope: the assets remain version-pinned to 2025–2027, and a separate 2028–2030 curriculum record plus objective-UUID reconciliation is required before reuse. Source: https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf (Topic 16, pp. 41–43).
+ The teaching and assessment evidence column points to the current draft content, not to a claim that every possible exam command word or mark-scheme variation has been exhausted.
 
 | Syllabus outcome | Required learning focus | Draft teaching evidence | Existing assessment evidence | Remaining review / evidence gate |
 |---|---|---|---|---|
