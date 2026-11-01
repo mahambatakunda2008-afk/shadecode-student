@@ -207,6 +207,13 @@
         "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
         "use": "Controlling Topic 3.1 outcomes 1–4, syllabus p. 21."
       }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/enzymes/enzyme-action.svg",
+        "caption": "Substrate binding, enzyme–substrate complex formation and product release.",
+        "alt": "Schematic showing a substrate approaching an enzyme active site, binding, then products being released while the enzyme remains available."
+      }
     ]
   }
 }
