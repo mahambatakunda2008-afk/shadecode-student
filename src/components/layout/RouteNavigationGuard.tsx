@@ -25,6 +25,9 @@ const MANAGED_PREFIXES = Array.from(new Set([...NAV_MANAGED_PREFIXES, ...EXTRA_A
 
 export function RouteNavigationGuard() {
   const pathname = usePathname();
+  // The marketing landing page has its own header (Sign in / Get started). Rendering this in-app "Back to app" bar on
+  // top of it duplicated the top chrome and offered logged-out visitors a confusing "Back to app" button.
+  if (pathname === "/") return null;
   if (MANAGED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return null;
 
   return (

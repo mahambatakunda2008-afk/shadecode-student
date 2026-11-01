@@ -110,7 +110,9 @@ test.describe("public pages on a phone", () => {
     await page.mouse.wheel(0, 900);
     await page.waitForTimeout(300);
     const top = (await header.boundingBox())?.y ?? 999;
-    metrics.push({ page: "/", headerTopAfterScroll: top, signInHeight: box?.height, signInWidth: box?.width });
+    const guardBars = await page.locator('nav[aria-label="Page navigation"]').count();
+    metrics.push({ page: "/", headerTopAfterScroll: top, signInHeight: box?.height, signInWidth: box?.width, inAppNavBarsOnLanding: guardBars });
+    expect(guardBars, 'the in-app "Page navigation" bar (with "Back to app") must not appear on the landing page').toBe(0);
     expect(Math.abs(top), "sticky header must stay at the top of the viewport").toBeLessThanOrEqual(1);
     expect(box?.height ?? 0, "Sign in tap target height").toBeGreaterThanOrEqual(40);
   });
