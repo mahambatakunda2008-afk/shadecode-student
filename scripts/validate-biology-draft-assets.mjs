@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const DRAFT_ROOT = "docs/learning-assets/drafts";
 const PUBLIC_ROOT = resolve("public");
@@ -100,4 +101,4 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) await main();
