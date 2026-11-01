@@ -171,6 +171,16 @@
         "path": "/learning-assets/biology/9700/transport-mammals/tissue-fluid-formation.svg",
         "alt": "Original capillary exchange schematic showing filtration at the arterial end, osmotic return at the venous end and excess fluid entering lymphatic vessels.",
         "caption": "Formation and return of tissue fluid."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/vessel-plan-diagrams.svg",
+        "alt": "Original paired plan schematics of artery and vein in transverse and longitudinal section, emphasizing tissue layers and lumen.",
+        "caption": "Artery and vein plan diagrams in transverse and longitudinal section."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/blood-cell-recognition.svg",
+        "alt": "Original schematic comparison of a mammalian red blood cell, monocyte, neutrophil and lymphocyte for recognition and biological drawing practice.",
+        "caption": "Recognising the four blood cell types in a smear."
       }
     ]
   }
