@@ -7,8 +7,6 @@
  <g id="cell"><ellipse rx="112" ry="126" fill="#fff" stroke="#334155" stroke-width="3"/><path d="M-90 0H90" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 6"/></g>
  <g id="blueX"><path d="M-18 -35L18 35M18 -35L-18 35" stroke="#0369a1" stroke-width="10" stroke-linecap="round"/></g>
  <g id="orangeX"><path d="M-18 -35L18 35M18 -35L-18 35" stroke="#c2410c" stroke-width="10" stroke-linecap="round"/></g>
- <g id="blueV"><path d="M-18 -35L0 0L18 -35" fill="none" stroke="#0369a1" stroke-width="10" stroke-linecap="round"/></g>
- <g id="orangeV"><path d="M-18 -35L0 0L18 -35" fill="none" stroke="#c2410c" stroke-width="10" stroke-linecap="round"/></g>
 </defs>
 <g transform="translate(155 220)">
  <use href="#cell"/>
@@ -32,8 +30,7 @@
 </g>
 <g transform="translate(1040 220)">
  <use href="#cell"/>
- <use href="#blueV" x="-52" y="-35" transform="translate(-52 -35)"/>
- <use href="#blueV" x="52" y="35" transform="translate(52 35) rotate(180)"/>
+ <path d="M-58 -70L-38 -28M58 70L38 28" stroke="#0369a1" stroke-width="10" stroke-linecap="round"/>
  <text y="165" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#0f172a">D · Anaphase II</text>
  <text y="190" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Sister chromatids separate</text>
 </g>
