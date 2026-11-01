@@ -95,7 +95,7 @@
       },
       {
         "heading": "Epistasis",
-        "body": "Epistasis occurs when an allele of one gene affects or masks the expression of a gene at a different locus. It can modify the phenotype ratios expected from a simple dihybrid cross. The 9700 syllabus requires candidates to interpret and construct crosses involving epistasis, but does not require memorising expected ratios for different types of epistasis. Explain the interaction described by the question and derive the phenotype classes from the stated genetic information."
+        "body": "Epistasis occurs when an allele of one gene affects or masks the expression of a gene at a different locus. It can modify the phenotype ratios expected from a simple dihybrid cross. The 9700 syllabus requires candidates to interpret and construct crosses involving epistasis, but does not require memorising expected ratios for different types of epistasis. Explain the interaction described by the question and derive phenotype classes from the stated genetic information. Any worked 9:3:4 example in this lesson is an illustrative derivation, not a ratio candidates must memorise."
       },
       {
         "heading": "From genes to proteins and phenotype",
@@ -212,13 +212,13 @@
         ]
       },
       {
-        "question": "In a plant, pigment production requires a functional enzyme coded by gene P. A second gene, C, is required to activate the pigment pathway. Plants with cc are white regardless of their P genotype. Explain why this is epistasis and predict the phenotype of PpCc × PpCc offspring if both genes assort independently.",
+        "question": "In a plant, pigment production requires a functional enzyme coded by gene P. A second gene, C, is required to activate the pigment pathway. Plants with cc are white regardless of their P genotype. The genes assort independently. Explain why this is epistasis and use a genetic diagram to derive the genotype classes and expected phenotype proportions for PpCc × PpCc. Treat this as extension practice: memorising epistasis ratios is not required by the 9700 syllabus.",
         "answer": "The cc genotype masks the effect of the P gene, so gene C is epistatic to P. In a PpCc × PpCc cross, 9/16 are P_C_ and coloured, 3/16 are ppC_ and unpigmented, and 4/16 are __cc and white. The ratio is 9 coloured : 3 unpigmented : 4 white.",
         "mark_points": [
           "cc masks expression at P locus",
           "Interaction between two different gene loci",
           "Correct genotype classes",
-          "9:3:4 ratio derived from the stated model"
+          "Phenotype proportions correctly derived from the stated model; this is extension practice, not a memorised syllabus ratio"
         ]
       },
       {
