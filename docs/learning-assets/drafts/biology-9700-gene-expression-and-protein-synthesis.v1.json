@@ -1,0 +1,226 @@
+{
+  "asset_key": "biology-9700-gene-expression-and-protein-synthesis",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Gene expression and protein synthesis",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "6",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 6, pp. 25–27. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 6.2.1–6.2.7.",
+    "syllabus_outcome_codes": [
+      "6.2.1",
+      "6.2.2",
+      "6.2.3",
+      "6.2.4",
+      "6.2.5",
+      "6.2.6",
+      "6.2.7"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Explain the relationship between a gene, its nucleotide sequence and the polypeptide it codes for.",
+      "Describe the triplet nature and near-universal nature of the genetic code, including start and stop codons.",
+      "Describe transcription and translation and explain the roles of RNA polymerase, mRNA, codons, tRNA, anticodons and ribosomes.",
+      "Distinguish the template (transcribed) DNA strand from the non-template (coding) strand.",
+      "Explain RNA processing in eukaryotes, including removal of introns and joining of exons.",
+      "Explain how a gene mutation changes the DNA base-pair sequence and may alter a polypeptide.",
+      "Compare substitution, deletion and insertion mutations and explain their possible effects."
+    ],
+    "sections": [
+      {
+        "heading": "Genes contain instructions for polypeptides",
+        "body": "A gene is a sequence of nucleotides that forms part of a DNA molecule and contains information used to produce a functional product, commonly a polypeptide. The order of bases in the gene determines the order of bases in an RNA transcript and, through the genetic code, the order of amino acids in a polypeptide. A change in the DNA base sequence can therefore change the RNA sequence and may change the amino acid sequence or the amount of polypeptide produced."
+      },
+      {
+        "heading": "The genetic code is read in triplets",
+        "body": "During translation, the mRNA base sequence is read in groups of three bases called codons. Each codon specifies one amino acid or a signal to start or stop translation. The code is degenerate: most amino acids are specified by more than one codon. It is non-overlapping: each base is read as part of one codon in a reading frame. The genetic code is nearly universal, meaning that the same codons usually specify the same amino acids in almost all organisms, with a small number of exceptions. AUG commonly acts as the start codon and codes for methionine; UAA, UAG and UGA are stop codons."
+      },
+      {
+        "heading": "Transcription: DNA information is copied into RNA",
+        "body": "Transcription occurs when RNA polymerase binds to DNA and locally separates the strands. One DNA strand acts as the template, also called the transcribed strand. RNA polymerase uses complementary base pairing to assemble RNA nucleotides into an mRNA molecule. In RNA, adenine pairs with uracil rather than thymine. The mRNA sequence is complementary and antiparallel to the template strand. The non-template strand, also called the coding strand, has the same base sequence as the mRNA except that DNA has T where mRNA has U. RNA polymerase forms phosphodiester bonds in the growing RNA strand."
+      },
+      {
+        "heading": "Template and coding strands: avoid the common trap",
+        "body": "The template strand is read by RNA polymerase and is complementary to the RNA transcript. The coding strand is not used as the template for that transcript; its sequence matches the mRNA when both are written 5′ to 3′, except T in DNA corresponds to U in RNA. For example, if the coding DNA strand is 5′-ATG CCT-3′, the mRNA is 5′-AUG CCU-3′. The template strand is 3′-TAC GGA-5′. Always check the 5′ and 3′ labels before writing a sequence."
+      },
+      {
+        "heading": "RNA processing in eukaryotes",
+        "body": "In eukaryotic cells, the initial RNA transcript (pre-mRNA) contains coding regions called exons and non-coding regions called introns. During RNA processing, introns are removed and exons are joined together to form mature mRNA. The mature mRNA can then leave the nucleus through a nuclear pore and associate with a ribosome in the cytoplasm or on the rough endoplasmic reticulum. The sequence of joined exons determines the codons that are translated."
+      },
+      {
+        "heading": "Translation: codons become an amino-acid sequence",
+        "body": "Translation takes place at a ribosome. The ribosome binds to mRNA and reads its codons in sequence. Each transfer RNA (tRNA) carries a specific amino acid and has an anticodon of three bases that can pair with a complementary codon on mRNA. As codons are read, suitable tRNAs bind in the ribosome and their amino acids are joined by peptide bonds. The ribosome moves along the mRNA, allowing the polypeptide chain to grow. Translation ends when a stop codon is reached; a release factor helps release the completed polypeptide. The polypeptide then folds and may be modified to become functional."
+      },
+      {
+        "heading": "How transcription and translation work together",
+        "body": "The information flow for a protein-coding gene is DNA → mRNA → polypeptide. Transcription produces an RNA copy of the gene's information. In eukaryotes, this RNA is processed before translation. Translation uses the mRNA codons to assemble amino acids in the correct order. DNA is not translated directly by the ribosome. The genetic code links each mRNA codon to an amino acid or a start/stop signal."
+      },
+      {
+        "heading": "Gene mutations change the base sequence",
+        "body": "A gene mutation is a change in the sequence of DNA base pairs. A mutation can alter a codon in mRNA and may change the amino acid sequence of the polypeptide. The effect depends on the mutation and where it occurs. A mutation may have no detectable effect, may change one amino acid, may create a premature stop codon, or may alter many amino acids and protein function. A mutation does not always change the polypeptide because the genetic code is degenerate and some base substitutions are silent."
+      },
+      {
+        "heading": "Substitution mutations",
+        "body": "A substitution mutation replaces one DNA base pair with a different base pair. If the altered codon still specifies the same amino acid, the change is silent. If it specifies a different amino acid, it is a missense mutation. If it becomes a stop codon, it is a nonsense mutation and translation may end early. The effect depends on the position and chemical properties of the amino acid change and the role of the affected region of the polypeptide."
+      },
+      {
+        "heading": "Insertion and deletion mutations",
+        "body": "An insertion adds one or more base pairs; a deletion removes one or more base pairs. If the number of bases inserted or deleted is not a multiple of three, the reading frame changes. This is a frameshift mutation: codons downstream of the mutation are regrouped, often changing many amino acids and possibly introducing a premature stop codon. Insertions or deletions in multiples of three do not shift the reading frame, although they add or remove amino acid(s) and can still affect protein structure and function."
+      },
+      {
+        "heading": "Exam reasoning: trace the effect step by step",
+        "body": "For a mutation question, do not jump straight from 'mutation' to 'faulty protein'. Explain the chain: DNA base-pair sequence changes; the transcribed mRNA codon(s) may change; the amino-acid sequence may change or translation may stop early; the polypeptide's folding, shape or active/binding site may be affected; its function may change. Use 'may' where appropriate because some mutations are silent or have little effect. A frameshift changes the reading frame, not merely one codon."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Define a gene and explain how its base sequence can determine the primary structure of a polypeptide.",
+        "answer": "A gene is a sequence of nucleotides forming part of DNA that contains information for a functional product. Its base sequence is transcribed into mRNA; the mRNA codons are translated into an amino-acid sequence, determining the polypeptide's primary structure.",
+        "mark_points": [
+          "Gene is a sequence of DNA nucleotides",
+          "DNA sequence is transcribed into mRNA",
+          "mRNA is read as codons",
+          "Codons determine amino-acid sequence / primary structure"
+        ]
+      },
+      {
+        "question": "State what is meant by a triplet genetic code and give one start codon and one stop codon.",
+        "answer": "The genetic code is read as groups of three mRNA bases, each group being a codon. AUG is a start codon; UAA is one example of a stop codon.",
+        "mark_points": [
+          "Three bases form one codon",
+          "AUG start codon",
+          "Any one of UAA, UAG or UGA as stop codon"
+        ]
+      },
+      {
+        "question": "The coding DNA strand is 5′-ATG GCA TTT-3′. Write the mRNA sequence in the 5′ to 3′ direction.",
+        "answer": "5′-AUG GCA UUU-3′.",
+        "mark_points": [
+          "Correct sequence AUG GCA UUU",
+          "Correct 5′ to 3′ direction",
+          "T in DNA replaced by U in RNA"
+        ]
+      },
+      {
+        "question": "Describe the roles of mRNA, tRNA and the ribosome during translation.",
+        "answer": "mRNA provides the codon sequence. Each tRNA carries a specific amino acid and has an anticodon complementary to an mRNA codon. The ribosome holds the mRNA and tRNAs in position and catalyses peptide-bond formation as the polypeptide grows.",
+        "mark_points": [
+          "mRNA carries codons / sequence information",
+          "tRNA carries a specific amino acid",
+          "tRNA anticodon pairs with complementary codon",
+          "Ribosome positions components and catalyses peptide-bond formation"
+        ]
+      },
+      {
+        "question": "Explain why the mRNA sequence is similar to the coding DNA strand but differs from the template DNA strand.",
+        "answer": "mRNA is transcribed using the template strand, so it is complementary and antiparallel to that strand. It has the same base sequence as the coding strand when both are written 5′ to 3′, except RNA contains U instead of T.",
+        "mark_points": [
+          "mRNA is complementary to template strand",
+          "mRNA has same sequence as coding strand",
+          "U in RNA replaces T in DNA",
+          "Correct strand direction / antiparallel relationship"
+        ]
+      },
+      {
+        "question": "Explain the purpose of removing introns and joining exons during eukaryotic RNA processing.",
+        "answer": "The initial transcript contains introns and exons. Introns are removed and exons are joined to produce mature mRNA containing the coding sequence that can be translated at a ribosome.",
+        "mark_points": [
+          "Pre-mRNA contains introns and exons",
+          "Introns removed",
+          "Exons joined together",
+          "Mature mRNA can be translated"
+        ]
+      },
+      {
+        "question": "A substitution changes an mRNA codon but the same amino acid is still incorporated. Explain how this is possible.",
+        "answer": "The genetic code is degenerate, so more than one codon can specify the same amino acid. The substitution is therefore silent with respect to the amino-acid sequence.",
+        "mark_points": [
+          "Genetic code is degenerate",
+          "Several codons can code for the same amino acid",
+          "Amino-acid sequence is unchanged / silent mutation"
+        ]
+      },
+      {
+        "question": "Explain why a deletion of one nucleotide near the beginning of a coding sequence can have a large effect on a polypeptide.",
+        "answer": "Deleting one nucleotide shifts the reading frame because codons are read in groups of three. All downstream bases are regrouped into different codons, potentially changing many amino acids and creating a premature stop codon.",
+        "mark_points": [
+          "One-base deletion is not a multiple of three",
+          "Reading frame shifts",
+          "Downstream codons change",
+          "Many amino acids may change / premature stop may form"
+        ]
+      },
+      {
+        "question": "Compare substitution and insertion mutations.",
+        "answer": "A substitution replaces one base pair with another and may affect one codon. An insertion adds base pair(s); if the number is not a multiple of three, it causes a frameshift and can alter many downstream codons.",
+        "mark_points": [
+          "Substitution replaces a base pair",
+          "Insertion adds base pair(s)",
+          "Substitution may be silent, missense or nonsense",
+          "Insertion not in multiples of three can cause frameshift"
+        ]
+      },
+      {
+        "question": "Describe the events from transcription to the release of a completed polypeptide.",
+        "answer": "RNA polymerase uses a DNA template strand to synthesise complementary mRNA. In eukaryotes, introns are removed and exons joined. The mature mRNA binds to a ribosome, which reads codons. tRNAs with complementary anticodons deliver amino acids, which are joined by peptide bonds. At a stop codon, the polypeptide is released.",
+        "mark_points": [
+          "RNA polymerase synthesises complementary mRNA from template",
+          "Introns removed and exons joined in eukaryotes",
+          "mRNA associates with ribosome",
+          "tRNA anticodons pair with codons and deliver amino acids",
+          "Peptide bonds form / chain elongates",
+          "Stop codon leads to release"
+        ]
+      },
+      {
+        "question": "A base substitution changes a codon into a stop codon. Predict and explain the likely effect on the polypeptide.",
+        "answer": "A premature stop codon may cause translation to end before the full amino-acid sequence is assembled. The polypeptide will be shorter and may fold differently or be non-functional.",
+        "mark_points": [
+          "Premature termination of translation",
+          "Shorter polypeptide produced",
+          "May fold differently / altered function"
+        ]
+      },
+      {
+        "question": "Explain why an insertion of three bases may have a different effect from an insertion of one base.",
+        "answer": "An insertion of three bases adds one codon and may add one amino acid without shifting the downstream reading frame. An insertion of one base shifts the reading frame, changing the grouping of downstream codons.",
+        "mark_points": [
+          "Three bases represent one additional codon",
+          "Reading frame remains unchanged",
+          "One-base insertion causes frameshift",
+          "Downstream codons are altered"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/nucleic-acids/transcription-translation.svg",
+        "alt": "Flow diagram of gene expression showing DNA transcription to mRNA, eukaryotic RNA processing, codon and anticodon pairing at a ribosome, tRNA amino-acid delivery and polypeptide formation.",
+        "caption": "From a DNA gene to a polypeptide."
+      },
+      {
+        "path": "/learning-assets/biology/9700/nucleic-acids/gene-mutation-effects.svg",
+        "alt": "Comparison of a normal coding sequence with substitution, insertion and deletion mutations, highlighting silent or changed codons and a frameshift.",
+        "caption": "How different gene mutations can affect translation."
+      }
+    ]
+  }
+}
