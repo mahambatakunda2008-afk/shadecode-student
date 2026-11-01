@@ -63,5 +63,5 @@
 <rect x="645" y="565" width="485" height="90" rx="14" fill="#eff6ff"/>
 <text x="665" y="590" font-size="16">Each homologous pair orients randomly and independently.</text><text x="665" y="618" font-size="16">Independent orientations produce different combinations</text>
 <text x="665" y="642" font-size="16">of maternal and paternal chromosomes in gametes.</text>
-<text x="600" y="740" text-anchor="middle" font-size="15" fill="#475569">Schematic only, not to scale. Blue and red indicate homologous chromosome origins.</text>
+<text x="600" y="740" text-anchor="middle" font-size="15" fill="#475569">Schematic only, not to scale. Blue/green and red/purple distinguish the two parental homologues.</text>
 </g></svg>
