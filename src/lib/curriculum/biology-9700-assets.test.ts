@@ -188,9 +188,9 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     );
 
     expect(diagram).toContain(
-      'M600 535 V590 M210 590 H990 M210 590 V617 M470 590 V617 M730 590 V617 M990 590 V617',
+      'M410 550 V590 H250 V630 M410 590 H470 V630 M790 550 V590 H730 V630 M790 590 H950 V630',
     );
-    expect(diagram.match(/<circle cx="(?:210|470|730|990)" cy="665" r="48"/g)).toHaveLength(4);
+    expect(diagram.match(/<circle cx="(?:250|470|730|950)" cy="680" r="42"/g)).toHaveLength(4);
   });
 
 
