@@ -31,11 +31,11 @@
 - `biology-9700-circulatory-system.v1.json`: 8 teaching sections, 8 original questions with answers and indicative marking points, 3 diagrams.
 - `biology-9700-gas-transport.v1.json`: 7 teaching sections, 8 original questions with answers and indicative marking points, 2 diagrams.
 - `biology-9700-heart.v1.json`: 6 teaching sections, 7 original questions with answers and indicative marking points, 3 diagrams.
-- 21 teaching sections, 23 original questions, 8 original SVG diagrams in total.
+- 21 teaching sections, 23 original questions, 10 original SVG diagrams in total.
 
 ## Assessment and visual requirements
 
-Questions include explanation, comparison, sequencing and mechanism prompts. The visual set includes double circulation, vessel-wall comparison, tissue-fluid exchange, adult oxygen dissociation curve, Bohr shift, heart anatomy, cardiac-cycle valve sequence and cardiac conduction. The current SVGs are original teaching schematics, not microscopy images or substitutes for candidate biological drawings from actual specimens.
+Questions include explanation, comparison, sequencing and mechanism prompts. The visual set includes double circulation, vessel-wall comparison, artery and vein plan diagrams in TS and LS, blood-cell recognition, tissue-fluid exchange, adult oxygen dissociation curve, Bohr shift, heart anatomy, cardiac-cycle valve sequence and cardiac conduction. The current SVGs are original teaching schematics, not microscopy images or substitutes for candidate biological drawings from actual specimens.
 
 ## Scope controls and review gates
 
