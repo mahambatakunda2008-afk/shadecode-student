@@ -41,7 +41,7 @@
   },
   "content": {
     "learning_objectives": [
-      "Use the terms gene, locus, allele, dominant, recessive, codominant, phenotype, genotype, homozygous and heterozygous accurately.",
+      "Use the terms gene, locus, allele, dominant, recessive, codominant, linkage, test cross, F1, F2, phenotype, genotype, homozygous and heterozygous accurately.",
       "Construct and interpret genetic diagrams and Punnett squares for monohybrid and dihybrid crosses.",
       "Predict outcomes involving multiple alleles, codominance, sex linkage, autosomal linkage and epistasis.",
       "Explain and interpret test crosses.",
@@ -51,7 +51,11 @@
     "sections": [
       {
         "heading": "The information chain: gene to phenotype",
-        "body": "A gene is a length of DNA that codes for a polypeptide or functional RNA. Its position on a chromosome is its locus. Different versions of the same gene are alleles. An organism's genotype is the combination of alleles it carries; its phenotype is the observable feature produced by the genotype interacting with the environment. A dominant allele affects the phenotype in a heterozygote. A recessive allele affects the phenotype only when no dominant allele at that locus is present. With codominance, both alleles contribute to the heterozygote phenotype. Homozygous means two identical alleles at a locus; heterozygous means two different alleles."
+        "body": "A gene is a length of DNA that codes for a polypeptide or functional RNA. Its position on a chromosome is its locus. Different versions of the same gene are alleles. An organism's genotype is the combination of alleles it carries; its phenotype is the observable feature produced by the genotype interacting with the environment. A dominant allele affects the phenotype in a heterozygote. A recessive allele affects the phenotype only when no dominant allele at that locus is present. With codominance, both alleles contribute to the heterozygote phenotype. Homozygous means two identical alleles at a locus; heterozygous means two different alleles. Linkage means that genes are on the same chromosome and tend to be inherited together; crossing over can produce recombinant combinations."
+      },
+      {
+        "heading": "Parental, F1 and F2 generations",
+        "body": "The parental (P) generation is the pair of organisms used to begin a genetic cross. Their offspring are the first filial generation, called F1. When F1 individuals are crossed with one another, or self-fertilised where appropriate, their offspring form the second filial generation, called F2. F1 and F2 describe generations, not genotypes or phenotypes. Always identify which generation the question's data refer to before interpreting a ratio."
       },
       {
         "heading": "Write alleles and genotypes consistently",
@@ -286,6 +290,16 @@
           "Correct recombination frequency formula",
           "Random sampling variation",
           "Large sample and/or repeats suggested"
+        ]
+      },
+      {
+        "question": "In a genetic investigation, two parental plants are crossed to produce F1 offspring. Two F1 plants are then crossed to produce F2 offspring. Define the P, F1 and F2 generations, and explain why F1 and F2 are not names for particular genotypes.",
+        "answer": "P is the parental generation used in the initial cross. F1 is the first filial generation produced by that cross. F2 is the second filial generation produced when F1 individuals are crossed or self-fertilised. These labels identify generations, not specific genotypes.",
+        "mark_points": [
+          "P correctly identified as parental generation",
+          "F1 correctly identified as first filial generation",
+          "F2 correctly identified as offspring of an F1 cross or self-fertilisation",
+          "Recognises generation labels do not specify genotype"
         ]
       }
     ],
