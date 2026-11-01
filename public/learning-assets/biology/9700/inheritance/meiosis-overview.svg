@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+<title id="title">Meiosis overview</title>
+<desc id="desc">One diploid cell replicates its DNA and completes meiosis I, producing two haploid cells. Each of those cells independently completes meiosis II, producing two haploid cells, for four haploid products in total.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0 L9 3 L0 6Z" fill="#334155"/></marker></defs>
+<rect width="1200" height="800" fill="#f8fafc"/>
+<text x="600" y="48" text-anchor="middle" font-family="Arial" font-size="32" font-weight="bold" fill="#0f172a">MEIOSIS: ONE DNA REPLICATION, TWO DIVISIONS</text>
+<g font-family="Arial" text-anchor="middle" fill="#0f172a">
+<rect x="55" y="95" width="205" height="125" rx="20" fill="#e0f2fe" stroke="#0369a1" stroke-width="3"/>
+<text x="157" y="132" font-size="22" font-weight="bold">Diploid cell</text><text x="157" y="164" font-size="19">2n</text><text x="157" y="192" font-size="16">Homologous pairs</text>
+<path d="M260 157 H325" stroke="#334155" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="335" y="95" width="230" height="125" rx="20" fill="#e0f2fe" stroke="#0369a1" stroke-width="3"/>
+<text x="450" y="132" font-size="22" font-weight="bold">DNA replicated</text><text x="450" y="164" font-size="18">Still 2n chromosomes</text><text x="450" y="192" font-size="16">Each has two chromatids</text>
+<path d="M565 157 H630" stroke="#334155" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="640" y="95" width="240" height="125" rx="20" fill="#dcfce7" stroke="#15803d" stroke-width="3"/>
+<text x="760" y="132" font-size="22" font-weight="bold">Meiosis I</text><text x="760" y="164" font-size="18">Homologous chromosomes</text><text x="760" y="192" font-size="18">separate (reduction division)</text>
+<path d="M880 157 H920 V265 H410 V292 M920 265 H790 V292" fill="none" stroke="#334155" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="290" y="300" width="240" height="92" rx="18" fill="#fef3c7" stroke="#b45309" stroke-width="3"/>
+<rect x="670" y="300" width="240" height="92" rx="18" fill="#fef3c7" stroke="#b45309" stroke-width="3"/>
+<text x="410" y="337" font-size="21" font-weight="bold">Haploid cell 1</text><text x="410" y="367" font-size="18">n; chromosomes still duplicated</text>
+<text x="790" y="337" font-size="21" font-weight="bold">Haploid cell 2</text><text x="790" y="367" font-size="18">n; chromosomes still duplicated</text>
+<path d="M410 392 V450 M790 392 V450" stroke="#334155" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="290" y="460" width="240" height="90" rx="18" fill="#ede9fe" stroke="#6d28d9" stroke-width="3"/>
+<rect x="670" y="460" width="240" height="90" rx="18" fill="#ede9fe" stroke="#6d28d9" stroke-width="3"/>
+<text x="410" y="495" font-size="22" font-weight="bold">Meiosis II</text><text x="410" y="525" font-size="17">Sister chromatids separate</text>
+<text x="790" y="495" font-size="22" font-weight="bold">Meiosis II</text><text x="790" y="525" font-size="17">Sister chromatids separate</text>
+<path d="M410 550 V590 H250 V630 M410 590 H470 V630 M790 550 V590 H730 V630 M790 590 H950 V630" fill="none" stroke="#334155" stroke-width="3" marker-end="url(#arrow)"/>
+<g fill="#fce7f3" stroke="#be185d" stroke-width="3"><circle cx="250" cy="680" r="42"/><circle cx="470" cy="680" r="42"/><circle cx="730" cy="680" r="42"/><circle cx="950" cy="680" r="42"/></g>
+<g font-size="21" fill="#831843"><text x="250" y="687">n</text><text x="470" y="687">n</text><text x="730" y="687">n</text><text x="950" y="687">n</text></g>
+<text x="600" y="755" font-size="19" font-weight="bold">Four haploid products; variation arises through crossing over and independent assortment.</text>
+</g></svg>

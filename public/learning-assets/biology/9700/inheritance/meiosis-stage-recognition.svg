@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="t d">
+<title id="t">Meiosis stage recognition</title>
+<desc id="d">Four original schematic cells. Metaphase I shows a paired homologous set of two replicated chromosomes at the equator. Anaphase I shows the replicated homologous chromosomes moving to opposite poles while sister chromatids remain joined. Metaphase II shows one replicated chromosome aligned at the equator in a haploid cell. Anaphase II shows sister chromatids separated and moving to opposite poles.</desc>
+<rect width="1200" height="520" fill="#f8fafc"/>
+<text x="600" y="42" text-anchor="middle" font-family="Arial" font-size="29" font-weight="bold" fill="#0f172a">MEIOSIS: RECOGNISE THE STAGE</text>
+<defs>
+ <g id="cell"><ellipse rx="112" ry="126" fill="#fff" stroke="#334155" stroke-width="3"/><path d="M-90 0H90" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 6"/></g>
+ <g id="blueX"><path d="M-18 -35L18 35M18 -35L-18 35" stroke="#0369a1" stroke-width="10" stroke-linecap="round"/></g>
+ <g id="orangeX"><path d="M-18 -35L18 35M18 -35L-18 35" stroke="#c2410c" stroke-width="10" stroke-linecap="round"/></g>
+</defs>
+<g transform="translate(155 220)">
+ <use href="#cell"/>
+ <use href="#blueX" x="-22"/><use href="#orangeX" x="22"/>
+ <path d="M-48 -58H48M-48 58H48" stroke="#64748b" stroke-width="2" stroke-dasharray="4 5"/>
+ <text y="165" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#0f172a">A · Metaphase I</text>
+ <text y="190" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Homologous pair at equator</text>
+</g>
+<g transform="translate(450 220)">
+ <use href="#cell"/>
+ <use href="#blueX" x="-57"/><use href="#orangeX" x="57"/>
+ <path d="M-57 -80V-60M57 60V80" stroke="#64748b" stroke-width="3"/>
+ <text y="165" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#0f172a">B · Anaphase I</text>
+ <text y="190" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Homologues separate; centromeres intact</text>
+</g>
+<g transform="translate(745 220)">
+ <use href="#cell"/>
+ <use href="#blueX"/>
+ <text y="165" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#0f172a">C · Metaphase II</text>
+ <text y="190" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Single replicated chromosome at equator</text>
+</g>
+<g transform="translate(1040 220)">
+ <use href="#cell"/>
+ <path d="M-58 -70L-38 -28M58 70L38 28" stroke="#0369a1" stroke-width="10" stroke-linecap="round"/>
+ <text y="165" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#0f172a">D · Anaphase II</text>
+ <text y="190" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Sister chromatids separate</text>
+</g>
+<text x="600" y="485" text-anchor="middle" font-family="Arial" font-size="15" fill="#475569">Schematic only, not to scale. Blue and orange distinguish homologous chromosome origins.</text>
+</svg>

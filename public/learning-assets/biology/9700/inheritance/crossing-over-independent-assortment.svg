@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+<title id="title">Crossing over and independent assortment</title>
+<desc id="desc">The left panel shows a pair of replicated homologous chromosomes. Two non-sister chromatids cross at a chiasma in prophase I and exchange corresponding DNA segments, producing two recombinant chromatids while the other two remain parental. The right panel compares two possible orientations of two homologous chromosome pairs at metaphase I. The alternative orientations lead to different maternal and paternal chromosome combinations in haploid cells.</desc>
+<rect width="1200" height="760" fill="#f8fafc"/>
+<text x="600" y="48" text-anchor="middle" font-family="Arial" font-size="32" font-weight="bold" fill="#0f172a">TWO SOURCES OF GENETIC VARIATION</text>
+<g font-family="Arial" fill="#0f172a">
+<rect x="35" y="85" width="555" height="625" rx="20" fill="#fff" stroke="#64748b" stroke-width="2"/>
+<text x="312" y="128" text-anchor="middle" font-size="25" font-weight="bold">1. Crossing over</text>
+<text x="312" y="160" text-anchor="middle" font-size="17">Prophase I: non-sister chromatids exchange DNA</text>
+<text x="145" y="205" text-anchor="middle" font-size="18" font-weight="bold">Before</text>
+<text x="310" y="205" text-anchor="middle" font-size="18" font-weight="bold">Chiasma</text>
+<text x="485" y="205" text-anchor="middle" font-size="18" font-weight="bold">After</text>
+<!-- paired replicated homologues before crossing -->
+<path d="M105 240 V430 M135 240 V430" stroke="#2563eb" stroke-width="11" stroke-linecap="round"/>
+<path d="M175 240 V430 M205 240 V430" stroke="#dc2626" stroke-width="11" stroke-linecap="round"/>
+<path d="M135 325 C185 325 165 365 205 365" fill="none" stroke="#0f172a" stroke-width="3" stroke-dasharray="5 5"/>
+<text x="155" y="455" text-anchor="middle" font-size="14">Homologous pair</text>
+<path d="M230 330 H265" stroke="#334155" stroke-width="3"/><path d="M255 320 L267 330 L255 340" fill="none" stroke="#334155" stroke-width="3"/>
+<!-- chiasma between non-sister chromatids -->
+<path d="M285 240 V300 C285 320 335 340 335 360 V430" fill="none" stroke="#2563eb" stroke-width="11" stroke-linecap="round"/>
+<path d="M315 240 V300 C315 320 265 340 265 360 V430" fill="none" stroke="#2563eb" stroke-width="11" stroke-linecap="round"/>
+<path d="M355 240 V300 C355 320 405 340 405 360 V430" fill="none" stroke="#dc2626" stroke-width="11" stroke-linecap="round"/>
+<path d="M385 240 V300 C385 320 335 340 335 360 V430" fill="none" stroke="#dc2626" stroke-width="11" stroke-linecap="round"/>
+<circle cx="335" cy="330" r="7" fill="#0f172a"/>
+<text x="335" y="455" text-anchor="middle" font-size="14">Chiasma between</text><text x="335" y="475" text-anchor="middle" font-size="14">non-sister chromatids</text>
+<path d="M415 330 H445" stroke="#334155" stroke-width="3"/><path d="M435 320 L447 330 L435 340" fill="none" stroke="#334155" stroke-width="3"/>
+<!-- resulting four chromatids, two parental and two recombinant -->
+<path d="M470 240 V430" stroke="#2563eb" stroke-width="11" stroke-linecap="round"/>
+<path d="M490 240 V430" stroke="#dc2626" stroke-width="11" stroke-linecap="round"/>
+<path d="M520 240 V315" stroke="#2563eb" stroke-width="11" stroke-linecap="round"/><path d="M520 315 V430" stroke="#dc2626" stroke-width="11" stroke-linecap="round"/>
+<path d="M550 240 V315" stroke="#dc2626" stroke-width="11" stroke-linecap="round"/><path d="M550 315 V430" stroke="#2563eb" stroke-width="11" stroke-linecap="round"/>
+<text x="510" y="455" text-anchor="middle" font-size="14">Two parental +</text><text x="510" y="475" text-anchor="middle" font-size="14">two recombinant</text>
+<rect x="65" y="510" width="495" height="145" rx="14" fill="#eff6ff"/>
+<text x="85" y="545" font-size="18" font-weight="bold">Key idea</text>
+<text x="85" y="578" font-size="17">Only two of the four chromatids are shown</text>
+<text x="85" y="605" font-size="17">exchanging segments. The resulting recombinant</text>
+<text x="85" y="632" font-size="17">chromatids carry new allele combinations.</text>
+
+<rect x="610" y="85" width="555" height="625" rx="20" fill="#fff" stroke="#64748b" stroke-width="2"/>
+<text x="887" y="128" text-anchor="middle" font-size="25" font-weight="bold">2. Independent assortment</text>
+<text x="887" y="160" text-anchor="middle" font-size="17">Metaphase I: two homologous pairs orient independently</text>
+<text x="745" y="205" text-anchor="middle" font-size="18" font-weight="bold">Orientation A</text>
+<text x="1030" y="205" text-anchor="middle" font-size="18" font-weight="bold">Orientation B</text>
+<!-- two homologous chromosome pairs shown at the metaphase equator -->
+<ellipse cx="745" cy="355" rx="105" ry="125" fill="#f8fafc" stroke="#334155" stroke-width="3"/>
+<ellipse cx="1030" cy="355" rx="105" ry="125" fill="#f8fafc" stroke="#334155" stroke-width="3"/>
+<path d="M745 245 V465 M1030 245 V465" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 6"/>
+<!-- Each X is one replicated chromosome; each pair straddles the equator. -->
+<g fill="none" stroke-linecap="round" stroke-width="8">
+ <!-- Orientation A: maternal homologues of both pairs face left -->
+ <path d="M685 275 L715 315 M715 275 L685 315" stroke="#2563eb"/>
+ <path d="M775 275 L805 315 M805 275 L775 315" stroke="#dc2626"/>
+ <path d="M685 385 L715 425 M715 385 L685 425" stroke="#16a34a"/>
+ <path d="M775 385 L805 425 M805 385 L775 425" stroke="#9333ea"/>
+ <!-- Orientation B: the second homologous pair is reversed -->
+ <path d="M970 275 L1000 315 M1000 275 L970 315" stroke="#2563eb"/>
+ <path d="M1060 275 L1090 315 M1090 275 L1060 315" stroke="#dc2626"/>
+ <path d="M970 385 L1000 425 M1000 385 L970 425" stroke="#9333ea"/>
+ <path d="M1060 385 L1090 425 M1090 385 L1060 425" stroke="#16a34a"/>
+</g>
+<text x="745" y="505" text-anchor="middle" font-size="15">Maternal + maternal</text><text x="745" y="525" text-anchor="middle" font-size="15">towards same pole</text>
+<text x="1030" y="505" text-anchor="middle" font-size="15">Second pair reversed:</text><text x="1030" y="525" text-anchor="middle" font-size="15">mixed parental origins</text>
+<rect x="645" y="565" width="485" height="90" rx="14" fill="#eff6ff"/>
+<text x="665" y="590" font-size="16">Each homologous pair orients randomly and independently.</text><text x="665" y="618" font-size="16">Independent orientations produce different combinations</text>
+<text x="665" y="642" font-size="16">of maternal and paternal chromosomes in gametes.</text>
+<text x="600" y="740" text-anchor="middle" font-size="15" fill="#475569">Schematic only, not to scale. Blue/green and red/purple distinguish the two parental homologues.</text>
+</g></svg>
