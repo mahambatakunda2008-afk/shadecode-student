@@ -345,7 +345,7 @@ export default function LessonDetailPage() {
       `}</style>
 
       {showToast && <div className="lesson-toast" role="status"><CheckCircle2 size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />{lesson.completed ? "Lesson complete. XP earned." : "Lesson saved for offline use."}</div>}
-      <main className="lesson-shell">
+      <div className="lesson-shell">
         <Link href="/learn" className="lesson-back"><ArrowLeft size={16} />Back to Learn</Link>
 
         <header className="lesson-hero">
@@ -417,7 +417,7 @@ export default function LessonDetailPage() {
         </div> : <div style={{ textAlign: "center", padding: 50, color: "var(--muted-foreground)" }}><BookOpen size={28} /><p>No content yet.</p><Link href="/learn" style={{ color: "var(--primary)" }}>Generate a new lesson</Link></div>}
 
         {lesson.updated_at && <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "var(--muted-foreground)", fontSize: 11 }}><Clock size={12} />Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</div>}
-      </main>
+      </div>
 
       {showTutor && <div role="dialog" aria-modal="true" aria-label="Socratic Tutor" style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
         <div style={{ width: "100%", maxWidth: 700, height: "82vh", background: "var(--surface)", border: "1px solid var(--card-border)", borderRadius: 16, overflow: "hidden" }}>

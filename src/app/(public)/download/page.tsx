@@ -61,7 +61,7 @@ function PlatformCard({
         {action} →
       </a>
       {secondary ? (
-        <p className="mt-3 text-center text-xs leading-5 text-white/40">{secondary}</p>
+        <p className="mt-3 text-center text-xs leading-5 text-white/60">{secondary}</p>
       ) : null}
     </article>
   );
@@ -105,7 +105,7 @@ export default function DownloadPage() {
           </div>
         </section>
 
-        <footer className="mt-10 text-center text-xs text-white/35">
+        <footer className="mt-10 text-center text-xs text-white/55">
           Shadecode Student · <a href="/privacy.html" className="hover:text-white/60">Privacy</a>
         </footer>
       </div>

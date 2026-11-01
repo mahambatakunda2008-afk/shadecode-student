@@ -211,7 +211,7 @@ export default function ExperienceFocus() {
   const PrimaryButtonIcon = isFinished ? RotateCcw : isRunning ? Pause : Play;
 
   return (
-    <main className="min-h-screen bg-[var(--background)] px-4 py-7 text-[var(--foreground)] sm:px-6 lg:px-8" data-experience={experience.family} data-study-level={experience.stage}>
+    <div className="min-h-screen bg-[var(--background)] px-4 py-7 text-[var(--foreground)] sm:px-6 lg:px-8" data-experience={experience.family} data-study-level={experience.stage}>
       <div className="mx-auto max-w-4xl space-y-6">
         <header className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-7">
           <div className="flex items-start gap-3">
@@ -260,6 +260,6 @@ export default function ExperienceFocus() {
 
         <button type="button" onClick={requestNotificationPermission} className="mx-auto flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--muted-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"><Hammer className="h-4 w-4" />Enable completion notifications</button>
       </div>
-    </main>
+    </div>
   );
 }

@@ -136,11 +136,11 @@ export default function LearnPageClientV2() {
   }
 
   if (loading && data.lessons.length === 0) {
-    return <main className="min-h-screen bg-[var(--background)] p-6"><div className="mx-auto max-w-6xl animate-pulse space-y-5"><div className="h-10 w-56 rounded-xl bg-[var(--muted)]" /><div className="h-5 w-80 rounded bg-[var(--muted)]" /><div className="h-72 rounded-3xl bg-[var(--card)]" /></div></main>;
+    return <div className="min-h-screen bg-[var(--background)] p-6"><div className="mx-auto max-w-6xl animate-pulse space-y-5"><div className="h-10 w-56 rounded-xl bg-[var(--muted)]" /><div className="h-5 w-80 rounded bg-[var(--muted)]" /><div className="h-72 rounded-3xl bg-[var(--card)]" /></div></div>;
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -176,6 +176,6 @@ export default function LearnPageClientV2() {
           {visibleLessons.length === 0 ? <div className="rounded-2xl border border-dashed border-[var(--card-border)] p-10 text-center"><BookOpen className="mx-auto h-8 w-8 text-[var(--muted-foreground)]" /><p className="mt-3 font-semibold">No lessons yet</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">Choose a subject and generate your first lesson above.</p></div> : <div className="grid gap-3 md:grid-cols-2">{visibleLessons.slice(0, 8).map((lesson: Lesson) => <button key={lesson.id} type="button" onClick={() => router.push(`/learn/${lesson.id}`)} className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 text-left transition hover:-translate-y-0.5 hover:border-[var(--primary)]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--primary)]">{lesson.subject}</p><h3 className="mt-1 truncate font-bold">{lesson.title}</h3><p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--muted-foreground)]">{lesson.description || "Continue this lesson."}</p></div>{lesson.completed ? <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--primary)]" /> : <BookOpen className="h-5 w-5 shrink-0 text-[var(--muted-foreground)]" />}</div><div className="mt-4 flex items-center gap-3"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--muted)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${lesson.progress}%` }} /></div><span className="text-[10px] font-semibold text-[var(--muted-foreground)]">{lesson.progress}%</span><span className="flex items-center gap-1 text-[10px] text-[var(--muted-foreground)]"><Clock3 className="h-3 w-3" />{timeAgo(lesson.updated_at)}</span></div></button>)}</div>}
         </section>
       </div>
-    </main>
+    </div>
   );
 }

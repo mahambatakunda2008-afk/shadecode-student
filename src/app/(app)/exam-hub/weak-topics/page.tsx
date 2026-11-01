@@ -31,7 +31,7 @@ export default function WeakTopicsPage() {
   const hasData = summary && summary.exam_scores.length > 0;
 
   return (
-    <main className="ssc-page min-h-screen px-4 py-6 sm:px-6 sm:py-8">
+    <div className="ssc-page min-h-screen px-4 py-6 sm:px-6 sm:py-8">
       <div className="mx-auto w-full max-w-3xl">
         <Link
           href="/exam-hub"
@@ -103,7 +103,7 @@ export default function WeakTopicsPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }
 

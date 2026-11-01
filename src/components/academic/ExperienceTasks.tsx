@@ -18,7 +18,7 @@ export default function ExperienceTasks() {
       : { eyebrow: "Practice", title: "Turn study into action.", body: "Keep revision focused with concrete tasks. Use what you learn, finish the next step and build evidence of progress.", icon: ClipboardCheck };
   const Icon = copy.icon;
   return (
-    <main className="min-h-screen bg-[var(--background)] px-4 py-7 text-[var(--foreground)] sm:px-6 lg:px-8" data-experience={experience.family} data-study-level={experience.stage}>
+    <div className="min-h-screen bg-[var(--background)] px-4 py-7 text-[var(--foreground)] sm:px-6 lg:px-8" data-experience={experience.family} data-study-level={experience.stage}>
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-7">
           <div className="flex items-start gap-3">
@@ -32,6 +32,6 @@ export default function ExperienceTasks() {
         </header>
         <TasksLocalFirstV2 />
       </div>
-    </main>
+    </div>
   );
 }

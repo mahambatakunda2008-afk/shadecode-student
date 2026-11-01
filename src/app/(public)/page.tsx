@@ -21,7 +21,7 @@ const faqs = [["What is Shadecode Student?", "A personal learning system that br
 export default function PublicHomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   return (
-    <main className="min-h-screen overflow-x-clip bg-[var(--brand-ink)] text-slate-100">
+    <main className="dark min-h-screen overflow-x-clip bg-[var(--brand-ink)] text-slate-100">
       <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[var(--brand-ink)]/96">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" aria-label="Shadecode Student home"><BrandLockup compact /></Link>
@@ -54,7 +54,7 @@ export default function PublicHomePage() {
             <div className="absolute -inset-6 hidden" />
             <div className="relative rounded-[18px] border border-white/10 bg-[var(--brand-surface)] p-5 shadow-xl shadow-black/30">
               <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-                <div className="flex items-center gap-3"><BrandMark className="h-9 w-9 text-[var(--brand-blue)]" aria-hidden="true" /><div><div className="font-[var(--font-brand)] text-xs tracking-[.14em] text-white">SHADECODE</div><div className="mt-1 font-[var(--font-brand)] text-[11px] tracking-[.25em] text-slate-500">CORTEX OS</div></div></div>
+                <div className="flex items-center gap-3"><BrandMark className="h-9 w-9 text-[var(--brand-blue)]" aria-hidden="true" /><div><div className="font-[var(--font-brand)] text-xs tracking-[.14em] text-white">SHADECODE</div><div className="mt-1 font-[var(--font-brand)] text-[11px] tracking-[.25em] text-slate-400">CORTEX OS</div></div></div>
                 <span className="flex items-center gap-2 text-xs font-medium text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true" /> Example preview</span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-4"><Metric label="Today" value="Learn" /><Metric label="Focus" value="3 tasks" /><Metric label="State" value="Updating" /></div>
@@ -92,11 +92,11 @@ export default function PublicHomePage() {
 
       <section id="faq" className="border-t border-white/[0.07] bg-white/[0.015]"><div className="mx-auto max-w-3xl px-4 py-24 sm:px-6"><div className="text-center"><span className="text-sm font-semibold uppercase tracking-[.16em] text-blue-300">FAQ</span><h2 className="mt-4 font-[var(--font-display)] text-3xl font-semibold text-white">Useful answers.</h2></div><div className="mt-10 divide-y divide-white/[0.07] rounded-2xl border border-white/[0.08] bg-[var(--brand-surface)]/70">{faqs.map(([question,answer],index) => <div key={question}><button type="button" onClick={() => setOpenFaq(openFaq === index ? null : index)} className="flex min-h-14 w-full items-center justify-between gap-4 px-5 py-5 text-left text-[15px] font-semibold text-white"><span>{question}</span><ChevronDown size={18} className={`shrink-0 text-blue-300 transition-transform ${openFaq === index ? "rotate-180" : ""}`} /></button>{openFaq === index && <p className="px-5 pb-5 text-[15px] leading-6.5 text-slate-400">{answer}</p>}</div>)}</div></div></section>
 
-      <footer className="border-t border-white/[0.08]"><div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-9 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8"><BrandLockup compact /><div className="text-sm text-slate-500">Study smarter. Live sharper. · Built for learners.</div><div className="flex flex-wrap gap-5 text-sm text-slate-400"><a href="/privacy.html" className="hover:text-white">Privacy</a><a href="/terms.html" className="hover:text-white">Terms</a><a href="/security.html" className="hover:text-white">Security</a><Link href="/auth/login" className="hover:text-white">Sign in</Link></div></div></footer>
+      <footer className="border-t border-white/[0.08]"><div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-9 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8"><BrandLockup compact /><div className="text-sm text-slate-400">Study smarter. Live sharper. · Built for learners.</div><div className="flex flex-wrap gap-5 text-sm text-slate-400"><a href="/privacy.html" className="hover:text-white">Privacy</a><a href="/terms.html" className="hover:text-white">Terms</a><a href="/security.html" className="hover:text-white">Security</a><Link href="/auth/login" className="hover:text-white">Sign in</Link></div></div></footer>
     </main>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) { return <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5"><div className="text-xs font-medium uppercase tracking-[.1em] text-slate-500">{label}</div><div className="mt-1 font-[var(--font-display)] text-lg font-semibold text-white">{value}</div></div>; }
+function Metric({ label, value }: { label: string; value: string }) { return <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5"><div className="text-xs font-medium uppercase tracking-[.1em] text-slate-400">{label}</div><div className="mt-1 font-[var(--font-display)] text-lg font-semibold text-white">{value}</div></div>; }
 
 function PlatformCard({ icon: Icon, name, level, body }: { icon: typeof Sparkles; name: string; level: string; body: string }) { return <div className="rounded-2xl border border-white/[0.08] bg-[var(--brand-surface)]/70 p-6 transition hover:-translate-y-0.5 hover:border-violet-400/20"><div className="flex items-start justify-between gap-4"><div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-cyan-400/10 via-blue-500/10 to-violet-500/10 text-blue-300"><Icon size={21} /></div><span className="rounded-full border border-white/[0.09] bg-white/[0.02] px-2.5 py-1 text-xs font-semibold text-slate-400">{level}</span></div><h3 className="mt-5 font-[var(--font-display)] text-xl font-semibold text-white">Shadecode {name}</h3><p className="mt-2.5 text-[15px] leading-6.5 text-slate-400">{body}</p></div>; }

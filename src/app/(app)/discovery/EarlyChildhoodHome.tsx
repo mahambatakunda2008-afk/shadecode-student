@@ -58,9 +58,9 @@ export default function EarlyChildhoodHome() {
     return Array.from(map.entries());
   }, [activities]);
 
-  if (loading) return <main className="mx-auto max-w-4xl px-4 py-8"><div className="h-80 animate-pulse rounded-[30px] bg-[var(--surface-2)]" /></main>;
+  if (loading) return <div className="mx-auto max-w-4xl px-4 py-8"><div className="h-80 animate-pulse rounded-[30px] bg-[var(--surface-2)]" /></div>;
 
-  return <main className="mx-auto max-w-4xl px-4 py-5 md:px-6 md:py-8">
+  return <div className="mx-auto max-w-4xl px-4 py-5 md:px-6 md:py-8">
     <header className="relative overflow-hidden rounded-[30px] border border-[var(--card-border)] bg-[var(--surface)] p-7 shadow-sm md:p-9">
       <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[var(--primary-glow)] blur-3xl" />
       <div className="relative">
@@ -82,5 +82,5 @@ export default function EarlyChildhoodHome() {
     </section>
 
     {!activities.length && <section className="mt-5 rounded-[24px] border border-[var(--card-border)] bg-[var(--surface)] p-8 text-center"><Sparkles className="mx-auto mb-3 h-8 w-8 text-[var(--primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">Your discovery pack is getting ready.</h2><p className="mt-2 text-sm text-[var(--muted-foreground)]">No ready activities are available yet. Once a curriculum pack is loaded, they will appear here.</p></section>}
-  </main>;
+  </div>;
 }

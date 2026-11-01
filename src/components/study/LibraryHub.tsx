@@ -73,7 +73,7 @@ export default function LibraryHub({ subjects }: { subjects: LearnerSubject[] })
 
   if (lesson) {
     return (
-      <main className="mx-auto w-full max-w-2xl px-4 py-8">
+      <div className="mx-auto w-full max-w-2xl px-4 py-8">
         <button type="button" onClick={() => { setLesson(null); setNotice(null); }} className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
           <ArrowLeft className="size-4" aria-hidden /> Back to results
         </button>
@@ -97,12 +97,12 @@ export default function LibraryHub({ subjects }: { subjects: LearnerSubject[] })
           <button type="button" onClick={() => void vote(false)} aria-pressed={myVote === "down"} className={`${button} ${myVote === "down" ? "bg-white/10" : ""}`}><ThumbsDown className="size-4" aria-hidden /> Not helpful</button>
           {notice && <p role="status" className="w-full text-xs text-[var(--muted-foreground)]">{notice}</p>}
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+    <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <header className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">Lesson library</h1>
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">Search lessons other students have worked through. Instant, and it works even when AI is unavailable.</p>
@@ -139,6 +139,6 @@ export default function LibraryHub({ subjects }: { subjects: LearnerSubject[] })
           </li>
         ))}
       </ul>
-    </main>
+    </div>
   );
 }

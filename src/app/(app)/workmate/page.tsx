@@ -12,7 +12,7 @@ const modes = [
 
 export default function WorkmatePage() {
   return (
-    <main className="ssc-page max-w-6xl">
+    <div className="ssc-page max-w-6xl">
       <header className="ssc-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--primary)]">
@@ -47,6 +47,6 @@ export default function WorkmatePage() {
       </header>
 
       <CortexVerifyPanel />
-    </main>
+    </div>
   );
 }

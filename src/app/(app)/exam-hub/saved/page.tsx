@@ -20,7 +20,7 @@ export default function SavedPapersPage() {
   }, []);
 
   return (
-    <main className="ssc-page min-h-screen px-4 py-5 sm:px-6 sm:py-8">
+    <div className="ssc-page min-h-screen px-4 py-5 sm:px-6 sm:py-8">
       <div className="mx-auto w-full max-w-5xl">
         <Link
           href="/exam-hub"
@@ -96,6 +96,6 @@ export default function SavedPapersPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }

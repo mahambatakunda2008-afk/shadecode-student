@@ -266,17 +266,17 @@ export default function LearnPageResilient() {
   const displayedLessons = showAllLessons ? visibleLessons : visibleLessons.slice(0, 4);
 
   if (loading && lessons.length === 0) {
-    return <main className="min-h-[70vh] bg-[var(--background)] px-5 py-10 dark:bg-[var(--background)]" aria-busy="true">
+    return <div className="min-h-[70vh] bg-[var(--background)] px-5 py-10 dark:bg-[var(--background)]" aria-busy="true">
       <div className="mx-auto max-w-7xl animate-pulse space-y-5">
         <div className="h-5 w-36 rounded-full bg-[var(--surface-2)] dark:bg-[var(--surface-2)]" />
         <div className="h-12 w-3/5 rounded-2xl bg-[var(--surface-2)] dark:bg-[var(--surface-2)]" />
         <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]"><div className="h-80 rounded-[28px] bg-[var(--surface-2)] dark:bg-[var(--surface-2)]" /><div className="h-80 rounded-[28px] bg-[var(--surface-2)] dark:bg-[var(--surface-2)]" /></div>
       </div>
-    </main>;
+    </div>;
   }
 
   return (
-    <main data-page="learn" className="min-h-screen bg-[var(--background)] text-[var(--foreground)] dark:bg-[var(--background)] dark:text-[var(--foreground)]">
+    <div data-page="learn" className="min-h-screen bg-[var(--background)] text-[var(--foreground)] dark:bg-[var(--background)] dark:text-[var(--foreground)]">
       <div className="mx-auto max-w-[1440px] px-4 pb-12 pt-5 sm:px-6 lg:px-10 lg:pt-8">
         <header className="mb-7 flex flex-col justify-between gap-5 border-b border-[var(--card-border)] pb-6 dark:border-[var(--card-border)] sm:flex-row sm:items-end">
           <div>
@@ -425,6 +425,6 @@ export default function LearnPageResilient() {
           <LearnBrainStatus />
         </section>
       </div>
-    </main>
+    </div>
   );
 }

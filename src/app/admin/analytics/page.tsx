@@ -77,11 +77,11 @@ export default function AdminAnalyticsPage() {
     return result;
   }, [events]);
 
-  if (loading) return <main className="p-6"><p className="text-sm text-[var(--muted-foreground)]">Loading product analytics…</p></main>;
-  if (error) return <main className="p-6"><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-6"><h1 className="text-xl font-bold">Product analytics unavailable</h1><p className="mt-2 text-sm text-[var(--muted-foreground)]">{error}</p><button onClick={() => void load()} className="mt-4 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-bold text-white">Retry</button></div></main>;
+  if (loading) return <div className="p-6"><p className="text-sm text-[var(--muted-foreground)]">Loading product analytics…</p></div>;
+  if (error) return <div className="p-6"><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-6"><h1 className="text-xl font-bold">Product analytics unavailable</h1><p className="mt-2 text-sm text-[var(--muted-foreground)]">{error}</p><button onClick={() => void load()} className="mt-4 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-bold text-white">Retry</button></div></div>;
 
   return (
-    <main className="mx-auto w-full max-w-7xl space-y-6 p-6 pb-12">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-6 pb-12">
       <header><p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--primary)]">Shadecode Product Intelligence</p><h1 className="mt-1 text-3xl font-black tracking-tight">Analytics</h1><p className="mt-2 text-sm text-[var(--muted-foreground)]">Real usage from the last 90 days. No synthetic numbers.</p></header>
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {[['DAU', metrics.dau, 'today'], ['WAU', metrics.wau, '7 days'], ['MAU', metrics.mau, '30 days'], ['New users', metrics.newUsers, '30 days'], ['Returning', metrics.returningUsers, '30 days']].map(([label, value, note]) => <div key={String(label)} className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><p className="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">{label}</p><p className="mt-2 text-3xl font-black">{value}</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">{note}</p></div>)}
@@ -91,6 +91,6 @@ export default function AdminAnalyticsPage() {
         <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5"><h2 className="text-lg font-bold">Feature usage</h2><div className="mt-4 space-y-2">{metrics.featureUsage.map((feature) => <div key={feature.name} className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] px-3 py-2.5"><span className="text-sm">{feature.name.replaceAll('_', ' ')}</span><strong className="text-sm">{feature.count}</strong></div>)}</div></section>
       </div>
       <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5"><div className="flex items-end justify-between gap-4"><div><h2 className="text-lg font-bold">30-day activity</h2><p className="text-xs text-[var(--muted-foreground)]">Unique authenticated users and recorded events.</p></div><button onClick={() => void load()} className="rounded-lg border border-[var(--card-border)] px-3 py-2 text-xs font-bold">Refresh</button></div><div className="mt-5 flex h-48 items-end gap-1">{activity.map((item) => <div key={item.day} title={`${item.day}: ${item.users} users, ${item.events} events`} className="group flex h-full flex-1 items-end"><div className="w-full rounded-t-md bg-[var(--primary)]/70 transition-all group-hover:bg-[var(--primary)]" style={{ height: `${Math.max(3, (item.users / Math.max(...activity.map((a) => a.users), 1)) * 100)}%` }} /></div>)}</div><div className="mt-2 flex justify-between text-[10px] text-[var(--muted-foreground)]"><span>{activity[0]?.day}</span><span>{activity.at(-1)?.day}</span></div></section>
-    </main>
+    </div>
   );
 }

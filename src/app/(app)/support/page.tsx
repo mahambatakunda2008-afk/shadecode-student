@@ -13,7 +13,7 @@ export default function SupportShadecodePage() {
   const amountIsValid = amount.trim() !== "" && Number.isFinite(parsedAmount) && parsedAmount > 0 && parsedAmount <= 10000;
 
   return (
-    <main className="ssc-page mx-auto w-full max-w-3xl">
+    <div className="ssc-page mx-auto w-full max-w-3xl">
       <Link href="/settings" className="mb-5 inline-flex min-h-10 items-center gap-2 text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]">
         <ArrowLeft size={16} aria-hidden="true" />
         Back to settings
@@ -95,6 +95,6 @@ export default function SupportShadecodePage() {
           Safety promise: Shadecode will never ask for your EcoCash PIN or store card security details. Contributions will never buy XP, marks, rankings, or access to core learning features.
         </p>
       </section>
-    </main>
+    </div>
   );
 }

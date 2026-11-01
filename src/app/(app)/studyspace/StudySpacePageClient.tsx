@@ -44,7 +44,7 @@ export default function StudySpacePageClient() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl p-4 sm:p-6">
+    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div><p className="m-0 text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--primary)]">SHADECODE</p><h1 className="m-1 text-3xl font-black tracking-tight">StudySpace</h1><p className="m-0 text-sm text-[var(--muted-foreground)]">One workspace for lessons, learning, working, practice, assessment and exams.</p></div>
         <button onClick={() => router.back()} className="self-start rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3 py-2 text-sm">Back</button>
@@ -64,6 +64,6 @@ export default function StudySpacePageClient() {
           {showCanvas && <div className="mt-4 min-w-0"><StudyCanvasViewport storageKey={`shadecode-canvas:${mode}:${subject.trim().toLowerCase() || "general"}`} onChange={setCanvasData} /></div>}
         </section>
       </div>
-    </main>
+    </div>
   );
 }

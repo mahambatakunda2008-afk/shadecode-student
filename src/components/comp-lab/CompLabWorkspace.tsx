@@ -83,7 +83,7 @@ export default function CompLabWorkspace() {
 
   if (!selected) {
     return (
-      <main className="flex min-h-full w-full flex-col bg-[var(--background)]">
+      <div className="flex min-h-full w-full flex-col bg-[var(--background)]">
         <nav aria-label="Comp Lab navigation" className="sticky top-0 z-30 flex min-h-14 items-center gap-2 border-b border-[var(--card-border)] bg-[var(--surface)]/95 px-3 backdrop-blur sm:px-5">
           <StudentBackButton router={router} />
           <div className="hidden h-5 w-px bg-[var(--card-border)] sm:block" />
@@ -99,12 +99,12 @@ export default function CompLabWorkspace() {
             </div>
           </div>
         </section>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="flex min-h-full w-full flex-col bg-[var(--background)]">
+    <div className="flex min-h-full w-full flex-col bg-[var(--background)]">
       <nav aria-label="Comp Lab navigation" className="sticky top-0 z-30 flex min-h-14 items-center gap-2 border-b border-[var(--card-border)] bg-[var(--surface)]/95 px-3 backdrop-blur sm:px-5">
         <StudentBackButton router={router} /><button type="button" onClick={closeEnvironment} className="inline-flex h-9 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3 text-xs font-semibold text-[var(--muted-foreground)] hover:border-[var(--card-border)] hover:bg-[var(--surface-2)] hover:text-[var(--foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]" title="View all Comp Lab environments"><Boxes className="h-4 w-4" /> <span className="hidden md:inline">Environments</span></button><div className="hidden h-5 w-px bg-[var(--card-border)] sm:block" /><div className="flex min-w-0 flex-1 items-center gap-2"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--primary-glow)] text-[var(--primary)]"><EnvironmentIcon environment={selected} className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Comp Lab</p><p className="truncate text-sm font-semibold text-[var(--foreground)]">{selected.label}</p></div></div><label className="relative hidden min-w-[210px] sm:block"><span className="sr-only">Switch environment</span><select value={selected.id} onChange={event => openEnvironment(event.target.value)} className="w-full appearance-none rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] py-2 pl-3 pr-8 text-xs font-medium text-[var(--foreground)] outline-none focus:ring-2 focus:ring-[var(--primary)]">{COMP_LAB_ENVIRONMENTS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select><ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-[var(--muted-foreground)]" /></label><button type="button" onClick={closeEnvironment} className="sm:hidden rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-2 text-xs font-semibold text-[var(--foreground)]">Switch</button>
       </nav>
@@ -113,6 +113,6 @@ export default function CompLabWorkspace() {
 
       <section className="flex-1 p-2 sm:p-5 lg:p-6">{selectedIsShadeWorkspace ? <ShadeCompLabWorkspace /> : selectedIsCodeWorkspace ? <><ResizableCompLabWorkspace /><CompLabIntelligencePanel /></> : selectedIsWebWorkspace ? <WebCompLabWorkspace /> : selectedIsAlgorithmWorkspace ? <AlgorithmStudioPlus /> : <CompLabProjectWorkspace environment={selected} />}</section>
       <footer className="border-t border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-xs text-[var(--muted-foreground)]"><Code2 className="mr-2 inline h-4 w-4" />Pick an environment, build something, run it, understand what happened, and keep improving.</footer>
-    </main>
+    </div>
   );
 }

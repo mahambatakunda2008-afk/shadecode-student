@@ -144,18 +144,18 @@ export default function Settings() {
 
   if (loading) {
     return (
-      <main className="ssc-page" aria-busy="true" aria-label="Loading settings">
+      <section className="ssc-page" aria-busy="true" aria-label="Loading settings">
         <div className="ssc-skeleton mb-3 h-8 w-48" />
         <div className="ssc-skeleton mb-4 h-40 w-full rounded-2xl" />
         <div className="ssc-skeleton h-32 w-full rounded-2xl" />
         <p className="mt-4 text-sm text-[var(--muted-foreground)]">Loading your settings…</p>
-      </main>
+      </section>
     );
   }
 
   if (loadError) {
     return (
-      <main className="ssc-page">
+      <div className="ssc-page">
         <section className="ssc-card max-w-2xl p-6" role="alert">
           <h1 className="text-xl font-bold">Settings unavailable</h1>
           <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{loadError}</p>
@@ -163,7 +163,7 @@ export default function Settings() {
             Try again
           </button>
         </section>
-      </main>
+      </div>
     );
   }
 
@@ -176,7 +176,7 @@ export default function Settings() {
   const profileCopy = isFoundation ? "Your learning space" : isBeyond ? "Your workspace identity" : "Your student profile";
 
   return (
-    <main className="ssc-page" data-experience={experience.family} data-study-level={experience.stage}>
+    <div className="ssc-page" data-experience={experience.family} data-study-level={experience.stage}>
       {toast && (
         <div role="status" aria-live="polite" aria-atomic="true" className="fixed left-1/2 top-6 z-[10000] flex -translate-x-1/2 items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] shadow-[var(--shadow-lg)]">
           <Check size={16} aria-hidden="true" className="text-[var(--accent)]" />
@@ -285,7 +285,7 @@ export default function Settings() {
           {signingOut ? "Signing out…" : "Sign out"}
         </button>
       </footer>
-    </main>
+    </div>
   );
 }
 

@@ -69,7 +69,7 @@ export default function RevisionHub() {
   if (deck) return <DeckSession deck={deck} onExit={exitDeck} />;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8">
+    <div className="mx-auto w-full max-w-3xl px-4 py-8">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">Revise by syllabus</h1>
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">Test yourself on the official learning outcomes, then rate how you did. Works offline from AI and never runs out of cards.</p>
@@ -130,7 +130,7 @@ export default function RevisionHub() {
           </ul>
         </>
       )}
-    </main>
+    </div>
   );
 }
 
@@ -174,7 +174,7 @@ function DeckSession({ deck, onExit }: { deck: Deck; onExit: () => void }) {
   const progress = useMemo(() => Math.round((Math.min(index, total) / total) * 100), [index, total]);
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8" key={round}>
+    <div className="mx-auto w-full max-w-xl px-4 py-8" key={round}>
       <button type="button" onClick={onExit} className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
         <ArrowLeft className="size-4" aria-hidden /> All topics
       </button>
@@ -216,6 +216,6 @@ function DeckSession({ deck, onExit }: { deck: Deck; onExit: () => void }) {
           </div>
         </section>
       )}
-    </main>
+    </div>
   );
 }

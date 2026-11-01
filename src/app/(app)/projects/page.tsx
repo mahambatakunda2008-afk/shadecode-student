@@ -53,7 +53,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
       <section className="relative overflow-hidden rounded-3xl border border-[var(--card-border)] bg-[var(--surface)] p-6 shadow-sm md:p-8">
         <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[var(--primary-glow)] blur-3xl" aria-hidden="true" />
         <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
@@ -90,6 +90,6 @@ export default function ProjectsPage() {
       </form></section>}
 
       <section className="mt-8"><div className="flex items-end justify-between"><div><p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Workspace</p><h2 className="mt-1 text-xl font-bold text-[var(--foreground)]">Your projects</h2></div></div>{activeProjects.length === 0 ? <div className="mt-4 rounded-2xl border border-dashed border-[var(--card-border)] bg-[var(--surface)] p-8 text-center"><FolderKanban className="mx-auto h-8 w-8 text-[var(--muted-foreground)]" /><p className="mt-3 text-sm font-semibold text-[var(--foreground)]">Nothing started yet.</p><p className="mt-1 text-sm text-[var(--muted-foreground)]">Create your first project and Shadecode will turn the brief into a work-ready plan.</p></div> : <div className="mt-4 grid gap-4 md:grid-cols-2">{activeProjects.map((project) => { const currentIndex = project.stages.findIndex((stage) => stage.id === project.currentStageId); const progress = project.stages.length ? Math.round(((Math.max(0, currentIndex) + 1) / project.stages.length) * 100) : 0; return <Link key={project.id} href={`/projects/${project.id}`} className="group rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-5 transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-start justify-between gap-4"><div><h3 className="font-bold text-[var(--foreground)]">{project.title}</h3><p className="mt-1 text-xs text-[var(--muted-foreground)]">{project.subject || "General"} · {project.board || "Board not specified"}</p></div><ArrowRight className="h-4 w-4 text-[var(--muted-foreground)] transition group-hover:translate-x-1 group-hover:text-[var(--primary)]" /></div><div className="mt-5 h-2 overflow-hidden rounded-full bg-[var(--surface-3)]" aria-label={`${progress}% project progress`}><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${progress}%` }} /></div><p className="mt-2 text-xs text-[var(--muted-foreground)]">{progress}% through stages · {stageCopy[project.academicStage]}</p></Link>; })}</div>}</section>
-    </main>
+    </div>
   );
 }

@@ -134,7 +134,7 @@ Use only evidence present in the question. Explain the key concept, likely metho
   }, [fetchQuestions]);
 
   return (
-    <main className="ssc-page mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-6">
+    <div className="ssc-page mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-6">
       <header className="ssc-page-header mb-6">
         <Link href="/exam-hub" className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
           ← Exam Hub
@@ -242,6 +242,6 @@ Use only evidence present in the question. Explain the key concept, likely metho
           );
         })}
       </div>
-    </main>
+    </div>
   );
 }

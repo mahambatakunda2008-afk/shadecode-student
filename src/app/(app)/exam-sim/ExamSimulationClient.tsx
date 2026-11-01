@@ -144,11 +144,11 @@ export default function ExamSimulationClient() {
   };
 
   if (!subjectReady || frozenQuestions === undefined) {
-    return <main className="grid min-h-[60vh] place-items-center bg-[var(--background)] px-5 py-10 text-[var(--foreground)]" aria-busy="true"><p role="status" aria-live="polite" className="flex max-w-sm items-center gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] px-5 py-4 text-sm leading-6 text-[var(--muted-foreground)] shadow-sm"><span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[var(--primary)]" />{frozenQuestions === undefined ? "Loading the challenge…" : "Preparing your subjects…"}</p></main>;
+    return <div className="grid min-h-[60vh] place-items-center bg-[var(--background)] px-5 py-10 text-[var(--foreground)]" aria-busy="true"><p role="status" aria-live="polite" className="flex max-w-sm items-center gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] px-5 py-4 text-sm leading-6 text-[var(--muted-foreground)] shadow-sm"><span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[var(--primary)]" />{frozenQuestions === undefined ? "Loading the challenge…" : "Preparing your subjects…"}</p></div>;
   }
 
   if (challengeError) {
-    return <main className="mx-auto grid min-h-[60vh] max-w-2xl place-items-center bg-[var(--background)] px-5 py-10 text-[var(--foreground)]"><section role="alert" className="w-full rounded-2xl border border-amber-500/30 bg-[var(--surface)] p-6"><h1 className="text-xl font-bold">Challenge not ready</h1><p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{challengeError}</p><button type="button" onClick={() => router.push(`/challenge/${challengeId}`)} className="mt-5 min-h-11 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)]">Return to challenge</button></section></main>;
+    return <div className="mx-auto grid min-h-[60vh] max-w-2xl place-items-center bg-[var(--background)] px-5 py-10 text-[var(--foreground)]"><section role="alert" className="w-full rounded-2xl border border-amber-500/30 bg-[var(--surface)] p-6"><h1 className="text-xl font-bold">Challenge not ready</h1><p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{challengeError}</p><button type="button" onClick={() => router.push(`/challenge/${challengeId}`)} className="mt-5 min-h-11 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)]">Return to challenge</button></section></div>;
   }
 
   return <>

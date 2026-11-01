@@ -159,15 +159,15 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
     finally { setChecking(false); }
   }
 
-  if (!session && !error) return <main className="min-h-screen bg-[var(--background)] p-6"><div className="mx-auto max-w-4xl py-16 text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[var(--primary)]" /><p className="mt-3 text-sm text-[var(--muted-foreground)]">Opening your learning session…</p></div></main>;
-  if (!session) return <main className="min-h-screen bg-[var(--background)] p-6"><div className="mx-auto max-w-4xl py-16 text-center"><p className="font-semibold">{error}</p><button type="button" onClick={() => router.push("/learn")} className="mt-4 rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-bold text-[var(--primary-foreground)]">Back to Learn</button></div></main>;
+  if (!session && !error) return <div className="min-h-screen bg-[var(--background)] p-6"><div className="mx-auto max-w-4xl py-16 text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[var(--primary)]" /><p className="mt-3 text-sm text-[var(--muted-foreground)]">Opening your learning session…</p></div></div>;
+  if (!session) return <div className="min-h-screen bg-[var(--background)] p-6"><div className="mx-auto max-w-4xl py-16 text-center"><p className="font-semibold">{error}</p><button type="button" onClick={() => router.push("/learn")} className="mt-4 rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-bold text-[var(--primary-foreground)]">Back to Learn</button></div></div>;
   const selectedQuestionNumbers = session.source_metadata?.selectedQuestionNumbers ?? [];
   const uncertainQuestions = (session.source_metadata?.questionIndex ?? []).filter(question => question.extractionConfidence < 0.95);
   const visualPages = ((session.source_metadata?.pageVisuals as Array<{ pageNumber?: number; hasVisualContent?: boolean }> | undefined) ?? []).filter(page => page.hasVisualContent);
   const visualAnalysis = session.source_metadata?.visualAnalysis ?? session.learning_plan.visualAnalysis ?? [];
 
   return (
-    <main className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-5">
         <button type="button" onClick={() => router.push("/learn")} className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)]"><ArrowLeft className="h-4 w-4" /> Back to Learn</button>
         {offline && <div className="flex items-center gap-2 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-3 text-xs"><WifiOff className="h-4 w-4 text-[var(--primary)]" /> Offline copy loaded. Reading works, but Cortex checkpoint checking needs a connection.</div>}
@@ -253,6 +253,6 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
         {checkpoints.length === 0 && <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-6"><div className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 text-[var(--primary)]" /><div><h2 className="font-bold">This session has no interactive checks yet</h2><p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">Generate a new paper session to get the interactive Cortex tutor layer.</p></div></div></section>}
         {allComplete && <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-6"><div className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 text-[var(--primary)]" /><div><h2 className="font-bold">Paper session mastered</h2><p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">Cortex has recorded the checkpoint evidence. Those signals now feed the learner's topic mastery and revision queue.</p><button type="button" onClick={() => router.push("/learn")} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-[var(--primary-foreground)]">Return to Learn <ChevronRight className="h-4 w-4" /></button></div></div></section>}
       </div>
-    </main>
+    </div>
   );
 }

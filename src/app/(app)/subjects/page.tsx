@@ -306,11 +306,13 @@ export default function SubjectsPage() {
                     {/* View lessons for this subject */}
                     <Link
                       href={`/learn/history?subject=${encodeURIComponent(s.name)}`}
+                      aria-label={`View ${s.name} lessons`}
+                      title={`View ${s.name} lessons`}
                       style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "9px 12px", borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--card-border)", textDecoration: "none", transition: "filter .15s", cursor: "pointer" }}
                       onMouseEnter={e => (e.currentTarget.style.filter = "brightness(1.15)")}
                       onMouseLeave={e => (e.currentTarget.style.filter = "brightness(1)")}
                     >
-                      <ChevronRight size={14} color="var(--muted-foreground)" />
+                      <ChevronRight size={14} color="var(--muted-foreground)" aria-hidden="true" />
                     </Link>
                     <button
                       type="button"

@@ -57,7 +57,7 @@ export default function ExperienceLearn() {
 
   if (state === "error") {
     return (
-      <main className="min-h-[70vh] bg-[var(--background)] px-5 py-10 text-[var(--foreground)]">
+      <div className="min-h-[70vh] bg-[var(--background)] px-5 py-10 text-[var(--foreground)]">
         <section className="mx-auto max-w-xl rounded-3xl border border-[var(--card-border)] bg-[var(--surface)] p-6 shadow-sm sm:p-8" role="alert">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
             <WifiOff size={22} aria-hidden="true" />
@@ -75,13 +75,13 @@ export default function ExperienceLearn() {
             Try again
           </button>
         </section>
-      </main>
+      </div>
     );
   }
 
   if (state !== "ready") {
     return (
-      <main className="min-h-[70vh] bg-[var(--background)] px-5 py-10 text-[var(--foreground)]" aria-busy="true" aria-label="Checking your session">
+      <section className="min-h-[70vh] bg-[var(--background)] px-5 py-10 text-[var(--foreground)]" aria-busy="true" aria-label="Checking your session">
         <div className="mx-auto max-w-7xl space-y-5">
           <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]" role="status" aria-live="polite">
             <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -93,7 +93,7 @@ export default function ExperienceLearn() {
             <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]"><div className="h-80 rounded-[28px] bg-[var(--surface-2)]" /><div className="h-80 rounded-[28px] bg-[var(--surface-2)]" /></div>
           </div>
         </div>
-      </main>
+      </section>
     );
   }
 
