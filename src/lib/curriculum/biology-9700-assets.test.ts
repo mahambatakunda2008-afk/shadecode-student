@@ -252,4 +252,32 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(diagram).toContain("not to scale");
   });
 
+
+  it("explicitly teaches and assesses the Le/le gibberellin-synthesis outcome", () => {
+    const asset = JSON.parse(
+      readFileSync(
+        join(process.cwd(), "docs/learning-assets/drafts/biology-9700-inheritance-genetic-crosses.v1.json"),
+        "utf8",
+      ),
+    ) as {
+      content: {
+        learning_objectives: string[];
+        sections: Array<{ heading: string; body: string }>;
+        practice: Array<{ question: string; answer: string; mark_points: string[] }>;
+      };
+    };
+
+    expect(asset.content.learning_objectives.join(" ")).toContain("Le and le alleles");
+    const gibberellin = asset.content.sections.find(
+      (section) => section.heading === "Gibberellin and stem elongation",
+    );
+    expect(gibberellin?.body).toContain("functional enzyme");
+    expect(gibberellin?.body).toContain("non-functional enzyme");
+    const cross = asset.content.practice.find(
+      (question) => question.question.includes("Lele is crossed with a lele plant"),
+    );
+    expect(cross?.answer).toContain("1/2 Lele and 1/2 lele");
+    expect(cross?.mark_points.join(" ")).toContain("Reduced stem elongation");
+  });
+
 });
