@@ -246,6 +246,8 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(diagram).toContain("Chiasma between");
     expect(diagram).toContain("two recombinant");
     expect(diagram).toContain("orients randomly");
+    expect(diagram).toContain("two homologous pairs orient independently");
+    expect(diagram).toContain("Orientation B: the second homologous pair is reversed");
     expect(diagram).toContain("maternal and paternal chromosomes");
     expect(diagram).toContain("not to scale");
   });
