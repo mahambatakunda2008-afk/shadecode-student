@@ -112,6 +112,9 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
       expect(map).toContain(`| ${code} |`);
     }
     expect(map).toContain("2025–2027");
+    expect(map).toContain("Forward-version surveillance (checked 2026-11-01)");
+    expect(map).toContain("a separate 2028–2030 curriculum record");
+    expect(map).toContain("744622-2028-2030-syllabus.pdf");
     expect(map).toContain("Authentic, permission-cleared photomicrograph still required");
     expect(map).toContain("Do not invent UUIDs");
     expect(map).toContain("| 16.1.2 | Explain what is meant by homologous pairs of chromosomes.");
