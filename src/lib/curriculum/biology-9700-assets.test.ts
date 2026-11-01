@@ -174,6 +174,11 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(diagramTask?.instruction).toContain("In a separate key, identify lacI");
     expect(diagramTask?.instruction).toContain("not drawn as part of the operon");
     expect(diagramTask?.expected_features.join(" ")).toContain("regulatory gene encoding the repressor");
+    const lactoseExplanation = asset.content.sections.find(
+      (section) => section.heading === "The lac operon when lactose is present",
+    );
+    expect(lactoseExplanation?.body).toContain("more precise molecular inducer is allolactose");
+    expect(lactoseExplanation?.body).toContain("follow the wording of the question");
   });
 
   it("connects the meiosis-II branch to all four haploid products", () => {
