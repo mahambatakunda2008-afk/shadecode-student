@@ -3,7 +3,7 @@
 **Asset status:** Draft, teacher/editor review required.  
 **Syllabus boundary:** Cambridge International AS & A Level Biology 9700, 2025–2027, Topic 16 only.  
 **Purpose:** Original practice questions written to exercise syllabus knowledge and data-handling skills. These are **not** Cambridge past-paper questions and the mark guidance is not an official Cambridge mark scheme.  
-**Assessment length:** Five original questions, 38 marks.  
+**Assessment length:** Six original questions, 44 marks.  
 **Publication:** Do not import or publish until subject-editor approval, objective UUID reconciliation, accessibility review and source/version checks are complete.
 
 ---
@@ -142,6 +142,27 @@ A sample of 160 offspring gives the following results:
 **Interpretation check:** There are three phenotype categories, so degrees of freedom = 3 − 1 = 2 for this goodness-of-fit test. The result is consistent with the expected frequencies supplied in the question, but it does not prove the model is true.
 
 ---
+
+---
+
+## Question 6: Le/le alleles and gibberellin synthesis (6 marks)
+
+In a plant species, the **Le** allele codes for a functional enzyme involved in gibberellin synthesis. The **le** allele codes for a non-functional form of this enzyme. A heterozygous plant is crossed with a plant that is homozygous recessive.
+
+**(a)** State the gametes produced by each parent. (2)
+
+**(b)** Use a genetic diagram or clear working to determine the expected genotypes and proportions of the offspring. (2)
+
+**(c)** Explain why the homozygous recessive offspring are expected to show reduced stem elongation. (2)
+
+### Mark guidance
+
+- **(a)** Heterozygous parent produces Le and le gametes (1); homozygous recessive parent produces le gametes only (1).
+- **(b)** Correct cross, Lele × lele (1); expected offspring 1/2 Lele and 1/2 lele (1).
+- **(c)** lele plants produce the non-functional enzyme (1); reduced gibberellin synthesis through this pathway leads to reduced stem elongation (1).
+
+**Syllabus boundary:** This question assesses the Le/le enzyme and stem-elongation outcome. Do not confuse it with the separate gibberellin/DELLA gene-control mechanism in outcome 16.3.4.
+
 
 ## Assessment and review record
 
