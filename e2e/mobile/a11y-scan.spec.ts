@@ -19,7 +19,8 @@ test.beforeAll(() => fs.mkdirSync(OUT, { recursive: true }));
 test.afterAll(() => fs.writeFileSync(`${OUT}/a11y.json`, JSON.stringify(findings, null, 2)));
 test.skip(!fs.existsSync(AXE_PATH), "axe-core not available (the workflow downloads it before the run).");
 
-type AxeViolation = { id: string; impact: string; help: string; nodes: { target: string[]; html: string }[] };
+type AxeNode = { target: string[]; html: string; any?: { data?: { fgColor?: string; bgColor?: string; contrastRatio?: number; expectedContrastRatio?: string } }[] };
+type AxeViolation = { id: string; impact: string; help: string; nodes: AxeNode[] };
 type AxeWindow = { axe: { run: (ctx: unknown, opts: unknown) => Promise<{ violations: AxeViolation[] }> } };
 
 async function scan(page: Page, route: string) {
@@ -34,7 +35,15 @@ async function scan(page: Page, route: string) {
       });
       const rank: Record<string, number> = { critical: 0, serious: 1, moderate: 2, minor: 3 };
       return r.violations
-        .map((v) => ({ id: v.id, impact: v.impact, help: v.help.slice(0, 70), count: v.nodes.length, samples: v.nodes.slice(0, 2).map((n) => `${n.target.join(" ")} :: ${n.html}`.slice(0, 170)) }))
+        .map((v) => ({
+          id: v.id,
+          impact: v.impact,
+          help: v.help.slice(0, 70),
+          count: v.nodes.length,
+          samples: v.nodes.slice(0, 2).map((n) => `${n.target.join(" ")} :: ${n.html}`.slice(0, 170)),
+          // Colour-contrast: record the actual colours and ratio so the fix targets the real cause.
+          contrast: v.id === "color-contrast" ? v.nodes.slice(0, 8).map((n) => { const d = n.any?.[0]?.data; return `${d?.fgColor}/${d?.bgColor} ${d?.contrastRatio} (need ${d?.expectedContrastRatio}) ${n.html.replace(/\s+/g, " ").slice(0, 90)}`; }) : undefined,
+        }))
         .sort((a, b) => (rank[a.impact] ?? 9) - (rank[b.impact] ?? 9));
     });
     const targets = await page.evaluate(() => {
@@ -51,7 +60,7 @@ async function scan(page: Page, route: string) {
     });
     const byImpact: Record<string, number> = {};
     for (const v of violations) byImpact[v.impact] = (byImpact[v.impact] ?? 0) + v.count;
-    findings.push({ page: route, byImpact, top: violations.slice(0, 5), ...targets });
+    findings.push({ page: route, byImpact, top: violations.slice(0, 5).map((v) => (v.id === "color-contrast" ? v : { ...v, contrast: undefined })), ...targets });
   } catch (e) {
     findings.push({ page: route, error: String(e).slice(0, 200) });
   }
