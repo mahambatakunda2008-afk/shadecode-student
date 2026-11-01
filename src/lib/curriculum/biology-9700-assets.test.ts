@@ -206,6 +206,7 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
       "## Question 3: Gene control and experimental evaluation (7 marks)",
       "## Question 4: Test-cross design and inference (5 marks)",
       "## Question 5: Epistasis and chi-squared interpretation (8 marks)",
+      "## Question 6: Le/le alleles and gibberellin synthesis (6 marks)",
     ]) {
       expect(pack).toContain(heading);
     }
@@ -217,7 +218,10 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(pack).toContain("χ² = 36/90 + 36/30 + 0 = **1.6**");
     expect(pack).toContain("This ratio is supplied as context; candidates are not expected to memorise epistasis ratios.");
     expect(pack).toContain("The 9:3:4 model is supplied in the question and is not a ratio candidates are expected to memorise.");
-    expect(pack).toContain("Five original questions, 38 marks");
+    expect(pack).toContain("Six original questions, 44 marks");
+    expect(pack).toContain("Lele × lele");
+    expect(pack).toContain("1/2 Lele and 1/2 lele");
+    expect(pack).toContain("reduced stem elongation");
     expect(pack).toContain("Cambridge past-paper questions");
     expect(pack).toContain("Do not import or publish");
   });
