@@ -31,7 +31,8 @@
       "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved.",
       "Expanded Topic 16.3 assessment with operator and repressor mutation analysis, eukaryotic transcription-factor mutation, quantitative gibberellin/DELLA data interpretation, and a comparative causal-chain response. Questions are original draft exercises and require independent subject review.",
       "Added an experimental-reasoning section and a data-analysis visual task that distinguish measured growth from inferred molecular mechanism; includes percentage-change calculation and limits of inference.",
-      "Aligned the lac-operon diagram task with the actual schematic: lacI is now explicitly identified in a separate key because the figure shows the repressor protein and operon control regions, not the lacI DNA locus itself."
+      "Aligned the lac-operon diagram task with the actual schematic: lacI is now explicitly identified in a separate key because the figure shows the repressor protein and operon control regions, not the lacI DNA locus itself.",
+      "Added a syllabus-language note distinguishing the simplified term lactose from the more precise inducer allolactose, so learners can handle both exam wording and molecular accuracy."
     ]
   },
   "content": {
@@ -65,7 +66,7 @@
       },
       {
         "heading": "The lac operon when lactose is present",
-        "body": "Some lactose is converted to allolactose, which acts as the inducer. Allolactose binds to the repressor and changes its shape. The repressor can no longer bind to the operator. RNA polymerase can transcribe lacZ, lacY and lacA, and the corresponding proteins are produced. These proteins allow the bacterium to take up and metabolise lactose. The syllabus explanation can stop here; cAMP is not required."
+        "body": "Some lactose is converted to allolactose, which acts as the inducer. Allolactose binds to the repressor and changes its shape. The repressor can no longer bind to the operator. RNA polymerase can transcribe lacZ, lacY and lacA, and the corresponding proteins are produced. These proteins allow the bacterium to take up and metabolise lactose. The syllabus explanation can stop here; cAMP is not required. In syllabus-level explanations, the inducer may be described simply as lactose; the more precise molecular inducer is allolactose, which is formed from lactose. If a question specifies the term to use, follow the wording of the question while keeping the mechanism clear."
       },
       {
         "heading": "Transcription factors in eukaryotes",
