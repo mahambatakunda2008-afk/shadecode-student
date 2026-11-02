@@ -19,3 +19,8 @@ export function resolveCurriculumIngestionRunStatus(sourceStatus: string | null 
   if (sourceStatus === "partial" || (sourceStatus === "ok" && extractionSkipped > 0)) return "partial";
   return "failed";
 }
+
+/** A configured syllabus version is authoritative; disagreement must block ingestion. */
+export function hasCurriculumVersionConflict(configuredVersion: string | null | undefined, discoveredVersion: string | null | undefined): boolean {
+  return Boolean(configuredVersion && discoveredVersion && configuredVersion !== discoveredVersion);
+}
