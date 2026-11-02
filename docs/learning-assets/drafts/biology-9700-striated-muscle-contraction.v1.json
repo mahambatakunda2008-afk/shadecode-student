@@ -1,0 +1,181 @@
+{
+  "asset_key": "biology-9700-striated-muscle-contraction",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Striated muscle: neuromuscular junction and sliding filament model",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "15",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 15, pp. 40–41.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "15.1.10",
+      "15.1.11",
+      "15.1.12"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Describe how a neuromuscular junction stimulates a muscle action potential.",
+      "Explain the roles of T-tubules and sarcoplasmic reticulum.",
+      "Identify sarcomere structures in diagrams and electron micrographs.",
+      "Explain sliding filament contraction using troponin, tropomyosin, calcium ions and ATP."
+    ],
+    "sections": [
+      [
+        "Striated muscle organisation",
+        "A skeletal muscle contains bundles of muscle fibres. Each muscle fibre is a long multinucleate cell containing many myofibrils. Myofibrils consist of repeating sarcomeres arranged end to end. The regular arrangement of thick and thin filaments produces the striated appearance."
+      ],
+      [
+        "Sarcomere structure",
+        "A sarcomere extends from one Z line to the next. Thin actin filaments are anchored to Z lines and extend towards the centre. Thick myosin filaments lie centrally. The A band spans the length of the thick filaments; the I band contains thin filaments only; the H zone contains thick filaments only. The M line is at the centre of the sarcomere."
+      ],
+      [
+        "The neuromuscular junction",
+        "A motor neurone forms a specialised synapse with a skeletal muscle fibre. An action potential arriving at the motor neurone terminal causes acetylcholine release. Acetylcholine binds receptors on the motor end plate and depolarises the sarcolemma. If threshold is reached, a muscle action potential spreads along the sarcolemma."
+      ],
+      [
+        "T-tubules and sarcoplasmic reticulum",
+        "The sarcolemma forms transverse tubules (T-tubules) that carry the action potential deep into the muscle fibre. This triggers the sarcoplasmic reticulum, a specialised internal membrane system storing calcium ions, to release calcium ions into the sarcoplasm near the myofibrils."
+      ],
+      [
+        "Calcium exposes actin binding sites",
+        "Calcium ions bind to troponin on the thin filament. Troponin changes shape and moves tropomyosin away from the myosin-binding sites on actin. Myosin heads can then bind to actin to form cross-bridges."
+      ],
+      [
+        "Cross-bridge cycle and ATP",
+        "Energised myosin heads bind to exposed actin sites and pivot, pulling thin filaments towards the centre of the sarcomere. ATP binds to myosin, causing it to detach from actin. ATP hydrolysis provides energy to re-cock the myosin head. The cycle repeats while calcium ions and ATP are available."
+      ],
+      [
+        "Changes during contraction",
+        "Thin filaments slide further between thick filaments; the filaments themselves do not shorten. Z lines move closer together, the I band and H zone become narrower or may disappear, while the A band remains the same width. Many sarcomeres shorten together to shorten the muscle fibre."
+      ],
+      [
+        "Relaxation",
+        "When stimulation stops, calcium ions are actively transported back into the sarcoplasmic reticulum using ATP. Calcium dissociates from troponin, tropomyosin again covers the myosin-binding sites on actin, cross-bridge formation stops and the muscle fibre relaxes."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Define a sarcomere.",
+        "answer": "The region of a myofibril between two successive Z lines.",
+        "mark_points": [
+          "Between two Z lines"
+        ]
+      },
+      {
+        "question": "Name the protein forming the thick filament.",
+        "answer": "Myosin.",
+        "mark_points": [
+          "Myosin"
+        ]
+      },
+      {
+        "question": "Name the protein forming the thin filament.",
+        "answer": "Actin.",
+        "mark_points": [
+          "Actin"
+        ]
+      },
+      {
+        "question": "State what the A band represents.",
+        "answer": "The region spanning the full length of the thick myosin filaments, including areas where actin overlaps them.",
+        "mark_points": [
+          "Length of thick filaments"
+        ]
+      },
+      {
+        "question": "Describe the sequence from a motor neurone impulse to a muscle action potential.",
+        "answer": "The impulse reaches the motor neurone terminal, causing acetylcholine release. Acetylcholine binds receptors on the motor end plate, depolarising the sarcolemma; if threshold is reached, a muscle action potential is generated.",
+        "mark_points": [
+          "ACh released",
+          "Binds motor end plate receptors",
+          "Depolarisation",
+          "Muscle action potential"
+        ]
+      },
+      {
+        "question": "Explain the role of T-tubules.",
+        "answer": "They conduct the action potential from the sarcolemma into the interior of the muscle fibre, allowing the signal to reach the sarcoplasmic reticulum throughout the fibre.",
+        "mark_points": [
+          "Invaginations of sarcolemma",
+          "Carry action potential deep into fibre"
+        ]
+      },
+      {
+        "question": "Explain how calcium ions initiate contraction.",
+        "answer": "Calcium ions released from the sarcoplasmic reticulum bind to troponin. Troponin changes shape and moves tropomyosin, exposing myosin-binding sites on actin.",
+        "mark_points": [
+          "Ca2+ released from SR",
+          "Binds troponin",
+          "Tropomyosin moves",
+          "Actin sites exposed"
+        ]
+      },
+      {
+        "question": "Explain why ATP is needed for the cross-bridge cycle.",
+        "answer": "ATP binding causes myosin to detach from actin. Hydrolysis of ATP supplies energy to re-cock the myosin head for another power stroke.",
+        "mark_points": [
+          "ATP causes detachment",
+          "Hydrolysis re-cocks myosin"
+        ]
+      },
+      {
+        "question": "State two changes in a sarcomere during contraction and one region that stays the same width.",
+        "answer": "Z lines move closer together and the I band and H zone narrow; the A band remains the same width.",
+        "mark_points": [
+          "Z lines closer/I band narrows/H zone narrows",
+          "A band unchanged"
+        ]
+      },
+      {
+        "question": "A muscle is deprived of ATP. Predict the effect on cross-bridges.",
+        "answer": "Myosin heads cannot detach efficiently from actin without ATP, so cross-bridges remain attached and the muscle cannot complete normal relaxation.",
+        "mark_points": [
+          "ATP required for detachment",
+          "Cross-bridges remain attached"
+        ]
+      },
+      {
+        "question": "Describe how a muscle fibre relaxes after stimulation stops.",
+        "answer": "Calcium ions are actively pumped back into the sarcoplasmic reticulum using ATP. Calcium leaves troponin, tropomyosin covers actin binding sites and cross-bridge cycling stops.",
+        "mark_points": [
+          "Ca2+ pumped into SR",
+          "Ca2+ leaves troponin",
+          "Tropomyosin covers binding sites"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/neuromuscular-junction.svg",
+        "role": "Neuromuscular junction and excitation pathway"
+      },
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/sarcomere-structure.svg",
+        "role": "Sarcomere bands and filament arrangement"
+      },
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/sliding-filament-cycle.svg",
+        "role": "Sliding filament cross-bridge cycle"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions are original learning checks, not official Cambridge questions or mark schemes.",
+      "All diagrams are explanatory schematics; they are not authentic electron micrographs."
+    ]
+  }
+}
