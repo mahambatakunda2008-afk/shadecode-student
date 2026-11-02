@@ -1,0 +1,337 @@
+{
+  "asset_key": "biology-9700-cellular-respiration",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Cellular respiration: pathways, mitochondria and practical investigations",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "12",
+    "status": "draft",
+    "source_reference": "Cambridge 9700 syllabus 2028-2030, Topic 12.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "12.2.1",
+      "12.2.2",
+      "12.2.3",
+      "12.2.4",
+      "12.2.5",
+      "12.2.6",
+      "12.2.7",
+      "12.2.8",
+      "12.2.9",
+      "12.2.10",
+      "12.2.11",
+      "12.2.12",
+      "12.2.13",
+      "12.2.14"
+    ]
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft requiring subject-editor and practical review.",
+      "Questions are original learning checks, not official Cambridge questions or mark schemes.",
+      "SVGs are explanatory schematics, not authentic electron micrographs or evidence of completed practical work."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Describe the four stages of aerobic respiration and their locations.",
+      "Explain mitochondrial structure, chemiosmosis and aerobic versus anaerobic respiration.",
+      "Explain rice adaptations and design yeast/respirometer investigations."
+    ],
+    "sections": [
+      {
+        "heading": "Locations",
+        "body": "Glycolysis occurs in the cytoplasm; the link reaction and Krebs cycle occur in the mitochondrial matrix; oxidative phosphorylation occurs on the inner mitochondrial membrane."
+      },
+      {
+        "heading": "Glycolysis",
+        "body": "Glucose is phosphorylated to fructose 1,6-bisphosphate (6C), which splits into two triose phosphate molecules (3C). These are oxidised to pyruvate (3C), producing ATP and reduced NAD. Net gain is two ATP per glucose."
+      },
+      {
+        "heading": "Link reaction",
+        "body": "Pyruvate enters the mitochondrial matrix when oxygen is available. It is decarboxylated, releasing CO2, and dehydrogenated, reducing NAD. The remaining 2C acetyl group combines with coenzyme A."
+      },
+      {
+        "heading": "Krebs cycle",
+        "body": "A 2C acetyl group combines with 4C oxaloacetate to form 6C citrate. Citrate is converted through small steps, regenerating oxaloacetate. Decarboxylation releases CO2 and dehydrogenation reduces NAD and FAD; ATP or an equivalent nucleotide is also formed."
+      },
+      {
+        "heading": "NAD and FAD",
+        "body": "Decarboxylation removes a carboxyl group as CO2. Dehydrogenation removes hydrogen from a substrate. NAD and FAD accept hydrogen/electrons, become reduced and transfer them to carriers in the inner mitochondrial membrane."
+      },
+      {
+        "heading": "Mitochondrial structure",
+        "body": "The outer membrane encloses the organelle. The folded inner membrane forms cristae, increasing surface area for electron-transfer carriers and ATP synthase. The intermembrane space allows protons to accumulate. The matrix contains enzymes for the link reaction and Krebs cycle."
+      },
+      {
+        "heading": "Oxidative phosphorylation",
+        "body": "Reduced NAD and FAD deliver hydrogen to inner-membrane carriers. Hydrogen separates into protons and electrons. Electrons pass along the electron transport chain and release energy, which pumps protons from the matrix into the intermembrane space. Protons diffuse back through ATP synthase, driving ATP formation. Oxygen is the final electron acceptor and forms water."
+      },
+      {
+        "heading": "Mammalian anaerobic respiration",
+        "body": "In mammalian cells pyruvate is reduced to lactate. Reduced NAD is oxidised back to NAD so glycolysis can continue. This pathway does not release CO2."
+      },
+      {
+        "heading": "Yeast fermentation",
+        "body": "In yeast pyruvate is decarboxylated to ethanal and CO2. Ethanal is reduced to ethanol using hydrogen from reduced NAD, which is oxidised back to NAD."
+      },
+      {
+        "heading": "Energy yield",
+        "body": "Anaerobic pathways produce ATP only through glycolysis. Aerobic respiration also oxidises pyruvate-derived acetyl groups through the link reaction and Krebs cycle; reduced coenzymes supply electrons for oxidative phosphorylation. Detailed total ATP yield is not required."
+      },
+      {
+        "heading": "Rice adaptations",
+        "body": "Aerenchyma air spaces transport oxygen internally towards submerged roots. Root cells can use ethanol fermentation when oxygen is scarce. Faster stem growth helps shoots remain above floodwater. Fermentation is less energy-efficient."
+      },
+      {
+        "heading": "Yeast redox indicators",
+        "body": "DCPIP and methylene blue are artificial electron acceptors. Their oxidised forms are coloured; reduction causes loss of colour. Time to a defined endpoint or absorbance change indirectly indicates respiration rate."
+      },
+      {
+        "heading": "Yeast investigations",
+        "body": "For temperature, equilibrate identical yeast, substrate and indicator mixtures at different water-bath temperatures. For substrate concentration, vary only substrate concentration. Control yeast mass, pH, total volume and indicator concentration; repeat and measure decolourisation time or absorbance."
+      },
+      {
+        "heading": "Respirometer temperature investigation",
+        "body": "Place known quantities of respiring material in a sealed chamber with separated CO2 absorbent. Equilibrate at a set water-bath temperature and measure capillary movement over a fixed time. Repeat at other temperatures with equivalent material and a control."
+      }
+    ],
+    "questions": [
+      {
+        "question": "State the locations of the four stages of aerobic respiration.",
+        "answer": "Glycolysis: cytoplasm; link reaction: matrix; Krebs cycle: matrix; oxidative phosphorylation: inner mitochondrial membrane.",
+        "mark_points": [
+          "Cytoplasm",
+          "Matrix",
+          "Matrix",
+          "Inner membrane"
+        ]
+      },
+      {
+        "question": "Outline glycolysis.",
+        "answer": "Glucose is phosphorylated to fructose 1,6-bisphosphate, which splits into two triose phosphate molecules. These are oxidised to pyruvate, producing ATP and reduced NAD.",
+        "mark_points": [
+          "Phosphorylation",
+          "6C compound splits",
+          "Two 3C triose phosphates",
+          "Oxidation to pyruvate",
+          "ATP and reduced NAD"
+        ]
+      },
+      {
+        "question": "State the net ATP gain from glycolysis per glucose.",
+        "answer": "Two ATP molecules net.",
+        "mark_points": [
+          "2 ATP net"
+        ]
+      },
+      {
+        "question": "Describe the link reaction.",
+        "answer": "Pyruvate is decarboxylated, releasing CO2, and dehydrogenated, reducing NAD. The remaining 2C acetyl group combines with coenzyme A.",
+        "mark_points": [
+          "CO2 released",
+          "NAD reduced",
+          "2C acetyl group",
+          "Coenzyme A"
+        ]
+      },
+      {
+        "question": "Explain citrate formation in the Krebs cycle.",
+        "answer": "A 2C acetyl group combines with 4C oxaloacetate to form 6C citrate. A series of reactions regenerates oxaloacetate.",
+        "mark_points": [
+          "2C acetyl",
+          "4C oxaloacetate",
+          "6C citrate",
+          "Oxaloacetate regenerated"
+        ]
+      },
+      {
+        "question": "Define decarboxylation and dehydrogenation.",
+        "answer": "Decarboxylation removes a carboxyl group as CO2. Dehydrogenation removes hydrogen from a substrate.",
+        "mark_points": [
+          "CO2 removed",
+          "Hydrogen removed"
+        ]
+      },
+      {
+        "question": "Explain the function of cristae.",
+        "answer": "Cristae increase inner-membrane surface area for electron-transfer carriers and ATP synthase, supporting oxidative phosphorylation.",
+        "mark_points": [
+          "Increased surface area",
+          "Electron carriers and ATP synthase",
+          "Oxidative phosphorylation"
+        ]
+      },
+      {
+        "question": "Explain how the electron transport chain establishes a proton gradient.",
+        "answer": "Electrons pass along inner-membrane carriers and release energy. This energy pumps protons from the matrix into the intermembrane space.",
+        "mark_points": [
+          "Electron transfer",
+          "Energy released",
+          "Protons pumped out of matrix",
+          "Gradient established"
+        ]
+      },
+      {
+        "question": "Explain how chemiosmosis produces ATP.",
+        "answer": "Protons diffuse down their electrochemical gradient through ATP synthase into the matrix. Energy released drives phosphorylation of ADP using inorganic phosphate.",
+        "mark_points": [
+          "Down gradient",
+          "Through ATP synthase",
+          "ADP + Pi to ATP"
+        ]
+      },
+      {
+        "question": "State the role of oxygen in oxidative phosphorylation.",
+        "answer": "Oxygen is the final electron acceptor and combines with electrons and protons to form water.",
+        "mark_points": [
+          "Final electron acceptor",
+          "Electrons and protons",
+          "Water"
+        ]
+      },
+      {
+        "question": "Describe anaerobic respiration in mammalian cells.",
+        "answer": "Pyruvate is reduced to lactate, oxidising reduced NAD back to NAD so glycolysis can continue.",
+        "mark_points": [
+          "Pyruvate to lactate",
+          "NAD regenerated",
+          "Glycolysis continues"
+        ]
+      },
+      {
+        "question": "Describe ethanol fermentation in yeast.",
+        "answer": "Pyruvate is decarboxylated to ethanal and CO2. Ethanal is reduced to ethanol using reduced NAD, which is oxidised back to NAD.",
+        "mark_points": [
+          "Ethanal and CO2 formed",
+          "Ethanal reduced to ethanol",
+          "NAD regenerated"
+        ]
+      },
+      {
+        "question": "Why is ATP yield lower in anaerobic conditions?",
+        "answer": "Only glycolysis produces ATP. Aerobic respiration also uses the link reaction, Krebs cycle and oxidative phosphorylation.",
+        "mark_points": [
+          "Glycolysis only",
+          "No oxidative phosphorylation",
+          "Aerobic includes further oxidation"
+        ]
+      },
+      {
+        "question": "Explain how aerenchyma helps rice roots.",
+        "answer": "Air spaces in aerenchyma allow oxygen to move internally from aerial parts towards submerged roots.",
+        "mark_points": [
+          "Air spaces",
+          "Internal oxygen transport"
+        ]
+      },
+      {
+        "question": "How do DCPIP and methylene blue indicate yeast respiration?",
+        "answer": "The oxidised indicators are coloured and accept electrons. Reduction causes loss of colour, so time to a defined endpoint indirectly indicates respiration rate.",
+        "mark_points": [
+          "Coloured oxidised form",
+          "Accept electrons",
+          "Reduction causes colour loss",
+          "Endpoint time estimates rate"
+        ]
+      },
+      {
+        "question": "Outline a temperature investigation using a yeast redox indicator.",
+        "answer": "Use equal yeast, substrate and indicator volumes in identical tubes at different water-bath temperatures. Record decolourisation time, control pH and concentrations, and repeat.",
+        "mark_points": [
+          "Different temperatures",
+          "Equal mixtures",
+          "Measure endpoint time",
+          "Control variables",
+          "Repeat"
+        ]
+      },
+      {
+        "question": "How could substrate concentration be tested with yeast and DCPIP?",
+        "answer": "Vary substrate concentration while keeping yeast concentration, temperature, pH, total volume and indicator concentration constant; measure decolourisation time or absorbance.",
+        "mark_points": [
+          "Vary substrate only",
+          "Control other variables",
+          "Measure endpoint/absorbance"
+        ]
+      },
+      {
+        "question": "Outline a respirometer experiment comparing temperature.",
+        "answer": "Use equal masses of respiring material in sealed apparatus with separated CO2 absorbent. Equilibrate at set temperatures and measure capillary movement over equal times; correct with a control.",
+        "mark_points": [
+          "Equal material",
+          "CO2 absorbent separated",
+          "Equilibrate temperatures",
+          "Measure movement/time",
+          "Control"
+        ]
+      },
+      {
+        "question": "Why does high temperature eventually reduce respiration rate?",
+        "answer": "Above the optimum, enzymes lose their functional shape, reducing formation of enzyme-substrate complexes and lowering rate.",
+        "mark_points": [
+          "Above optimum",
+          "Enzyme structure altered",
+          "Fewer complexes",
+          "Rate falls"
+        ]
+      },
+      {
+        "question": "Compare anaerobic end products in mammals and yeast.",
+        "answer": "Mammalian cells produce lactate without CO2 in this pathway; yeast produces ethanol and CO2.",
+        "mark_points": [
+          "Mammals: lactate",
+          "Yeast: ethanol and CO2"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/mitochondrion-structure.svg",
+        "role": "Original explanatory schematic for Topic 12"
+      },
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/aerobic-respiration-overview.svg",
+        "role": "Original explanatory schematic for Topic 12"
+      },
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/glycolysis-carbon-flow.svg",
+        "role": "Original explanatory schematic for Topic 12"
+      },
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/link-krebs-cycle.svg",
+        "role": "Original explanatory schematic for Topic 12"
+      },
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/oxidative-phosphorylation.svg",
+        "role": "Original explanatory schematic for Topic 12"
+      },
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/anaerobic-pathways.svg",
+        "role": "Original explanatory schematic for Topic 12"
+      },
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/rice-flood-adaptations.svg",
+        "role": "Original explanatory schematic for Topic 12"
+      },
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/yeast-redox-practical.svg",
+        "role": "Original explanatory schematic for Topic 12"
+      },
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/temperature-respirometer.svg",
+        "role": "Original explanatory schematic for Topic 12"
+      }
+    ]
+  }
+}
