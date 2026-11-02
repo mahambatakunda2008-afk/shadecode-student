@@ -82,8 +82,8 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
       "Genetic technology",
     ];
     const syllabusText = headings.map((heading, index) =>
-      `${index + 1} ${heading}\\nStudents should understand the key concepts and apply them.`
-    ).join("\\n\\n");
+      `${index + 1} ${heading}\nStudents should understand the key concepts and apply them.`
+    ).join("\n\n");
     const items = extractCurriculumKnowledge(
       syllabusText,
       {
@@ -113,7 +113,7 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
   it("does not promote numbered Biology syllabus content lines into objective records", async () => {
     const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
     const items = extractCurriculumKnowledge(
-      "1 Cell structure\\n1.1 Describe the structure of a typical prokaryotic cell.\\n1.2 Explain the role of organelles.",
+      "1 Cell structure\n1.1 Describe the structure of a typical prokaryotic cell.\n1.2 Explain the role of organelles.",
       {
         boardId: "cambridge",
         qualificationId: "cambridge-as-a-level",
