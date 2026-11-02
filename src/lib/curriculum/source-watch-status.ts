@@ -19,3 +19,46 @@ export function resolveCurriculumIngestionRunStatus(sourceStatus: string | null 
   if (sourceStatus === "partial" || (sourceStatus === "ok" && extractionSkipped > 0)) return "partial";
   return "failed";
 }
+
+
+export interface WatchedSyllabusVersion {
+  version: string | null;
+  source: "document" | "registry" | "unresolved";
+  confidence: string;
+  evidence: string[];
+}
+
+/**
+ * Keep the version discovered inside the official PDF separate from the
+ * registry's expected version. Ingestion needs both values to detect a
+ * mismatch and fail closed instead of silently labelling a new PDF as old.
+ */
+export function resolveWatchedSyllabusVersion(input: {
+  configuredVersion?: string | null;
+  discoveredVersion?: string | null;
+  discoveryConfidence?: string | null;
+  discoveryEvidence?: string[];
+}): WatchedSyllabusVersion {
+  if (input.discoveredVersion) {
+    return {
+      version: input.discoveredVersion,
+      source: "document",
+      confidence: input.discoveryConfidence ?? "unknown",
+      evidence: input.discoveryEvidence ?? [],
+    };
+  }
+  if (input.configuredVersion) {
+    return {
+      version: input.configuredVersion,
+      source: "registry",
+      confidence: "high",
+      evidence: ["Source registry explicitly configured this syllabus version."],
+    };
+  }
+  return {
+    version: null,
+    source: "unresolved",
+    confidence: input.discoveryConfidence ?? "unresolved",
+    evidence: input.discoveryEvidence ?? [],
+  };
+}
