@@ -3,7 +3,7 @@ import { PDFParse } from "pdf-parse";
 import { CURRICULUM_SOURCE_WATCHES } from "../src/lib/curriculum/source-watch.ts";
 import { discoverSyllabusVersion } from "../src/lib/curriculum/version-discovery.ts";
 import { fingerprintExtractedText, fingerprintPdfBytes } from "../src/lib/curriculum/source-fingerprint.ts";
-import { summarizeCurriculumWatchStatus } from "../src/lib/curriculum/source-watch-status.ts";
+import { resolveWatchedSyllabusVersion, summarizeCurriculumWatchStatus } from "../src/lib/curriculum/source-watch-status.ts";
 
 const outputDir = ".curriculum-watch";
 const snapshotDir = `${outputDir}/documents`;
@@ -118,7 +118,12 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
         await writeFile(sourceFile, sourcePdf.bytes);
         if (text) await writeFile(snapshotFile, text, "utf8");
 
-        const effectiveVersion = source.syllabusVersion ?? discovery.version ?? null;
+        const resolvedVersion = resolveWatchedSyllabusVersion({
+          configuredVersion: source.syllabusVersion,
+          discoveredVersion: discovery.version,
+          discoveryConfidence: discovery.confidence,
+          discoveryEvidence: discovery.evidence,
+        });
         if (!sourceResult.versionDiscovery && discovery.version) {
           sourceResult.versionDiscovery = {
             version: discovery.version,
@@ -131,10 +136,10 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
           url: sourcePdf.url,
           requestedUrl: documentUrl,
           title: sourcePdf.url.split("/").pop() ?? sourcePdf.url,
-          syllabusVersion: effectiveVersion,
-          syllabusVersionSource: source.syllabusVersion ? "registry" : discovery.version ? "document" : "unresolved",
-          syllabusVersionConfidence: source.syllabusVersion ? "high" : discovery.confidence,
-          syllabusVersionEvidence: source.syllabusVersion ? ["Source registry explicitly configured this syllabus version."] : discovery.evidence,
+          syllabusVersion: resolvedVersion.version,
+          syllabusVersionSource: resolvedVersion.source,
+          syllabusVersionConfidence: resolvedVersion.confidence,
+          syllabusVersionEvidence: resolvedVersion.evidence,
           contentHash,
           sourceBytesPath: sourceFile,
           extractionHash,
