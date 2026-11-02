@@ -1,101 +1,48 @@
 // src/app/results/[id]/page.tsx
-import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
-import ExamShareCard, { ExamResult } from '@/components/ExamShareCard'
-import Link from 'next/link'
-import { BrandMark } from '@/components/brand/BrandMark'
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { BrandMark } from "@/components/brand/BrandMark";
+import { PublicResultCard } from "@/components/share/PublicResultCard";
+import { getPublicResult } from "@/lib/share/getPublicResult";
+import { resultDescription, resultTitle } from "@/lib/share/publicResult";
 
 interface Props {
-  params: Promise<{ id: string }>
-}
-
-async function getResult(id: string): Promise<ExamResult | null> {
-  const supabase = await createSupabaseServerClient()
-  const { data, error } = await supabase
-    .from('exam_results')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error || !data) return null
-  return data as ExamResult
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params
-  const result = await getResult(id)
+  const { id } = await params;
+  const result = await getPublicResult(id);
+  if (!result) return { title: "Result not found — Shadecode Student", robots: { index: false, follow: false } };
 
-  if (!result) {
-    return { title: 'Result not found — Shadecode Student' }
-  }
-
-  const pct = Math.round((result.score / result.total) * 100)
-  const name = result.user_name ? `${result.user_name} scored` : 'Someone scored'
-
+  const title = `${resultTitle(result)} — Shadecode Student`;
+  const description = resultDescription(result);
   return {
-    title: `${name} ${pct}% on ${result.subject} ${result.difficulty} — Shadecode Student`,
-    description: `${result.score}/${result.total} · Grade ${result.grade} · ${result.difficulty} · Can you beat this?`,
-    openGraph: {
-      title: `${pct}% on ${result.subject} ${result.difficulty} 🔥`,
-      description: `Grade ${result.grade} · ${result.score}/${result.total} questions correct. Challenge them on Shadecode Student.`,
-      url: `https://shadecodestudent.vercel.app/results/${id}`,
-      siteName: 'Shadecode Student',
-      images: [
-        {
-          url: `https://shadecodestudent.vercel.app/results/${id}/opengraph-image`,
-          width: 1200,
-          height: 630,
-          alt: `${result.subject} exam result`,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${pct}% on ${result.subject} ${result.difficulty}`,
-      description: `Grade ${result.grade} on Shadecode Student. Can you beat it?`,
-    },
-  }
+    title,
+    description,
+    // Unlisted by design: reachable by link, never indexed.
+    robots: { index: false, follow: false },
+    openGraph: { title, description, url: `/results/${id}`, siteName: "Shadecode Student", type: "website" },
+    twitter: { card: "summary_large_image", title, description },
+  };
 }
 
 export default async function ResultPage({ params }: Props) {
-  const { id } = await params
-  const result = await getResult(id)
-
-  if (!result) notFound()
+  const { id } = await params;
+  const result = await getPublicResult(id);
+  if (!result) notFound();
 
   return (
-    <main className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center px-4 py-12">
-      {/* Brand header */}
-      <Link
-        href="/"
-        className="flex items-center gap-2 mb-10 text-[#67E8F9] hover:text-[#22D3EE] transition-colors"
-      >
-        <BrandMark className="h-6 w-6 text-[#22D3EE]" aria-hidden="true" />
-        <span className="text-xl font-bold tracking-tight">Shadecode Student</span>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-[var(--background)] px-4 py-12">
+      <Link href="/" className="mb-8 flex items-center gap-2 text-[var(--foreground)]">
+        <BrandMark className="h-6 w-6" aria-hidden="true" />
+        <span className="text-lg font-bold tracking-tight">Shadecode Student</span>
       </Link>
-
-      {/* Eyebrow */}
-      <p className="text-sm text-slate-500 mb-6 text-center">
-        {result.user_name
-          ? <><span className="text-slate-300 font-medium">{result.user_name}</span> just completed an exam</>
-          : 'Exam result'}
-      </p>
-
-      {/* The card */}
-      <ExamShareCard
-        result={result}
-        shareUrl={`/results/${id}`}
-        showSignupCta
-      />
-
-      {/* Footer nudge */}
-      <p className="mt-8 text-xs text-slate-600 text-center max-w-xs">
-        Free AI-powered exam practice across 14 subjects.{' '}
-        <Link href="/auth/signup" className="text-[#67E8F9] hover:text-[#22D3EE]">
-          Start studying →
-        </Link>
+      <PublicResultCard result={result} sharePath={`/results/${id}`} />
+      <p className="mt-8 max-w-xs text-center text-xs text-[var(--muted-foreground)]">
+        Free exam practice with instant marking. Your own results stay private unless you share the link.
       </p>
     </main>
-  )
+  );
 }

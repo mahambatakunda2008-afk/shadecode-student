@@ -1,6 +1,7 @@
 // src/app/results/[id]/opengraph-image.tsx
 import { ImageResponse } from 'next/og'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getPublicResult } from '@/lib/share/getPublicResult'
+import { GRADE_HEX } from '@/lib/share/publicResult'
 import { OgBrandMark } from '@/lib/og/OgBrandMark'
 
 // Node.js runtime (Edge runtime is deprecated in Next.js 16)
@@ -9,27 +10,14 @@ export const alt = 'Shadecode Student Exam Result'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-const GRADE_COLORS: Record<string, string> = {
-  'A+': '#34d399',
-  'A':  '#34d399',
-  'B':  '#60a5fa',
-  'C':  '#facc15',
-  'D':  '#fb923c',
-  'F':  '#f87171',
-}
-
 export default async function OGImage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   try {
-    const supabase = await createSupabaseServerClient()
-    const { data: result } = await supabase
-      .from('exam_results')
-      .select('*')
-      .eq('id', params.id)
-      .single()
+    const { id } = await params
+    const result = await getPublicResult(id)
 
     if (!result) {
       return new ImageResponse(
@@ -52,8 +40,8 @@ export default async function OGImage({
       )
     }
 
-    const pct = Math.round((result.score / result.total) * 100)
-    const gradeColor = GRADE_COLORS[result.grade] ?? '#94a3b8'
+    const pct = result.percentage
+    const gradeColor = GRADE_HEX[result.grade] ?? '#94a3b8'
 
     return new ImageResponse(
       <div
@@ -110,13 +98,6 @@ export default async function OGImage({
                 {result.topic}
               </span>
             )}
-
-            {result.user_name && (
-              <span style={{ color: '#64748b', fontSize: 20 }}>
-                by{' '}
-                <span style={{ color: '#94a3b8', fontWeight: 600 }}>{result.user_name}</span>
-              </span>
-            )}
           </div>
 
           {/* Right — grade + score */}
@@ -125,10 +106,10 @@ export default async function OGImage({
               {result.grade}
             </span>
             <span style={{ color: '#f8fafc', fontSize: 40, fontWeight: 700, marginTop: -8 }}>
-              {result.score}/{result.total}
+              {result.correct}/{result.total}
             </span>
             <span style={{ color: '#64748b', fontSize: 24, marginTop: 8 }}>
-              {pct}% · +{result.xp_earned} XP
+              {pct}% correct
             </span>
           </div>
         </div>
