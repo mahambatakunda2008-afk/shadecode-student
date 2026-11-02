@@ -65,7 +65,7 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
       "Biological molecules",
       "Enzymes",
       "Cell membranes and transport",
-      "Mitosis",
+      "The mitotic cell cycle",
       "Nucleic acids and protein synthesis",
       "Transport in plants",
       "Transport in mammals",
