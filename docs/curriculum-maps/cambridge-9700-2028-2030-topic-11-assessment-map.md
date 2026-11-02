@@ -21,9 +21,9 @@
 
 ## Draft asset inventory
 
-- `biology-9700-immune-system.v1.json`: 10 teaching sections, 14 original questions with answers and indicative mark points, 2 original SVG diagrams.
+- `biology-9700-immune-system.v1.json`: 10 teaching sections, 15 original questions with answers and indicative mark points, 2 original SVG diagrams.
 - `biology-9700-antibodies-vaccination.v1.json`: 10 teaching sections, 16 original questions with answers and indicative mark points, 4 original SVG diagrams.
-- Total: 20 teaching sections, 30 original questions, 6 original SVG diagrams.
+- Total: 20 teaching sections, 31 original questions, 6 original SVG diagrams.
 
 ## Scope notes
 
