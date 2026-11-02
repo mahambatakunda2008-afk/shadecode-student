@@ -49,7 +49,7 @@ interface HeadingInfo {
 
 function headingInfo(line: string): HeadingInfo | null {
   const cleaned = line.replace(/^#+\s*/, "").trim();
-  const match = cleaned.match(/^(?:(\d+(?:\.\d+)*?)[.)]?\s+)?([A-Za-z][A-Za-z /&'_-]{2,100})\s*:?$/);
+  const match = cleaned.match(/^(?:(\d+(?:\.\d+)*?)[.)]?\s+)?([A-Za-z][A-Za-z ,/&'_-]{2,100})\s*:?$/);
   if (!match) return null;
   const level = match[1] ? match[1].split(".").length : 1;
   return { normalized: normalizeHeading(match[2]), level, raw: cleaned };
