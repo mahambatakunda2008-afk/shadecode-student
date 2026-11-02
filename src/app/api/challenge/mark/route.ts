@@ -7,6 +7,7 @@ import { sanitizeQuestions } from '@/lib/challenge/questions'
 import { markAgainstKey, type KeyEntry } from '@/lib/challenge/serverMarking'
 import { didWin } from '@/lib/challenge/attempt'
 import { gradeForPercentage } from '@/lib/challenge/fromResult'
+import { recordBattleAttempt } from '@/lib/challenge/recordAttempt'
 import { signalsFromMarkedPaper } from '@/lib/learning/signals'
 import { recordSignalsServer } from '@/lib/learning/server'
 import type { ExamAnswer } from '@/lib/exam/types'
@@ -71,19 +72,19 @@ export async function POST(request: NextRequest) {
     // The challenger practising their own paper is marked but never recorded as a battle.
     if (user.id !== challenge.challenger_id) {
       const { data: profile } = await supabase.from('profiles').select('username, display_name').eq('id', user.id).maybeSingle()
-      const { error } = await supabase.from('challenge_attempts').insert({
-        challenge_id: challengeId,
-        user_id: user.id,
-        user_name: profile?.username ?? profile?.display_name ?? 'A student',
+      const saved = await recordBattleAttempt(admin, {
+        challengeId,
+        userId: user.id,
+        userName: profile?.username ?? profile?.display_name ?? 'A student',
         percentage,
-        total_score: Math.round(marked.totalScore),
-        max_score: Math.round(marked.maxScore),
-        time_taken: timeTaken,
+        totalScore: Math.round(marked.totalScore),
+        maxScore: Math.round(marked.maxScore),
+        timeTaken,
         grade: gradeForPercentage(percentage),
         won,
         verified: true,
       })
-      if (error) console.error('[challenge/mark insert]', error)
+      if (!saved.ok) console.error('[challenge/mark] attempt not recorded')
     }
 
     // Learning loop: each question's outcome, with the key's generator id and any diagnosed mistake.

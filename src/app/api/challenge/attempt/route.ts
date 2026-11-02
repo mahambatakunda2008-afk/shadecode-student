@@ -5,6 +5,8 @@ import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { didWin, validateAttempt } from '@/lib/challenge/attempt'
 import { gradeForPercentage } from '@/lib/challenge/fromResult'
 import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { recordBattleAttempt } from '@/lib/challenge/recordAttempt'
 
 export const dynamic = "force-dynamic";
 
@@ -44,21 +46,21 @@ export async function POST(request: NextRequest) {
 
     const won = didWin(attempt.percentage, Number(challenge.percentage))
 
-    const { error } = await supabase
-      .from('challenge_attempts')
-      .insert({
-        challenge_id: attempt.challengeId,
-        user_id:     user.id,
-        user_name,
-        percentage:  attempt.percentage,
-        total_score: attempt.totalScore,
-        max_score:   attempt.maxScore,
-        time_taken:  attempt.timeTaken ?? 0,
-        grade:       attempt.grade ?? gradeForPercentage(attempt.percentage),
-        won,
-      })
+    // Self-reported papers are recorded unverified; only the service role may write attempts.
+    const saved = await recordBattleAttempt(createSupabaseAdminClient(), {
+      challengeId: attempt.challengeId,
+      userId: user.id,
+      userName: user_name,
+      percentage: attempt.percentage,
+      totalScore: attempt.totalScore,
+      maxScore: attempt.maxScore,
+      timeTaken: attempt.timeTaken ?? 0,
+      grade: attempt.grade ?? gradeForPercentage(attempt.percentage),
+      won,
+      verified: false,
+    })
 
-    if (error) console.error('[challenge/attempt POST]', error)
+    if (!saved.ok) console.error('[challenge/attempt POST] attempt not recorded')
     // Non-fatal — return result regardless
     return NextResponse.json({ won })
   } catch (err) {

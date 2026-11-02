@@ -13,6 +13,15 @@ export function normaliseMarking(value: unknown): MarkingMode {
   return value === "server" ? "server" : "client";
 }
 
+/**
+ * A challenger can insert their own `challenge_questions` row, so the `marking`
+ * column alone proves nothing. A battle is server-marked only if the private
+ * answer key (service-role only) also exists.
+ */
+export function resolveMarking(marking: unknown, hasAnswerKey: boolean): MarkingMode {
+  return normaliseMarking(marking) === "server" && hasAnswerKey ? "server" : "client";
+}
+
 export interface BattleTrust {
   attemptVerified: boolean;
   badge: string;

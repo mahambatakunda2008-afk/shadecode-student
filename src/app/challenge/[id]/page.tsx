@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { BrandMark } from '@/components/brand/BrandMark'
 import AcceptChallengeLink from '@/components/challenge/AcceptChallengeLink'
 import { challengeAcceptUrl } from '@/lib/challenge/pending'
-import { battleTrust, normaliseMarking } from '@/lib/challenge/verification'
+import { battleTrust, resolveMarking } from '@/lib/challenge/verification'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { ShieldCheck } from 'lucide-react'
 
 interface Challenge {
@@ -42,7 +43,12 @@ async function getChallenge(id: string): Promise<Challenge | null> {
 async function getMarking(id: string) {
   const supabase = await createSupabaseServerClient()
   const { data } = await supabase.from('challenge_questions').select('marking').eq('challenge_id', id).maybeSingle()
-  return normaliseMarking(data?.marking)
+  // The key table is service-role only; its existence is what makes "server" marking real.
+  const admin = createSupabaseAdminClient()
+  const { data: key } = data?.marking === 'server' && admin
+    ? await admin.from('challenge_answer_keys').select('challenge_id').eq('challenge_id', id).maybeSingle()
+    : { data: null }
+  return resolveMarking(data?.marking, Boolean(key))
 }
 
 const GRADE_COLORS: Record<string, string> = {
