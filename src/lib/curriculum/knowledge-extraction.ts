@@ -105,11 +105,14 @@ function extractSectionBlocks(
   const flush = (endLine: number) => {
     if (!currentHeading) return;
     const content = buffer.join(" ").replace(/\s+/g, " ").trim();
-    if (!content) return;
     const kind = profile.sectionKinds?.[currentHeading.normalized] ?? DEFAULT_SECTION_KINDS[currentHeading.normalized];
-    if (!kind) return;
+    if (!kind || (!content && kind !== "topic")) return;
+    // Topic headings are useful draft structure even when a source extractor
+    // has not attached body text yet. Keep the title as a non-empty placeholder
+    // so downstream knowledge records remain valid and reviewable.
+    const sectionContent = content || currentHeading.raw;
     const parent = topicStack.length ? topicStack[topicStack.length - 1] : undefined;
-    const chunks = content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
+    const chunks = sectionContent.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
     chunks.forEach((chunk, index) => {
       const headingTitle = currentHeading!.raw;
       const item = makeItem(kind, headingTitle, chunk.trim(), identity, {
