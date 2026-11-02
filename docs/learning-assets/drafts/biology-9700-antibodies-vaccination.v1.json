@@ -1,0 +1,254 @@
+{
+  "asset_key": "biology-9700-antibodies-vaccination",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Antibodies, monoclonal antibodies and vaccination",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "11",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus, Version 1, September 2025, 2028–2030, Topic 11, p. 32. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "11.2.1",
+      "11.2.2",
+      "11.2.3",
+      "11.2.4",
+      "11.2.5",
+      "11.2.6"
+    ]
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation, assessment review and accessibility review before import or publication.",
+      "Questions are original learning checks, not Cambridge past-paper questions or official mark schemes.",
+      "Immune responses are simplified for syllabus teaching; diagrams are explanatory models and do not represent every molecular interaction or cell subtype."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Relate the structure of an antibody to antigen binding and its functions.",
+      "Outline the hybridoma method for producing monoclonal antibodies.",
+      "Outline how monoclonal antibodies are used in disease diagnosis and treatment.",
+      "Distinguish active and passive immunity and natural and artificial immunity.",
+      "Explain how vaccine antigens stimulate long-term immunity and how vaccination programmes reduce disease spread."
+    ],
+    "sections": [
+      {
+        "heading": "Antibody structure",
+        "body": "An antibody is a soluble globular glycoprotein with a characteristic Y-shaped structure. It consists of four polypeptide chains: two identical heavy chains and two identical light chains, held together by disulfide bonds. Each arm has a variable region formed by parts of a heavy and a light chain. The two variable regions create two antigen-binding sites. Their amino acid sequences and three-dimensional shapes determine which antigen is bound. The stem and other constant regions are more conserved and interact with components of the immune system."
+      },
+      {
+        "heading": "How structure supports antibody function",
+        "body": "The two antigen-binding sites allow an antibody to bind specifically to matching epitopes, and can link antigens or particles together. The variable region gives specificity. Binding can neutralise a toxin or prevent a virus attaching to a host cell. Antibodies can agglutinate cells or pathogens, making them easier for phagocytes to engulf. The constant region can bind to receptors on immune cells or activate complement, helping to remove the antigen. Antibodies do not normally destroy pathogens by digesting them directly; they bind and help other mechanisms remove them."
+      },
+      {
+        "heading": "Monoclonal antibodies",
+        "body": "Monoclonal antibodies are identical antibodies produced from a single clone of cells and are specific to one antigenic target. Their specificity makes them useful in diagnosis and treatment. A hybridoma is a cell formed by fusing an antibody-producing B-lymphocyte with a tumour cell (myeloma cell) that can divide repeatedly. The hybridoma combines antibody production with the ability to grow for long periods in culture."
+      },
+      {
+        "heading": "Hybridoma production method",
+        "body": "An animal, commonly a mouse in the standard method, is exposed to the chosen antigen to stimulate production of B-lymphocytes that make the required antibody. Antibody-producing lymphocytes are collected, usually from the spleen, and mixed with myeloma cells. The cells are fused, commonly using polyethylene glycol, to form hybridomas. The mixture is cultured in a selective medium so unfused cells do not persist. Hybridomas are screened to identify the one producing the required antibody. The selected hybridoma is cloned and cultured to produce large quantities of identical monoclonal antibody. The method is an outline; detailed cell-culture chemistry is not required here."
+      },
+      {
+        "heading": "Monoclonal antibodies in diagnosis",
+        "body": "A monoclonal antibody can be used to detect a specific antigen in a sample. The antibody is linked to a detectable marker, such as an enzyme, fluorescent dye or coloured particle. If the target antigen is present, it binds to the antibody. A detection step reveals the binding, indicating the presence of the target. Diagnostic tests can detect pathogen antigens or molecules associated with a disease. In a pregnancy test, for example, antibodies are used to detect the hormone hCG in urine. Correct controls and interpretation are important because a test result depends on sensitivity, specificity, timing and sample quality."
+      },
+      {
+        "heading": "Monoclonal antibodies in treatment",
+        "body": "Therapeutic monoclonal antibodies can bind to specific molecules on cells or pathogens. They may block a receptor or signalling molecule, mark a target cell for immune destruction, or carry a toxic drug or radioactive substance to a target cell. Some treatments target antigens on cancer cells, helping focus treatment on cells with the target. The target must be sufficiently specific and accessible; binding to a target does not guarantee that every diseased cell will be eliminated. Clinical use depends on evidence of safety and effectiveness."
+      },
+      {
+        "heading": "Active and passive immunity",
+        "body": "Active immunity occurs when a person's own lymphocytes respond to an antigen and produce antibodies and memory cells. It usually takes time to develop but can be long-lasting. Passive immunity occurs when a person receives antibodies made by another organism. It provides immediate, temporary protection because the recipient does not make the antibodies and does not usually form memory cells from the transferred antibodies. Active immunity involves an immune response by the recipient; passive immunity transfers ready-made antibodies."
+      },
+      {
+        "heading": "Natural and artificial immunity",
+        "body": "Natural immunity is acquired without a deliberate medical intervention: natural active immunity follows infection, while natural passive immunity occurs when maternal antibodies pass to a fetus through the placenta or to an infant in breast milk. Artificial immunity results from medical intervention: artificial active immunity follows vaccination, while artificial passive immunity follows injection or infusion of prepared antibodies, such as antivenom or immunoglobulin. These two classifications describe different features: active/passive identifies how protection is obtained, while natural/artificial identifies whether it follows medical intervention."
+      },
+      {
+        "heading": "Vaccines stimulate active immunity",
+        "body": "Vaccines contain antigens from a pathogen, or genetic instructions or components that cause pathogen antigens to be produced. These antigens stimulate a specific immune response without requiring the person to experience the full disease. Selected lymphocytes undergo clonal expansion, plasma cells produce antibodies and memory cells form. If the same pathogen is encountered later, memory cells produce a faster and larger secondary response. Vaccine design and schedules vary; protection may not be complete and some vaccines require booster doses to maintain immunity."
+      },
+      {
+        "heading": "Vaccination programmes and disease control",
+        "body": "A vaccination programme aims to increase the proportion of people who are immune, reducing the number of susceptible hosts. If fewer people can be infected, opportunities for transmission fall and outbreaks become less likely. When enough people are immune, indirect protection can reduce risk for people who cannot be vaccinated or who respond poorly; this is often called herd or community immunity. The coverage needed varies with the disease and its transmissibility. Programmes depend on vaccine supply, cold-chain reliability, trained staff, access, public confidence, accurate information, monitoring and equitable delivery. Vaccination complements rather than replaces other public-health measures."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Describe the molecular structure of an antibody.",
+        "answer": "An antibody is a Y-shaped glycoprotein made of two identical heavy chains and two identical light chains held together by disulfide bonds. It has two variable antigen-binding regions and constant regions.",
+        "mark_points": [
+          "Y-shaped glycoprotein",
+          "Two heavy and two light chains",
+          "Disulfide bonds",
+          "Variable antigen-binding sites",
+          "Constant regions"
+        ]
+      },
+      {
+        "question": "Explain how the variable region gives an antibody specificity.",
+        "answer": "The amino acid sequence of the variable region produces a particular three-dimensional shape that is complementary to a specific antigen epitope.",
+        "mark_points": [
+          "Variable amino acid sequence",
+          "Specific three-dimensional shape",
+          "Complementary binding to epitope"
+        ]
+      },
+      {
+        "question": "State two ways antibodies help remove pathogens.",
+        "answer": "Antibodies can neutralise toxins or prevent pathogen attachment, agglutinate pathogens, or mark pathogens for phagocytosis.",
+        "mark_points": [
+          "Any two valid functions"
+        ]
+      },
+      {
+        "question": "Outline the hybridoma method for producing monoclonal antibodies.",
+        "answer": "An animal is immunised with the antigen; antibody-producing B cells are collected and fused with myeloma cells. Hybridomas are selected and screened for the required antibody, then the correct hybridoma is cloned and cultured.",
+        "mark_points": [
+          "Immunise animal with antigen",
+          "Collect antibody-producing B cells",
+          "Fuse with myeloma cells",
+          "Select/screen hybridomas",
+          "Clone and culture selected hybridoma"
+        ]
+      },
+      {
+        "question": "Why are myeloma cells used in hybridoma production?",
+        "answer": "Myeloma cells can divide repeatedly in culture. Fusion with an antibody-producing B cell creates a hybridoma that can both produce the antibody and grow for extended periods.",
+        "mark_points": [
+          "Myeloma cells divide repeatedly",
+          "B cell provides antibody production",
+          "Hybridoma combines both properties"
+        ]
+      },
+      {
+        "question": "Explain how a monoclonal antibody can be used to diagnose a disease.",
+        "answer": "A monoclonal antibody specific to a disease-associated antigen is linked to a detectable marker. If the antigen is present in a sample, it binds the antibody and the marker produces a detectable signal.",
+        "mark_points": [
+          "Specific to target antigen",
+          "Detectable marker attached",
+          "Antigen binds antibody if present",
+          "Signal indicates target"
+        ]
+      },
+      {
+        "question": "Give one example of a diagnostic use of monoclonal antibodies.",
+        "answer": "Pregnancy tests use antibodies to detect human chorionic gonadotrophin (hCG) in urine.",
+        "mark_points": [
+          "Pregnancy test",
+          "Detects hCG"
+        ]
+      },
+      {
+        "question": "Describe two ways monoclonal antibodies can be used to treat disease.",
+        "answer": "They can block receptors or signalling molecules, mark target cells for immune destruction, or deliver a drug or radioactive substance to target cells.",
+        "mark_points": [
+          "Any two valid treatment mechanisms"
+        ]
+      },
+      {
+        "question": "Distinguish active immunity from passive immunity.",
+        "answer": "Active immunity results from the recipient's own immune response and can produce memory cells. Passive immunity results from receiving antibodies made elsewhere and is usually temporary, without memory-cell formation.",
+        "mark_points": [
+          "Active: own immune response",
+          "Active: memory cells",
+          "Passive: receives ready-made antibodies",
+          "Passive: temporary/no memory from transfer"
+        ]
+      },
+      {
+        "question": "Distinguish natural active immunity from artificial active immunity.",
+        "answer": "Natural active immunity follows infection. Artificial active immunity follows vaccination.",
+        "mark_points": [
+          "Natural active: infection",
+          "Artificial active: vaccination"
+        ]
+      },
+      {
+        "question": "Give one example each of natural passive and artificial passive immunity.",
+        "answer": "Natural passive: maternal antibodies transferred through placenta or breast milk. Artificial passive: injected antivenom or immunoglobulin.",
+        "mark_points": [
+          "Natural passive example",
+          "Artificial passive example"
+        ]
+      },
+      {
+        "question": "Explain why passive immunity is usually short-lived.",
+        "answer": "The recipient receives antibodies rather than producing them. The transferred antibodies are gradually broken down, and the recipient does not usually form memory cells from the transfer.",
+        "mark_points": [
+          "Antibodies transferred from another source",
+          "Antibodies are broken down over time",
+          "No memory-cell production from passive transfer"
+        ]
+      },
+      {
+        "question": "Explain how a vaccine can produce long-term immunity.",
+        "answer": "Vaccine antigens activate specific lymphocytes, causing clonal expansion and formation of plasma cells and memory cells. Memory cells respond rapidly if the same antigen is encountered again.",
+        "mark_points": [
+          "Contains antigens",
+          "Activates specific lymphocytes",
+          "Clonal expansion / plasma cells",
+          "Memory cells formed",
+          "Faster secondary response"
+        ]
+      },
+      {
+        "question": "Explain how a vaccination programme can reduce transmission in a population.",
+        "answer": "Vaccination increases the proportion of immune people, reducing the number of susceptible hosts and the opportunities for a pathogen to pass between hosts. Sufficient coverage can provide indirect community protection.",
+        "mark_points": [
+          "Increases immune proportion",
+          "Fewer susceptible hosts",
+          "Fewer transmission opportunities",
+          "Indirect/community protection"
+        ]
+      },
+      {
+        "question": "A vaccine has high individual effectiveness but coverage is low. Explain why outbreaks may still occur.",
+        "answer": "Many people remain susceptible, so the pathogen can still find hosts and spread. Low coverage may be insufficient to interrupt transmission, even if vaccinated individuals are well protected.",
+        "mark_points": [
+          "Large susceptible population remains",
+          "Pathogen can still transmit between hosts",
+          "Coverage insufficient to reduce spread"
+        ]
+      },
+      {
+        "question": "Compare monoclonal antibody diagnosis with monoclonal antibody treatment.",
+        "answer": "In diagnosis, a labelled antibody detects a target antigen and produces a measurable signal. In treatment, an antibody binds a disease-associated target to block its function, recruit immune destruction or deliver a therapeutic agent.",
+        "mark_points": [
+          "Diagnosis: labelled detection of target",
+          "Treatment: therapeutic action on target",
+          "Clear distinction of purpose"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/immunity/antibody-structure.svg",
+        "role": "Y-shaped antibody showing heavy and light chains, variable binding regions and constant regions."
+      },
+      {
+        "path": "/learning-assets/biology/9700/immunity/hybridoma-method.svg",
+        "role": "Steps in immunisation, B-cell collection, fusion, screening, cloning and culture."
+      },
+      {
+        "path": "/learning-assets/biology/9700/immunity/immunity-types.svg",
+        "role": "Classification of active/passive and natural/artificial immunity with examples."
+      },
+      {
+        "path": "/learning-assets/biology/9700/immunity/vaccination-community-protection.svg",
+        "role": "How vaccination coverage reduces susceptible hosts and transmission opportunities."
+      }
+    ]
+  }
+}
