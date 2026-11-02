@@ -1,0 +1,265 @@
+{
+  "asset_key": "biology-9700-gas-exchange-system",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "The human gas exchange system",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "9",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus, 2028–2030, Version 1, September 2025, Topic 9, Gas exchange, section 9.1. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 9.1.1–9.1.7.",
+    "syllabus_outcome_codes": [
+      "9.1.1",
+      "9.1.2",
+      "9.1.3",
+      "9.1.4",
+      "9.1.5",
+      "9.1.6",
+      "9.1.7"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation, assessment review and accessibility review before import or publication.",
+      "Original diagrams are explanatory schematics, not photomicrographs or electron micrographs. Recognition and drawing outcomes must be reinforced with genuine microscope slides and authentic micrographs in practical teaching.",
+      "Questions are original learning checks, not Cambridge past-paper questions or official mark schemes."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Describe the human gas exchange system, limited to lungs, trachea, bronchi, bronchioles, alveoli and capillary network.",
+      "Describe the distribution of cartilage, ciliated epithelium, goblet cells, alveolar squamous epithelium, smooth muscle and capillaries.",
+      "Recognise the named gas exchange tissues in microscope slides, photomicrographs and electron micrographs.",
+      "Recognise trachea, bronchi, bronchioles and alveoli in microscope slides and micrographs, and make plan diagrams of transverse sections of tracheal and bronchial walls.",
+      "Explain how ciliated epithelial cells, goblet cells and mucous glands maintain the health of the gas exchange system.",
+      "Explain the functions of cartilage, smooth muscle, elastic fibres and squamous epithelium in the gas exchange system.",
+      "Describe gas exchange between alveolar air and capillary blood."
+    ],
+    "sections": [
+      {
+        "heading": "The route taken by air",
+        "body": "Air enters through the nose or mouth, passes into the pharynx and larynx, then travels down the trachea. The trachea divides into two bronchi, one entering each lung. Each bronchus branches repeatedly into smaller bronchi and bronchioles. The smallest bronchioles lead to clusters of alveoli. The lungs contain extensive branching airways ending in millions of alveoli. The gas exchange system also includes a dense capillary network surrounding alveoli. For this syllabus outcome, be able to identify lungs, trachea, bronchi, bronchioles, alveoli and capillary network and trace the route of air."
+      },
+      {
+        "heading": "Trachea and bronchi",
+        "body": "The trachea and bronchi are conducting airways. Their walls contain supporting cartilage, smooth muscle, elastic fibres and a lining of ciliated epithelium with goblet cells. Cartilage supports the airway and helps prevent collapse during pressure changes in breathing. In the trachea, cartilage occurs as incomplete C-shaped rings. Bronchi contain irregular plates of cartilage rather than the trachea's C-shaped rings. The epithelial lining is pseudostratified ciliated columnar epithelium, with goblet cells interspersed. Mucous glands occur in the airway wall and add mucus to the surface."
+      },
+      {
+        "heading": "Bronchioles",
+        "body": "Bronchioles are smaller airways branching from bronchi. They have no cartilage in their walls. Their walls contain smooth muscle and elastic fibres, and are lined by epithelium that becomes lower and simpler towards the smaller airways. Smooth muscle changes the diameter of bronchioles and therefore affects resistance to airflow. Elastic fibres allow airways to stretch during inspiration and recoil during expiration. The smaller airways lead towards alveolar ducts and alveoli."
+      },
+      {
+        "heading": "Alveoli and capillary network",
+        "body": "Alveoli are tiny air spaces with walls made predominantly of a single layer of flattened squamous epithelial cells. Each alveolus is closely surrounded by a dense network of capillaries. The alveolar epithelium and capillary endothelium form a very thin exchange barrier. Alveoli provide a very large total surface area, and their close association with capillaries provides a short diffusion distance. Elastic fibres in alveolar walls allow stretching during inspiration and recoil during expiration. Alveolar macrophages are present in lungs but are not a named tissue-distribution requirement in this outcome."
+      },
+      {
+        "heading": "Where the named tissues are found",
+        "body": "Cartilage is present in the trachea and bronchi, but not bronchioles or alveoli. Ciliated epithelium lines the conducting airways, including the trachea and bronchi, and extends into larger bronchioles; the epithelial lining becomes simpler distally. Goblet cells and mucous glands are characteristic of larger conducting airways and become less numerous towards smaller airways. Smooth muscle is present in airway walls, especially bronchi and bronchioles, and is important in controlling airway diameter. Elastic fibres occur in airway walls and alveolar tissue. Alveoli are lined by squamous epithelium and closely associated with capillaries. Capillaries form a dense network around alveoli."
+      },
+      {
+        "heading": "Recognising tissues in slides and micrographs",
+        "body": "In a light micrograph, cartilage is recognised by chondrocytes in spaces within a firm matrix. Ciliated epithelium has cells with hair-like cilia at the free surface; goblet cells appear as mucus-secreting cells within the epithelium. Smooth muscle appears as bundles or layers of elongated cells with centrally placed nuclei and no striations. Alveolar walls are extremely thin and lined by flattened squamous cells. Capillaries are narrow vessels, often containing red blood cells, and lie close to alveolar air spaces. Electron micrographs can reveal cilia and very thin exchange barriers in greater detail. Do not identify a tissue from colour alone: use cell shape, arrangement, lumen, wall thickness and position."
+      },
+      {
+        "heading": "Plan diagrams of trachea and bronchus",
+        "body": "A plan diagram shows the overall arrangement of tissues and the shape of the whole section, not individual cells. For transverse sections of trachea and bronchus, draw the outer outline and lumen accurately, then show the major tissue regions in their correct relative positions. Include cartilage, the airway lining and wall layers where visible. Use clear single lines, no shading, no sketching or unnecessary detail, and label structures with straight ruled label lines. A tracheal plan should show the characteristic incomplete cartilage ring; a bronchial plan should show cartilage plates within the wall. A plan diagram is not a detailed cell drawing."
+      },
+      {
+        "heading": "Mucus, cilia and airway protection",
+        "body": "Goblet cells and mucous glands secrete mucus onto the airway surface. Mucus traps inhaled dust, particles and microorganisms. Ciliated epithelial cells beat in coordinated waves to move the mucus towards the throat, where it can be swallowed or expelled. This mucociliary escalator helps keep the lower gas exchange system clear. Damage to cilia, for example by cigarette smoke, reduces mucus clearance and increases the risk of infection and airway obstruction. Mucus is protective, but excessive mucus or impaired ciliary movement can interfere with airflow."
+      },
+      {
+        "heading": "Support and control of airways",
+        "body": "Cartilage supports the trachea and bronchi and prevents their walls collapsing when pressure inside the airways falls during inspiration. Smooth muscle contracts to narrow airway diameter and relaxes to widen it, regulating airflow and resistance. Elastic fibres allow airway walls and alveoli to stretch as the lungs expand and recoil as the lungs become smaller during expiration. These elastic properties help drive passive expiration. Squamous epithelium in alveoli is extremely thin, minimising the distance over which oxygen and carbon dioxide diffuse."
+      },
+      {
+        "heading": "Gas exchange at the alveolus",
+        "body": "Oxygen diffuses from alveolar air into capillary blood because its partial pressure is higher in the alveolus than in blood arriving from the pulmonary artery. Carbon dioxide diffuses in the opposite direction because its partial pressure is higher in arriving blood than in alveolar air. Both gases move down their partial pressure gradients. The alveolar and capillary walls are each very thin, giving a short diffusion distance. The large total alveolar surface area, extensive capillary network and continuous ventilation and blood flow help maintain steep gradients. Oxygen enters red blood cells and binds to haemoglobin; carbon dioxide is carried away in blood."
+      },
+      {
+        "heading": "Maintaining steep diffusion gradients",
+        "body": "Ventilation continually replaces alveolar air, replenishing oxygen and removing carbon dioxide. Blood flow continually brings deoxygenated blood with relatively low oxygen partial pressure and higher carbon dioxide partial pressure to the alveolar capillaries, then carries oxygenated blood away. These processes maintain partial pressure differences across the exchange surface. If ventilation or perfusion is reduced, gas exchange becomes less effective. Diffusion itself is passive and does not require ATP; ventilation and circulation are the processes that renew the air and blood at the exchange surface."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Trace the route taken by air from the trachea to an alveolus.",
+        "answer": "The trachea divides into bronchi; bronchi branch into smaller bronchi and then bronchioles; bronchioles lead to alveolar ducts and alveoli.",
+        "mark_points": [
+          "Trachea divides into bronchi",
+          "Bronchi branch",
+          "Bronchioles",
+          "Alveolar ducts / alveoli"
+        ]
+      },
+      {
+        "question": "Compare the distribution of cartilage in the trachea, bronchi and bronchioles.",
+        "answer": "The trachea has incomplete C-shaped cartilage rings. Bronchi have irregular cartilage plates in their walls. Bronchioles have no cartilage.",
+        "mark_points": [
+          "Trachea: C-shaped rings",
+          "Bronchi: cartilage plates",
+          "Bronchioles: no cartilage"
+        ]
+      },
+      {
+        "question": "Describe where goblet cells and ciliated epithelial cells are found and state their roles.",
+        "answer": "They occur in the lining of conducting airways. Goblet cells secrete mucus that traps particles and microorganisms. Cilia beat to move the mucus towards the throat for removal.",
+        "mark_points": [
+          "Lining of conducting airways",
+          "Goblet cells secrete mucus",
+          "Mucus traps particles / pathogens",
+          "Cilia move mucus towards throat"
+        ]
+      },
+      {
+        "question": "Explain why cartilage is present in the trachea and bronchi but absent from bronchioles.",
+        "answer": "Cartilage supports larger airways and prevents collapse during pressure changes in breathing. Smaller bronchioles are supported by surrounding lung tissue and have smooth muscle to regulate their diameter; cartilage would restrict their flexibility.",
+        "mark_points": [
+          "Supports larger airway walls",
+          "Prevents collapse",
+          "Bronchioles lack cartilage",
+          "Bronchiole smooth muscle controls diameter"
+        ]
+      },
+      {
+        "question": "Describe how to make a plan diagram of a transverse section of a bronchus.",
+        "answer": "Draw the overall outline and lumen in correct proportions, show the main tissue regions such as cartilage plates and lining, use clear single lines without shading or cell detail, and add ruled labels.",
+        "mark_points": [
+          "Overall outline and lumen accurate",
+          "Major tissue regions correctly positioned",
+          "No individual cell detail / no shading",
+          "Clear ruled labels"
+        ]
+      },
+      {
+        "question": "State two features that help identify alveoli in a micrograph.",
+        "answer": "Alveoli appear as many open air spaces separated by very thin walls. Capillaries lie close to the alveolar walls and may contain red blood cells.",
+        "mark_points": [
+          "Open air spaces",
+          "Very thin inter-alveolar walls",
+          "Nearby capillaries / red blood cells"
+        ]
+      },
+      {
+        "question": "Explain how mucus and cilia protect the gas exchange system.",
+        "answer": "Mucus traps inhaled particles and microorganisms. Cilia beat in coordinated waves to move the mucus towards the throat, where it can be swallowed or expelled.",
+        "mark_points": [
+          "Mucus traps particles / microorganisms",
+          "Cilia beat",
+          "Move mucus towards throat",
+          "Mucus removed by swallowing / coughing"
+        ]
+      },
+      {
+        "question": "Explain the role of smooth muscle in bronchioles.",
+        "answer": "Contraction of smooth muscle narrows the bronchiole lumen and increases resistance to airflow. Relaxation widens the lumen and reduces resistance, regulating airflow to the gas exchange surfaces.",
+        "mark_points": [
+          "Contraction narrows lumen",
+          "Increases resistance / reduces airflow",
+          "Relaxation widens lumen",
+          "Regulates airflow"
+        ]
+      },
+      {
+        "question": "Explain why elastic fibres are important in alveoli and airways.",
+        "answer": "Elastic fibres allow tissues to stretch as the lungs expand during inspiration and recoil during expiration. Recoil helps reduce lung volume and drive expiration.",
+        "mark_points": [
+          "Stretch during inspiration",
+          "Recoil during expiration",
+          "Helps drive expiration"
+        ]
+      },
+      {
+        "question": "Explain how the structure of alveoli makes gas exchange efficient.",
+        "answer": "Alveoli provide a large surface area. Their squamous epithelial lining and the capillary endothelium are thin, giving a short diffusion distance. A dense capillary network and ventilation maintain steep partial pressure gradients.",
+        "mark_points": [
+          "Large surface area",
+          "Thin squamous epithelium / capillary endothelium",
+          "Short diffusion distance",
+          "Dense capillary network",
+          "Ventilation maintains gradient"
+        ]
+      },
+      {
+        "question": "State the direction of diffusion of oxygen and carbon dioxide at a healthy alveolus.",
+        "answer": "Oxygen diffuses from alveolar air into capillary blood. Carbon dioxide diffuses from capillary blood into alveolar air.",
+        "mark_points": [
+          "Oxygen: alveolus to blood",
+          "Carbon dioxide: blood to alveolus"
+        ]
+      },
+      {
+        "question": "Explain how ventilation and blood flow maintain gas exchange at alveoli.",
+        "answer": "Ventilation replenishes oxygen and removes carbon dioxide from alveolar air. Blood flow brings blood with lower oxygen and higher carbon dioxide partial pressures and carries oxygenated blood away, maintaining diffusion gradients.",
+        "mark_points": [
+          "Ventilation replenishes O2",
+          "Ventilation removes CO2",
+          "Blood brings deoxygenated blood",
+          "Blood carries oxygenated blood away",
+          "Gradients maintained"
+        ]
+      },
+      {
+        "question": "A disease causes the alveolar walls to thicken. Explain the likely effect on gas exchange.",
+        "answer": "A thicker alveolar wall increases diffusion distance, reducing the rate of diffusion of oxygen and carbon dioxide. Less oxygen may enter the blood in a given time.",
+        "mark_points": [
+          "Diffusion distance increases",
+          "Rate of diffusion decreases",
+          "Less oxygen enters blood per unit time"
+        ]
+      },
+      {
+        "question": "Explain why the alveolar lining is squamous rather than a thick, multilayered epithelium.",
+        "answer": "A single layer of flattened squamous cells creates a very thin barrier, minimising diffusion distance and allowing rapid exchange of oxygen and carbon dioxide.",
+        "mark_points": [
+          "Single thin cell layer",
+          "Flattened cells",
+          "Short diffusion distance",
+          "Rapid gas diffusion"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/gas-exchange/human-gas-exchange-system.svg",
+        "alt": "Original schematic of lungs, trachea, bronchi, bronchioles, alveoli and capillary network with airflow pathway.",
+        "caption": "Human gas exchange system and the route taken by air."
+      },
+      {
+        "path": "/learning-assets/biology/9700/gas-exchange/airway-wall-comparison.svg",
+        "alt": "Original comparison of trachea, bronchus and bronchiole wall organisation, showing cartilage distribution, smooth muscle and epithelial lining.",
+        "caption": "How airway wall tissues are distributed."
+      },
+      {
+        "path": "/learning-assets/biology/9700/gas-exchange/trachea-bronchus-plan.svg",
+        "alt": "Original simplified plan diagrams of transverse tracheal and bronchial walls showing lumen, lining and cartilage arrangement.",
+        "caption": "Plan diagram practice: trachea and bronchus in transverse section."
+      },
+      {
+        "path": "/learning-assets/biology/9700/gas-exchange/airway-tissue-recognition.svg",
+        "alt": "Original labelled tissue-recognition schematic for ciliated epithelium, goblet cells, cartilage, smooth muscle, squamous alveolar lining and capillaries.",
+        "caption": "Recognition guide for the named gas exchange tissues."
+      },
+      {
+        "path": "/learning-assets/biology/9700/gas-exchange/alveolus-exchange-surface.svg",
+        "alt": "Original alveolus surrounded by capillaries, showing thin alveolar and capillary walls and opposite diffusion directions for oxygen and carbon dioxide.",
+        "caption": "Alveolar-capillary exchange surface."
+      },
+      {
+        "path": "/learning-assets/biology/9700/gas-exchange/gas-exchange-gradients.svg",
+        "alt": "Original diagram showing oxygen partial pressure gradient from alveolar air to blood and carbon dioxide gradient from blood to alveolar air.",
+        "caption": "Partial pressure gradients drive gas exchange."
+      }
+    ]
+  }
+}
