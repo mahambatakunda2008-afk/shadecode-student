@@ -158,4 +158,29 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     expect(new Set(topics.map((item) => item.metadata?.stableKey)).size).toBe(19);
   });
 
+  it("retains topic headings as draft records when PDF extraction yields no body text", async () => {
+    const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
+    const items = extractCurriculumKnowledge(
+      "1 Cell structure\\n2 Biological molecules\\n3 Enzymes",
+      {
+        boardId: "cambridge",
+        qualificationId: "cambridge-as-a-level",
+        level: "as_a_level",
+        syllabusId: "cambridge-9700",
+        syllabusVersion: "2028-2030",
+        subjectId: "biology",
+      },
+      provenance,
+      getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
+    );
+    const topics = items.filter((item) => item.kind === "topic");
+    expect(topics.map((item) => item.title)).toEqual([
+      "1 Cell structure",
+      "2 Biological molecules",
+      "3 Enzymes",
+    ]);
+    expect(topics.every((item) => item.status === "draft")).toBe(true);
+    expect(topics.every((item) => item.content.trim().length > 0)).toBe(true);
+  });
+
 });
