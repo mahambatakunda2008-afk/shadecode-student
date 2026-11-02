@@ -140,7 +140,7 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     ];
     const repeatedBody = "Students should understand the key concepts and apply them.";
     const items = extractCurriculumKnowledge(
-      headings.map((heading, index) => `${index + 1} ${heading}\\n${repeatedBody}`).join("\\n\\n"),
+      headings.map((heading, index) => `${index + 1} ${heading}\n${repeatedBody}`).join("\n\n"),
       {
         boardId: "cambridge",
         qualificationId: "cambridge-as-a-level",
