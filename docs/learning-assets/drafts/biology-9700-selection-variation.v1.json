@@ -1,0 +1,180 @@
+{
+  "asset_key": "biology-9700-selection-variation",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Selection and evolution: variation and the t-test",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "17",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 17, p. 44–45.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "17.1.1",
+      "17.1.2",
+      "17.1.3",
+      "17.1.4"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain genetic and environmental contributions to phenotypic variation.",
+      "Distinguish continuous and discontinuous variation.",
+      "Explain the genetic basis of continuous and discontinuous variation.",
+      "Use a t-test to compare the means of two independent samples."
+    ],
+    "sections": [
+      [
+        "Phenotypic variation",
+        "Variation is the difference in characteristics between individuals of the same species. Phenotype is influenced by genotype, environmental conditions, or an interaction between genotype and environment. Genetic differences can arise from mutation, meiosis and fertilisation; environmental influences include nutrition, temperature, light and disease."
+      ],
+      [
+        "Genetic and environmental contributions",
+        "A characteristic such as human blood group is mainly determined by alleles at a gene locus, so environmental effects are small. Human height is influenced by many genes and by nutrition and health during development. In plants, genotype can influence potential growth while light, water and mineral availability affect the realised phenotype."
+      ],
+      [
+        "Discontinuous variation",
+        "Discontinuous variation has distinct categories with no intermediate values, such as ABO blood groups. It is often controlled by one gene or a small number of genes with a limited number of alleles. Environmental effects are usually small relative to genetic effects for the categories being studied."
+      ],
+      [
+        "Continuous variation",
+        "Continuous variation shows a range of values with many intermediate phenotypes, such as height or mass. It is commonly influenced by many genes with additive effects (polygenic inheritance) and environmental factors. Measurements can be plotted as a frequency distribution, often with many individuals near the mean."
+      ],
+      [
+        "Genetic basis of variation",
+        "Discontinuous traits are often determined by one or a few genes with alleles that produce recognisable categories. Continuous traits commonly involve many loci, each contributing a small effect. Recombination and independent assortment generate new combinations of alleles, while mutations introduce new alleles."
+      ],
+      [
+        "Why sample means are compared",
+        "A sample mean estimates the population mean, but two samples from populations with the same true mean can differ because of sampling variation. A t-test assesses whether the difference between two sample means is statistically significant relative to variation within the samples."
+      ],
+      [
+        "Using a t-test",
+        "State the null hypothesis that the two population means are equal. Calculate the t value using the formula provided in the examination, using the sample means, sample sizes and variation terms specified by that formula. Determine the degrees of freedom as directed, then compare the calculated t value with the critical value at the stated probability level."
+      ],
+      [
+        "Interpreting a t-test",
+        "If the calculated t value is greater than the critical value, the difference between sample means is statistically significant at that probability level and the null hypothesis is rejected. If it is not greater, the difference is not statistically significant and the null hypothesis is not rejected. A non-significant result does not prove the means are identical."
+      ],
+      [
+        "Good sampling and limitations",
+        "Samples should be independent and collected using a method that avoids bias. Measurements should be appropriate for comparing means, and sample sizes should be adequate. A statistically significant difference does not automatically show that the difference is biologically important or identify its cause."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Define phenotypic variation.",
+        "answer": "Differences in observable characteristics between individuals of the same species.",
+        "mark_points": [
+          "Differences between individuals",
+          "Observable characteristics"
+        ]
+      },
+      {
+        "question": "Give one example of variation caused mainly by genotype and one influenced by both genotype and environment.",
+        "answer": "ABO blood group is mainly genetically determined; human height is influenced by many genes and environmental factors such as nutrition.",
+        "mark_points": [
+          "Blood group genotype",
+          "Height genes and environment"
+        ]
+      },
+      {
+        "question": "Distinguish continuous and discontinuous variation.",
+        "answer": "Continuous variation shows a range of intermediate values, whereas discontinuous variation has distinct categories with no intermediates.",
+        "mark_points": [
+          "Continuous range/intermediates",
+          "Discontinuous distinct categories"
+        ]
+      },
+      {
+        "question": "Explain why human height shows continuous variation.",
+        "answer": "Many genes contribute small additive effects and environmental factors such as nutrition and health also influence growth, producing a wide range of values.",
+        "mark_points": [
+          "Many genes",
+          "Additive effects",
+          "Environmental influence"
+        ]
+      },
+      {
+        "question": "Explain why ABO blood group is an example of discontinuous variation.",
+        "answer": "It has distinct categories determined by alleles at one gene locus, with no intermediate blood-group categories.",
+        "mark_points": [
+          "Distinct categories",
+          "Alleles at one locus"
+        ]
+      },
+      {
+        "question": "State the null hypothesis for a t-test comparing two sample means.",
+        "answer": "There is no significant difference between the two population means; any observed difference between sample means is due to sampling variation.",
+        "mark_points": [
+          "No difference between population means",
+          "Observed difference due to chance"
+        ]
+      },
+      {
+        "question": "A calculated t value is 2.8 and the critical value is 2.1. State the conclusion.",
+        "answer": "2.8 is greater than 2.1, so the difference is statistically significant at the stated probability level and the null hypothesis is rejected.",
+        "mark_points": [
+          "Calculated t exceeds critical t",
+          "Significant difference",
+          "Reject null"
+        ]
+      },
+      {
+        "question": "A calculated t value is 1.4 and the critical value is 2.1. State the conclusion.",
+        "answer": "1.4 is below 2.1, so the difference is not statistically significant and the null hypothesis is not rejected.",
+        "mark_points": [
+          "Calculated t below critical t",
+          "Not significant",
+          "Do not reject null"
+        ]
+      },
+      {
+        "question": "Why can two samples from populations with equal means have different sample means?",
+        "answer": "Random sampling variation means each sample contains a different set of individuals, so sample means vary by chance.",
+        "mark_points": [
+          "Sampling variation",
+          "Different sampled individuals"
+        ]
+      },
+      {
+        "question": "Why does a significant t-test result not prove that one environmental factor caused the difference?",
+        "answer": "The test detects a statistically significant difference between means but does not identify its cause; other variables or confounding factors may explain it.",
+        "mark_points": [
+          "Test detects difference only",
+          "Does not establish cause"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/selection-and-evolution/variation-distributions.svg",
+        "role": "Continuous and discontinuous variation distributions"
+      },
+      {
+        "path": "/learning-assets/biology/9700/selection-and-evolution/genetic-environmental.svg",
+        "role": "Genetic and environmental contributions to phenotype"
+      },
+      {
+        "path": "/learning-assets/biology/9700/selection-and-evolution/t-test-workflow.svg",
+        "role": "T-test decision workflow"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions and numerical datasets are original learning checks, not official Cambridge questions or mark schemes.",
+      "Graphs are explanatory schematics; practical measurement and data handling must also be practised."
+    ]
+  }
+}
