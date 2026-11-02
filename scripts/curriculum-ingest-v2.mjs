@@ -193,10 +193,10 @@ for (const source of report.sources ?? []) {
         previous ? "warning" : "info");
 
       const resolved = curriculumFromSource(source, document);
-      if (!resolved || !extractedText) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
+      if (!resolved) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
 
-      // Preserve the downloaded document and fingerprint, but never normalize its
-      // contents into a curriculum version when the PDF contradicts the pinned source.
+      // Check the pinned-version invariant even when PDF text extraction failed.
+      // A mismatch is independently important source evidence and must be recorded.
       if (resolved.conflict) {
         await recordChange(
           runId,
@@ -211,6 +211,8 @@ for (const source of report.sources ?? []) {
         sourceExtractionSkipped += 1;
         continue;
       }
+
+      if (!extractedText) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
 
       const provenance = provenanceFor(source, document);
       const profile = getCurriculumExtractionProfile(source.id);
