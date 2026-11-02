@@ -1,0 +1,187 @@
+{
+  "asset_key": "biology-9700-inheritance-gene-control",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Inheritance: gene control in prokaryotes and eukaryotes",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "16",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 16, pp. 42–44.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "16.3.1",
+      "16.3.2",
+      "16.3.3",
+      "16.3.4"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Distinguish structural and regulatory genes and inducible and repressible enzymes.",
+      "Explain genetic control of protein production using the lac operon.",
+      "Describe transcription factors in eukaryotic gene expression.",
+      "Explain gibberellin activation of genes through DELLA protein breakdown."
+    ],
+    "sections": [
+      [
+        "Structural and regulatory genes",
+        "A structural gene codes for a polypeptide or functional RNA that contributes to a cell's structure or function. A regulatory gene codes for a product, such as a repressor protein, that controls the expression of other genes."
+      ],
+      [
+        "Inducible and repressible enzymes",
+        "An inducible enzyme is synthesised in response to the presence of an inducer; the pathway is usually switched on when its substrate is available. A repressible enzyme is normally synthesised but its production is switched off when a corepressor or end product is present. These terms describe regulation of enzyme production, not activation of enzyme molecules already made."
+      ],
+      [
+        "The lac operon",
+        "In Escherichia coli, the lac operon includes structural genes coding for proteins involved in lactose uptake and breakdown, and a regulatory gene coding for a repressor. The operator is a DNA sequence where the repressor can bind; the promoter is where RNA polymerase binds to initiate transcription."
+      ],
+      [
+        "Lactose absent",
+        "When lactose is absent, the repressor is active and binds to the operator. This prevents RNA polymerase from transcribing the structural genes, so little or no lactose-metabolising enzymes are produced."
+      ],
+      [
+        "Lactose present",
+        "Lactose (more precisely, its isomer allolactose) acts as an inducer by binding to the repressor and changing its shape. The repressor can no longer bind effectively to the operator. RNA polymerase transcribes the structural genes and the mRNA is translated to produce enzymes for lactose uptake and breakdown."
+      ],
+      [
+        "Why the lac operon is inducible",
+        "The enzymes needed to metabolise lactose are produced when lactose is available. This avoids wasting resources making these enzymes when their substrate is absent. The syllabus explanation focuses on the repressor/operator mechanism; detailed cAMP regulation is not required unless explicitly requested by a later syllabus update."
+      ],
+      [
+        "Transcription factors in eukaryotes",
+        "Transcription factors are proteins that bind to specific DNA sequences and are involved in controlling gene expression in eukaryotes. They can increase or decrease the rate of transcription by influencing the binding or activity of RNA polymerase and associated proteins."
+      ],
+      [
+        "Gibberellin and DELLA repressors",
+        "In the absence of gibberellin, DELLA proteins act as repressors by inhibiting transcription factors that promote transcription of genes involved in stem growth. Gibberellin binds its receptor and initiates a signalling pathway that leads to DELLA protein breakdown. The transcription factors are released from inhibition and can promote transcription of growth-related genes."
+      ],
+      [
+        "Comparing prokaryotic and eukaryotic gene control",
+        "The lac operon is a prokaryotic mechanism in which a repressor binds directly to an operator near structural genes. In the gibberellin pathway in plants, a hormone signal promotes breakdown of DELLA repressors, allowing transcription factors to activate target genes. Both regulate transcription, but the molecular mechanisms differ."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Distinguish a structural gene from a regulatory gene.",
+        "answer": "A structural gene codes for a functional product such as a polypeptide; a regulatory gene codes for a product that controls expression of other genes.",
+        "mark_points": [
+          "Structural gene product",
+          "Regulatory gene controls expression"
+        ]
+      },
+      {
+        "question": "Distinguish an inducible enzyme from a repressible enzyme.",
+        "answer": "Production of an inducible enzyme is switched on by an inducer; production of a repressible enzyme is switched off by a corepressor or end product.",
+        "mark_points": [
+          "Inducible switched on",
+          "Repressible switched off"
+        ]
+      },
+      {
+        "question": "Name the regulatory protein in the lac operon.",
+        "answer": "The lac repressor protein.",
+        "mark_points": [
+          "Repressor"
+        ]
+      },
+      {
+        "question": "What is the role of the operator in the lac operon?",
+        "answer": "It is a DNA sequence where the repressor binds; when occupied, transcription of the structural genes is prevented.",
+        "mark_points": [
+          "DNA binding site",
+          "Repressor binding prevents transcription"
+        ]
+      },
+      {
+        "question": "Explain why the lac operon is usually switched off when lactose is absent.",
+        "answer": "The active repressor binds to the operator and prevents RNA polymerase from transcribing the structural genes.",
+        "mark_points": [
+          "Repressor active",
+          "Binds operator",
+          "Transcription blocked"
+        ]
+      },
+      {
+        "question": "Explain how lactose leads to production of beta-galactosidase.",
+        "answer": "Allolactose binds to the repressor and changes its shape so it cannot bind effectively to the operator. RNA polymerase transcribes the structural genes and the mRNA is translated to produce beta-galactosidase.",
+        "mark_points": [
+          "Inducer binds repressor",
+          "Repressor leaves operator",
+          "Transcription occurs",
+          "Translation produces enzyme"
+        ]
+      },
+      {
+        "question": "State the role of the promoter in the lac operon.",
+        "answer": "The promoter is the DNA sequence where RNA polymerase binds to begin transcription.",
+        "mark_points": [
+          "RNA polymerase binding site"
+        ]
+      },
+      {
+        "question": "Define a transcription factor.",
+        "answer": "A protein that binds to DNA and helps control gene expression by increasing or decreasing the rate of transcription.",
+        "mark_points": [
+          "Protein",
+          "Binds DNA",
+          "Controls transcription rate"
+        ]
+      },
+      {
+        "question": "Explain how gibberellin activates genes involved in stem growth.",
+        "answer": "Gibberellin signalling leads to DELLA protein breakdown. DELLA proteins no longer inhibit transcription factors, so the factors can promote transcription of growth-related genes.",
+        "mark_points": [
+          "Gibberellin signal",
+          "DELLA breakdown",
+          "Transcription factors released",
+          "Transcription increases"
+        ]
+      },
+      {
+        "question": "Compare gene regulation by the lac operon with gibberellin signalling.",
+        "answer": "In the lac operon, an inducer prevents a repressor from binding to an operator. In gibberellin signalling, the hormone causes DELLA repressors to be broken down, releasing transcription factors.",
+        "mark_points": [
+          "Lactose/allolactose affects repressor-operator binding",
+          "Gibberellin causes DELLA breakdown",
+          "Transcription factors released"
+        ]
+      },
+      {
+        "question": "Why is it inaccurate to say that lactose directly activates beta-galactosidase molecules in the lac operon?",
+        "answer": "Lactose acts as an inducer of gene expression by affecting the repressor; it leads to transcription and translation of the enzyme rather than directly switching on pre-existing enzyme molecules.",
+        "mark_points": [
+          "Acts on repressor",
+          "Regulates gene expression",
+          "New enzyme synthesised"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/inheritance/lac-operon.svg",
+        "role": "Lac operon with repressor, operator and promoter"
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/della-gibberellin.svg",
+        "role": "Gibberellin signalling and DELLA protein breakdown"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions and datasets are original learning checks, not official Cambridge questions or mark schemes.",
+      "Meiosis and genetic diagrams are explanatory schematics; stage-identification practice must also use authentic photomicrographs."
+    ]
+  }
+}
