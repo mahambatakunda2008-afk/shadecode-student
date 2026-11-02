@@ -29,7 +29,7 @@ export default function ExamSimulationClient() {
   const challengeId = decode(params.get("cid"));
   const challengerName = decode(params.get("cname")) || "your friend";
   const [subject, setSubject] = useState("");
-  const [battle, setBattle] = useState<{ won: boolean; percentage: number } | null>(null);
+  const [battle, setBattle] = useState<{ won: boolean; percentage: number; verified: boolean } | null>(null);
   // undefined = still loading; null = no frozen set (older challenge), fall back to a normal exam.
   const [frozenQuestions, setFrozenQuestions] = useState<ExamQuestion[] | null | undefined>(challengeId ? undefined : null);
   // "server": the play set is keyless and the server marks (verified). "client": older self-reported challenge.
@@ -112,7 +112,7 @@ export default function ExamSimulationClient() {
   const handleFinished = (result: ExamResults) => {
     if (challengeId && marking === "server") {
       // Verified battle: the server already marked and recorded this attempt and told us who won.
-      if (typeof result.won === "boolean") { setBattle({ won: result.won, percentage: Math.round(result.percentage) }); clearPendingChallenge(); }
+      if (typeof result.won === "boolean") { setBattle({ won: result.won, percentage: Math.round(result.percentage), verified: true }); clearPendingChallenge(); }
     } else if (challengeId) {
       // Server decides the winner from the stored challenge score; the browser only reports its own result.
       void fetch("/api/challenge/attempt", {
@@ -121,7 +121,7 @@ export default function ExamSimulationClient() {
         body: JSON.stringify({ challenge_id: challengeId, percentage: result.percentage, total_score: result.totalScore, max_score: result.maxScore, time_taken: result.timeTaken }),
       })
         .then((response) => (response.ok ? response.json() : null))
-        .then((data: { won?: boolean } | null) => { if (data && typeof data.won === "boolean") { setBattle({ won: data.won, percentage: result.percentage }); clearPendingChallenge(); } })
+        .then((data: { won?: boolean } | null) => { if (data && typeof data.won === "boolean") { setBattle({ won: data.won, percentage: result.percentage, verified: false }); clearPendingChallenge(); } })
         .catch(() => undefined);
     }
     for (const question of result.results) {
@@ -156,6 +156,7 @@ export default function ExamSimulationClient() {
     {battle && challengeId && (
       <aside role="status" aria-live="polite" className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl border border-white/10 bg-[var(--card)] p-5 shadow-lg backdrop-blur">
         <p className="text-sm font-semibold text-[var(--foreground)]">{battle.won ? `You beat ${challengerName}!` : `${challengerName} takes this one.`}</p>
+        <p className="mt-1 text-xs font-medium text-[var(--muted-foreground)]">{battle.verified ? "✓ Verified marking" : "Self-reported result"}</p>
         <p className="mt-1 text-xs text-[var(--muted-foreground)]">You scored {battle.percentage}%. {battle.won ? "Share the win and send a rematch." : "Review your weak topics, then challenge them back."}</p>
         <a href={`/challenge/${challengeId}`} className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90">See the challenge</a>
       </aside>

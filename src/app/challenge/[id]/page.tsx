@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { BrandMark } from '@/components/brand/BrandMark'
 import AcceptChallengeLink from '@/components/challenge/AcceptChallengeLink'
 import { challengeAcceptUrl } from '@/lib/challenge/pending'
+import { battleTrust, normaliseMarking } from '@/lib/challenge/verification'
+import { ShieldCheck } from 'lucide-react'
 
 interface Challenge {
   id: string
@@ -35,6 +37,12 @@ async function getChallenge(id: string): Promise<Challenge | null> {
     .single()
   if (error || !data) return null
   return data as Challenge
+}
+
+async function getMarking(id: string) {
+  const supabase = await createSupabaseServerClient()
+  const { data } = await supabase.from('challenge_questions').select('marking').eq('challenge_id', id).maybeSingle()
+  return normaliseMarking(data?.marking)
 }
 
 const GRADE_COLORS: Record<string, string> = {
@@ -81,8 +89,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ChallengePage({ params }: Props) {
   const { id } = await params
-  const c = await getChallenge(id)
+  const [c, marking] = await Promise.all([getChallenge(id), getMarking(id)])
   if (!c) notFound()
+  const trust = battleTrust(marking)
 
   const gc   = GRADE_COLORS[c.grade] ?? '#94a3b8'
   const diff = DIFF_BADGE[c.difficulty] ?? 'bg-slate-500/15 text-slate-300 border-slate-500/30'
@@ -168,6 +177,13 @@ export default async function ChallengePage({ params }: Props) {
             </div>
           </div>
         </div>
+
+        {trust.attemptVerified && (
+          <p className="flex items-start gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-xs leading-5 text-[var(--muted-foreground)]">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden="true" />
+            <span><span className="font-semibold text-[var(--foreground)]">{trust.badge}.</span> {trust.note}</span>
+          </p>
+        )}
 
         {/* CTAs */}
         <div className="space-y-3">
