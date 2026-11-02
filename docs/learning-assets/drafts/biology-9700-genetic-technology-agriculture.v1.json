@@ -1,0 +1,160 @@
+{
+  "asset_key": "biology-9700-genetic-technology-agriculture",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Genetically modified organisms in agriculture",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "19",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030, Topic 19, pp. 47–49.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "19.3.1",
+      "19.3.2"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain how genetic engineering may improve food supply using GM salmon, herbicide-resistant soybean and insect-resistant cotton.",
+      "Discuss ethical and social implications of GMOs in food production."
+    ],
+    "sections": [
+      [
+        "Genetic engineering and food demand",
+        "Genetic engineering may help meet global food demand by changing characteristics that affect growth, yield, quality or losses. Outcomes depend on the organism, trait, farming system and environmental context; a modified trait does not automatically solve food insecurity or distribution problems."
+      ],
+      [
+        "GM salmon",
+        "Genetically modified Atlantic salmon have been engineered with a growth-hormone gene construct that allows faster growth under specified conditions. Potential benefits include shorter production time and improved production efficiency. Assessment must also consider containment, escape, ecological effects, animal welfare and public acceptance."
+      ],
+      [
+        "Herbicide-resistant soybean",
+        "Herbicide-resistant soybean varieties tolerate application of a specified herbicide, allowing farmers to control weeds without killing the crop. Potential benefits include simplified weed management and reduced crop competition. Risks include evolution of herbicide-resistant weeds, increased reliance on a particular herbicide and gene flow where compatible relatives occur."
+      ],
+      [
+        "Insect-resistant cotton",
+        "Insect-resistant cotton may contain a gene from Bacillus thuringiensis (Bt) that enables the plant to produce an insecticidal protein active against certain insect pests. This can reduce damage and may reduce some insecticide applications. Resistance can evolve in pest populations, so refuge strategies and integrated pest management are important."
+      ],
+      [
+        "Assessing agricultural benefits",
+        "Compare yield, quality, production costs, pesticide use, labour, reliability and performance under local conditions. Benefits may differ between small-scale and large-scale farms and depend on seed access, training, regulation and markets."
+      ],
+      [
+        "Ecological and health considerations",
+        "Possible concerns include gene flow, effects on non-target organisms, changes in farming practices, resistance evolution and food safety assessment. Risks should be assessed case by case using evidence rather than assuming all GMOs have identical effects."
+      ],
+      [
+        "Ethical and social implications",
+        "Consider consumer choice and labelling, ownership and patent control of seeds, dependence on suppliers, equitable access, impacts on small-scale farmers, cultural or religious views, biodiversity and distribution of benefits. Regulation and transparent communication influence trust."
+      ],
+      [
+        "Balanced evaluation",
+        "A balanced judgement weighs demonstrated benefits against evidence-based risks, uncertainty, monitoring and alternatives. Genetic modification is one tool among breeding, integrated pest management, soil conservation, irrigation and improvements to food distribution."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "State one intended benefit of GM salmon.",
+        "answer": "Faster growth under specified farming conditions, potentially reducing time to market and improving production efficiency.",
+        "mark_points": [
+          "Faster growth / production efficiency"
+        ]
+      },
+      {
+        "question": "Explain how herbicide-resistant soybean can help farmers control weeds.",
+        "answer": "The crop tolerates a specified herbicide, allowing weeds to be killed while the soybean crop survives, reducing competition for resources.",
+        "mark_points": [
+          "Crop tolerates herbicide",
+          "Weeds killed",
+          "Reduced competition"
+        ]
+      },
+      {
+        "question": "Describe how Bt cotton can resist insect pests.",
+        "answer": "It contains a gene from Bacillus thuringiensis that enables the plant to produce an insecticidal protein active against certain insect pests.",
+        "mark_points": [
+          "Bt gene",
+          "Produces insecticidal protein",
+          "Acts on certain pests"
+        ]
+      },
+      {
+        "question": "Explain why pest resistance to Bt cotton may evolve.",
+        "answer": "Variation may exist in pest populations; susceptible insects are killed while resistant individuals survive and reproduce, increasing resistance alleles over generations.",
+        "mark_points": [
+          "Variation in susceptibility",
+          "Differential survival/reproduction",
+          "Resistance alleles increase"
+        ]
+      },
+      {
+        "question": "Give one possible ecological risk of GM crop cultivation.",
+        "answer": "The introduced gene may spread to compatible wild relatives or non-target organisms may be affected; resistance evolution is also valid.",
+        "mark_points": [
+          "One valid ecological risk"
+        ]
+      },
+      {
+        "question": "Explain why herbicide-resistant crops may contribute to herbicide-resistant weeds.",
+        "answer": "Repeated use of the same herbicide selects for resistant weed variants, which survive and reproduce, increasing resistance in the weed population.",
+        "mark_points": [
+          "Selection pressure",
+          "Resistant weeds survive/reproduce"
+        ]
+      },
+      {
+        "question": "Give two possible benefits of GM crops in food production.",
+        "answer": "Higher yield, reduced crop losses, improved quality, more reliable production or reduced use of some insecticides are valid when linked to an example.",
+        "mark_points": [
+          "Two valid benefits"
+        ]
+      },
+      {
+        "question": "Give two social or ethical issues associated with GM food production.",
+        "answer": "Consumer choice and labelling, seed patents and ownership, unequal access, farmer dependence, cultural views and environmental effects are valid.",
+        "mark_points": [
+          "Two valid issues"
+        ]
+      },
+      {
+        "question": "Explain why the risks of GMOs should be assessed case by case.",
+        "answer": "Different organisms, inserted traits and farming environments create different exposures and effects, so evidence about one GMO cannot automatically be applied to all others.",
+        "mark_points": [
+          "Different traits/organisms/environments",
+          "Evidence cannot be generalised"
+        ]
+      },
+      {
+        "question": "Suggest two measures that could reduce the evolution of insect resistance in Bt cotton pests.",
+        "answer": "Use refuge areas with non-Bt cotton and combine Bt crops with integrated pest management, monitoring and other control methods.",
+        "mark_points": [
+          "Refuge strategy",
+          "Integrated pest management / monitoring"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/gm-salmon-trait.svg",
+        "alt": "gm salmon trait",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/herbicide-resistant-soybean.svg",
+        "alt": "herbicide resistant soybean",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/bt-cotton-resistance.svg",
+        "alt": "bt cotton resistance",
+        "type": "svg"
+      }
+    ]
+  }
+}
