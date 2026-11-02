@@ -8,5 +8,5 @@ describe("Cambridge Biology 9700 Topic 19 draft assets",()=>{
  it("covers all 17 outcomes exactly once",()=>{const codes=packages.flatMap(x=>x.curriculum.syllabus_outcome_codes);expect(codes).toHaveLength(17);expect(new Set(codes).size).toBe(17);expect([...codes].sort()).toEqual([...expected].sort());});
  it("keeps packages draft-only and unmapped",()=>{for(const x of packages){expect(x.curriculum.status).toBe("draft");expect(x.review_status).toBe("draft");expect(x.curriculum.objective_mapping_status).toBe("unmapped_to_database_objective_uuids");}});
  it("requires teaching sections and answered questions",()=>{for(const x of packages){expect(x.content.sections.length).toBeGreaterThanOrEqual(8);expect(x.content.questions.length).toBeGreaterThanOrEqual(8);for(const q of x.content.questions){expect(q.answer.length).toBeGreaterThan(5);expect(q.mark_points.length).toBeGreaterThan(0);}}});
- it("links all ten Topic 19 SVG assets",()=>{const a=packages.flatMap(x=>x.content.visual_assets);expect(a).toHaveLength(10);expect(a.every(x=>x.path.startsWith("/learning-assets/biology/9700/genetic-technology/"))).toBe(true);});
+ it("links all thirteen Topic 19 SVG assets",()=>{const a=packages.flatMap(x=>x.content.visual_assets);expect(a).toHaveLength(13);expect(a.every(x=>x.path.startsWith("/learning-assets/biology/9700/genetic-technology/"))).toBe(true);});
 });
