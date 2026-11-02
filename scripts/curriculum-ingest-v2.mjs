@@ -6,7 +6,7 @@ import { extractCurriculumKnowledge } from "../src/lib/curriculum/knowledge-extr
 import { getCurriculumExtractionProfile } from "../src/lib/curriculum/extraction-profiles.ts";
 import { evaluateCurriculumDocumentEvidence, shouldProcessCurriculumDocument } from "../src/lib/curriculum/document-evidence.ts";
 import { fingerprintExtractedText } from "../src/lib/curriculum/source-fingerprint.ts";
-import { resolveCurriculumIngestionRunStatus } from "../src/lib/curriculum/source-watch-status.ts";
+import { hasCurriculumVersionConflict, resolveCurriculumIngestionRunStatus } from "../src/lib/curriculum/source-watch-status.ts";
 
 const reportPath = process.env.CURRICULUM_WATCH_REPORT ?? ".curriculum-watch/latest-report.json";
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -26,7 +26,7 @@ function curriculumFromSource(source, document) {
   const discovered = document.syllabusVersion ?? null;
   const configured = source.syllabusVersion ?? null;
   const version = discovered || configured || "unversioned";
-  const conflict = Boolean(discovered && configured && discovered !== configured);
+  const conflict = hasCurriculumVersionConflict(configured, discovered);
   return {
     curriculum: {
       boardId: source.boardId,
