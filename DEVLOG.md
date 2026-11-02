@@ -571,3 +571,13 @@ The next real curriculum blocker after Mathematics 9709 was Physics 9702. The of
 
 ### Result
 Physics 9702 is no longer blocked at the "objectives exist but whole-syllabus knowledge is missing" layer. Cortex can now resolve the verified Physics syllabus at the teaching tier once a learner has an exact stored Physics curriculum identity.
+
+## 2026-11-02 — Cortex Auto-Cycle
+
+Implemented a regression test, `src/tests/authorization/profileXp.test.ts`, to cover the `increment_xp` authorization boundary. The test verifies that attempts by non-`service_role` users to modify profile XP are correctly blocked with a permission error, ensuring the RLS protection identified in the security audit remains effective.
+
+**Task:** Add regression test for service-role XP increment
+
+**Change:** A new test file, `src/tests/authorization/profileXp.test.ts`, is introduced to provide regression coverage for the `increment_xp` authorization boundary. This test simulates a scenario where a non-`service_role` user attempts to increment a profile's experience points (XP). It asserts that this operation fails with a permission-denied error (typical of Supabase RLS policies), thereby verifying that the security control enforcing `service-role` exclusivity for XP increments remains active. This directly addresses the 'Add regression coverage for authorization boundaries' requirement, specifically for the `increment_xp` mechanism mentioned in the audit.
+
+---
