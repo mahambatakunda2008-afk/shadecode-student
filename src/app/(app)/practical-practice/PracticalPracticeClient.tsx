@@ -179,6 +179,33 @@ export default function PracticalPracticeClient() {
                 </svg>
                 <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Use cylinders of the same dimensions, blot each consistently before weighing, and keep immersion time and temperature constant. The six tubes represent a concentration series, not measured results.</p>
               </figure>}
+              {task.id === "P3-04" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
+                <figcaption className="mb-3 text-xs font-semibold">Amylase and pH · endpoint test apparatus schematic</figcaption>
+                <svg viewBox="0 0 640 300" role="img" aria-label="Water bath containing labelled starch and amylase buffer test tubes, with a spotting tile containing iodine drops for testing starch breakdown at timed intervals" className="mx-auto block w-full max-w-2xl">
+                  <rect x="42" y="92" width="340" height="142" rx="10" fill="var(--primary)" opacity=".08" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M49 135 Q90 127 130 135 T210 135 T300 135 T375 135" fill="none" stroke="var(--primary)" strokeWidth="2" strokeDasharray="6 4"/>
+                  <text x="212" y="255" textAnchor="middle" fontSize="12" fill="currentColor">Water bath · constant temperature</text>
+                  {["Starch","Amylase + buffer"].map((label,i)=>{
+                    const x=105+i*145;
+                    return <g key={label}>
+                      <path d={`M${x} 48 H${x+54} V176 Q${x+54} 190 ${x+27} 190 Q${x} 190 ${x} 176 Z`} fill="var(--surface-2)" stroke="currentColor" strokeWidth="2"/>
+                      <path d={`M${x+3} 145 H${x+51} V176 Q${x+51} 187 ${x+27} 187 Q${x+3} 187 ${x+3} 176 Z`} fill="var(--primary)" opacity=".25"/>
+                      <path d={`M${x-3} 45 H${x+57}`} stroke="currentColor" strokeWidth="3"/>
+                      <text x={x+27} y="30" textAnchor="middle" fontSize="11" fill="currentColor">{label}</text>
+                    </g>;
+                  })}
+                  <rect x="425" y="118" width="180" height="105" rx="9" fill="var(--surface-2)" stroke="currentColor" strokeWidth="2"/>
+                  {Array.from({length:3},(_,row)=>Array.from({length:4},(_,col)=>{
+                    const cx=449+col*42, cy=145+row*27;
+                    return <g key={`${row}-${col}`}><circle cx={cx} cy={cy} r="9" fill="var(--primary)" opacity=".2" stroke="var(--primary)" strokeWidth="1.2"/></g>;
+                  }))}
+                  <text x="515" y="95" textAnchor="middle" fontSize="12" fill="currentColor">Spotting tile</text>
+                  <text x="515" y="245" textAnchor="middle" fontSize="11" fill="currentColor">Iodine in each well</text>
+                  <path d="M382 164 H413" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
+                  <text x="397" y="153" textAnchor="middle" fontSize="9" fill="currentColor">Timed</text>
+                </svg>
+                <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">At each pH, equilibrate the starch and amylase-buffer mixtures at the same temperature. Mix to start timing, then test small samples at fixed intervals with iodine. Record the time when iodine no longer turns blue-black. Use a fresh pipette tip or clean dropper to avoid contaminating solutions.</p>
+              </figure>}
               {task.id === "P3-02" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
                 <figcaption className="mb-3 text-xs font-semibold">Specimen field of view · illustrative schematic, not a micrograph</figcaption>
                 <svg viewBox="0 0 520 300" role="img" aria-label="Circular microscope field showing an arrangement of elongated plant tissue cells with visible cell walls and nuclei, plus a scale bar" className="mx-auto block w-full max-w-xl">
