@@ -675,6 +675,204 @@
         "totalPracticeMarks": 28,
         "principle": "Practice marks and guidance are original, not an official Cambridge mark scheme. Potometer water uptake is an estimate of transpiration and must not be described as a direct measurement of transpiration."
       }
+    },
+    {
+      "id": "P5-02",
+      "paper": "Paper 5",
+      "title": "Comparing treatment groups using descriptive statistics and a t-test",
+      "format": "A Level statistical analysis, uncertainty and interpretation",
+      "syllabusStage": "a_level_extension",
+      "skills": [
+        "identify data type",
+        "calculate standard error",
+        "confidence intervals",
+        "null hypothesis",
+        "choose statistical test",
+        "degrees of freedom",
+        "interpret probability",
+        "evaluate conclusion"
+      ],
+      "scenario": "An investigator tests whether a nutrient treatment changes the dry mass of seedlings. Two independent groups of seedlings are grown under identical conditions except for the nutrient treatment. Dry mass is measured in mg after 21 days. The data are approximately normally distributed and the sample standard deviations are similar. Summary data are provided: untreated group n = 10, mean = 4.8 mg, sample standard deviation = 0.6 mg; treated group n = 10, mean = 6.1 mg, sample standard deviation = 0.8 mg. For this question, use t = (difference between means) ÷ standard error of the difference, and use the supplied two-tailed critical value of 2.101 at p = 0.05 and 18 degrees of freedom.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Identify the type of data collected and explain why a t-test may be appropriate for comparing the two groups.",
+          "answer": [
+            "Dry mass is continuous quantitative data.",
+            "The two groups are independent samples.",
+            "A t-test is appropriate when data are approximately normally distributed and the sample standard deviations are approximately equal."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 3,
+          "prompt": "Calculate the standard error of the mean for each group using SE = sample standard deviation ÷ square root of sample size. Give answers to two significant figures.",
+          "answer": [
+            "Untreated: 0.6 ÷ √10 = 0.19 mg (2 s.f.).",
+            "Treated: 0.8 ÷ √10 = 0.25 mg (2 s.f.).",
+            "The standard error estimates the precision of each sample mean, not the spread of individual measurements."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 3,
+          "prompt": "Calculate the 95% confidence interval for each mean using mean ± 1.96 × SE. Give the limits to two decimal places.",
+          "answer": [
+            "Untreated: 4.8 ± (1.96 × 0.1897), approximately 4.43 to 5.17 mg.",
+            "Treated: 6.1 ± (1.96 × 0.2530), approximately 5.60 to 6.60 mg.",
+            "State the interval in mg and retain sensible precision."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "State the null hypothesis and calculate the degrees of freedom for the t-test.",
+          "answer": [
+            "Null hypothesis: there is no significant difference in mean seedling dry mass between the treated and untreated populations.",
+            "Degrees of freedom = n₁ + n₂ − 2.",
+            "Degrees of freedom = 10 + 10 − 2 = 18."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 4,
+          "prompt": "Calculate the standard error of the difference between means using √(s₁²/n₁ + s₂²/n₂), then calculate the t value. Use the values in the scenario.",
+          "answer": [
+            "SE difference = √((0.6² ÷ 10) + (0.8² ÷ 10)).",
+            "SE difference = √(0.036 + 0.064) = √0.100 = 0.316 mg.",
+            "Difference between means = 6.1 − 4.8 = 1.3 mg.",
+            "t = 1.3 ÷ 0.316 = 4.11 (3 s.f.)."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 3,
+          "prompt": "Use the supplied critical value to decide whether the difference is statistically significant at p = 0.05. Explain what the decision means.",
+          "answer": [
+            "Calculated t = 4.11, which is greater than the critical value 2.101.",
+            "Reject the null hypothesis at the 5% significance level; the difference is statistically significant under the test assumptions.",
+            "This does not mean there is a 95% probability that the treatment caused the difference."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Explain why statistical significance does not, by itself, prove that the nutrient treatment caused the increase in dry mass. Give one design feature that strengthens a causal conclusion.",
+          "answer": [
+            "Other uncontrolled variables or bias could contribute to the difference.",
+            "Statistical significance addresses compatibility with the null hypothesis under the test assumptions, not the cause of an effect.",
+            "Randomly allocate seedlings to groups and standardise other growth conditions; use adequate replication."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 3,
+          "prompt": "Explain why standard deviation and standard error are not interchangeable, and state what error bars showing standard error represent.",
+          "answer": [
+            "Standard deviation describes spread of individual measurements around the mean.",
+            "Standard error describes the estimated precision/variation of the sample mean between repeated samples.",
+            "Standard-error bars show uncertainty around the estimated mean; they are not a range containing most individual observations."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 25,
+        "principle": "This is an original A Level statistical practice task. The t-test assumptions and supplied critical value are stated in the scenario. The practice calculations are not an official Cambridge mark scheme."
+      }
+    },
+    {
+      "id": "P5-03",
+      "paper": "Paper 5",
+      "title": "Choosing statistical tests for biological investigations",
+      "format": "A Level statistical test selection, hypotheses and interpretation",
+      "syllabusStage": "a_level_extension",
+      "skills": [
+        "classify variables and data",
+        "choose statistical test",
+        "state null hypothesis",
+        "interpret correlation",
+        "chi-squared",
+        "t-test assumptions",
+        "evaluate sampling"
+      ],
+      "scenario": "Three short investigations produce different kinds of biological data. Investigation A compares the number of individuals in two phenotypic categories with expected frequencies from a genetic cross. Investigation B compares mean leaf area in two independent groups; leaf-area data are continuous, approximately normally distributed and have similar standard deviations. Investigation C records paired measurements of an environmental gradient and species abundance at eight randomly selected independent sites; a scatter graph shows a monotonic relationship, but the data are not normally distributed.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "For each investigation, identify the type of data and choose the most appropriate statistical test from chi-squared, t-test, Pearson's linear correlation and Spearman's rank correlation.",
+          "answer": [
+            "A: nominal frequency data compared with expected frequencies; use chi-squared.",
+            "B: continuous measurements from two independent, approximately normal groups with similar standard deviations; use a t-test.",
+            "C: paired data with a monotonic relationship and non-normal distribution; use Spearman's rank correlation."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 3,
+          "prompt": "Write a suitable null hypothesis for Investigation A and explain why a chi-squared test is appropriate.",
+          "answer": [
+            "Null hypothesis: there is no significant difference between the observed and expected frequencies in the phenotypic categories.",
+            "The data are counts/frequencies in nominal categories.",
+            "Chi-squared tests whether deviations between observed and expected frequencies are greater than expected by chance."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 3,
+          "prompt": "Write a suitable null hypothesis for Investigation B and state two conditions that should be checked before using the t-test.",
+          "answer": [
+            "Null hypothesis: there is no significant difference between the population mean leaf areas of the two groups.",
+            "The data should be continuous and approximately normally distributed.",
+            "The samples should be independent and the population standard deviations approximately equal."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Explain why Spearman's rank correlation is preferred to Pearson's linear correlation in Investigation C.",
+          "answer": [
+            "The paired measurements are not normally distributed, so Pearson's test conditions are not met.",
+            "The relationship is described as monotonic, not necessarily linear.",
+            "Spearman's test uses ranked data to assess an increasing or decreasing association."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 3,
+          "prompt": "A Spearman's rank coefficient is calculated as +0.86. Interpret its direction and strength, and explain why it does not establish causation.",
+          "answer": [
+            "The positive value indicates that larger values of one variable tend to be associated with larger values of the other.",
+            "A value of +0.86 indicates a strong positive rank correlation.",
+            "Correlation alone does not show that one variable causes the other; other variables may influence both."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 3,
+          "prompt": "State two sampling requirements that strengthen the validity of Investigation C and explain why site selection matters.",
+          "answer": [
+            "Select sites randomly from the target population so each site has an appropriate chance of selection.",
+            "Measurements at sites should be independent; avoid treating repeated measurements from the same site as independent sites.",
+            "Biased site selection can make the sample unrepresentative and distort the apparent relationship."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Explain what a probability value below 0.05 would mean in a correctly selected test, and state one thing it would not mean.",
+          "answer": [
+            "A result with p < 0.05 is statistically significant at the 5% level under the test assumptions.",
+            "It indicates that the observed result, or a more extreme result, would have a probability below 0.05 if the null hypothesis were true.",
+            "It does not mean there is a 95% probability that the alternative hypothesis is true or that the result is biologically important."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 21,
+        "principle": "This original practice task uses A Level statistical tests named in the Cambridge 9700 syllabus. Candidates must select tests based on data type, distribution, sample structure and relationship form, not by memorising one test per topic."
+      }
     }
   ],
   "learnerWorkflow": {
