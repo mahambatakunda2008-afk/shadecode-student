@@ -19,7 +19,7 @@ import {
   type PracticeSkillRating,
 } from "@/lib/curriculum/practice/biology-practical-attempt";
 
-type Question = { id: string; marks: number; prompt: string; answer: string[] };
+type Question = { id: string; marks: number; prompt: string; answer: string[]; data?: { columns: string[]; rows: (string | number)[][] } };
 type Task = { id: string; paper: "Paper 3" | "Paper 5"; title: string; format: string; skills: string[]; scenario: string; questions: Question[]; markingGuide?: { totalPracticeMarks: number; principle: string } };
 type PracticeSet = PracticalPracticeSet & { title: string; assessmentNotice: string; tasks: Task[] };
 
@@ -142,6 +142,13 @@ export default function PracticalPracticeClient() {
               const revealed = attempt.revealedAnswers.includes(key);
               return <article key={question.id} className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Question {index + 1}</p><h3 className="mt-2 text-sm font-semibold leading-6">{question.prompt}</h3></div><span className="shrink-0 rounded-lg bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold tabular-nums">{question.marks} marks</span></div>
+                {question.data && <div className="mt-4 overflow-hidden rounded-xl border border-[var(--card-border)]">
+                  <div className="border-b border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-2"><p className="text-xs font-semibold">Provided results</p><p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">Use these values as evidence in your answer.</p></div>
+                  <div className="overflow-x-auto"><table className="w-full min-w-[320px] border-collapse text-left text-xs">
+                    <thead><tr>{question.data.columns.map((column, columnIndex) => <th key={columnIndex} scope="col" className="border-b border-[var(--card-border)] px-3 py-2 font-semibold text-[var(--foreground)]">{column}</th>)}</tr></thead>
+                    <tbody>{question.data.rows.map((row, rowIndex) => <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[var(--background)]" : "bg-[var(--surface)]"}>{row.map((value, columnIndex) => <td key={columnIndex} className="border-b border-[var(--card-border)] px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
+                  </table></div>
+                </div>}
                 {(() => {
                   const assessedSkills = getPracticalQuestionSkills(task, question);
                   return assessedSkills.length > 0 ? <div className="mt-3 rounded-xl border border-[var(--card-border)] bg-[var(--background)] px-3 py-3"><p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)]">Skills assessed in this question</p><div className="mt-2 flex flex-wrap gap-2">{assessedSkills.map((skill) => { const rating = attempt.skillRatings[`${task.id}::${skill}`]; return <span key={skill} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--card-border)] px-2.5 py-1 text-[11px]"><span>{skill}</span><span className="font-semibold text-[var(--primary)]">{rating ?? "not rated"}</span></span>; })}</div></div> : null;
