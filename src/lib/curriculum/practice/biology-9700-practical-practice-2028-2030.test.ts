@@ -12,6 +12,7 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(practiceSet.provenance.sourceUrl).toContain("cambridgeinternational.org");
     expect(practiceSet.assessmentNotice).toContain("not official Cambridge mark schemes");
     expect(practiceSet.tasks).toHaveLength(8);
+    expect(practiceSet.tasks.reduce((sum, task) => sum + task.questions.length, 0)).toBe(60);
   });
 
   it("covers Paper 3 practical skills and Paper 5 planning and evaluation", () => {
@@ -24,14 +25,17 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
   });
 
   it("has complete prompts, answer guidance and internally consistent practice totals", () => {
+    let totalPracticeMarks = 0;
     for (const task of practiceSet.tasks) {
       expect(task.questions.length).toBeGreaterThan(0);
       expect(task.questions.every((question) => question.prompt.length > 20)).toBe(true);
       expect(task.questions.every((question) => question.answer.length > 0)).toBe(true);
       expect(task.questions.every((question) => question.marks > 0)).toBe(true);
-      expect(task.questions.reduce((sum, question) => sum + question.marks, 0))
-        .toBe(task.markingGuide.totalPracticeMarks);
+      const taskMarks = task.questions.reduce((sum, question) => sum + question.marks, 0);
+      expect(taskMarks).toBe(task.markingGuide.totalPracticeMarks);
+      totalPracticeMarks += taskMarks;
     }
+    expect(totalPracticeMarks).toBe(209);
   });
 
   it("covers A Level statistical analysis and appropriate test selection", () => {
