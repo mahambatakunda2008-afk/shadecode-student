@@ -165,7 +165,7 @@ export default function PracticalPracticeClient() {
                 <figcaption className="mb-3 text-xs font-semibold">Osmosis investigation · potato cylinders in sucrose solutions</figcaption>
                 <svg viewBox="0 0 640 300" role="img" aria-label="Six labelled test tubes containing increasing sucrose concentrations and equal-sized potato cylinders immersed in solution, with a balance for measuring mass" className="mx-auto block w-full max-w-2xl">
                   {Array.from({length:6},(_,i)=>{
-                    const x=45+i*96, level=175, height=105, concentration=(i*0.2).toFixed(1);
+                    const x=45+i*96, level=175, concentration=(i*0.2).toFixed(1);
                     return <g key={i}>
                       <path d={`M${x} 54 V${level} Q${x} 190 ${x+23} 190 Q${x+46} 190 ${x+46} ${level} V54`} fill="none" stroke="currentColor" strokeWidth="2.2"/>
                       <path d={`M${x+3} ${level-5} H${x+43} V${level} Q${x+43} 187 ${x+23} 187 Q${x+3} 187 ${x+3} ${level} Z`} fill="var(--primary)" opacity=".22"/>
