@@ -45,7 +45,8 @@ type PlottedPoint = { x: number; y: number };
 function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData; storageKey: string }) {
   const numericColumns = useMemo(() => data.columns.map((label, index) => ({ label, index, values: data.rows.map((row) => Number(row[index])) })).filter((column) => column.values.length > 1 && column.values.every(Number.isFinite)), [data]);
   const [xIndex, setXIndex] = useState(numericColumns[0]?.index ?? 0);
-  const [yIndex, setYIndex] = useState(numericColumns[1]?.index ?? numericColumns[0]?.index ?? 0);
+  const defaultYIndex = numericColumns.find((column) => column.index !== numericColumns[0]?.index && /mean|relative rate|rate|yield|percentage/i.test(column.label))?.index ?? numericColumns[1]?.index ?? numericColumns[0]?.index ?? 0;
+  const [yIndex, setYIndex] = useState(defaultYIndex);
   const [points, setPoints] = useState<PlottedPoint[]>([]);
   const [ready, setReady] = useState(false);
   const plot = { left: 58, top: 18, width: 540, height: 270 };
