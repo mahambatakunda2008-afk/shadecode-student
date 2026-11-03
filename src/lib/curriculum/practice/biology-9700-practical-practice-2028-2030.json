@@ -427,12 +427,44 @@
         {
           "id": "g",
           "marks": 3,
-          "prompt": "Describe the graph to plot and explain how the isotonic concentration can be estimated.",
+          "prompt": "The following original practice results were obtained. Describe the graph to plot and explain how the isotonic concentration can be estimated.",
           "answer": [
             "Plot sucrose concentration / mol dm⁻³ on the x-axis and mean percentage change in mass / % on the y-axis.",
             "Use an appropriate scale, labelled axes and accurately plotted points.",
             "Estimate the isotonic concentration where the best-fit line or curve crosses 0% change in mass."
-          ]
+          ],
+          "data": {
+            "columns": [
+              "Sucrose concentration / mol dm⁻³",
+              "Mean percentage change in mass / %"
+            ],
+            "rows": [
+              [
+                0,
+                18.4
+              ],
+              [
+                0.2,
+                11.2
+              ],
+              [
+                0.4,
+                4.6
+              ],
+              [
+                0.6,
+                -3.1
+              ],
+              [
+                0.8,
+                -10.5
+              ],
+              [
+                1,
+                -17.8
+              ]
+            ]
+          }
         },
         {
           "id": "h",
@@ -541,12 +573,56 @@
         {
           "id": "g",
           "marks": 3,
-          "prompt": "Describe a suitable graph for comparing enzyme activity at different pH values.",
+          "prompt": "The following original practice results were obtained. Describe a suitable graph for comparing enzyme activity at different pH values.",
           "answer": [
             "Plot pH on the x-axis.",
             "Plot relative rate (1 ÷ mean endpoint time) on the y-axis, with its unit or definition stated clearly.",
             "Use a suitable scale, accurately plotted points and a smooth best-fit curve where justified; identify the pH with the highest measured activity."
-          ]
+          ],
+          "data": {
+            "columns": [
+              "pH",
+              "Mean endpoint time / s",
+              "Relative rate / s⁻¹"
+            ],
+            "rows": [
+              [
+                3,
+                180,
+                0.00556
+              ],
+              [
+                4,
+                92,
+                0.0109
+              ],
+              [
+                5,
+                42,
+                0.0238
+              ],
+              [
+                6,
+                31,
+                0.0323
+              ],
+              [
+                7,
+                38,
+                0.0263
+              ],
+              [
+                8,
+                75,
+                0.0133
+              ],
+              [
+                9,
+                150,
+                0.00667
+              ]
+            ]
+          }
         },
         {
           "id": "h",
@@ -707,12 +783,34 @@
         {
           "id": "b",
           "marks": 3,
-          "prompt": "Calculate the standard error of the mean for each group using SE = sample standard deviation ÷ square root of sample size. Give answers to two significant figures.",
+          "prompt": "Use the supplied summary data to calculate the standard error of the mean for each group using SE = sample standard deviation ÷ square root of sample size. Give answers to two significant figures.",
           "answer": [
             "Untreated: 0.6 ÷ √10 = 0.19 mg (2 s.f.).",
             "Treated: 0.8 ÷ √10 = 0.25 mg (2 s.f.).",
             "The standard error estimates the precision of each sample mean, not the spread of individual measurements."
-          ]
+          ],
+          "data": {
+            "columns": [
+              "Group",
+              "Sample size (n)",
+              "Mean dry mass / mg",
+              "Sample standard deviation / mg"
+            ],
+            "rows": [
+              [
+                "Untreated",
+                10,
+                4.8,
+                0.6
+              ],
+              [
+                "Treated",
+                10,
+                6.1,
+                0.8
+              ]
+            ]
+          }
         },
         {
           "id": "c",
