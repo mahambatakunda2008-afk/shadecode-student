@@ -83,6 +83,8 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 - [x] AI circuit breaker (`src/lib/aiCircuitBreaker.ts`): 3 failures in 10 min pauses AI for 3 min, one probe request tests recovery; only skips AI when the engine can serve the topic
 - [x] Server-marked battles (deterministic papers: numeric or multiple choice): keyless play set + private `challenge_answer_keys` (service role only) + `POST /api/challenge/mark` records a verified attempt. Papers needing judgement (written AI-marked answers) stay self-reported (`marking = 'client'`)
 - [x] Verified marking indicator on the challenge page and the battle result banner (shown only for server-marked attempts; self-reported papers are labelled as such) -- `src/lib/challenge/verification.ts`
+- [x] Battle attempts are now written only by the service role (`recordBattleAttempt`); the open INSERT policy on `challenge_attempts` is dropped, and the challenge-page badge requires the private answer key to exist
+- [ ] `challenge_attempts` still has a public SELECT policy exposing `user_id`; restrict it before building any leaderboard
 - [ ] Battle follow-ups: verify the challenger's own score (it is still read from their saved result, so it deliberately carries no Verified badge); Biology and written papers need AI or self-marking before they can be verified
 - [ ] Flashcards, notes and lessons: audit each AI path for the same ladder (lessons already have a local fallback pack)
 - [ ] Owner action: provider keys. GROQ_API_KEY was assumed to be the fast option but is not usable; pick any reachable low-latency provider later and add it to the chain
