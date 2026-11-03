@@ -254,6 +254,25 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
         "dealing with data",
         "Safety in the laboratory",
         "Responsibility for safety matters rests with centres.",
+        "# Expectations for each skill (Paper 3)",
+        "## Manipulation, measurement and observation",
+        "### Decisions relating to measurements and observations",
+        "Within an investigation, candidates should be able to:",
+        "- identify the independent variable and dependent variable",
+        "- decide a suitable range of values for the independent variable",
+        "- decide the number of different values (a minimum of five)",
+        "### Collection of data and observations",
+        "- follow instructions to collect results",
+        "- assess the risk as low, medium or high",
+        "### Recording data and observations",
+        "- record raw and calculated results in an appropriate table",
+        "  - descriptive headings, including required units",
+        "# Expectations for each skill (Paper 5)",
+        "### Defining the problem",
+        "- state a relevant prediction and link this to an underlying hypothesis",
+        "### Methods",
+        "- describe how to vary the independent variable",
+        "- prepare a simple risk assessment of their plans",
       ].join("\n"),
       { boardId: "cambridge", qualificationId: "cambridge-as-a-level", level: "as_a_level", syllabusId: "cambridge-9700", syllabusVersion: "2028-2030", subjectId: "biology" },
       provenance,
@@ -295,6 +314,22 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     ]);
     expect(skills.every((item) => item.kind === "skill" && item.status === "draft")).toBe(true);
     expect(skills.every((item) => item.parentId === practical.find((paper) => paper.code === item.code?.slice(0, 2))?.id)).toBe(true);
+    const expectations = items.filter((item) => item.metadata?.extraction === "cambridge-practical-skill-expectation");
+    expect(expectations.map((item) => item.code)).toEqual([
+      "P3-EXPECT-DECISIONS-RELATING-TO-MEASUREMENTS-AND-OBSERVATIONS-01",
+      "P3-EXPECT-DECISIONS-RELATING-TO-MEASUREMENTS-AND-OBSERVATIONS-02",
+      "P3-EXPECT-DECISIONS-RELATING-TO-MEASUREMENTS-AND-OBSERVATIONS-03",
+      "P3-EXPECT-COLLECTION-OF-DATA-AND-OBSERVATIONS-01",
+      "P3-EXPECT-COLLECTION-OF-DATA-AND-OBSERVATIONS-02",
+      "P3-EXPECT-RECORDING-DATA-AND-OBSERVATIONS-01",
+      "P5-EXPECT-DEFINING-THE-PROBLEM-01",
+      "P5-EXPECT-METHODS-01",
+      "P5-EXPECT-METHODS-02",
+    ]);
+    expect(expectations[0].content).toContain("identify the independent variable");
+    expect(expectations[5].content).toContain("descriptive headings");
+    expect(expectations.every((item) => item.status === "draft")).toBe(true);
+    expect(expectations.every((item) => item.parentId === practical.find((paper) => paper.code === item.metadata?.paper)?.id)).toBe(true);
   });
   it("captures the practical overview when the PDF heading is numbered without a duplicate heading", async () => {
     const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
