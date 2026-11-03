@@ -70,8 +70,8 @@ describe("watched syllabus version resolution", () => {
     expect(resolveWatchedSyllabusVersion({ configuredVersion: "2028-2030" })).toEqual({
       version: "2028-2030",
       source: "registry",
-      confidence: "high",
-      evidence: ["Source registry explicitly configured this syllabus version."],
+      confidence: "registry-configured",
+      evidence: ["Source registry explicitly configured this syllabus version; the PDF itself did not expose a version string."],
     });
   });
 
