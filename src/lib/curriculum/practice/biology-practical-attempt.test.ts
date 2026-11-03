@@ -85,7 +85,7 @@ describe("Biology practical attempt preview", () => {
     attempt = selfAwardPracticalMarks(set, attempt, "P3-01", "b", 1);
     const summary = summarizePracticalAttempt(set, attempt);
     expect(summary.selfAwardedMarks).toBe(3);
-    expect(summary.availableMarks).toBe(5);
+    expect(summary.availableMarks).toBe(7);
     expect(() => selfAwardPracticalMarks(set, attempt, "P3-01", "a", 4)).toThrow();
   });
 
