@@ -230,6 +230,9 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     const items = extractCurriculumKnowledge(
       [
         "5 Practical assessment",
+        "Practical assessment",
+        "At least 20% of course time should be practical work.",
+        "Practical work develops investigative skills and supports understanding of biological concepts.",
         "Paper 3 – Advanced Practical Skills",
         "Paper 3 consists of two or three questions, totalling 40 marks.",
         "manipulation, measurement and observation",
@@ -249,8 +252,15 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
       provenance,
       getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
     );
+    const overview = items.find((item) => item.metadata?.extraction === "cambridge-practical-assessment-overview");
+    expect(overview?.kind).toBe("practical_activity");
+    expect(overview?.code).toBe("PRACTICAL-OVERVIEW");
+    expect(overview?.content).toContain("At least 20% of course time");
+    expect(overview?.content).toContain("investigative skills");
+    expect(overview?.status).toBe("draft");
     const practical = items.filter((item) => item.metadata?.extraction === "cambridge-practical-assessment");
     expect(practical.map((item) => item.code)).toEqual(["P3", "P5"]);
+    expect(practical.every((item) => item.parentId === overview?.id)).toBe(true);
     expect(practical[0].content).toContain("manipulation, measurement and observation");
     expect(practical[1].content).toContain("planning, analysis, conclusions and evaluation");
     expect(practical[0].content).not.toContain("Paper 5 is");
