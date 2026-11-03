@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import practicalPracticeBank from "./biology-9700-practical-practice-2028-2030.json";
 import {
   canAttemptPracticalSet,
   getPracticalQuestionFeedback,
@@ -230,6 +231,27 @@ describe("Biology practical attempt preview", () => {
       { prompt: "Identify variables, repeat the test and plot a graph.", answer: ["Use at least three repeats."] },
     );
     expect(mapped.every((skill) => declared.includes(skill))).toBe(true);
+  });
+
+  it("maps every original bank question to one or more declared task skills", () => {
+    const bank = practicalPracticeBank as unknown as PracticalPracticeSet;
+    const questions = bank.tasks.flatMap((task) =>
+      task.questions.map((question) => ({ task, question })),
+    );
+    expect(questions).toHaveLength(59);
+
+    for (const { task, question } of questions) {
+      const mapped = getPracticalQuestionSkills(task, question);
+      expect(mapped.length, `${task.id} question ${question.id} should have a curated skill mapping`).toBeGreaterThan(0);
+      expect(mapped.every((skill) => task.skills.includes(skill))).toBe(true);
+    }
+  });
+
+  it("maps probability interpretation to an explicit skill in the statistics task", () => {
+    const bank = practicalPracticeBank as unknown as PracticalPracticeSet;
+    const task = bank.tasks.find((item) => item.id === "P5-03");
+    const question = task?.questions.find((item) => item.id === "g");
+    expect(task && question ? getPracticalQuestionSkills(task, question) : []).toContain("interpret probability");
   });
 
   it("rejects unknown questions and skills", () => {
