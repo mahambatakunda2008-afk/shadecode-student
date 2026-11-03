@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import practiceSet from "./biology-9700-practical-practice-2028-2030.json";
 
 describe("Cambridge Biology 9700 practical practice set 1", () => {
+  const findQuestion = (taskId: string, questionId: string) =>
+    practiceSet.tasks.find((task) => task.id === taskId)?.questions
+      .find((question) => question.id === questionId);
+
   it("keeps original practice material unpublished and clearly sourced", () => {
     expect(practiceSet.status).toBe("draft");
     expect(practiceSet.publicationStatus).toBe("unpublished");
@@ -65,9 +69,6 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
   });
 
   it("supplies original numerical datasets for graphing and statistical analysis", () => {
-    const findQuestion = (taskId: string, questionId: string) =>
-      practiceSet.tasks.find((task) => task.id === taskId)?.questions
-        .find((question) => question.id === questionId);
     const osmosis = findQuestion("P3-03", "g");
     const amylase = findQuestion("P3-04", "g");
     const statistics = findQuestion("P5-02", "b");
