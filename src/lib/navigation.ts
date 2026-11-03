@@ -110,7 +110,7 @@ export function getExperienceNavGroups(
   _curriculumSubjects?: unknown,
   _profileSubjects?: unknown,
 ): NavGroup[] {
-  const hasBiologySubject = JSON.stringify([_curriculumSubjects, _profileSubjects] ?? [])
+  const hasBiologySubject = JSON.stringify([_curriculumSubjects, _profileSubjects])
     .toLowerCase()
     .includes("biology");
   const foundation: NavGroup[] = [
