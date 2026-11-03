@@ -564,6 +564,117 @@
         "totalPracticeMarks": 30,
         "principle": "These are original practice mark points, not an official Cambridge mark scheme. A shorter endpoint time indicates faster starch breakdown only when starting concentrations, sampling procedure and other conditions are comparable."
       }
+    },
+    {
+      "id": "P3-05",
+      "paper": "Paper 3",
+      "title": "Investigating water uptake with a potometer",
+      "format": "Plant transport investigation, rate measurement and experimental evaluation",
+      "skills": [
+        "apparatus setup",
+        "independent and dependent variables",
+        "range and intervals",
+        "repeats",
+        "control of variables",
+        "measurement",
+        "rate calculation",
+        "table",
+        "graph",
+        "evaluation"
+      ],
+      "scenario": "A student uses a bubble potometer to investigate how air movement affects water uptake by a leafy shoot. The shoot is cut and assembled under water, the apparatus is sealed, and the distance moved by an air bubble is measured over a fixed time. The student understands that water uptake is an estimate of transpiration rate, not a direct measurement of water vapour loss.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Identify the independent and dependent variables for an investigation of air movement. State a suitable unit for the dependent variable.",
+          "answer": [
+            "Independent variable: air movement / wind speed around the leaves.",
+            "Dependent variable: rate of bubble movement or water uptake, for example mm min⁻¹ or mm³ min⁻¹ if capillary dimensions are known.",
+            "Measure bubble displacement over a fixed time, or calculate volume uptake from capillary cross-sectional area and displacement."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 4,
+          "prompt": "Describe how to set up the potometer so that measurements are valid and the apparatus does not leak.",
+          "answer": [
+            "Cut the shoot under water to reduce air entering the xylem.",
+            "Insert the shoot into the apparatus while submerged and assemble the apparatus under water where appropriate.",
+            "Ensure all joints are airtight and seal connections with suitable material.",
+            "Introduce a single air bubble into the capillary and check that it moves freely; allow the shoot to acclimatise before recording."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 4,
+          "prompt": "State four variables that should be controlled while investigating air movement and explain how to control them.",
+          "answer": [
+            "Light intensity: use the same lamp position and intensity throughout.",
+            "Temperature: monitor and maintain a constant room or chamber temperature.",
+            "Humidity: keep humidity constant and measure it if possible.",
+            "Leaf area: use the same shoot throughout or shoots with comparable total leaf area.",
+            "Measurement duration: use identical timing intervals at every air movement setting."
+          ],
+          "notes": "Any four valid control-and-method pairs."
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Suggest a suitable range of at least five air movement settings and explain why the order of testing may matter.",
+          "answer": [
+            "Use at least five measured wind speeds spanning still air to a stronger, safe airflow, for example 0, 0.5, 1.0, 1.5 and 2.0 m s⁻¹ if the apparatus permits.",
+            "Measure air speed at leaf level rather than relying only on fan settings.",
+            "Randomise or alternate the order where possible because the shoot may change condition over time."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 4,
+          "prompt": "A bubble moves 18 mm in 6 minutes. Calculate the mean rate of bubble movement. If the capillary has a cross-sectional area of 0.50 mm², calculate the volume of water uptake per minute.",
+          "answer": [
+            "Rate of movement = 18 ÷ 6 = 3.0 mm min⁻¹.",
+            "Volume moved in 6 minutes = distance × cross-sectional area.",
+            "Volume = 18 × 0.50 = 9.0 mm³.",
+            "Volume uptake rate = 9.0 ÷ 6 = 1.5 mm³ min⁻¹."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 3,
+          "prompt": "Explain why a potometer measures water uptake rather than directly measuring transpiration rate.",
+          "answer": [
+            "Some absorbed water is used in photosynthesis, growth and maintaining cell turgidity.",
+            "Not all water taken up is necessarily lost as water vapour during the measurement period.",
+            "Therefore water uptake is an estimate or proxy for transpiration, not a direct measurement of water loss."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Explain the expected effect of increasing air movement on transpiration and identify a condition under which the trend might become less pronounced.",
+          "answer": [
+            "Moving air removes the humid boundary layer around leaves.",
+            "This maintains a steep water vapour concentration gradient between the leaf air spaces and surrounding air, increasing transpiration.",
+            "The effect may become less pronounced if another factor, such as light intensity or stomatal opening, limits transpiration, or if water supply becomes limiting."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "Evaluate two limitations of a potometer investigation and suggest practical improvements.",
+          "answer": [
+            "Leaks or changes in bubble size affect readings; check airtight seals and reset the bubble consistently.",
+            "Leaf area differs between shoots; use the same shoot for all treatments or measure and standardise leaf area.",
+            "The shoot may change during a long experiment; randomise treatment order and allow consistent acclimatisation.",
+            "Air speed may vary across the leaves; measure it at several positions near the shoot and keep fan distance fixed."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 28,
+        "principle": "Practice marks and guidance are original, not an official Cambridge mark scheme. Potometer water uptake is an estimate of transpiration and must not be described as a direct measurement of transpiration."
+      }
     }
   ],
   "learnerWorkflow": {
