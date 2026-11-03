@@ -13,6 +13,9 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(practiceSet.assessmentNotice).toContain("not official Cambridge mark schemes");
     expect(findQuestion("P3-02", "a")?.prompt).toContain("36 mm");
     expect(findQuestion("P3-02", "a")?.prompt).toContain("120 µm");
+    expect(findQuestion("P3-02", "b")?.prompt).toContain("50 µm scale bar");
+    expect(findQuestion("P3-02", "b")?.answer.join(" ")).toContain("15 mm");
+    expect(findQuestion("P3-02", "d")?.answer.join(" ")).toContain("stage micrometer");
     expect(practiceSet.tasks).toHaveLength(8);
     expect(practiceSet.tasks.reduce((sum, task) => sum + task.questions.length, 0)).toBe(60);
   });
