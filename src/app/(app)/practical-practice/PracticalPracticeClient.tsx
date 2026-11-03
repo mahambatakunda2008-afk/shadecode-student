@@ -347,7 +347,8 @@ export default function PracticalPracticeClient() {
                     <tbody>{question.data.rows.map((row, rowIndex) => <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[var(--background)]" : "bg-[var(--surface)]"}>{row.map((value, columnIndex) => <td key={columnIndex} className="border-b border-[var(--card-border)] px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
                   </table></div>
                 </div>}
-                {question.data && getPracticalQuestionSkills(task, question).some((skill) => /graph/i.test(skill)) && <PracticalGraphPlotter data={question.data} storageKey={`shadecode:practical-graph:${set.id}:${key}`} />}\n                {(() => {
+                {question.data && getPracticalQuestionSkills(task, question).some((skill) => /graph/i.test(skill)) && <PracticalGraphPlotter data={question.data} storageKey={`shadecode:practical-graph:${set.id}:${key}`} />}
+                {(() => {
                   const assessedSkills = getPracticalQuestionSkills(task, question);
                   return assessedSkills.length > 0 ? <div className="mt-3 rounded-xl border border-[var(--card-border)] bg-[var(--background)] px-3 py-3"><p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)]">Skills assessed in this question</p><div className="mt-2 flex flex-wrap gap-2">{assessedSkills.map((skill) => { const rating = attempt.skillRatings[`${task.id}::${skill}`]; return <span key={skill} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--card-border)] px-2.5 py-1 text-[11px]"><span>{skill}</span><span className="font-semibold text-[var(--primary)]">{rating ?? "not rated"}</span></span>; })}</div></div> : null;
                 })()}
