@@ -251,4 +251,25 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     expect(practical[0].content).not.toContain("Paper 5 is");
     expect(practical.every((item) => item.kind === "assessment_requirement" && item.status === "draft")).toBe(true);
   });
+  it("joins wrapped Cambridge Biology subtopic headings and ignores continued repeats", async () => {
+    const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
+    const items = extractCurriculumKnowledge(
+      [
+        "1 Cell structure",
+        "1.1 The microscope in cell",
+        "studies",
+        "1.1 The microscope in cell studies (continued)",
+        "Learning outcomes",
+        "Candidates should be able to:",
+        "1 use a light microscope",
+      ].join("\n"),
+      { boardId: "cambridge", qualificationId: "cambridge-as-a-level", level: "as_a_level", syllabusId: "cambridge-9700", syllabusVersion: "2028-2030", subjectId: "biology" },
+      provenance,
+      getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
+    );
+    const subtopics = items.filter((item) => item.metadata?.extraction === "cambridge-subtopic");
+    expect(subtopics).toHaveLength(1);
+    expect(subtopics[0].title).toBe("The microscope in cell studies");
+    expect(items.filter((item) => item.kind === "learning_outcome").map((item) => item.code)).toEqual(["1.1.1"]);
+  });
 });
