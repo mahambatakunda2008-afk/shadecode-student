@@ -794,7 +794,8 @@
         "interpret correlation",
         "chi-squared",
         "t-test assumptions",
-        "evaluate sampling"
+        "evaluate sampling",
+        "interpret probability"
       ],
       "scenario": "Three short investigations produce different kinds of biological data. Investigation A compares the number of individuals in two phenotypic categories with expected frequencies from a genetic cross. Investigation B compares mean leaf area in two independent groups; leaf-area data are continuous, approximately normally distributed and have similar standard deviations. Investigation C records paired measurements of an environmental gradient and species abundance at eight randomly selected independent sites; a scatter graph shows a monotonic relationship, but the data are not normally distributed.",
       "questions": [
