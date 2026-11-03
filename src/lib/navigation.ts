@@ -110,6 +110,9 @@ export function getExperienceNavGroups(
   _curriculumSubjects?: unknown,
   _profileSubjects?: unknown,
 ): NavGroup[] {
+  const hasBiologySubject = JSON.stringify([_curriculumSubjects, _profileSubjects] ?? [])
+    .toLowerCase()
+    .includes("biology");
   const foundation: NavGroup[] = [
     { group: "Start here", items: [NAV_ITEMS.dashboard, NAV_ITEMS.learn] },
     {
@@ -203,9 +206,6 @@ export function getExperienceNavGroups(
     _curriculumSubjects,
     _profileSubjects,
   ]);
-  const hasBiologySubject = JSON.stringify([_curriculumSubjects, _profileSubjects] ?? [])
-    .toLowerCase()
-    .includes("biology");
 
   // Keep Comp Lab discoverable for computing learners in every experience
   // family, including foundation profiles whose default groups omit it.
