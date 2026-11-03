@@ -100,13 +100,66 @@
         {
           "id": "f",
           "marks": 4,
-          "prompt": "Describe the graph that should be drawn and how the data should be presented.",
+          "prompt": "The original practice results are shown below. Describe the graph that should be drawn and how the data should be presented.",
           "answer": [
             "Temperature / °C on the x-axis.",
             "Mean oxygen volume in 60 s / cm³ on the y-axis.",
             "Linear scales use most of the available grid and have labelled axes with units.",
             "Plot points accurately and draw a suitable best-fit line or smooth curve; do not join points dot-to-dot without justification."
-          ]
+          ],
+          "data": {
+            "columns": [
+              "Temperature / °C",
+              "Repeat 1 oxygen volume / cm³",
+              "Repeat 2 oxygen volume / cm³",
+              "Repeat 3 oxygen volume / cm³",
+              "Mean oxygen volume / cm³"
+            ],
+            "rows": [
+              [
+                10,
+                2,
+                2.2,
+                2.1,
+                2.1
+              ],
+              [
+                20,
+                4.6,
+                4.9,
+                4.9,
+                4.8
+              ],
+              [
+                30,
+                8.2,
+                8.6,
+                8.7,
+                8.5
+              ],
+              [
+                40,
+                10,
+                10.3,
+                10.3,
+                10.2
+              ],
+              [
+                50,
+                7,
+                7.2,
+                7.1,
+                7.1
+              ],
+              [
+                60,
+                3,
+                3.3,
+                3.3,
+                3.2
+              ]
+            ]
+          }
         },
         {
           "id": "g",
