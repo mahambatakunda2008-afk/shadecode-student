@@ -43,6 +43,7 @@ const COMMON_PAPER_PATTERNS = [
 
 export const CURRICULUM_EXTRACTION_PROFILES: Record<string, CurriculumExtractionProfile> = {
   "cambridge-as-a-level-biology-9700-2028-2030": {
+    cambridgeNumberedLearningOutcomes: true,
     topicHeadings: [
       "cell structure",
       "biological molecules",
