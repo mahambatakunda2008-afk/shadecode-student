@@ -247,6 +247,21 @@ describe("Biology practical attempt preview", () => {
     }
   });
 
+  it("provides graph-capable numeric datasets for every curated graph question", () => {
+    const bank = practicalPracticeBank as unknown as PracticalPracticeSet;
+    const graphQuestions = bank.tasks.flatMap((task) => task.questions
+      .filter((question) => getPracticalQuestionSkills(task, question).some((skill) => /graph/i.test(skill)))
+      .map((question) => ({ task, question })));
+    expect(graphQuestions.length).toBeGreaterThan(0);
+    for (const { task, question } of graphQuestions) {
+      const data = (question as typeof question & { data?: { columns: string[]; rows: (string | number)[][] } }).data;
+      expect(data, `${task.id} question ${question.id} needs a dataset for graph practice`).toBeDefined();
+      const numericColumns = data!.columns.filter((_, index) => data!.rows.length > 1 && data!.rows.every((row) => Number.isFinite(Number(row[index]))));
+      expect(numericColumns.length, `${task.id} question ${question.id} needs two numeric axes`).toBeGreaterThanOrEqual(2);
+      expect(data!.rows.every((row) => row.length === data!.columns.length)).toBe(true);
+    }
+  });
+
   it("maps probability interpretation to an explicit skill in the statistics task", () => {
     const bank = practicalPracticeBank as unknown as PracticalPracticeSet;
     const task = bank.tasks.find((item) => item.id === "P5-03");
