@@ -50,6 +50,7 @@ function provenanceFor(source, document, extra = {}) {
     retrievedAt: report.runAt,
     ...(document.syllabusVersionEvidence?.length ? { versionEvidence: document.syllabusVersionEvidence } : {}),
     ...(document.syllabusVersionSource ? { versionSource: document.syllabusVersionSource } : {}),
+    ...(document.syllabusVersionConfidence ? { versionConfidence: document.syllabusVersionConfidence } : {}),
     ...(extra.sectionOrPage ? { sectionOrPage: extra.sectionOrPage } : {}),
     ...(extra.versionConflict ? { versionConflict: true } : {}),
     mappingStatus: "pending",
@@ -142,6 +143,9 @@ for (const source of report.sources ?? []) {
           watcherVersion: report.watcherVersion,
           sourceReportedCharacters: document.characters ?? null,
           syllabusVersion: document.syllabusVersion ?? null,
+          syllabusVersionSource: document.syllabusVersionSource ?? "legacy-or-unknown",
+          syllabusVersionConfidence: document.syllabusVersionConfidence ?? "unknown",
+          syllabusVersionEvidence: document.syllabusVersionEvidence ?? [],
           textPersisted: evidence.extractionSucceeded,
         },
       }, { onConflict: "source_id,url,content_hash", ignoreDuplicates: true });
@@ -161,6 +165,9 @@ for (const source of report.sources ?? []) {
             watcherVersion: report.watcherVersion,
             sourceReportedCharacters: document.characters ?? null,
             syllabusVersion: document.syllabusVersion ?? null,
+            syllabusVersionSource: document.syllabusVersionSource ?? "legacy-or-unknown",
+            syllabusVersionConfidence: document.syllabusVersionConfidence ?? "unknown",
+            syllabusVersionEvidence: document.syllabusVersionEvidence ?? [],
             textPersisted: true,
           },
         }).eq("source_id", sourceRow.id).eq("url", document.url)
