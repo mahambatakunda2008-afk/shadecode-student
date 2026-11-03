@@ -338,6 +338,117 @@
         "totalPracticeMarks": 29,
         "principle": "Practice mark allocation is original. A valid plan must be sufficiently detailed for another student to repeat and must distinguish the measured light intensity from lamp distance."
       }
+    },
+    {
+      "id": "P3-03",
+      "paper": "Paper 3",
+      "title": "Osmosis in plant tissue",
+      "format": "Quantitative investigation, percentage change and interpretation",
+      "skills": [
+        "independent and dependent variables",
+        "range and intervals",
+        "repeats",
+        "control of variables",
+        "measurement",
+        "percentage change",
+        "table",
+        "graph",
+        "interpretation",
+        "evaluation"
+      ],
+      "scenario": "A student investigates how sucrose concentration affects the mass of potato cylinders. Equal-sized cylinders are blotted dry and weighed before being placed in sucrose solutions for the same period. They are then removed, blotted in a standardised way and reweighed.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Identify the independent and dependent variables. State how the dependent variable should be expressed so that cylinders with slightly different starting masses can be compared.",
+          "answer": [
+            "Independent variable: sucrose concentration / mol dm⁻³.",
+            "Dependent variable: change in mass of each potato cylinder.",
+            "Calculate percentage change in mass using ((final mass − initial mass) ÷ initial mass) × 100."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 4,
+          "prompt": "Suggest a suitable range of at least five sucrose concentrations and explain why the range should include values on both sides of the isotonic concentration.",
+          "answer": [
+            "Use at least five concentrations, for example 0.0, 0.2, 0.4, 0.6, 0.8 and 1.0 mol dm⁻³.",
+            "Use equal intervals where practical to make trends easier to compare.",
+            "Include concentrations expected to cause mass gain and mass loss.",
+            "A range on both sides helps estimate the concentration at which there is no net mass change."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 4,
+          "prompt": "Describe four variables that should be controlled and how each should be standardised.",
+          "answer": [
+            "Use cylinders from the same potato variety or tuber where possible.",
+            "Cut cylinders to the same length and diameter using the same cutter.",
+            "Keep immersion time the same for every cylinder.",
+            "Use the same volume of solution and ensure each cylinder is fully immersed.",
+            "Maintain the same temperature and blot each cylinder using the same method and duration."
+          ],
+          "notes": "Any four valid control-and-method pairs."
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Explain why at least three potato cylinders should be tested at each concentration.",
+          "answer": [
+            "Replicates reveal biological and measurement variation.",
+            "A mean percentage change can be calculated for each concentration.",
+            "Variation or anomalous results can be identified and investigated rather than silently discarded."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 4,
+          "prompt": "Construct a suitable results table. Include raw measurements and the calculated dependent variable.",
+          "answer": [
+            "Include sucrose concentration / mol dm⁻³ in the first column.",
+            "Record initial and final mass for each replicate, with units such as g.",
+            "Include percentage change in mass for each replicate.",
+            "Include mean percentage change for each concentration; distinguish raw and calculated data and use consistent precision."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 4,
+          "prompt": "A cylinder has an initial mass of 2.50 g and a final mass of 2.20 g. Calculate its percentage change in mass and show your working.",
+          "answer": [
+            "Change in mass = 2.20 − 2.50 = −0.30 g.",
+            "Percentage change = (−0.30 ÷ 2.50) × 100.",
+            "Percentage change = −12%.",
+            "The negative sign indicates a decrease in mass."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Describe the graph to plot and explain how the isotonic concentration can be estimated.",
+          "answer": [
+            "Plot sucrose concentration / mol dm⁻³ on the x-axis and mean percentage change in mass / % on the y-axis.",
+            "Use an appropriate scale, labelled axes and accurately plotted points.",
+            "Estimate the isotonic concentration where the best-fit line or curve crosses 0% change in mass."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 3,
+          "prompt": "Explain the biological basis of the expected pattern and give one limitation with an improvement.",
+          "answer": [
+            "In a dilute solution, water enters potato cells by osmosis and mass tends to increase.",
+            "In a concentrated solution, water leaves cells and mass tends to decrease.",
+            "A limitation is inconsistent blotting or tissue size; standardise blotting and use a cork borer and cutting guide to produce comparable cylinders."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 28,
+        "principle": "Practice mark allocation and answer points are original, not an official Cambridge mark scheme. The isotonic concentration is estimated from zero percentage change, not assumed to be the concentration of a particular prepared solution."
+      }
     }
   ],
   "learnerWorkflow": {
