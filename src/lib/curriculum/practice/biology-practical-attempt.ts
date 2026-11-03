@@ -80,9 +80,9 @@ const PRACTICAL_SKILL_ALIASES: Record<string, string[]> = {
   "percentage change": ["percentage change", "percentage increase", "percentage decrease", "change in mass"],
   "data processing": ["process", "calculate", "mean", "percentage", "statistical", "standard error"],
   anomalies: ["anomalous", "anomaly", "outlier", "variation"],
-  conclusion: ["conclude", "conclusion", "results suggest", "results show", "supported by the data"],
+  conclusion: ["conclude", "conclusion", "results suggest", "results show", "trend suggests", "pattern suggests", "supported by the data"],
   interpretation: ["interpret", "interpretation", "trend", "pattern", "relationship", "association"],
-  evaluation: ["evaluate", "evaluation", "limitation", "limitations", "improvement", "improvements", "weakness"],
+  evaluation: ["evaluate", "evaluation", "limitation", "limitations", "improve", "improvement", "improvements", "weakness", "reliability", "validity"],
   "limitations and improvements": ["limitation", "limitations", "improvement", "improvements", "weakness"],
   "choose statistical test": ["statistical test", "chi-squared", "t-test", "spearman", "pearson"],
   "null hypothesis": ["null hypothesis", "hypothesis", "no significant difference"],
@@ -600,7 +600,7 @@ function normalizeSkill(skill: string): string {
 function classifyPracticalSkill(skill: string): PracticalSkillDomain {
   const value = normalizeSkill(skill);
   if (/conclusion|limitation|improvement|evaluation|reliability|validity/.test(value)) return "evaluation";
-  if (/graph|table|calculation|statistic|standard error|confidence interval|t-test|chi-squared|correlation|anomal/.test(value)) return "data-handling";
+  if (/graph|table|calculation|statistic|standard error|confidence interval|t-test|chi-squared|correlation|anomal|probability|null hypothesis|degrees of freedom|data type/.test(value)) return "data-handling";
   if (/osmosis|enzyme|catalase|amylase|photosynthesis|microscop|magnification|potometer|biological drawing|cell|membrane/.test(value)) return "biological-understanding";
   if (/variable|range|interval|repeat|control|risk|apparatus|measurement|sampling|method|procedure|dilution|timing|calibrat|independent|dependent/.test(value)) return "experimental-technique";
   return "other";
