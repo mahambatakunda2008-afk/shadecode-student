@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BookOpenCheck, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Eye, EyeOff, FlaskConical, RotateCcw, Save, Target } from "lucide-react";
 import practiceData from "@/lib/curriculum/practice/biology-9700-practical-practice-2028-2030.json";
-import { getPracticalQuestionFeedback } from "@/lib/curriculum/practice/biology-practical-attempt";
+import { getPracticalQuestionFeedback, getPracticalQuestionSkills } from "@/lib/curriculum/practice/biology-practical-attempt";
 import {
   canAttemptPracticalSet,
   ratePracticalSkill,
@@ -142,6 +142,10 @@ export default function PracticalPracticeClient() {
               const revealed = attempt.revealedAnswers.includes(key);
               return <article key={question.id} className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Question {index + 1}</p><h3 className="mt-2 text-sm font-semibold leading-6">{question.prompt}</h3></div><span className="shrink-0 rounded-lg bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold tabular-nums">{question.marks} marks</span></div>
+                {(() => {
+                  const assessedSkills = getPracticalQuestionSkills(task, question);
+                  return assessedSkills.length > 0 ? <div className="mt-3 rounded-xl border border-[var(--card-border)] bg-[var(--background)] px-3 py-3"><p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)]">Skills assessed in this question</p><div className="mt-2 flex flex-wrap gap-2">{assessedSkills.map((skill) => { const rating = attempt.skillRatings[`${task.id}::${skill}`]; return <span key={skill} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--card-border)] px-2.5 py-1 text-[11px]"><span>{skill}</span><span className="font-semibold text-[var(--primary)]">{rating ?? "not rated"}</span></span>; })}</div></div> : null;
+                })()}
                 <label className="mt-4 block"><span className="sr-only">Your answer to question {index + 1}</span><textarea value={attempt.answers[key] ?? ""} onChange={(event) => updateAnswer(task.id, question.id, event.target.value)} rows={4} placeholder="Write your answer here…" className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 text-sm leading-6 outline-none transition placeholder:text-[var(--muted-foreground)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15" /></label>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <button type="button" onClick={() => setAttempt((current) => revealPracticalGuidance(set, current, task.id, question.id))} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold hover:bg-[var(--surface-2)]">{revealed ? <EyeOff size={14} /> : <Eye size={14} />}{revealed ? "Guidance revealed" : "Reveal self-check points"}</button>
