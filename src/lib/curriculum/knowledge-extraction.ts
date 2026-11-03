@@ -247,7 +247,7 @@ function extractCambridgePracticalAssessment(
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
-    if (/^Paper\s*3\s*[–-]\s*Advanced Practical Skills$/i.test(line)) {
+    if (/^Paper\s*3(?:\s*[–-]\s*Advanced Practical Skills)?$/i.test(line)) {
       flush();
       current = { code: "P3", title: "Paper 3 – Advanced Practical Skills", content: [] };
       continue;
@@ -261,15 +261,51 @@ function extractCambridgePracticalAssessment(
     if (current) current.content.push(line.replace(/^[•●▪–-]\s*/, ""));
   }
   flush();
-  return sections.map((section, index) => makeItem(
-    "assessment_requirement", section.title, section.content.join(" ").replace(/\s+/g, " ").trim(),
-    identity, { ...provenance, sectionOrPage: provenance.sectionOrPage ?? section.title }, index,
-    { code: section.code, metadata: {
-      extraction: "cambridge-practical-assessment",
-      stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment", section.code].join("|"),
-      paper: section.code,
-    } },
-  ));
+
+  const items: CurriculumKnowledgeItem[] = [];
+  const skillLabels = [
+    "manipulation, measurement and observation",
+    "presentation of data and observations",
+    "analysis, conclusions and evaluation",
+    "planning",
+    "analysis",
+    "conclusions",
+    "evaluation",
+  ];
+  sections.forEach((section, index) => {
+    const content = section.content.join(" ").replace(/\s+/g, " ").trim();
+    const parent = makeItem(
+      "assessment_requirement", section.title, content,
+      identity, { ...provenance, sectionOrPage: provenance.sectionOrPage ?? section.title }, index,
+      { code: section.code, metadata: {
+        extraction: "cambridge-practical-assessment",
+        stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment", section.code].join("|"),
+        paper: section.code,
+      } },
+    );
+    items.push(parent);
+
+    const relevantSkills = section.code === "P3"
+      ? skillLabels.slice(0, 3)
+      : skillLabels.slice(3);
+    for (const label of relevantSkills) {
+      if (!new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(content)) continue;
+      items.push(makeItem(
+        "skill", label[0].toUpperCase() + label.slice(1), label,
+        identity, { ...provenance, sectionOrPage: section.title }, items.length,
+        {
+          code: `${section.code}-${label.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "")}`,
+          parentId: parent.id,
+          metadata: {
+            extraction: "cambridge-practical-skill",
+            paper: section.code,
+            stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-skill", section.code, label].join("|"),
+          },
+        },
+      ));
+    }
+  });
+  return items;
 }
 function extractCambridgeNumberedLearningOutcomes(
   text: string,
