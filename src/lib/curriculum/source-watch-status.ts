@@ -66,3 +66,21 @@ export function resolveWatchedSyllabusVersion(input: {
     evidence: input.discoveryEvidence ?? [],
   };
 }
+
+export type CurriculumExtractionSkipReason = "version_conflict" | "missing_curriculum" | "missing_extracted_text" | null;
+
+/**
+ * Centralise the extraction gate so a syllabus-version mismatch is checked
+ * before missing-text handling. Version conflicts must be recorded even when
+ * PDF text extraction failed.
+ */
+export function resolveCurriculumExtractionSkipReason(input: {
+  curriculumResolved: boolean;
+  versionConflict: boolean;
+  extractedText?: string | null;
+}): CurriculumExtractionSkipReason {
+  if (!input.curriculumResolved) return "missing_curriculum";
+  if (input.versionConflict) return "version_conflict";
+  if (typeof input.extractedText !== "string" || !input.extractedText.trim()) return "missing_extracted_text";
+  return null;
+}
