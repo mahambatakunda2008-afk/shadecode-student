@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   canAttemptPracticalSet,
   ratePracticalSkill,
+  recommendPracticalPractice,
   revealPracticalGuidance,
   savePracticalAnswer,
   selfAwardPracticalMarks,
