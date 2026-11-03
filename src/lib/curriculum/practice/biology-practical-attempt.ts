@@ -302,5 +302,5 @@ function skillKey(taskId: string, skill: string): string {
 }
 
 function normalizeSkill(skill: string): string {
-  return skill.trim().toLowerCase().replace(/\\s+/g, " ");
+  return skill.trim().toLowerCase().replace(/\s+/g, " ");
 }
