@@ -7,7 +7,7 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(practiceSet.publicationStatus).toBe("unpublished");
     expect(practiceSet.provenance.sourceUrl).toContain("cambridgeinternational.org");
     expect(practiceSet.assessmentNotice).toContain("not official Cambridge mark schemes");
-    expect(practiceSet.tasks).toHaveLength(6);
+    expect(practiceSet.tasks).toHaveLength(8);
   });
 
   it("covers Paper 3 practical skills and Paper 5 planning and evaluation", () => {
@@ -28,6 +28,17 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
       expect(task.questions.reduce((sum, question) => sum + question.marks, 0))
         .toBe(task.markingGuide.totalPracticeMarks);
     }
+  });
+
+  it("covers A Level statistical analysis and appropriate test selection", () => {
+    const statistics = practiceSet.tasks.find((task) => task.id === "P5-02");
+    const testSelection = practiceSet.tasks.find((task) => task.id === "P5-03");
+    expect(statistics?.syllabusStage).toBe("a_level_extension");
+    expect(statistics?.questions.find((question) => question.id === "f")?.answer.join(" "))
+      .toContain("2.101");
+    expect(testSelection?.skills).toContain("choose statistical test");
+    expect(testSelection?.questions.find((question) => question.id === "a")?.answer.join(" "))
+      .toContain("Spearman's rank correlation");
   });
 
   it("includes the five-value investigation expectation and repeat measurements", () => {
