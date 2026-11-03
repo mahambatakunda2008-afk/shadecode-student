@@ -257,23 +257,31 @@ function extractCambridgePracticalAssessment(
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
+    if (/^Practical assessment$/i.test(line)) {
+      flush();
+      collectingOverview = true;
+      continue;
+    }
     if (/^Paper\s*3(?:\s*[–-]\s*Advanced Practical Skills)?$/i.test(line)) {
       flush();
+      collectingOverview = false;
       current = { code: "P3", title: "Paper 3 – Advanced Practical Skills", content: [] };
       continue;
     }
     if (/^Paper\s*5(?:\s*[–-].*)?$/i.test(line)) {
       flush();
+      collectingOverview = false;
       current = { code: "P5", title: "Paper 5 – Planning, Analysis and Evaluation", content: [] };
       continue;
     }
-    if (/^Safety in the laboratory$/i.test(line)) { flush(); continue; }
+    if (/^Safety in the laboratory$/i.test(line)) { flush(); collectingOverview = false; continue; }
     if (current) current.content.push(line.replace(/^[•●▪–-]\s*/, ""));
+    else if (collectingOverview) overviewLines.push(line.replace(/^[•●▪–-]\s*/, ""));
   }
   flush();
 
   const items: CurriculumKnowledgeItem[] = [];
-  const overviewContent = overviewLines.join(" ").replace(/\\s+/g, " ").trim();
+  const overviewContent = overviewLines.join(" ").replace(/\s+/g, " ").trim();
   const overview = overviewContent
     ? makeItem(
         "practical_activity",
