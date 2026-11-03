@@ -25,6 +25,15 @@ const set: PracticalPracticeSet = {
         { id: "b", marks: 2, prompt: "Explain repeats.", answer: ["Repeat at least three times"] },
       ],
     },
+    {
+      id: "P5-01",
+      title: "Planning",
+      paper: "Paper 5",
+      skills: ["variables", "planning"],
+      questions: [
+        { id: "a", marks: 2, prompt: "Plan an investigation.", answer: ["Define variables"] },
+      ],
+    },
   ],
 };
 
@@ -49,8 +58,25 @@ describe("Biology practical attempt preview", () => {
     attempt = ratePracticalSkill(set, attempt, "P3-01", "variables", "secure");
     attempt = ratePracticalSkill(set, attempt, "P3-01", "repeats", "revisit");
     const summary = summarizePracticalAttempt(set, attempt);
-    expect(summary.skillsToRevisit).toEqual(["repeats", "graph"]);
-    expect(summary.skills.find((skill) => skill.skill === "variables")?.rating).toBe("secure");
+    expect(summary.skillsToRevisit).toContain("repeats");
+    expect(summary.skillsToRevisit).toContain("graph");
+    expect(summary.skillsToRevisit).toContain("planning");
+    expect(summary.skills.find((skill) => skill.skill === "variables")?.rating).toBe("developing");
+    expect(summary.skills.find((skill) => skill.skill === "variables")?.reviewedTaskCount).toBe(1);
+    expect(summary.skills.find((skill) => skill.skill === "variables")?.totalTaskCount).toBe(2);
+  });
+
+
+  it("aggregates the same skill across tasks and preserves task-level ratings", () => {
+    let attempt = startPracticalAttempt(set);
+    attempt = ratePracticalSkill(set, attempt, "P3-01", "variables", "secure");
+    attempt = ratePracticalSkill(set, attempt, "P5-01", "variables", "revisit");
+    const review = summarizePracticalAttempt(set, attempt).skills.find((skill) => skill.skill === "variables");
+    expect(review?.rating).toBe("revisit");
+    expect(review?.taskIds).toEqual(["P3-01", "P5-01"]);
+    expect(review?.taskRatings).toEqual({ "P3-01": "secure", "P5-01": "revisit" });
+    expect(review?.reviewedTaskCount).toBe(2);
+    expect(review?.totalTaskCount).toBe(2);
   });
 
   it("bounds self-awarded marks and calculates transparent totals", () => {
