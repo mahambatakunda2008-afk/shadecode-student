@@ -7,7 +7,7 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(practiceSet.publicationStatus).toBe("unpublished");
     expect(practiceSet.provenance.sourceUrl).toContain("cambridgeinternational.org");
     expect(practiceSet.assessmentNotice).toContain("not official Cambridge mark schemes");
-    expect(practiceSet.tasks).toHaveLength(5);
+    expect(practiceSet.tasks).toHaveLength(6);
   });
 
   it("covers Paper 3 practical skills and Paper 5 planning and evaluation", () => {
