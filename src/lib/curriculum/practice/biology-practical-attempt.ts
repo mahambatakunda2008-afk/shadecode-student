@@ -29,6 +29,7 @@ export interface PracticalAttempt {
   revealedAnswers: string[];
   skillRatings: Record<string, PracticeSkillRating>;
   selfAwardedMarks: Record<string, number>;
+  checkedAnswerPoints: Record<string, number[]>;
 }
 
 export interface SkillReview {
@@ -88,6 +89,7 @@ export function startPracticalAttempt(
     revealedAnswers: [],
     skillRatings: {},
     selfAwardedMarks: {},
+    checkedAnswerPoints: {},
   };
 }
 
@@ -123,6 +125,29 @@ export function revealPracticalGuidance(
     revealedAnswers: attempt.revealedAnswers.includes(key)
       ? attempt.revealedAnswers
       : [...attempt.revealedAnswers, key],
+  };
+}
+
+export function togglePracticalAnswerPoint(
+  set: PracticalPracticeSet,
+  attempt: PracticalAttempt,
+  taskId: string,
+  questionId: string,
+  pointIndex: number,
+): PracticalAttempt {
+  const question = findQuestion(set, taskId, questionId);
+  if (!question) throw new Error("Question not found in this practical set.");
+  if (!Number.isInteger(pointIndex) || pointIndex < 0 || pointIndex >= question.answer.length) {
+    throw new Error("Self-check point does not exist for this question.");
+  }
+  const key = questionKey(taskId, questionId);
+  const checked = attempt.checkedAnswerPoints?.[key] ?? [];
+  const next = checked.includes(pointIndex)
+    ? checked.filter((index) => index !== pointIndex)
+    : [...checked, pointIndex];
+  return {
+    ...attempt,
+    checkedAnswerPoints: { ...attempt.checkedAnswerPoints, [key]: next },
   };
 }
 
