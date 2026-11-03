@@ -28,6 +28,19 @@ export function discoverSyllabusVersion(text: string, title = ""): CurriculumVer
   const haystack = `${title}\n${text.slice(0, 12000)}`;
   const evidence: string[] = [];
 
+  // Cambridge often states the examination cycle as a three-year list rather
+  // than a hyphenated range (for example, "for exams in 2028, 2029 and 2030").
+  const examSeries = /\\b(?:for\\s+exams?\\s+in|exams?\\s+in)\\s+(20\\d{2})\\s*,\\s*(20\\d{2})\\s+and\\s+(20\\d{2})\\b/i.exec(haystack);
+  if (examSeries) {
+    const years = examSeries.slice(1, 4).map(Number);
+    if (years[1] === years[0] + 1 && years[2] === years[1] + 1) {
+      const contextStart = Math.max(0, (examSeries.index ?? 0) - 90);
+      const contextEnd = Math.min(haystack.length, (examSeries.index ?? 0) + examSeries[0].length + 90);
+      evidence.push(haystack.slice(contextStart, contextEnd).replace(/\\s+/g, " ").trim());
+      return { version: `${years[0]}-${years[2]}`, confidence: "high", evidence };
+    }
+  }
+
   for (const pattern of VERSION_PATTERNS) {
     const match = pattern.exec(haystack);
     if (!match) continue;
