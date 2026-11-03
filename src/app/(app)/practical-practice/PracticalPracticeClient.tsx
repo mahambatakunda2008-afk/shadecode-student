@@ -135,6 +135,32 @@ export default function PracticalPracticeClient() {
               <div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full bg-[var(--primary-glow)] px-3 py-1 text-[11px] font-bold text-[var(--primary)]">{task.paper}</span><span className="text-xs text-[var(--muted-foreground)]">{task.format}</span></div>
               <h2 className="mt-3 text-xl font-bold">{task.title}</h2>
               <p className="mt-3 text-sm leading-7 text-[var(--muted-foreground)]">{task.scenario}</p>
+              {task.id === "P3-01" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
+                <figcaption className="mb-3 text-xs font-semibold">Catalase and temperature · oxygen collection apparatus schematic</figcaption>
+                <svg viewBox="0 0 640 330" role="img" aria-label="Conical flask containing catalase and hydrogen peroxide in a thermostatically controlled water bath, connected by an airtight delivery tube to a gas syringe held horizontally" className="mx-auto block w-full max-w-2xl">
+                  <rect x="70" y="170" width="330" height="112" rx="10" fill="var(--primary)" opacity=".08" stroke="currentColor" strokeWidth="2" />
+                  <path d="M78 205 Q110 197 145 205 T215 205 T285 205 T392 205" fill="none" stroke="var(--primary)" strokeWidth="2" strokeDasharray="6 4" />
+                  <text x="235" y="300" textAnchor="middle" fontSize="12" fill="currentColor">Water bath at set temperature</text>
+                  <path d="M190 112 H245 L257 145 L285 235 Q290 252 274 252 H161 Q145 252 151 235 L179 145 Z" fill="var(--surface-2)" stroke="currentColor" strokeWidth="2.5" />
+                  <path d="M162 218 Q190 210 218 218 T275 218 L284 241 H153 Z" fill="var(--primary)" opacity=".3" />
+                  <rect x="188" y="102" width="58" height="13" rx="3" fill="var(--surface-2)" stroke="currentColor" strokeWidth="2" />
+                  <path d="M216 102 V82 H355 V115 H430" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M430 115 V126" stroke="currentColor" strokeWidth="4" />
+                  <rect x="430" y="91" width="160" height="54" rx="7" fill="var(--surface-2)" stroke="currentColor" strokeWidth="2.5" />
+                  <rect x="446" y="100" width="112" height="36" rx="3" fill="var(--primary)" opacity=".13" />
+                  <path d="M558 96 V140 M558 118 H606" stroke="currentColor" strokeWidth="3" />
+                  <path d="M606 105 V131" stroke="currentColor" strokeWidth="2" />
+                  <text x="510" y="78" textAnchor="middle" fontSize="12" fill="currentColor">Gas syringe</text>
+                  <path d="M216 102 L150 62 H60" fill="none" stroke="currentColor" strokeWidth="1.3" />
+                  <text x="58" y="56" fontSize="12" fill="currentColor">Airtight bung</text>
+                  <path d="M360 115 L360 55 H430" fill="none" stroke="currentColor" strokeWidth="1.3" />
+                  <text x="435" y="51" fontSize="12" fill="currentColor">Delivery tube</text>
+                  <path d="M210 190 L120 155 H45" fill="none" stroke="currentColor" strokeWidth="1.3" />
+                  <text x="45" y="149" fontSize="12" fill="currentColor">Reaction mixture</text>
+                  <text x="218" y="270" textAnchor="middle" fontSize="11" fill="currentColor">Conical flask</text>
+                </svg>
+                <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Conceptual setup. Equilibrate both solutions in the water bath before mixing, keep the reaction time fixed at 60 s, and check every connection for gas leaks. The drawing is not to scale.</p>
+              </figure>}
               {task.id === "P3-02" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
                 <figcaption className="mb-3 text-xs font-semibold">Specimen field of view · illustrative schematic, not a micrograph</figcaption>
                 <svg viewBox="0 0 520 300" role="img" aria-label="Circular microscope field showing an arrangement of elongated plant tissue cells with visible cell walls and nuclei, plus a scale bar" className="mx-auto block w-full max-w-xl">
