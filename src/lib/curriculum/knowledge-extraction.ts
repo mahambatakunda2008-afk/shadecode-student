@@ -106,6 +106,9 @@ function extractSectionBlocks(
   const flush = (endLine: number) => {
     if (!currentHeading) return;
     const content = buffer.join(" ").replace(/\s+/g, " ").trim();
+    // Cambridge Biology learning outcomes are parsed below into individually
+    // numbered records. Avoid emitting the whole block as one generic outcome.
+    if (profile.cambridgeNumberedLearningOutcomes && currentHeading.normalized === "learning outcomes") return;
     const kind = profile.sectionKinds?.[currentHeading.normalized] ?? DEFAULT_SECTION_KINDS[currentHeading.normalized];
     if (!kind || (!content && kind !== "topic")) return;
     // Topic headings are useful draft structure even when a source extractor
