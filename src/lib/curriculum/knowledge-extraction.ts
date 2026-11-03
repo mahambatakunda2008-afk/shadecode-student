@@ -304,7 +304,6 @@ function extractCambridgePracticalAssessment(
   const paperSkills: Record<string, string[]> = {
     P3: [
       "manipulation, measurement and observation",
-      "presentation of data and observations",
       "decisions relating to measurements and observations",
       "collection of data and observations",
       "presentation of data and observations",
