@@ -322,12 +322,13 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
       "P3-EXPECT-COLLECTION-OF-DATA-AND-OBSERVATIONS-01",
       "P3-EXPECT-COLLECTION-OF-DATA-AND-OBSERVATIONS-02",
       "P3-EXPECT-RECORDING-DATA-AND-OBSERVATIONS-01",
+      "P3-EXPECT-RECORDING-DATA-AND-OBSERVATIONS-02",
       "P5-EXPECT-DEFINING-THE-PROBLEM-01",
       "P5-EXPECT-METHODS-01",
       "P5-EXPECT-METHODS-02",
     ]);
     expect(expectations[0].content).toContain("identify the independent variable");
-    expect(expectations[5].content).toContain("descriptive headings");
+    expect(expectations[6].content).toContain("descriptive headings");
     expect(expectations.every((item) => item.status === "draft")).toBe(true);
     expect(expectations.every((item) => item.parentId === practical.find((paper) => paper.code === item.metadata?.paper)?.id)).toBe(true);
   });
