@@ -54,7 +54,7 @@
           "marks": 4,
           "prompt": "Suggest a suitable set of at least five temperature values covering a useful range. Explain why the intervals should be appropriate.",
           "answer": [
-            "One suitable set is 10, 20, 30, 40, 50 and 60 °C.",
+            "Use at least five temperature values, for example 10, 20, 30, 40, 50 and 60 °C.",
             "Values span a range likely to show a trend and possible decline at high temperature.",
             "Equal 10 °C intervals make comparison straightforward.",
             "The range should avoid unsafe heating and should be refined if preliminary results show the optimum is outside it."
