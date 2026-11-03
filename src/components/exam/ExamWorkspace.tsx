@@ -20,6 +20,7 @@ import { sendLearningSignals } from "@/lib/learning/client";
 import { signalsFromMarkedPaper } from "@/lib/learning/signals";
 import { renderMath as math } from "@/lib/exam/mathText";
 import { isValidGeneratedPaper } from "@/lib/exam/paperValidation";
+import { trackEvent } from "@/lib/traction/client";
 
 export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string };
 export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
@@ -93,12 +94,16 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
     if (!subject || generating) return;
     setGenerating(true);
     setError(null);
+    // Funnel telemetry: exam_started only means the setup screen opened, so record the real steps.
+    const requestedAt = Date.now();
+    const telemetry = { subject, topic: topic || null, level: LEVELS[level].api, questionCount: count };
+    void trackEvent("exam_generation_requested", { ...telemetry, online });
     try {
       if (!online) {
         const difficulty = LEVELS[level].api;
         const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
         const generated = buildGuaranteedExam(subject, cleanTopic, difficulty, count);
-        if (!generated) { setError("You're offline and there's no saved practice set for this topic yet. Reconnect to generate a fresh paper."); return; }
+        if (!generated) { void trackEvent("exam_generation_failed", { ...telemetry, reason: "offline_no_set" }); setError("You're offline and there's no saved practice set for this topic yet. Reconnect to generate a fresh paper."); return; }
         const fallbackQuestions = generated.questions.map((q, idx) => ({
           id: idx + 1,
           type: q.type,
@@ -117,6 +122,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         setPaperSource("fallback");
         const total = count * 120;
         workId.current = `exam:offline:${id()}`;
+        void trackEvent("exam_paper_ready", { ...telemetry, source: "offline", ms: Date.now() - requestedAt });
         setQuestions(fallbackQuestions);
         setAnswers([]);
         setFlags([]);
@@ -151,6 +157,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       }
       const total = count * 120;
       workId.current = `exam:${id()}`;
+      void trackEvent("exam_paper_ready", { ...telemetry, source: data.metadata?.source === "deterministic-fallback" ? "fallback" : "live", ms: Date.now() - requestedAt });
       setPaperSource(data.metadata?.source === "deterministic-fallback" ? "fallback" : "live");
       setQuestions(data.questions);
       setAnswers([]);
@@ -182,6 +189,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         setPaperSource("fallback");
         const total = count * 120;
         workId.current = `exam:fallback:${id()}`;
+        void trackEvent("exam_paper_ready", { ...telemetry, source: "fallback", serverFailed: true, ms: Date.now() - requestedAt });
         setQuestions(fallbackQuestions);
         setAnswers([]);
         setFlags([]);
@@ -193,6 +201,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         setResumeId(null);
         setPanel("canvas");
       } else {
+        void trackEvent("exam_generation_failed", { ...telemetry, reason: e instanceof FetchTimeoutError ? "timeout" : "error", ms: Date.now() - requestedAt });
         setError(e instanceof FetchTimeoutError ? "Question generation is taking too long right now. Nothing was lost. Please try again in a minute." : e instanceof Error ? e.message : "Could not generate the exam. Please try again.");
       }
     } finally {

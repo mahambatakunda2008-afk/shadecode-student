@@ -85,14 +85,8 @@ export async function POST(req) {
       }, { status: 503 });
     }
 
-    void supabase.from("exams").insert({
-      user_id: userId,
-      subject: canonicalSubject.name,
-      difficulty,
-      questions: exam.questions,
-    }).then(({ error }) => {
-      if (error) console.error("[exam/generate] Background save failed:", error.message);
-    }).catch((error) => console.error("[exam/generate] Background save setup failed:", error));
+    // Generated papers are intentionally not written to `exams`: that table is the learner's exam
+    // schedule (subject + exam_date). The old insert here could never succeed against it.
 
     return NextResponse.json({
       questions: exam.questions,

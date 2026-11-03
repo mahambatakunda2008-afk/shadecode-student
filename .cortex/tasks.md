@@ -84,7 +84,9 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 - [x] Server-marked battles (deterministic papers: numeric or multiple choice): keyless play set + private `challenge_answer_keys` (service role only) + `POST /api/challenge/mark` records a verified attempt. Papers needing judgement (written AI-marked answers) stay self-reported (`marking = 'client'`)
 - [x] Verified marking indicator on the challenge page and the battle result banner (shown only for server-marked attempts; self-reported papers are labelled as such) -- `src/lib/challenge/verification.ts`
 - [x] Battle attempts are now written only by the service role (`recordBattleAttempt`); the open INSERT policy on `challenge_attempts` is dropped, and the challenge-page badge requires the private answer key to exist
-- [ ] `challenge_attempts` still has a public SELECT policy exposing `user_id`; restrict it before building any leaderboard
+- [x] `challenge_attempts` reads restricted to the learner and the challenger (migration 20261103130000)
+- [ ] Measure the exam funnel with the new events (`exam_generation_requested`, `exam_paper_ready`, `exam_generation_failed`) before changing the exam setup UX; `exam_started` only means the setup screen opened
+- [ ] AI provider chain: ~95% of lesson_assistant calls and all recent exam_sim calls failed on timeouts/aborts (no Groq or OpenAI calls logged). Needs an owner decision on provider keys/budgets (protected area)
 - [ ] Battle follow-ups: verify the challenger's own score (it is still read from their saved result, so it deliberately carries no Verified badge); Biology and written papers need AI or self-marking before they can be verified
 - [ ] Flashcards, notes and lessons: audit each AI path for the same ladder (lessons already have a local fallback pack)
 - [ ] Owner action: provider keys. GROQ_API_KEY was assumed to be the fast option but is not usable; pick any reachable low-latency provider later and add it to the chain
