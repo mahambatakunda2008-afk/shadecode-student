@@ -49,9 +49,6 @@ function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
   const [strokes, setStrokes] = useState<DrawingStroke[]>([]);
   const [current, setCurrent] = useState<DrawingStroke | null>(null);
   const [ready, setReady] = useState(false);
-  const svgRef = useState<SVGSVGElement | null>(null);
-  const activeSvg = svgRef[0];
-  const setActiveSvg = svgRef[1];
 
   useEffect(() => {
     try {
@@ -91,7 +88,7 @@ function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
 
   return <section className="mt-5 rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4" aria-label="Biological drawing workspace">
     <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-xs font-bold">Biological drawing workspace</h4><p className="mt-1 text-[11px] text-[var(--muted-foreground)]">Practise a large, clear specimen drawing. Draw with a finger, stylus or mouse.</p></div><div className="flex gap-2"><button type="button" disabled={!strokes.length} onClick={() => setStrokes((saved) => saved.slice(0, -1))} className="min-h-9 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold disabled:opacity-40">Undo</button><button type="button" onClick={() => { setStrokes([]); setCurrent(null); }} className="min-h-9 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold">Clear</button></div></div>
-    <div className="mt-3 overflow-hidden rounded-lg border border-[var(--card-border)] bg-[var(--surface)]"><svg ref={setActiveSvg} viewBox="0 0 600 360" role="img" aria-label="Blank specimen drawing field. Draw inside the circular field." onPointerDown={begin} onPointerMove={draw} onPointerUp={finish} onPointerCancel={finish} className="block w-full touch-none cursor-crosshair text-[var(--foreground)]"><rect width="600" height="360" fill="var(--surface)" /><circle cx="300" cy="180" r="150" fill="var(--background)" stroke="currentColor" strokeWidth="1.5" opacity=".9" />{strokes.map(renderStroke)}{current && renderStroke(current, -1)}</svg></div>
+    <div className="mt-3 overflow-hidden rounded-lg border border-[var(--card-border)] bg-[var(--surface)]"><svg viewBox="0 0 600 360" role="img" aria-label="Blank specimen drawing field. Draw inside the circular field." onPointerDown={begin} onPointerMove={draw} onPointerUp={finish} onPointerCancel={finish} className="block w-full touch-none cursor-crosshair text-[var(--foreground)]"><rect width="600" height="360" fill="var(--surface)" /><circle cx="300" cy="180" r="150" fill="var(--background)" stroke="currentColor" strokeWidth="1.5" opacity=".9" />{strokes.map(renderStroke)}{current && renderStroke(current, -1)}</svg></div>
     <div className="mt-2 flex flex-wrap justify-between gap-2 text-[11px] text-[var(--muted-foreground)]"><span>{strokes.length} stroke{strokes.length === 1 ? "" : "s"} · {ready ? "Saved on this device" : "Loading sketch…"}</span><span>Use single, clear lines. Add labels in your written answer.</span></div>
     <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Practical drawing checklist: draw only what is observed, use unbroken pencil-style outlines, keep cells large and in proportion, avoid shading, and use straight ruled label lines that do not cross.</p>
   </section>;
