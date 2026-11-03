@@ -225,4 +225,30 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     expect(subtopics.every((item) => item.parentId)).toBe(true);
     expect([...subtopics, ...outcomes].every((item) => item.status === "draft")).toBe(true);
   });
+  it("extracts Paper 3 and Paper 5 practical assessment requirements separately", async () => {
+    const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
+    const items = extractCurriculumKnowledge(
+      [
+        "5 Practical assessment",
+        "Paper 3 – Advanced Practical Skills",
+        "Paper 3 consists of two or three questions, totalling 40 marks.",
+        "manipulation, measurement and observation",
+        "presentation of data and observations",
+        "Paper 5",
+        "Paper 5 is a timetabled, written paper.",
+        "planning, analysis, conclusions and evaluation",
+        "Safety in the laboratory",
+        "Responsibility for safety matters rests with centres.",
+      ].join("\n"),
+      { boardId: "cambridge", qualificationId: "cambridge-as-a-level", level: "as_a_level", syllabusId: "cambridge-9700", syllabusVersion: "2028-2030", subjectId: "biology" },
+      provenance,
+      getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
+    );
+    const practical = items.filter((item) => item.metadata?.extraction === "cambridge-practical-assessment");
+    expect(practical.map((item) => item.code)).toEqual(["P3", "P5"]);
+    expect(practical[0].content).toContain("manipulation, measurement and observation");
+    expect(practical[1].content).toContain("planning, analysis, conclusions and evaluation");
+    expect(practical[0].content).not.toContain("Paper 5 is");
+    expect(practical.every((item) => item.kind === "assessment_requirement" && item.status === "draft")).toBe(true);
+  });
 });
