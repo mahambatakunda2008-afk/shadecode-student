@@ -995,7 +995,8 @@
         "chi-squared",
         "t-test assumptions",
         "evaluate sampling",
-        "interpret probability"
+        "interpret probability",
+        "calculate correlation coefficient"
       ],
       "scenario": "Three short investigations produce different kinds of biological data. Investigation A compares the number of individuals in two phenotypic categories with expected frequencies from a genetic cross. Investigation B compares mean leaf area in two independent groups; leaf-area data are continuous, approximately normally distributed and have similar standard deviations. Investigation C records paired measurements of an environmental gradient and species abundance at eight randomly selected independent sites; a scatter graph shows a monotonic relationship, but the data are not normally distributed.",
       "questions": [
@@ -1068,10 +1069,72 @@
             "It indicates that the observed result, or a more extreme result, would have a probability below 0.05 if the null hypothesis were true.",
             "It does not mean there is a 95% probability that the alternative hypothesis is true or that the result is biologically important."
           ]
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "The rank data for Investigation C are shown below. Calculate Spearman's rank correlation coefficient using ρ = 1 − [6Σd² ÷ n(n² − 1)]. Show the sum of squared rank differences and interpret your result.",
+          "data": {
+            "columns": [
+              "Site",
+              "Environmental gradient rank",
+              "Species abundance rank",
+              "Difference between ranks, d",
+              "d²"
+            ],
+            "rows": [
+              [
+                "A",
+                1,
+                1
+              ],
+              [
+                "B",
+                2,
+                2
+              ],
+              [
+                "C",
+                3,
+                3
+              ],
+              [
+                "D",
+                4,
+                4
+              ],
+              [
+                "E",
+                5,
+                6
+              ],
+              [
+                "F",
+                6,
+                7
+              ],
+              [
+                "G",
+                7,
+                8
+              ],
+              [
+                "H",
+                8,
+                5
+              ]
+            ]
+          },
+          "answer": [
+            "Calculate d as environmental gradient rank minus species abundance rank for each site, then square each difference.",
+            "The squared differences are 0, 0, 0, 0, 1, 1, 1 and 9, so Σd² = 12.",
+            "There are n = 8 paired sites. ρ = 1 − [6 × 12 ÷ (8 × (8² − 1))] = 1 − 72/504 = 0.857 (approximately +0.86).",
+            "This indicates a strong positive rank correlation: higher environmental-gradient ranks tend to occur with higher species-abundance ranks. Correlation does not establish causation."
+          ]
         }
       ],
       "markingGuide": {
-        "totalPracticeMarks": 21,
+        "totalPracticeMarks": 25,
         "principle": "This original practice task uses A Level statistical tests named in the Cambridge 9700 syllabus. Candidates must select tests based on data type, distribution, sample structure and relationship form, not by memorising one test per topic."
       }
     }
