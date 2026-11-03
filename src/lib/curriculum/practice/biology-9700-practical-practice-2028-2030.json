@@ -216,15 +216,14 @@
         {
           "id": "b",
           "marks": 4,
-          "prompt": "Describe four features of a high-quality biological drawing of the observed tissue.",
+          "prompt": "A 50 µm scale bar is to be added to the photomicrograph shown in the scenario. Calculate the length of the scale bar on the image, then describe three features of a high-quality biological drawing of the observed tissue.",
           "answer": [
-            "Use clear, single, continuous lines.",
-            "Draw large, accurate outlines with correct proportions.",
-            "Do not use shading or sketching.",
-            "Use straight ruled label lines that touch the correct structure and do not cross.",
-            "Include a suitable title and scale information where required."
+            "The photomicrograph magnification is ×300, so scale-bar image length = 50 µm × 300 = 15 000 µm = 15 mm.",
+            "Use clear, single, continuous lines and draw large, accurate outlines with correct proportions.",
+            "Do not use shading or sketching; represent only structures actually observed.",
+            "Use straight ruled label lines that touch the correct structure and do not cross. A scale bar should be a straight measured line labelled with the actual specimen length, for example 50 µm."
           ],
-          "notes": "Any four distinct valid features."
+          "notes": "The scale-bar calculation is 2 marks; award the remaining marks for any three distinct valid drawing conventions."
         },
         {
           "id": "c",
@@ -239,11 +238,11 @@
         {
           "id": "d",
           "marks": 3,
-          "prompt": "Give three precautions when using a light microscope to obtain a clear image.",
+          "prompt": "Give three precautions when using a light microscope to obtain a clear image and reliable measurements.",
           "answer": [
-            "Begin with low-power objective and focus before increasing magnification.",
-            "Use coarse focus only at low power; use fine focus at high power.",
-            "Adjust illumination/diaphragm and centre the specimen.",
+            "Begin with the low-power objective and focus before increasing magnification.",
+            "Use coarse focus only at low power and fine focus at high power; adjust illumination/diaphragm and centre the specimen.",
+            "Calibrate the eyepiece graticule against a stage micrometer for each objective magnification before measuring; do not assume one calibration applies to every objective.",
             "Handle slides carefully and avoid allowing the objective lens to strike the slide."
           ]
         }
