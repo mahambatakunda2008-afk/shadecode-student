@@ -135,6 +135,26 @@ export default function PracticalPracticeClient() {
               <div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full bg-[var(--primary-glow)] px-3 py-1 text-[11px] font-bold text-[var(--primary)]">{task.paper}</span><span className="text-xs text-[var(--muted-foreground)]">{task.format}</span></div>
               <h2 className="mt-3 text-xl font-bold">{task.title}</h2>
               <p className="mt-3 text-sm leading-7 text-[var(--muted-foreground)]">{task.scenario}</p>
+              {task.id === "P3-02" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
+                <figcaption className="mb-3 text-xs font-semibold">Specimen field of view · illustrative schematic, not a micrograph</figcaption>
+                <svg viewBox="0 0 520 300" role="img" aria-label="Circular microscope field showing an arrangement of elongated plant tissue cells with visible cell walls and nuclei, plus a scale bar" className="mx-auto block w-full max-w-xl">
+                  <defs><clipPath id="specimen-field"><circle cx="250" cy="145" r="125" /></clipPath></defs>
+                  <circle cx="250" cy="145" r="128" fill="none" stroke="currentColor" strokeWidth="2" opacity=".65" />
+                  <g clipPath="url(#specimen-field)" fill="none" stroke="var(--primary)" strokeWidth="2">
+                    <path d="M95 48 L170 38 L188 104 L112 119 Z M170 38 L245 34 L260 100 L188 104 Z M245 34 L322 45 L330 111 L260 100 Z M322 45 L395 65 L390 130 L330 111 Z" />
+                    <path d="M112 119 L188 104 L205 176 L125 190 Z M188 104 L260 100 L270 170 L205 176 Z M260 100 L330 111 L340 180 L270 170 Z M330 111 L390 130 L382 197 L340 180 Z" />
+                    <path d="M125 190 L205 176 L225 246 L145 260 Z M205 176 L270 170 L285 240 L225 246 Z M270 170 L340 180 L350 248 L285 240 Z M340 180 L382 197 L400 258 L350 248 Z" />
+                  </g>
+                  <g fill="var(--primary)" opacity=".8">
+                    <ellipse cx="150" cy="80" rx="8" ry="4" transform="rotate(-12 150 80)" /><ellipse cx="225" cy="70" rx="8" ry="4" transform="rotate(-5 225 70)" />
+                    <ellipse cx="300" cy="76" rx="8" ry="4" transform="rotate(8 300 76)" /><ellipse cx="360" cy="95" rx="8" ry="4" transform="rotate(15 360 95)" />
+                    <ellipse cx="160" cy="155" rx="8" ry="4" transform="rotate(-10 160 155)" /><ellipse cx="240" cy="138" rx="8" ry="4" /><ellipse cx="310" cy="145" rx="8" ry="4" transform="rotate(8 310 145)" />
+                    <ellipse cx="180" cy="220" rx="8" ry="4" transform="rotate(-8 180 220)" /><ellipse cx="250" cy="210" rx="8" ry="4" /><ellipse cx="320" cy="215" rx="8" ry="4" transform="rotate(10 320 215)" />
+                  </g>
+                  <path d="M370 270 H430" stroke="currentColor" strokeWidth="3" /><text x="400" y="288" textAnchor="middle" fill="currentColor" fontSize="12">Scale bar not to scale</text>
+                </svg>
+                <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Use the schematic to practise tracing cell boundaries and choosing labels. Use the stated measurements, not the drawing dimensions, for magnification calculations.</p>
+              </figure>}
             </div>
 
             {task.questions.map((question, index) => {
