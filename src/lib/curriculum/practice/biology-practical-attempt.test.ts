@@ -206,6 +206,32 @@ describe("Biology practical attempt preview", () => {
     expect(getPracticalQuestionSkills(task, { prompt: "Describe the graph and explain the conclusion.", answer: ["Plot the mean values and describe the trend."] })).toEqual(expect.arrayContaining(["graph", "conclusion"]));
     expect(getPracticalQuestionSkills(task, { prompt: "Explain why repeats are needed.", answer: ["Repeat each condition at least three times."] })).toContain("repeats");
   });
+  it("recognises syllabus skill synonyms that differ from the skill label", () => {
+    expect(getPracticalQuestionSkills(
+      { skills: ["anomalies", "repeats", "evaluation"] },
+      { prompt: "Investigate an anomalous endpoint time and explain how to improve reliability.", answer: ["Repeat the measurement and investigate the outlier."] },
+    )).toEqual(expect.arrayContaining(["anomalies", "repeats", "evaluation"]));
+
+    expect(getPracticalQuestionSkills(
+      { skills: ["graphing", "interpretation", "conclusion"] },
+      { prompt: "Describe the pattern and relationship shown by the plotted results.", answer: ["The trend suggests the response approaches a plateau."] },
+    )).toEqual(expect.arrayContaining(["graphing", "interpretation", "conclusion"]));
+
+    expect(getPracticalQuestionSkills(
+      { skills: ["rate calculation", "timing", "measurement"] },
+      { prompt: "Calculate the mean rate from the time taken for the endpoint.", answer: ["Rate = 1 divided by mean time, in s⁻¹."] },
+    )).toEqual(expect.arrayContaining(["rate calculation", "timing"]));
+  });
+
+  it("returns only skills declared by the current task", () => {
+    const declared = ["variables", "repeats", "graph"];
+    const mapped = getPracticalQuestionSkills(
+      { skills: declared },
+      { prompt: "Identify variables, repeat the test and plot a graph.", answer: ["Use at least three repeats."] },
+    );
+    expect(mapped.every((skill) => declared.includes(skill))).toBe(true);
+  });
+
   it("rejects unknown questions and skills", () => {
     const attempt = startPracticalAttempt(set);
     expect(() => savePracticalAnswer(set, attempt, "P3-01", "missing", "x")).toThrow();
