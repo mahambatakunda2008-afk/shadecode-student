@@ -111,11 +111,13 @@ describe("curriculum extraction decision gate", () => {
     expect(resolveCurriculumExtractionSkipReason({
       curriculumResolved: true,
       versionConflict: false,
+      versionSource: "document",
       extractedText: "  ",
     })).toBe("missing_extracted_text");
     expect(resolveCurriculumExtractionSkipReason({
       curriculumResolved: true,
       versionConflict: false,
+      versionSource: "document",
       extractedText: "valid syllabus text",
     })).toBeNull();
   });
