@@ -208,7 +208,7 @@ export function summarizePracticalAttempt(
     availableMarks: questions.reduce((sum, { question }) => sum + question.marks, 0),
     skills: skillReviews,
     skillsToRevisit: skillReviews
-      .filter((item) => item.rating === "revisit" || item.rating === "not-reviewed")
+      .filter((item) => item.rating !== "secure")
       .map((item) => item.skill),
   };
 }
