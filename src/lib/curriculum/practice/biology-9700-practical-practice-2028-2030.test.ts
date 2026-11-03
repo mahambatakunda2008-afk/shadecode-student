@@ -91,6 +91,14 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(photosynthesisRates?.data?.columns).toContain("Mean oxygen production / cm³ min⁻¹");
     expect(photosynthesisRates?.data?.rows).toHaveLength(5);
     expect(photosynthesisRates?.prompt).toContain("shown below");
+    const photosynthesisVariation = findQuestion("P5-01", "g");
+    expect(photosynthesisVariation?.data?.columns).toContain("Repeat 1 oxygen production / cm³ min⁻¹");
+    expect(photosynthesisVariation?.data?.rows).toHaveLength(5);
+    expect(photosynthesisVariation?.data?.rows.every((row) => {
+      const repeats = row.slice(1, 4).map(Number);
+      const mean = Number(row[4]);
+      return repeats.length === 3 && Math.abs(repeats.reduce((sum, value) => sum + value, 0) / 3 - mean) < 0.001;
+    })).toBe(true);
     const spearman = findQuestion("P5-03", "h");
     expect(spearman?.data?.rows).toHaveLength(8);
     expect(spearman?.data?.columns).toContain("Species abundance rank");
