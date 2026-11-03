@@ -45,6 +45,29 @@ type PlottedPoint = { x: number; y: number };
 
 type DrawingStroke = { points: { x: number; y: number }[] };
 
+type MeasurementUnit = "mm" | "µm" | "nm";
+
+function MagnificationCalculator() {
+  const [imageSize, setImageSize] = useState("");
+  const [imageUnit, setImageUnit] = useState<MeasurementUnit>("mm");
+  const [actualSize, setActualSize] = useState("");
+  const [actualUnit, setActualUnit] = useState<MeasurementUnit>("µm");
+  const factors: Record<MeasurementUnit, number> = { mm: 1000, "µm": 1, nm: 0.001 };
+  const image = Number(imageSize) * factors[imageUnit];
+  const actual = Number(actualSize) * factors[actualUnit];
+  const valid = imageSize.trim() !== "" && actualSize.trim() !== "" && Number.isFinite(image) && Number.isFinite(actual) && image > 0 && actual > 0;
+  const magnification = valid ? image / actual : null;
+  return <section className="mt-4 rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4" aria-label="Magnification calculator">
+    <h4 className="text-xs font-bold">Measurement tool · magnification</h4>
+    <p className="mt-1 text-[11px] leading-5 text-[var(--muted-foreground)]">Enter the measured image size and actual specimen size. The calculator converts both to micrometres before dividing.</p>
+    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <label className="text-xs font-medium">Image size<div className="mt-1 flex gap-2"><input type="number" min="0" step="any" inputMode="decimal" value={imageSize} onChange={(event) => setImageSize(event.target.value)} placeholder="e.g. 36" className="h-10 min-w-0 flex-1 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm" /><select value={imageUnit} onChange={(event) => setImageUnit(event.target.value as MeasurementUnit)} className="h-10 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2 text-sm">{(["mm", "µm", "nm"] as const).map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>
+      <label className="text-xs font-medium">Actual size<div className="mt-1 flex gap-2"><input type="number" min="0" step="any" inputMode="decimal" value={actualSize} onChange={(event) => setActualSize(event.target.value)} placeholder="e.g. 120" className="h-10 min-w-0 flex-1 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm" /><select value={actualUnit} onChange={(event) => setActualUnit(event.target.value as MeasurementUnit)} className="h-10 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2 text-sm">{(["mm", "µm", "nm"] as const).map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>
+    </div>
+    <div className="mt-3 rounded-lg bg-[var(--surface)] p-3" aria-live="polite"><p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)]">Magnification = image size ÷ actual size</p>{magnification !== null ? <><p className="mt-1 text-2xl font-bold tabular-nums text-[var(--primary)]">×{Number(magnification.toPrecision(6)).toLocaleString()}</p><p className="mt-1 text-[11px] text-[var(--muted-foreground)]">{image.toLocaleString()} µm ÷ {actual.toLocaleString()} µm. Magnification has no units.</p></> : <p className="mt-1 text-xs text-[var(--muted-foreground)]">Enter two positive measurements to calculate.</p>}</div>
+  </section>;
+}
+
 function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
   const [strokes, setStrokes] = useState<DrawingStroke[]>([]);
   const [current, setCurrent] = useState<DrawingStroke | null>(null);
@@ -416,6 +439,7 @@ export default function PracticalPracticeClient() {
                   </table></div>
                 </div>}
                 {question.data && getPracticalQuestionSkills(task, question).some((skill) => /graph/i.test(skill)) && <PracticalGraphPlotter data={question.data} storageKey={`shadecode:practical-graph:${set.id}:${key}`} />}
+                {task.id === "P3-02" && question.id === "a" && <MagnificationCalculator />}
                 {(() => {
                   const assessedSkills = getPracticalQuestionSkills(task, question);
                   return assessedSkills.length > 0 ? <div className="mt-3 rounded-xl border border-[var(--card-border)] bg-[var(--background)] px-3 py-3"><p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)]">Skills assessed in this question</p><div className="mt-2 flex flex-wrap gap-2">{assessedSkills.map((skill) => { const rating = attempt.skillRatings[`${task.id}::${skill}`]; return <span key={skill} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--card-border)] px-2.5 py-1 text-[11px]"><span>{skill}</span><span className="font-semibold text-[var(--primary)]">{rating ?? "not rated"}</span></span>; })}</div></div> : null;
