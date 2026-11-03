@@ -373,7 +373,35 @@
             "Plot light intensity on the x-axis and mean oxygen production rate on the y-axis.",
             "Use labelled axes with units and a suitable scale.",
             "Show variation using range bars or another justified measure of spread; state what the bars represent."
-          ]
+          ],
+          "data": {
+            "columns": [
+              "Light intensity / arbitrary units",
+              "Mean oxygen production / cm³ min⁻¹"
+            ],
+            "rows": [
+              [
+                10,
+                1.2
+              ],
+              [
+                20,
+                2.4
+              ],
+              [
+                30,
+                3.1
+              ],
+              [
+                40,
+                3.6
+              ],
+              [
+                50,
+                3.7
+              ]
+            ]
+          }
         },
         {
           "id": "h",
