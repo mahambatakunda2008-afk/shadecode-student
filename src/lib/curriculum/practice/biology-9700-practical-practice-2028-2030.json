@@ -449,6 +449,121 @@
         "totalPracticeMarks": 28,
         "principle": "Practice mark allocation and answer points are original, not an official Cambridge mark scheme. The isotonic concentration is estimated from zero percentage change, not assumed to be the concentration of a particular prepared solution."
       }
+    },
+    {
+      "id": "P3-04",
+      "paper": "Paper 3",
+      "title": "Effect of pH on amylase activity",
+      "format": "Enzyme investigation, colorimetry-style endpoint and rate comparison",
+      "skills": [
+        "independent and dependent variables",
+        "range and intervals",
+        "repeats",
+        "control of variables",
+        "risk assessment",
+        "timing",
+        "data table",
+        "rate calculation",
+        "graph",
+        "evaluation"
+      ],
+      "scenario": "A student investigates the effect of pH on the activity of amylase breaking down starch. At set time intervals, a drop of reaction mixture is added to iodine solution. The student records the time at which the iodine no longer turns blue-black. Temperature, enzyme concentration and starch concentration can be controlled.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Identify the independent and dependent variables. Explain why the endpoint time can be used to compare enzyme activity.",
+          "answer": [
+            "Independent variable: pH of the reaction mixture / buffer.",
+            "Dependent variable: time taken for starch to no longer be detected by iodine.",
+            "For the same initial starch concentration and fixed conditions, a shorter endpoint time indicates a faster rate of starch breakdown."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 4,
+          "prompt": "Suggest at least five pH values for the investigation and explain how the range could be improved after preliminary work.",
+          "answer": [
+            "A suitable initial range could be pH 3, 4, 5, 6, 7, 8 and 9.",
+            "Use buffer solutions to establish and maintain each pH.",
+            "The range should cover acidic, near-neutral and alkaline conditions likely to reveal a maximum.",
+            "If preliminary results place the maximum near an endpoint, test additional pH values around that region using smaller intervals."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 5,
+          "prompt": "Describe a method that gives comparable endpoint measurements at each pH.",
+          "answer": [
+            "Prepare equal volumes of starch solution and amylase solution at the same concentrations.",
+            "Use a buffer of known pH and keep its volume consistent.",
+            "Allow solutions to reach the same controlled temperature before mixing.",
+            "Start the timer immediately after mixing and use the same sampling interval throughout.",
+            "Add each sample to a fresh, equal volume of iodine solution using the same drop volume.",
+            "Use the same criterion for deciding that the blue-black colour has disappeared."
+          ],
+          "notes": "Credit requires a clear, repeatable sequence and a defined endpoint."
+        },
+        {
+          "id": "d",
+          "marks": 4,
+          "prompt": "State four variables, other than pH, that should be controlled and how each should be kept constant.",
+          "answer": [
+            "Temperature: use a thermostatically controlled water bath and pre-equilibrate solutions.",
+            "Starch concentration and volume: use the same prepared stock and measured volume.",
+            "Amylase concentration and volume: use the same enzyme stock and measured volume.",
+            "Sampling interval and sample volume: use a timer and consistent pipette/dropper technique.",
+            "Iodine concentration and volume: use the same iodine solution and equal volumes."
+          ],
+          "notes": "Any four correctly paired controls."
+        },
+        {
+          "id": "e",
+          "marks": 3,
+          "prompt": "Explain why the student should repeat each pH measurement and how to deal with an anomalous endpoint time.",
+          "answer": [
+            "Repeat each pH condition at least three times to assess variation.",
+            "Calculate a mean from concordant results and compare spread between repeats.",
+            "Check an anomalous result for procedural error and repeat the measurement; do not remove it without justification."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 4,
+          "prompt": "The endpoint times at pH 5 are 42 s, 39 s and 45 s. Calculate the mean endpoint time and the relative rate using 1 ÷ mean time. Give the rate to three significant figures.",
+          "answer": [
+            "Mean time = (42 + 39 + 45) ÷ 3 = 42 s.",
+            "Relative rate = 1 ÷ 42.",
+            "Relative rate = 0.0238 s⁻¹ to three significant figures.",
+            "This is a relative rate based on endpoint time, not a direct measurement of product concentration per unit time."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Describe a suitable graph for comparing enzyme activity at different pH values.",
+          "answer": [
+            "Plot pH on the x-axis.",
+            "Plot relative rate (1 ÷ mean endpoint time) on the y-axis, with its unit or definition stated clearly.",
+            "Use a suitable scale, accurately plotted points and a smooth best-fit curve where justified; identify the pH with the highest measured activity."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "Evaluate two limitations of this method and suggest improvements.",
+          "answer": [
+            "The colour endpoint is judged by eye and may be subjective; use a colorimeter or standardised visual comparison if suitable equipment is available.",
+            "Sampling at intervals gives limited time resolution; use shorter, consistent intervals near the endpoint.",
+            "Temperature may drift; use a thermostatically controlled water bath and monitor it.",
+            "pH may change during reaction; use an adequate buffer and check pH before and after the reaction."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 30,
+        "principle": "These are original practice mark points, not an official Cambridge mark scheme. A shorter endpoint time indicates faster starch breakdown only when starting concentrations, sampling procedure and other conditions are comparable."
+      }
     }
   ],
   "learnerWorkflow": {
