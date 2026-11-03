@@ -257,7 +257,7 @@ function extractCambridgePracticalAssessment(
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
-    if (/^Practical assessment$/i.test(line)) {
+    if (/^(?:\d+(?:\.\d+)?\s+)?Practical assessment$/i.test(line)) {
       flush();
       collectingOverview = true;
       continue;
