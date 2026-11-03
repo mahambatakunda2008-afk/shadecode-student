@@ -175,9 +175,6 @@ export default function PracticalPracticeClient() {
                   })}
                   <path d="M35 235 H605" stroke="currentColor" strokeWidth="1" opacity=".35"/>
                   <text x="320" y="252" textAnchor="middle" fontSize="12" fill="currentColor">Sucrose concentration / mol dm⁻³</text>
-                  <rect x="245" y="265" width="150" height="23" rx="5" fill="var(--surface-2)" stroke="currentColor" strokeWidth="1.4"/>
-                  <path d="M320 265 L320 258 M290 258 H350" stroke="currentColor" strokeWidth="1.4"/>
-                  <text x="320" y="281" textAnchor="middle" fontSize="10" fill="currentColor">Balance for mass</text>
                   <text x="320" y="30" textAnchor="middle" fontSize="12" fill="currentColor">Equal-sized potato cylinders · schematic, not to scale</text>
                 </svg>
                 <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Use cylinders of the same dimensions, blot each consistently before weighing, and keep immersion time and temperature constant. The six tubes represent a concentration series, not measured results.</p>
