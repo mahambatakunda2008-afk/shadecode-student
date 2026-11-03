@@ -1,8 +1,9 @@
 "use client";
 
-import { getPracticalQuestionFeedback,  useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BookOpenCheck, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Eye, EyeOff, FlaskConical, RotateCcw, Save, Target } from "lucide-react";
 import practiceData from "@/lib/curriculum/practice/biology-9700-practical-practice-2028-2030.json";
+import { getPracticalQuestionFeedback } from "@/lib/curriculum/practice/biology-practical-attempt";
 import {
   canAttemptPracticalSet,
   ratePracticalSkill,
