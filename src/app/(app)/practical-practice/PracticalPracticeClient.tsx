@@ -237,7 +237,7 @@ export default function PracticalPracticeClient() {
   };
 
   if (!canAttemptPracticalSet(set)) {
-    return <main className="min-h-[70vh] bg-[var(--background)] p-6 text-[var(--foreground)]"><div className="mx-auto max-w-2xl rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-6"><h1 className="text-xl font-bold">Practice set unavailable</h1><p className="mt-2 text-sm text-[var(--muted-foreground)]">This material has not been cleared for learner access.</p></div></main>;
+    return <div className="min-h-[70vh] bg-[var(--background)] p-6 text-[var(--foreground)]"><div className="mx-auto max-w-2xl rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-6"><h1 className="text-xl font-bold">Practice set unavailable</h1><p className="mt-2 text-sm text-[var(--muted-foreground)]">This material has not been cleared for learner access.</p></div></div>;
   }
 
   if (!task) return null;
