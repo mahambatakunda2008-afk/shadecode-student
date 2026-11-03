@@ -1,5 +1,35 @@
 export type PracticeSkillRating = "secure" | "developing" | "revisit";
 
+export type PracticalFeedbackCategory = "biological-knowledge" | "method-design" | "measurement" | "calculations" | "interpretation" | "evaluation";
+
+export interface PracticalQuestionFeedback {
+  category: PracticalFeedbackCategory;
+  categoryLabel: string;
+  improvementAdvice: string;
+}
+
+/** Deterministic coaching based on the question wording, not automated marking of learner text. */
+export function getPracticalQuestionFeedback(question: Pick<PracticalQuestion, "prompt" | "answer">): PracticalQuestionFeedback {
+  const text = `${question.prompt} ${question.answer.join(" ")}`.toLowerCase();
+  if (/limitation|improvement|evaluate|reliab|validity|precaution|risk|safety/.test(text)) {
+    return { category: "evaluation", categoryLabel: "Evaluation and reliability", improvementAdvice: "For every weakness, explain how it could affect the results, then pair it with a realistic improvement. For safety points, pair each hazard with a specific precaution." };
+  }
+  if (/calculate|calculation|percentage|magnification|mean|standard error|confidence interval|t-test|chi-squared|correlation|statistical/.test(text)) {
+    return { category: "calculations", categoryLabel: "Calculations and processing", improvementAdvice: "Write the equation first, substitute values with units, show each step, then give a suitably rounded answer. Check conversions and whether the final quantity has units." };
+  }
+  if (/graph|table|trend|pattern|anomal|plot|axis|axes|present the data|variation between repeats/.test(text)) {
+    return { category: "interpretation", categoryLabel: "Data presentation and interpretation", improvementAdvice: "Identify the variables and units, describe the overall pattern using data, and distinguish a supported trend from an explanation that the data cannot prove." };
+  }
+  if (/measure|measurement|microscope|drawing|scale bar|focus|calibrat|resolution|precision|readings|recording/.test(text)) {
+    return { category: "measurement", categoryLabel: "Measurement and observation", improvementAdvice: "State the instrument or observation method, the quantity and unit, and how readings will be made consistently. Include calibration, precision or a repeatable drawing convention where relevant." };
+  }
+  if (/method|plan|procedure|apparatus|variable|control|repeat|range|interval|independent|dependent|describe how|investigation|experiment|precaution/.test(text)) {
+    return { category: "method-design", categoryLabel: "Method design and technique", improvementAdvice: "Make the method repeatable: identify what changes and what is measured, explain how controls are maintained, specify a useful range and repeats, and give enough detail for another student to follow." };
+  }
+  return { category: "biological-knowledge", categoryLabel: "Biological knowledge", improvementAdvice: "Name the relevant biological structure or process, explain the mechanism using precise terms, and connect the explanation directly to the observation or context in the question." };
+}
+
+
 export interface PracticalQuestion {
   id: string;
   marks: number;
