@@ -35,6 +35,9 @@ export interface SkillReview {
   skill: string;
   rating: PracticeSkillRating | "not-reviewed";
   taskIds: string[];
+  taskRatings: Record<string, PracticeSkillRating | "not-reviewed">;
+  reviewedTaskCount: number;
+  totalTaskCount: number;
 }
 
 export interface PracticalAttemptSummary {
@@ -151,23 +154,49 @@ export function summarizePracticalAttempt(
   const questions = set.tasks.flatMap((task) =>
     task.questions.map((question) => ({ task, question })),
   );
-  const skills = new Map<string, { rating: PracticeSkillRating | "not-reviewed"; taskIds: string[] }>();
+  const skills = new Map<string, {
+    skill: string;
+    taskIds: string[];
+    taskRatings: Record<string, PracticeSkillRating | "not-reviewed">;
+  }>();
 
   for (const task of set.tasks) {
     for (const skill of task.skills) {
-      const key = skillKey(task.id, skill);
-      const existing = skills.get(key);
-      if (!existing) {
-        skills.set(key, { rating: attempt.skillRatings[key] ?? "not-reviewed", taskIds: [task.id] });
-      }
+      const normalizedSkill = normalizeSkill(skill);
+      const existing = skills.get(normalizedSkill) ?? {
+        skill,
+        taskIds: [],
+        taskRatings: {},
+      };
+      if (!existing.taskIds.includes(task.id)) existing.taskIds.push(task.id);
+      existing.taskRatings[task.id] = attempt.skillRatings[skillKey(task.id, skill)] ?? "not-reviewed";
+      skills.set(normalizedSkill, existing);
     }
   }
 
-  const skillReviews = [...skills.entries()].map(([key, value]) => ({
-    skill: key.slice(key.indexOf("::") + 2),
-    rating: value.rating,
-    taskIds: value.taskIds,
-  }));
+  const skillReviews: SkillReview[] = [...skills.values()].map((item) => {
+    const ratings = Object.values(item.taskRatings);
+    const reviewedRatings = ratings.filter((rating): rating is PracticeSkillRating => rating !== "not-reviewed");
+    const rating: PracticeSkillRating | "not-reviewed" =
+      reviewedRatings.length === 0
+        ? "not-reviewed"
+        : reviewedRatings.includes("revisit")
+          ? "revisit"
+          : reviewedRatings.includes("developing")
+            ? "developing"
+            : reviewedRatings.length === ratings.length
+              ? "secure"
+              : "developing";
+
+    return {
+      skill: item.skill,
+      rating,
+      taskIds: item.taskIds,
+      taskRatings: item.taskRatings,
+      reviewedTaskCount: reviewedRatings.length,
+      totalTaskCount: ratings.length,
+    };
+  });
 
   return {
     answeredQuestions: questions.filter(({ task, question }) =>
@@ -194,4 +223,8 @@ function questionKey(taskId: string, questionId: string): string {
 
 function skillKey(taskId: string, skill: string): string {
   return `${taskId}::${skill}`;
+}
+
+function normalizeSkill(skill: string): string {
+  return skill.trim().toLowerCase().replace(/\\s+/g, " ");
 }
