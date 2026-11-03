@@ -11,6 +11,8 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(practiceSet.publicationStatus).toBe("unpublished");
     expect(practiceSet.provenance.sourceUrl).toContain("cambridgeinternational.org");
     expect(practiceSet.assessmentNotice).toContain("not official Cambridge mark schemes");
+    expect(findQuestion("P3-02", "a")?.prompt).toContain("36 mm");
+    expect(findQuestion("P3-02", "a")?.prompt).toContain("120 µm");
     expect(practiceSet.tasks).toHaveLength(8);
     expect(practiceSet.tasks.reduce((sum, task) => sum + task.questions.length, 0)).toBe(60);
   });
