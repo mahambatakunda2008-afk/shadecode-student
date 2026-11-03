@@ -203,18 +203,19 @@ for (const source of report.sources ?? []) {
       const skipReason = resolveCurriculumExtractionSkipReason({
         curriculumResolved: Boolean(resolved),
         versionConflict: resolved?.conflict ?? false,
+        versionSource: document.syllabusVersionSource ?? null,
         extractedText,
       });
 
-      if (skipReason === "version_conflict" && resolved) {
+      if ((skipReason === "version_conflict" || skipReason === "unconfirmed_version") && resolved) {
         // Record the mismatch even when PDF text extraction failed.
         await recordChange(
           runId,
           upsert.data.id,
           null,
-          "syllabus_version_conflict",
+          skipReason === "version_conflict" ? "syllabus_version_conflict" : "syllabus_version_unconfirmed",
           { configuredVersion: resolved.configuredVersion },
-          { discoveredVersion: resolved.discoveredVersion },
+          { discoveredVersion: resolved.discoveredVersion, versionSource: document.syllabusVersionSource ?? "legacy-or-unknown", versionConfidence: document.syllabusVersionConfidence ?? "unknown" },
           "critical",
         );
       }
