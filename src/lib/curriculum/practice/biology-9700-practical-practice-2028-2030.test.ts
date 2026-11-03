@@ -40,7 +40,7 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(confidenceInterval?.prompt).toContain("2.262");
     expect(confidenceInterval?.answer.join(" ")).toContain("4.37 to 5.23 mg");
     expect(confidenceInterval?.answer.join(" ")).toContain("5.53 to 6.67 mg");
-    expect(confidenceInterval?.answer.join(" ")).not.toContain("1.96");
+    expect(confidenceInterval?.answer.join(" ")).toContain("not the large-sample normal value 1.96");
     expect(testSelection?.skills).toContain("choose statistical test");
     expect(testSelection?.questions.find((question) => question.id === "a")?.answer.join(" "))
       .toContain("Spearman's rank correlation");
