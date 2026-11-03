@@ -781,12 +781,59 @@
         {
           "id": "g",
           "marks": 3,
-          "prompt": "Explain the expected effect of increasing air movement on transpiration and identify a condition under which the trend might become less pronounced.",
+          "prompt": "The original practice results are shown below. Describe the relationship between air speed and water uptake, and explain why the increase may become less pronounced at higher air speeds. State one limitation of using these results to infer transpiration rate.",
           "answer": [
-            "Moving air removes the humid boundary layer around leaves.",
-            "This maintains a steep water vapour concentration gradient between the leaf air spaces and surrounding air, increasing transpiration.",
-            "The effect may become less pronounced if another factor, such as light intensity or stomatal opening, limits transpiration, or if water supply becomes limiting."
-          ]
+            "Mean water uptake rate increases as air speed rises from 0 to 1.5 m s⁻¹, then changes only slightly between 1.5 and 2.0 m s⁻¹.",
+            "Moving air removes the humid boundary layer around leaves, maintaining a steep water vapour concentration gradient and increasing transpiration.",
+            "The smaller increase at higher air speeds may occur because another factor, such as stomatal opening or water supply, becomes limiting.",
+            "A potometer measures water uptake rather than water vapour loss directly, so some absorbed water may be used in photosynthesis, growth or maintaining turgidity."
+          ],
+          "data": {
+            "columns": [
+              "Air speed / m s⁻¹",
+              "Repeat 1 water uptake / mm³ min⁻¹",
+              "Repeat 2 water uptake / mm³ min⁻¹",
+              "Repeat 3 water uptake / mm³ min⁻¹",
+              "Mean water uptake / mm³ min⁻¹"
+            ],
+            "rows": [
+              [
+                0,
+                0.7,
+                0.8,
+                0.9,
+                0.8
+              ],
+              [
+                0.5,
+                1.1,
+                1.2,
+                1.3,
+                1.2
+              ],
+              [
+                1,
+                1.6,
+                1.7,
+                1.8,
+                1.7
+              ],
+              [
+                1.5,
+                1.9,
+                2,
+                2.1,
+                2
+              ],
+              [
+                2,
+                2,
+                2.1,
+                2.2,
+                2.1
+              ]
+            ]
+          }
         },
         {
           "id": "h",
