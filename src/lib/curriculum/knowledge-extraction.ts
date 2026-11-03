@@ -232,6 +232,45 @@ function extractPatternLines(
 }
 
 
+function extractCambridgePracticalAssessment(
+  text: string,
+  identity: CurriculumKnowledgeIdentity,
+  provenance: CurriculumKnowledgeProvenance,
+): CurriculumKnowledgeItem[] {
+  const lines = text.split(/\r?\n/);
+  const sections: Array<{ code: string; title: string; content: string[] }> = [];
+  let current: (typeof sections)[number] | undefined;
+  const flush = () => {
+    if (current && current.content.length) sections.push(current);
+    current = undefined;
+  };
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (/^Paper\s*3\s*[–-]\s*Advanced Practical Skills$/i.test(line)) {
+      flush();
+      current = { code: "P3", title: "Paper 3 – Advanced Practical Skills", content: [] };
+      continue;
+    }
+    if (/^Paper\s*5(?:\s*[–-].*)?$/i.test(line)) {
+      flush();
+      current = { code: "P5", title: "Paper 5 – Planning, Analysis and Evaluation", content: [] };
+      continue;
+    }
+    if (/^Safety in the laboratory$/i.test(line)) { flush(); continue; }
+    if (current) current.content.push(line.replace(/^[•●▪–-]\s*/, ""));
+  }
+  flush();
+  return sections.map((section, index) => makeItem(
+    "assessment_requirement", section.title, section.content.join(" ").replace(/\s+/g, " ").trim(),
+    identity, { ...provenance, sectionOrPage: provenance.sectionOrPage ?? section.title }, index,
+    { code: section.code, metadata: {
+      extraction: "cambridge-practical-assessment",
+      stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment", section.code].join("|"),
+      paper: section.code,
+    } },
+  ));
+}
 function extractCambridgeNumberedLearningOutcomes(
   text: string,
   identity: CurriculumKnowledgeIdentity,
@@ -338,12 +377,15 @@ export function extractCurriculumKnowledge(
   const biologyStructure = profile.cambridgeNumberedLearningOutcomes
     ? extractCambridgeNumberedLearningOutcomes(text, identity, provenance, sectionItems.filter((item) => item.kind === "topic"))
     : [];
+  const practicalAssessment = profile.cambridgeNumberedLearningOutcomes
+    ? extractCambridgePracticalAssessment(text, identity, provenance)
+    : [];
   const objectives = extractNumberedObjectives(text, identity, provenance, profile.objectiveCodePattern);
   const assessments = extractPatternLines(text, identity, provenance, profile.assessmentPatterns, "assessment_requirement");
   const papers = extractPatternLines(text, identity, provenance, profile.paperPatterns, "paper_component");
 
   const seen = new Set<string>();
-  return [...sectionItems, ...biologyStructure, ...objectives, ...assessments, ...papers].filter((item) => {
+  return [...sectionItems, ...biologyStructure, ...practicalAssessment, ...objectives, ...assessments, ...papers].filter((item) => {
     const key = `${item.kind}:${item.code ?? ""}:${item.kind === "topic" ? item.title.toLowerCase() + ":" : ""}${item.content.toLowerCase().replace(/\s+/g, " ")}`;
     if (seen.has(key)) return false;
     seen.add(key);
