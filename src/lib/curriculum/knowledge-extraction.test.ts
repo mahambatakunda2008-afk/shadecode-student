@@ -161,7 +161,7 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
   it("retains topic headings as draft records when PDF extraction yields no body text", async () => {
     const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
     const items = extractCurriculumKnowledge(
-      "1 Cell structure\\n2 Biological molecules\\n3 Enzymes",
+      `1 Cell structure\n2 Biological molecules\n3 Enzymes`,
       {
         boardId: "cambridge",
         qualificationId: "cambridge-as-a-level",
