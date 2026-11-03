@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   canAttemptPracticalSet,
   ratePracticalSkill,
+  retryPracticalQuestion,
   recommendPracticalPractice,
   revealPracticalGuidance,
   savePracticalAnswer,
@@ -123,6 +124,23 @@ describe("Biology practical attempt preview", () => {
     const recommendation = summarizePracticalAttempt(set, attempt).recommendedPractice.find((item) => item.skill === "variables");
     expect(recommendation?.taskId).toBe("P3-01");
     expect(recommendation?.questionId).toBe("a");
+  });
+
+  it("clears only the selected question's answer and feedback state for a fresh retry", () => {
+    let attempt = startPracticalAttempt(set);
+    attempt = savePracticalAnswer(set, attempt, "P3-01", "a", "Initial response");
+    attempt = savePracticalAnswer(set, attempt, "P3-01", "b", "Keep this response");
+    attempt = revealPracticalGuidance(set, attempt, "P3-01", "a");
+    attempt = togglePracticalAnswerPoint(set, attempt, "P3-01", "a", 0);
+    attempt = selfAwardPracticalMarks(set, attempt, "P3-01", "a", 2);
+
+    const retried = retryPracticalQuestion(set, attempt, "P3-01", "a");
+    expect(retried.answers).toEqual({ "P3-01::b": "Keep this response" });
+    expect(retried.revealedAnswers).toEqual([]);
+    expect(retried.checkedAnswerPoints).toEqual({});
+    expect(retried.selfAwardedMarks).toEqual({});
+    expect(retried.startedAt).toBe(attempt.startedAt);
+    expect(() => retryPracticalQuestion(set, attempt, "P3-01", "missing")).toThrow();
   });
 
   it("bounds self-awarded marks and calculates transparent totals", () => {
