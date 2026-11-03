@@ -268,6 +268,7 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     const skills = items.filter((item) => item.metadata?.extraction === "cambridge-practical-skill");
     expect(skills.map((item) => item.code)).toEqual([
       "P3-manipulation-measurement-and-observation",
+      "P3-presentation-of-data-and-observations",
       "P3-decisions-relating-to-measurements-and-observations",
       "P3-collection-of-data-and-observations",
       "P3-presentation-of-data-and-observations",
