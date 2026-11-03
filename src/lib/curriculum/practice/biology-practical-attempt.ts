@@ -52,6 +52,37 @@ export interface PracticalPracticeSet {
   tasks: PracticalTask[];
 }
 
+const PRACTICAL_SKILL_ALIASES: Record<string, string[]> = {
+  repeat: ["repeats", "replication", "replicate"],
+  "independent and dependent variables": ["independent variable", "dependent variable", "variables"],
+  "control of variables": ["control", "constant", "maintain", "keep the same"],
+  measurement: ["measure", "measuring", "readings", "precision"],
+  graph: ["plot", "axis", "axes", "trend", "curve"],
+  table: ["record", "recording", "raw data", "headings"],
+  "biological drawing": ["drawing", "draw", "outline", "label", "proportion"],
+  "risk assessment": ["risk", "hazard", "safety", "precaution"],
+  "range and intervals": ["range", "interval", "values", "concentration", "temperature"],
+  "data processing": ["process", "calculate", "mean", "percentage", "statistical"],
+};
+
+function practicalSkillTerms(skill: string): string[] {
+  const normalized = skill.toLowerCase().trim();
+  const aliases = PRACTICAL_SKILL_ALIASES[normalized] ?? [];
+  const terms = normalized.split(/[^a-z0-9]+/).filter((term) => term.length > 3);
+  return [...new Set([...terms, ...aliases])];
+}
+
+/** Deterministic question-to-skill mapping based on prompt and self-check vocabulary. */
+export function getPracticalQuestionSkills(task: Pick<PracticalTask, "skills">, question: Pick<PracticalQuestion, "prompt" | "answer">): string[] {
+  const text = `${question.prompt} ${question.answer.join(" ")}`.toLowerCase();
+  const ranked = task.skills.map((skill, index) => {
+    const hits = practicalSkillTerms(skill).filter((term) => text.includes(term));
+    return { skill, index, score: hits.length };
+  }).filter((item) => item.score > 0);
+  ranked.sort((a, b) => b.score - a.score || a.index - b.index);
+  return ranked.slice(0, 5).map((item) => item.skill);
+}
+
 export interface PracticalAttempt {
   practiceSetId: string;
   startedAt: string;
