@@ -151,6 +151,29 @@ export function togglePracticalAnswerPoint(
   };
 }
 
+export function retryPracticalQuestion(
+  set: PracticalPracticeSet,
+  attempt: PracticalAttempt,
+  taskId: string,
+  questionId: string,
+): PracticalAttempt {
+  if (!findQuestion(set, taskId, questionId)) {
+    throw new Error("Question not found in this practical set.");
+  }
+
+  const key = questionKey(taskId, questionId);
+  const { [key]: _answer, ...answers } = attempt.answers;
+  const { [key]: _marks, ...selfAwardedMarks } = attempt.selfAwardedMarks;
+  const { [key]: _checked, ...checkedAnswerPoints } = attempt.checkedAnswerPoints ?? {};
+  return {
+    ...attempt,
+    answers,
+    selfAwardedMarks,
+    checkedAnswerPoints,
+    revealedAnswers: attempt.revealedAnswers.filter((item) => item !== key),
+  };
+}
+
 export function ratePracticalSkill(
   set: PracticalPracticeSet,
   attempt: PracticalAttempt,
