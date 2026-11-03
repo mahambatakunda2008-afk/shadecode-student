@@ -43,7 +43,7 @@ type PracticalGraphData = { columns: string[]; rows: (string | number)[][] };
 type PlottedPoint = { x: number; y: number };
 
 function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData; storageKey: string }) {
-  const numericColumns = data.columns.map((label, index) => ({ label, index, values: data.rows.map((row) => Number(row[index])) })).filter((column) => column.values.length > 1 && column.values.every(Number.isFinite));
+  const numericColumns = useMemo(() => data.columns.map((label, index) => ({ label, index, values: data.rows.map((row) => Number(row[index])) })).filter((column) => column.values.length > 1 && column.values.every(Number.isFinite)), [data]);
   const [xIndex, setXIndex] = useState(numericColumns[0]?.index ?? 0);
   const [yIndex, setYIndex] = useState(numericColumns[1]?.index ?? numericColumns[0]?.index ?? 0);
   const [points, setPoints] = useState<PlottedPoint[]>([]);
