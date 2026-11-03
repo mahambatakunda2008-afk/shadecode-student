@@ -161,6 +161,27 @@ export default function PracticalPracticeClient() {
                 </svg>
                 <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Conceptual setup. Equilibrate both solutions in the water bath before mixing, keep the reaction time fixed at 60 s, and check every connection for gas leaks. The drawing is not to scale.</p>
               </figure>}
+              {task.id === "P3-03" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
+                <figcaption className="mb-3 text-xs font-semibold">Osmosis investigation · potato cylinders in sucrose solutions</figcaption>
+                <svg viewBox="0 0 640 300" role="img" aria-label="Six labelled test tubes containing increasing sucrose concentrations and equal-sized potato cylinders immersed in solution, with a balance for measuring mass" className="mx-auto block w-full max-w-2xl">
+                  {Array.from({length:6},(_,i)=>{
+                    const x=45+i*96, level=175, height=105, concentration=(i*0.2).toFixed(1);
+                    return <g key={i}>
+                      <path d={`M${x} 54 V${level} Q${x} 190 ${x+23} 190 Q${x+46} 190 ${x+46} ${level} V54`} fill="none" stroke="currentColor" strokeWidth="2.2"/>
+                      <path d={`M${x+3} ${level-5} H${x+43} V${level} Q${x+43} 187 ${x+23} 187 Q${x+3} 187 ${x+3} ${level} Z`} fill="var(--primary)" opacity=".22"/>
+                      <rect x={x+16} y={level-43} width="14" height="35" rx="3" fill="var(--surface-2)" stroke="var(--primary)" strokeWidth="2" />
+                      <text x={x+23} y="215" textAnchor="middle" fontSize="11" fill="currentColor">{concentration}</text>
+                    </g>;
+                  })}
+                  <path d="M35 235 H605" stroke="currentColor" strokeWidth="1" opacity=".35"/>
+                  <text x="320" y="252" textAnchor="middle" fontSize="12" fill="currentColor">Sucrose concentration / mol dm⁻³</text>
+                  <rect x="245" y="265" width="150" height="23" rx="5" fill="var(--surface-2)" stroke="currentColor" strokeWidth="1.4"/>
+                  <path d="M320 265 L320 258 M290 258 H350" stroke="currentColor" strokeWidth="1.4"/>
+                  <text x="320" y="281" textAnchor="middle" fontSize="10" fill="currentColor">Balance for mass</text>
+                  <text x="320" y="30" textAnchor="middle" fontSize="12" fill="currentColor">Equal-sized potato cylinders · schematic, not to scale</text>
+                </svg>
+                <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Use cylinders of the same dimensions, blot each consistently before weighing, and keep immersion time and temperature constant. The six tubes represent a concentration series, not measured results.</p>
+              </figure>}
               {task.id === "P3-02" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
                 <figcaption className="mb-3 text-xs font-semibold">Specimen field of view · illustrative schematic, not a micrograph</figcaption>
                 <svg viewBox="0 0 520 300" role="img" aria-label="Circular microscope field showing an arrangement of elongated plant tissue cells with visible cell walls and nuclei, plus a scale bar" className="mx-auto block w-full max-w-xl">
