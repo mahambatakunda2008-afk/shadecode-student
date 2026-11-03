@@ -238,7 +238,7 @@ describe("Biology practical attempt preview", () => {
     const questions = bank.tasks.flatMap((task) =>
       task.questions.map((question) => ({ task, question })),
     );
-    expect(questions).toHaveLength(59);
+    expect(questions).toHaveLength(60);
 
     for (const { task, question } of questions) {
       const mapped = getPracticalQuestionSkills(task, question);
