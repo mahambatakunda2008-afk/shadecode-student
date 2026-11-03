@@ -94,6 +94,18 @@ export default function PracticalPracticeClient() {
           ].map(({ label, value, icon: Icon }) => <div key={label} className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4"><div className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]"><Icon size={15} />{label}</div><p className="mt-2 text-2xl font-bold tabular-nums">{value}</p></div>)}
         </section>
 
+        <section className="grid gap-3 sm:grid-cols-2" aria-label="Paper coverage">
+          {(["Paper 3", "Paper 5"] as const).map((paper) => {
+            const coverage = summary.paperCoverage[paper];
+            const percentage = coverage.questionCount ? Math.round((coverage.answeredQuestions / coverage.questionCount) * 100) : 0;
+            return <div key={paper} className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4">
+              <div className="flex items-center justify-between gap-3"><h2 className="text-sm font-bold">{paper} coverage</h2><span className="text-xs font-semibold tabular-nums text-[var(--muted-foreground)]">{percentage}% answered</span></div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-2)]"><div className="h-full rounded-full bg-[var(--primary)] transition-all" style={{ width: `${percentage}%` }} /></div>
+              <div className="mt-3 flex flex-wrap justify-between gap-2 text-xs text-[var(--muted-foreground)]"><span>{coverage.answeredQuestions}/{coverage.questionCount} questions</span><span>{coverage.taskCount} tasks</span><span>{coverage.selfAwardedMarks}/{coverage.availableMarks} self-awarded</span></div>
+            </div>;
+          })}
+        </section>
+
         <div className="grid items-start gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="space-y-2">
             <h2 className="px-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Practice tasks</h2>
