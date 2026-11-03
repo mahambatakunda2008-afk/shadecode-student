@@ -52,6 +52,11 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
       .toContain("five");
     expect(investigation?.questions.find((question) => question.id === "d")?.answer.join(" "))
       .toContain("three");
+    const catalaseGraph = investigation?.questions.find((question) => question.id === "f");
+    expect(catalaseGraph?.data?.rows).toHaveLength(6);
+    expect(catalaseGraph?.data?.columns).toContain("Mean oxygen volume / cm³");
+    expect(catalaseGraph?.prompt).toContain("results are shown below");
+    expect(catalaseGraph?.data?.rows.every((row) => row.length === catalaseGraph.data?.columns.length)).toBe(true);
   });
 
   it("supplies original numerical datasets for graphing and statistical analysis", () => {
@@ -72,7 +77,7 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(statistics?.data?.rows).toHaveLength(2);
     const photosynthesisRates = findQuestion("P5-01", "f");
     expect(photosynthesisRates?.data?.columns).toContain("Mean oxygen production / cm³ min⁻¹");
-    expect(photosynthesisRates?.data?.rows).toHaveLength(4);
+    expect(photosynthesisRates?.data?.rows).toHaveLength(5);
     expect(photosynthesisRates?.prompt).toContain("shown below");
   });
 });
