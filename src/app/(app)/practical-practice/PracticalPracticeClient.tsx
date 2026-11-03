@@ -39,6 +39,58 @@ function readAttempt(): PracticalAttempt {
   return startPracticalAttempt(set);
 }
 
+type PracticalGraphData = { columns: string[]; rows: (string | number)[][] };
+type PlottedPoint = { x: number; y: number };
+
+function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData; storageKey: string }) {
+  const numericColumns = data.columns.map((label, index) => ({ label, index, values: data.rows.map((row) => Number(row[index])) })).filter((column) => column.values.length > 1 && column.values.every(Number.isFinite));
+  const [xIndex, setXIndex] = useState(numericColumns[0]?.index ?? 0);
+  const [yIndex, setYIndex] = useState(numericColumns[1]?.index ?? numericColumns[0]?.index ?? 0);
+  const [points, setPoints] = useState<PlottedPoint[]>([]);
+  const [ready, setReady] = useState(false);
+  const plot = { left: 58, top: 18, width: 540, height: 270 };
+  const values = (index: number) => data.rows.map((row) => Number(row[index])).filter(Number.isFinite);
+  const bounds = (items: number[]) => { const min = Math.min(...items), max = Math.max(...items), span = max - min || 1; return { min: Math.min(0, min), max: max + span * 0.08 }; };
+  const xb = bounds(values(xIndex)), yb = bounds(values(yIndex));
+  const sx = (value: number) => plot.left + ((value - xb.min) / (xb.max - xb.min)) * plot.width;
+  const sy = (value: number) => plot.top + plot.height - ((value - yb.min) / (yb.max - yb.min)) * plot.height;
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved) as { xIndex?: number; yIndex?: number; points?: PlottedPoint[] };
+        if (Array.isArray(parsed.points) && parsed.points.every((point) => Number.isFinite(point.x) && Number.isFinite(point.y))) setPoints(parsed.points);
+        if (numericColumns.some((column) => column.index === parsed.xIndex)) setXIndex(parsed.xIndex!);
+        if (numericColumns.some((column) => column.index === parsed.yIndex)) setYIndex(parsed.yIndex!);
+      }
+    } catch { /* A damaged graph draft must not block the practical attempt. */ }
+    setReady(true);
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!ready) return;
+    try { window.localStorage.setItem(storageKey, JSON.stringify({ xIndex, yIndex, points })); } catch { /* Graphing remains usable without persistence. */ }
+  }, [points, ready, storageKey, xIndex, yIndex]);
+
+  if (numericColumns.length < 2) return null;
+  const addPoint = (event: import("react").MouseEvent<SVGSVGElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const px = ((event.clientX - rect.left) / rect.width) * 640, py = ((event.clientY - rect.top) / rect.height) * 330;
+    if (px < plot.left || px > plot.left + plot.width || py < plot.top || py > plot.top + plot.height) return;
+    const x = xb.min + ((px - plot.left) / plot.width) * (xb.max - xb.min);
+    const y = yb.min + ((plot.top + plot.height - py) / plot.height) * (yb.max - yb.min);
+    setPoints((current) => [...current, { x: Number(x.toPrecision(5)), y: Number(y.toPrecision(5)) }]);
+  };
+
+  return <section className="mt-4 rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4" aria-label="Interactive graph plotting workspace">
+    <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-xs font-bold">Graph plotting workspace</h4><p className="mt-1 text-[11px] text-[var(--muted-foreground)]">Choose axes, then tap or click inside the grid to plot points. Your work is saved on this device.</p></div><button type="button" onClick={() => setPoints([])} className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-xs font-semibold">Clear graph</button></div>
+    <div className="mt-3 grid gap-2 sm:grid-cols-2"><label className="text-xs text-[var(--muted-foreground)]">X-axis<select value={xIndex} onChange={(event) => { setXIndex(Number(event.target.value)); setPoints([]); }} className="mt-1 block min-h-10 w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2 text-sm text-[var(--foreground)]">{numericColumns.map((column) => <option key={column.index} value={column.index}>{column.label}</option>)}</select></label><label className="text-xs text-[var(--muted-foreground)]">Y-axis<select value={yIndex} onChange={(event) => { setYIndex(Number(event.target.value)); setPoints([]); }} className="mt-1 block min-h-10 w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2 text-sm text-[var(--foreground)]">{numericColumns.map((column) => <option key={column.index} value={column.index}>{column.label}</option>)}</select></label></div>
+    <div className="mt-3 overflow-hidden rounded-lg border border-[var(--card-border)]"><svg viewBox="0 0 640 330" role="img" aria-label="Graph grid. Click inside the grid to add a plotted point." onClick={addPoint} className="block w-full touch-manipulation cursor-crosshair bg-[var(--surface)]">{Array.from({ length: 11 }, (_, index) => <g key={index}><line x1={plot.left + index * plot.width / 10} y1={plot.top} x2={plot.left + index * plot.width / 10} y2={plot.top + plot.height} stroke="currentColor" opacity=".14"/><line x1={plot.left} y1={plot.top + index * plot.height / 10} x2={plot.left + plot.width} y2={plot.top + index * plot.height / 10} stroke="currentColor" opacity=".14"/></g>)}<path d={`M${plot.left} ${plot.top} V${plot.top + plot.height} H${plot.left + plot.width}`} fill="none" stroke="currentColor" strokeWidth="2"/><text x="328" y="321" textAnchor="middle" fontSize="12" fill="currentColor">{data.columns[xIndex]}</text><text x="15" y="153" textAnchor="middle" fontSize="12" fill="currentColor" transform="rotate(-90 15 153)">{data.columns[yIndex]}</text>{points.map((point, index) => <circle key={index} cx={sx(point.x)} cy={sy(point.y)} r="5" fill="var(--primary)" stroke="var(--background)" strokeWidth="1.5"><title>{`Point ${index + 1}: (${point.x}, ${point.y})`}</title></circle>)}</svg></div>
+    <div className="mt-2 flex flex-wrap justify-between gap-2 text-[11px] text-[var(--muted-foreground)]"><span>{points.length} point{points.length === 1 ? "" : "s"} plotted</span><span>Set your own scale, units and best-fit line in your written answer.</span></div>
+  </section>;
+}
+
 export default function PracticalPracticeClient() {
   const [attempt, setAttempt] = useState<PracticalAttempt>(() => startPracticalAttempt(set));
   const [ready, setReady] = useState(false);
@@ -295,7 +347,7 @@ export default function PracticalPracticeClient() {
                     <tbody>{question.data.rows.map((row, rowIndex) => <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[var(--background)]" : "bg-[var(--surface)]"}>{row.map((value, columnIndex) => <td key={columnIndex} className="border-b border-[var(--card-border)] px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
                   </table></div>
                 </div>}
-                {(() => {
+                {question.data && getPracticalQuestionSkills(task, question).some((skill) => /graph/i.test(skill)) && <PracticalGraphPlotter data={question.data} storageKey={`shadecode:practical-graph:${set.id}:${key}`} />}\n                {(() => {
                   const assessedSkills = getPracticalQuestionSkills(task, question);
                   return assessedSkills.length > 0 ? <div className="mt-3 rounded-xl border border-[var(--card-border)] bg-[var(--background)] px-3 py-3"><p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)]">Skills assessed in this question</p><div className="mt-2 flex flex-wrap gap-2">{assessedSkills.map((skill) => { const rating = attempt.skillRatings[`${task.id}::${skill}`]; return <span key={skill} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--card-border)] px-2.5 py-1 text-[11px]"><span>{skill}</span><span className="font-semibold text-[var(--primary)]">{rating ?? "not rated"}</span></span>; })}</div></div> : null;
                 })()}
