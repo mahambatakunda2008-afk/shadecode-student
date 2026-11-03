@@ -35,12 +35,18 @@ export interface PracticalQuestion {
   marks: number;
   prompt: string;
   answer: string[];
+  data?: {
+    columns: string[];
+    rows: Array<Array<string | number>>;
+  };
 }
 
 export interface PracticalTask {
   id: string;
   title: string;
   paper: "Paper 3" | "Paper 5";
+  format?: string;
+  scenario?: string;
   skills: string[];
   questions: PracticalQuestion[];
 }
