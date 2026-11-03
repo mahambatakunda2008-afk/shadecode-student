@@ -293,4 +293,44 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     expect(subtopics[0].title).toBe("The microscope in cell studies");
     expect(items.filter((item) => item.kind === "learning_outcome").map((item) => item.code)).toEqual(["1.1.1"]);
   });
+  it("tags Biology topics and descendants as AS core or A Level extension", async () => {
+    const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
+    const items = extractCurriculumKnowledge(
+      [
+        "1 Cell structure",
+        "1.1 The microscope in cell studies",
+        "Learning outcomes",
+        "Candidates should be able to:",
+        "1 use a light microscope",
+        "12 Energy and respiration",
+        "12.1 Respiration",
+        "Learning outcomes",
+        "Candidates should be able to:",
+        "1 explain the role of ATP",
+      ].join("\n"),
+      {
+        boardId: "cambridge",
+        qualificationId: "cambridge-as-a-level",
+        level: "as_a_level",
+        syllabusId: "cambridge-9700",
+        syllabusVersion: "2028-2030",
+        subjectId: "biology",
+      },
+      provenance,
+      getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
+    );
+    const topic1 = items.find((item) => item.kind === "topic" && item.title.startsWith("1 Cell"));
+    const topic12 = items.find((item) => item.kind === "topic" && item.title.startsWith("12 Energy"));
+    const subtopic1 = items.find((item) => item.code === "1.1");
+    const outcome1 = items.find((item) => item.code === "1.1.1");
+    const subtopic12 = items.find((item) => item.code === "12.1");
+    const outcome12 = items.find((item) => item.code === "12.1.1");
+    expect(topic1?.metadata?.curriculumStage).toBe("as_level_core");
+    expect(subtopic1?.metadata?.curriculumStage).toBe("as_level_core");
+    expect(outcome1?.metadata?.curriculumStage).toBe("as_level_core");
+    expect(topic12?.metadata?.curriculumStage).toBe("a_level_extension");
+    expect(subtopic12?.metadata?.curriculumStage).toBe("a_level_extension");
+    expect(outcome12?.metadata?.curriculumStage).toBe("a_level_extension");
+  });
+
 });
