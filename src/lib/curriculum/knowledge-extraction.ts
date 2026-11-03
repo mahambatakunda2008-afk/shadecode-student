@@ -328,9 +328,22 @@ function extractCambridgeNumberedLearningOutcomes(
 
     const subtopicMatch = line.match(/^(\d{1,2}\.\d{1,2})\s+(.+)$/);
     if (subtopicMatch) {
-      flushSubtopic();
-      subtopicHeading = { code: subtopicMatch[1], title: subtopicMatch[2] };
-      makeSubtopic(subtopicHeading.code, subtopicHeading.title);
+      const headingTitle = subtopicMatch[2].replace(/\s*\(continued\)$/i, "").trim();
+      if (currentSubtopic?.code === subtopicMatch[1]) {
+        // PDF page breaks can repeat a subtopic heading with a continued marker.
+        inLearningOutcomes = false;
+        continue;
+      }
+      makeSubtopic(subtopicMatch[1], headingTitle);
+      continue;
+    }
+
+    if (!inLearningOutcomes && currentSubtopic && /^[a-z(]/.test(line) &&
+        !/^(?:Candidates should be able to:|Learning outcomes)$/i.test(line) &&
+        currentSubtopic.title.length < 140) {
+      // Cambridge PDF text extraction sometimes wraps subtopic headings.
+      currentSubtopic.title = `${currentSubtopic.title} ${line}`.replace(/\s+/g, " ").trim();
+      currentSubtopic.content = currentSubtopic.title;
       continue;
     }
 
