@@ -12,6 +12,7 @@ export interface CurriculumExtractionProfile {
   assessmentPatterns?: RegExp[];
   paperPatterns?: RegExp[];
   terminologyHeadings?: string[];
+  cambridgeNumberedLearningOutcomes?: boolean;
 }
 
 const DEFAULT_SECTION_KINDS: Record<string, CurriculumKnowledgeKind> = {
@@ -227,6 +228,103 @@ function extractPatternLines(
   });
 }
 
+
+function extractCambridgeNumberedLearningOutcomes(
+  text: string,
+  identity: CurriculumKnowledgeIdentity,
+  provenance: CurriculumKnowledgeProvenance,
+  topics: CurriculumKnowledgeItem[],
+): CurriculumKnowledgeItem[] {
+  const lines = text.split(/\\r?\\n/);
+  const topicByCode = new Map<string, CurriculumKnowledgeItem>();
+  for (const topic of topics) {
+    const match = topic.title.match(/^(\\d{1,2})\\s+/);
+    if (match) topicByCode.set(match[1], topic);
+  }
+
+  const items: CurriculumKnowledgeItem[] = [];
+  let currentTopic: CurriculumKnowledgeItem | undefined;
+  let currentSubtopic: CurriculumKnowledgeItem | undefined;
+  let inLearningOutcomes = false;
+  let currentOutcome: CurriculumKnowledgeItem | undefined;
+  let subtopicHeading: { code: string; title: string } | undefined;
+
+  const flushOutcome = () => {
+    if (!currentOutcome) return;
+    currentOutcome.content = currentOutcome.content.replace(/\\s+/g, " ").trim();
+    currentOutcome.title = currentOutcome.content;
+    items.push(currentOutcome);
+    currentOutcome = undefined;
+  };
+  const flushSubtopic = () => {
+    flushOutcome();
+    if (currentSubtopic) items.push(currentSubtopic);
+    currentSubtopic = undefined;
+  };
+  const makeSubtopic = (code: string, title: string) => {
+    flushSubtopic();
+    const parentCode = code.split(".")[0];
+    currentTopic = topicByCode.get(parentCode);
+    currentSubtopic = makeItem("topic", title, title, identity, {
+      ...provenance,
+      sectionOrPage: provenance.sectionOrPage ?? `Topic ${code}`,
+    }, items.length, {
+      code,
+      parentId: currentTopic?.id,
+      metadata: {
+        extraction: "cambridge-subtopic",
+        stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "subtopic", code].join("|"),
+        parentTopicCode: parentCode,
+      },
+    });
+    inLearningOutcomes = false;
+  };
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index].trim();
+    if (!line) continue;
+
+    const subtopicMatch = line.match(/^(\\d{1,2}\\.\\d{1,2})\\s+(.+)$/);
+    if (subtopicMatch) {
+      flushSubtopic();
+      subtopicHeading = { code: subtopicMatch[1], title: subtopicMatch[2] };
+      makeSubtopic(subtopicHeading.code, subtopicHeading.title);
+      continue;
+    }
+
+    if (/^Learning outcomes$/i.test(line)) {
+      flushOutcome();
+      inLearningOutcomes = true;
+      continue;
+    }
+
+    if (inLearningOutcomes && currentSubtopic) {
+      const outcomeMatch = line.match(/^(\\d{1,2})\\s+(.+)$/);
+      if (outcomeMatch) {
+        flushOutcome();
+        const code = `${currentSubtopic.code}.${outcomeMatch[1]}`;
+        currentOutcome = makeItem("learning_outcome", outcomeMatch[2], outcomeMatch[2], identity, {
+          ...provenance,
+          sectionOrPage: provenance.sectionOrPage ?? `Outcome ${code}`,
+        }, items.length, {
+          code,
+          parentId: currentSubtopic.id,
+          metadata: {
+            extraction: "cambridge-numbered-learning-outcome",
+            stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "learning_outcome", code].join("|"),
+            topicCode: currentTopic?.code ?? currentTopic?.title.match(/^(\\d{1,2})/)?.[1] ?? null,
+          },
+        });
+      } else if (currentOutcome) {
+        currentOutcome.content += ` ${line.replace(/^[•●▪–-]\\s*/, "")}`;
+      }
+    }
+  }
+
+  flushSubtopic();
+  return items;
+}
+
 export function extractCurriculumKnowledge(
   text: string,
   identity: CurriculumKnowledgeIdentity,
@@ -234,12 +332,15 @@ export function extractCurriculumKnowledge(
   profile: CurriculumExtractionProfile = {},
 ): CurriculumKnowledgeItem[] {
   const sectionItems = extractSectionBlocks(text, identity, provenance, profile);
+  const biologyStructure = profile.cambridgeNumberedLearningOutcomes
+    ? extractCambridgeNumberedLearningOutcomes(text, identity, provenance, sectionItems.filter((item) => item.kind === "topic"))
+    : [];
   const objectives = extractNumberedObjectives(text, identity, provenance, profile.objectiveCodePattern);
   const assessments = extractPatternLines(text, identity, provenance, profile.assessmentPatterns, "assessment_requirement");
   const papers = extractPatternLines(text, identity, provenance, profile.paperPatterns, "paper_component");
 
   const seen = new Set<string>();
-  return [...sectionItems, ...objectives, ...assessments, ...papers].filter((item) => {
+  return [...sectionItems, ...biologyStructure, ...objectives, ...assessments, ...papers].filter((item) => {
     const key = `${item.kind}:${item.code ?? ""}:${item.kind === "topic" ? item.title.toLowerCase() + ":" : ""}${item.content.toLowerCase().replace(/\s+/g, " ")}`;
     if (seen.has(key)) return false;
     seen.add(key);
