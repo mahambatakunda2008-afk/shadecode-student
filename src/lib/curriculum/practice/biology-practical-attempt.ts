@@ -49,6 +49,15 @@ export interface PracticalAttemptSummary {
   skills: SkillReview[];
   skillsToRevisit: string[];
   recommendedPractice: PracticalPracticeRecommendation[];
+  paperCoverage: Record<"Paper 3" | "Paper 5", PracticalPaperCoverage>;
+}
+
+export interface PracticalPaperCoverage {
+  taskCount: number;
+  questionCount: number;
+  answeredQuestions: number;
+  availableMarks: number;
+  selfAwardedMarks: number;
 }
 
 export interface PracticalPracticeRecommendation {
@@ -221,7 +230,27 @@ export function summarizePracticalAttempt(
       .filter((item) => item.rating !== "secure")
       .map((item) => item.skill),
     recommendedPractice: recommendPracticalPractice(set, attempt, skillReviews),
+    paperCoverage: summarizePaperCoverage(set, attempt),
   };
+}
+
+export function summarizePaperCoverage(set: PracticalPracticeSet, attempt: PracticalAttempt): Record<"Paper 3" | "Paper 5", PracticalPaperCoverage> {
+  const coverage: Record<"Paper 3" | "Paper 5", PracticalPaperCoverage> = {
+    "Paper 3": { taskCount: 0, questionCount: 0, answeredQuestions: 0, availableMarks: 0, selfAwardedMarks: 0 },
+    "Paper 5": { taskCount: 0, questionCount: 0, answeredQuestions: 0, availableMarks: 0, selfAwardedMarks: 0 },
+  };
+  for (const task of set.tasks) {
+    const paper = coverage[task.paper];
+    paper.taskCount += 1;
+    for (const question of task.questions) {
+      const key = questionKey(task.id, question.id);
+      paper.questionCount += 1;
+      paper.availableMarks += question.marks;
+      if (attempt.answers[key]?.trim()) paper.answeredQuestions += 1;
+      paper.selfAwardedMarks += attempt.selfAwardedMarks[key] ?? 0;
+    }
+  }
+  return coverage;
 }
 
 export function recommendPracticalPractice(
