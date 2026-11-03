@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canAttemptPracticalSet,
+  getPracticalQuestionFeedback,
   ratePracticalSkill,
   retryPracticalQuestion,
   recommendPracticalPractice,
@@ -186,6 +187,16 @@ describe("Biology practical attempt preview", () => {
     expect(summary.selfAwardedMarks).toBe(3);
     expect(summary.availableMarks).toBe(7);
     expect(() => selfAwardPracticalMarks(set, attempt, "P3-01", "a", 4)).toThrow();
+  });
+
+
+  it("gives targeted question-level coaching across practical skill categories", () => {
+    expect(getPracticalQuestionFeedback({ prompt: "Calculate the percentage change in mass.", answer: [] }).category).toBe("calculations");
+    expect(getPracticalQuestionFeedback({ prompt: "Describe a method to control variables and repeat the experiment.", answer: [] }).category).toBe("method-design");
+    expect(getPracticalQuestionFeedback({ prompt: "Explain how to measure the length using a calibrated microscope.", answer: [] }).category).toBe("measurement");
+    expect(getPracticalQuestionFeedback({ prompt: "Describe the trend shown by the graph.", answer: [] }).category).toBe("interpretation");
+    expect(getPracticalQuestionFeedback({ prompt: "Evaluate two limitations and suggest improvements.", answer: [] }).category).toBe("evaluation");
+    expect(getPracticalQuestionFeedback({ prompt: "Explain why osmosis causes the observed change.", answer: [] }).category).toBe("biological-knowledge");
   });
 
   it("rejects unknown questions and skills", () => {
