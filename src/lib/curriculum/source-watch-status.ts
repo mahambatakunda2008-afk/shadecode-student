@@ -55,8 +55,8 @@ export function resolveWatchedSyllabusVersion(input: {
     return {
       version: input.configuredVersion,
       source: "registry",
-      confidence: "high",
-      evidence: ["Source registry explicitly configured this syllabus version."],
+      confidence: "registry-configured",
+      evidence: ["Source registry explicitly configured this syllabus version; the PDF itself did not expose a version string."],
     };
   }
   return {
