@@ -103,6 +103,11 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(spearman?.data?.rows).toHaveLength(8);
     expect(spearman?.data?.columns).toContain("Species abundance rank");
     expect(spearman?.answer.join(" ")).toContain("0.857");
+    expect(spearman?.prompt).toContain("no tied ranks");
+    const spearmanExplanation = findQuestion("P5-03", "d")?.answer.join(" ");
+    expect(spearmanExplanation).toContain("monotonic");
+    expect(spearmanExplanation).toContain("linear relationship");
+    expect(spearmanExplanation).not.toContain("Pearson's test conditions are not met");
     expect(spearman?.data?.rows.every((row) => row.length === spearman.data?.columns.length)).toBe(true);
   });
 });
