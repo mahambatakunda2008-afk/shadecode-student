@@ -263,15 +263,30 @@ function extractCambridgePracticalAssessment(
   flush();
 
   const items: CurriculumKnowledgeItem[] = [];
-  const skillLabels = [
-    "manipulation, measurement and observation",
-    "presentation of data and observations",
-    "analysis, conclusions and evaluation",
-    "planning",
-    "analysis",
-    "conclusions",
-    "evaluation",
-  ];
+  const paperSkills: Record<string, string[]> = {
+    P3: [
+      "manipulation, measurement and observation",
+      "decisions relating to measurements and observations",
+      "collection of data and observations",
+      "presentation of data and observations",
+      "recording data and observations",
+      "display of calculation and reasoning",
+      "layout of data and observations",
+      "analysis, conclusions and evaluation",
+      "interpreting data and observations",
+      "drawing conclusions",
+      "identifying sources of error and suggesting improvements",
+    ],
+    P5: [
+      "planning",
+      "defining the problem",
+      "methods",
+      "analysis, conclusions and evaluation",
+      "dealing with data",
+      "conclusions",
+      "evaluation",
+    ],
+  };
   sections.forEach((section, index) => {
     const content = section.content.join(" ").replace(/\s+/g, " ").trim();
     const parent = makeItem(
@@ -285,9 +300,7 @@ function extractCambridgePracticalAssessment(
     );
     items.push(parent);
 
-    const relevantSkills = section.code === "P3"
-      ? skillLabels.slice(0, 3)
-      : skillLabels.slice(3);
+    const relevantSkills = paperSkills[section.code] ?? [];
     for (const label of relevantSkills) {
       if (!new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(content)) continue;
       items.push(makeItem(
