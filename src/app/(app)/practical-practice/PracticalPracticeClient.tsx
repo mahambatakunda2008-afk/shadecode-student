@@ -42,6 +42,61 @@ function readAttempt(): PracticalAttempt {
 type PracticalGraphData = { columns: string[]; rows: (string | number)[][] };
 type PlottedPoint = { x: number; y: number };
 
+
+type DrawingStroke = { points: { x: number; y: number }[] };
+
+function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
+  const [strokes, setStrokes] = useState<DrawingStroke[]>([]);
+  const [current, setCurrent] = useState<DrawingStroke | null>(null);
+  const [ready, setReady] = useState(false);
+  const svgRef = useState<SVGSVGElement | null>(null);
+  const activeSvg = svgRef[0];
+  const setActiveSvg = svgRef[1];
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved) as DrawingStroke[];
+        if (Array.isArray(parsed) && parsed.every((stroke) => Array.isArray(stroke.points) && stroke.points.every((point) => Number.isFinite(point.x) && Number.isFinite(point.y)))) setStrokes(parsed);
+      }
+    } catch { /* Keep the drawing pad available if a saved sketch is damaged. */ }
+    setReady(true);
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!ready) return;
+    try { window.localStorage.setItem(storageKey, JSON.stringify(strokes)); } catch { /* Drawing remains usable when storage is full or disabled. */ }
+  }, [ready, storageKey, strokes]);
+
+  const locate = (event: import("react").PointerEvent<SVGSVGElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return { x: Math.max(20, Math.min(580, ((event.clientX - rect.left) / rect.width) * 600)), y: Math.max(20, Math.min(340, ((event.clientY - rect.top) / rect.height) * 360)) };
+  };
+  const begin = (event: import("react").PointerEvent<SVGSVGElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setCurrent({ points: [locate(event)] });
+  };
+  const draw = (event: import("react").PointerEvent<SVGSVGElement>) => {
+    if (!current) return;
+    const point = locate(event);
+    setCurrent((stroke) => stroke ? { points: [...stroke.points, point] } : stroke);
+  };
+  const finish = () => {
+    if (current?.points.length) setStrokes((saved) => [...saved, current]);
+    setCurrent(null);
+  };
+  const renderStroke = (stroke: DrawingStroke, index: number) => <polyline key={index} points={stroke.points.map((point) => `${point.x},${point.y}`).join(" ")} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />;
+
+  return <section className="mt-5 rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4" aria-label="Biological drawing workspace">
+    <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-xs font-bold">Biological drawing workspace</h4><p className="mt-1 text-[11px] text-[var(--muted-foreground)]">Practise a large, clear specimen drawing. Draw with a finger, stylus or mouse.</p></div><div className="flex gap-2"><button type="button" disabled={!strokes.length} onClick={() => setStrokes((saved) => saved.slice(0, -1))} className="min-h-9 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold disabled:opacity-40">Undo</button><button type="button" onClick={() => { setStrokes([]); setCurrent(null); }} className="min-h-9 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold">Clear</button></div></div>
+    <div className="mt-3 overflow-hidden rounded-lg border border-[var(--card-border)] bg-[var(--surface)]"><svg ref={setActiveSvg} viewBox="0 0 600 360" role="img" aria-label="Blank specimen drawing field. Draw inside the circular field." onPointerDown={begin} onPointerMove={draw} onPointerUp={finish} onPointerCancel={finish} className="block w-full touch-none cursor-crosshair text-[var(--foreground)]"><rect width="600" height="360" fill="var(--surface)" /><circle cx="300" cy="180" r="150" fill="var(--background)" stroke="currentColor" strokeWidth="1.5" opacity=".9" />{strokes.map(renderStroke)}{current && renderStroke(current, -1)}</svg></div>
+    <div className="mt-2 flex flex-wrap justify-between gap-2 text-[11px] text-[var(--muted-foreground)]"><span>{strokes.length} stroke{strokes.length === 1 ? "" : "s"} · {ready ? "Saved on this device" : "Loading sketch…"}</span><span>Use single, clear lines. Add labels in your written answer.</span></div>
+    <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Practical drawing checklist: draw only what is observed, use unbroken pencil-style outlines, keep cells large and in proportion, avoid shading, and use straight ruled label lines that do not cross.</p>
+  </section>;
+}
+
 function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData; storageKey: string }) {
   const numericColumns = useMemo(() => data.columns.map((label, index) => ({ label, index, values: data.rows.map((row) => Number(row[index])) })).filter((column) => column.values.length > 1 && column.values.every(Number.isFinite)), [data]);
   const [xIndex, setXIndex] = useState(numericColumns[0]?.index ?? 0);
@@ -303,6 +358,7 @@ export default function PracticalPracticeClient() {
                 </svg>
                 <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Use the schematic to practise tracing cell boundaries and choosing labels. Use the stated measurements, not the drawing dimensions, for magnification calculations.</p>
               </figure>}
+              {task.id === "P3-02" && <PracticalDrawingPad storageKey={`shadecode:practical-drawing:${set.id}:P3-02`} />}
               {task.id === "P3-05" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
                 <figcaption className="mb-3 text-xs font-semibold">Bubble potometer · apparatus schematic</figcaption>
                 <svg viewBox="0 0 620 310" role="img" aria-label="Schematic of a bubble potometer with leafy shoot in a sealed tube, a capillary containing a visible air bubble, and a water reservoir" className="mx-auto block w-full max-w-2xl">
