@@ -155,6 +155,37 @@ export default function PracticalPracticeClient() {
                 </svg>
                 <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Use the schematic to practise tracing cell boundaries and choosing labels. Use the stated measurements, not the drawing dimensions, for magnification calculations.</p>
               </figure>}
+              {task.id === "P3-05" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
+                <figcaption className="mb-3 text-xs font-semibold">Bubble potometer · apparatus schematic</figcaption>
+                <svg viewBox="0 0 620 310" role="img" aria-label="Schematic of a bubble potometer with leafy shoot in a sealed tube, a capillary containing a visible air bubble, and a water reservoir" className="mx-auto block w-full max-w-2xl">
+                  <defs><marker id="potometer-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="none" stroke="currentColor" strokeWidth="1" /></marker></defs>
+                  <path d="M265 192 V120 Q265 108 277 108 H545 Q557 108 557 120 V192" fill="none" stroke="var(--primary)" strokeWidth="9" strokeLinecap="round" />
+                  <path d="M270 180 H552" stroke="var(--primary)" strokeWidth="3" opacity=".35" />
+                  <rect x="340" y="101" width="34" height="14" rx="3" fill="var(--surface-2)" stroke="currentColor" />
+                  <path d="M356 105 V65 M356 82 L330 55 M356 80 L385 51 M356 72 L356 40" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
+                  <g fill="var(--primary)" stroke="var(--primary)" strokeWidth="1.5">
+                    <ellipse cx="326" cy="53" rx="17" ry="8" transform="rotate(25 326 53)" />
+                    <ellipse cx="390" cy="49" rx="18" ry="8" transform="rotate(-25 390 49)" />
+                    <ellipse cx="356" cy="34" rx="17" ry="8" />
+                  </g>
+                  <path d="M265 192 V238 H545 V192" fill="none" stroke="currentColor" strokeWidth="2" opacity=".7" />
+                  <path d="M280 221 H530" stroke="var(--primary)" strokeWidth="2" strokeDasharray="5 5" />
+                  <rect x="405" y="102" width="9" height="12" rx="4" fill="var(--background)" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M409 95 V70 H475" fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#potometer-arrow)" />
+                  <text x="480" y="67" fontSize="12" fill="currentColor">Air bubble</text>
+                  <path d="M355 40 L280 22 H190" fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#potometer-arrow)" />
+                  <text x="80" y="25" fontSize="12" fill="currentColor">Leafy shoot</text>
+                  <path d="M356 109 L356 145 H190" fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#potometer-arrow)" />
+                  <text x="75" y="149" fontSize="12" fill="currentColor">Airtight seal</text>
+                  <path d="M500 190 L500 266 H580" fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#potometer-arrow)" />
+                  <text x="485" y="283" fontSize="12" fill="currentColor">Water-filled tube</text>
+                  <path d="M265 238 L265 268 H180" fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#potometer-arrow)" />
+                  <text x="70" y="285" fontSize="12" fill="currentColor">Reservoir / water supply</text>
+                  <path d="M415 118 H525" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
+                  <text x="470" y="135" textAnchor="middle" fontSize="10" fill="currentColor">Capillary</text>
+                </svg>
+                <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Conceptual layout only. Real apparatus designs vary. The bubble is moved or reset using a reservoir or suitable control, and all joints must be airtight. Measure displacement over a timed interval.</p>
+              </figure>}
             </div>
 
             {task.questions.map((question, index) => {
