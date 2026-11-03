@@ -180,11 +180,11 @@ export default function PracticalPracticeClient() {
                   <path d="M500 190 L500 266 H580" fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#potometer-arrow)" />
                   <text x="485" y="283" fontSize="12" fill="currentColor">Water-filled tube</text>
                   <path d="M265 238 L265 268 H180" fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#potometer-arrow)" />
-                  <text x="70" y="285" fontSize="12" fill="currentColor">Reservoir / water supply</text>
+                  <text x="70" y="285" fontSize="12" fill="currentColor">Water-filled chamber</text>
                   <path d="M415 118 H525" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
                   <text x="470" y="135" textAnchor="middle" fontSize="10" fill="currentColor">Capillary</text>
                 </svg>
-                <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Conceptual layout only. Real apparatus designs vary. The bubble is moved or reset using a reservoir or suitable control, and all joints must be airtight. Measure displacement over a timed interval.</p>
+                <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Conceptual layout only. Real apparatus designs vary, and a separate reservoir or control tap may be fitted to reset the bubble. All joints must be airtight. Measure bubble displacement over a timed interval.</p>
               </figure>}
             </div>
 
