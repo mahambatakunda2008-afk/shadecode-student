@@ -62,7 +62,13 @@ export default function PracticalPracticeClient() {
   const updateRating = (taskId: string, skill: string, rating: PracticeSkillRating) => {
     setAttempt((current) => ratePracticalSkill(set, current, taskId, skill, rating));
   };
-  const openRecommendation = (taskId: string) => {\n    setActiveTask(taskId);\n    setShowReview(false);\n    window.scrollTo({ top: 0, behavior: "smooth" });\n  };\n\n  const reset = () => {
+  const openRecommendation = (taskId: string) => {
+    setActiveTask(taskId);
+    setShowReview(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const reset = () => {
     if (!window.confirm("Clear this practical practice attempt from this device?")) return;
     setAttempt(startPracticalAttempt(set));
     setShowReview(false);
