@@ -19,7 +19,7 @@ import ChallengeFriend from "./ChallengeFriend";
 import { sendLearningSignals } from "@/lib/learning/client";
 import { signalsFromMarkedPaper } from "@/lib/learning/signals";
 import { renderMath as math } from "@/lib/exam/mathText";
-import { isValidGeneratedPaper } from "@/lib/exam/paperValidation";
+import { expectedPaperLength, isValidGeneratedPaper } from "@/lib/exam/paperValidation";
 import { trackEvent } from "@/lib/traction/client";
 
 export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string };
@@ -115,12 +115,12 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           markingCriteria: q.markingCriteria,
           numeric: q.numeric,
         }));
-        if (!isValidGeneratedPaper(fallbackQuestions, count)) {
+        if (!isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("offline", fallbackQuestions, count))) {
           setError("The offline practice set failed question validation. Reconnect and try generating a fresh paper.");
           return;
         }
         setPaperSource("fallback");
-        const total = count * 120;
+        const total = fallbackQuestions.length * 120;
         workId.current = `exam:offline:${id()}`;
         void trackEvent("exam_paper_ready", { ...telemetry, source: "offline", ms: Date.now() - requestedAt });
         setQuestions(fallbackQuestions);
@@ -152,10 +152,11 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       }, 45000);
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "Question generation is temporarily unavailable.");
-      if (!isValidGeneratedPaper(data?.questions, count)) {
+      const builtInPaper = data?.metadata?.source === "deterministic-fallback";
+      if (!isValidGeneratedPaper(data?.questions, expectedPaperLength(builtInPaper ? "fallback" : "live", data?.questions, count))) {
         throw new Error("The generated paper did not pass question validation. Trying a verified local practice fallback.");
       }
-      const total = count * 120;
+      const total = data.questions.length * 120;
       workId.current = `exam:${id()}`;
       void trackEvent("exam_paper_ready", { ...telemetry, source: data.metadata?.source === "deterministic-fallback" ? "fallback" : "live", ms: Date.now() - requestedAt });
       setPaperSource(data.metadata?.source === "deterministic-fallback" ? "fallback" : "live");
@@ -185,9 +186,9 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         markingCriteria: q.markingCriteria,
         numeric: q.numeric,
       }));
-      if (fallbackQuestions && isValidGeneratedPaper(fallbackQuestions, count)) {
+      if (fallbackQuestions && isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("fallback", fallbackQuestions, count))) {
         setPaperSource("fallback");
-        const total = count * 120;
+        const total = fallbackQuestions.length * 120;
         workId.current = `exam:fallback:${id()}`;
         void trackEvent("exam_paper_ready", { ...telemetry, source: "fallback", serverFailed: true, ms: Date.now() - requestedAt });
         setQuestions(fallbackQuestions);

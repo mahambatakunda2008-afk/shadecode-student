@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidGeneratedPaper } from "./paperValidation";
+import { expectedPaperLength, isValidGeneratedPaper } from "./paperValidation";
 import type { ExamQuestion } from "./types";
 
 function question(overrides: Partial<ExamQuestion> = {}): ExamQuestion {
@@ -56,5 +56,21 @@ describe("isValidGeneratedPaper", () => {
   it("rejects unsupported question types and non-array payloads", () => {
     expect(isValidGeneratedPaper([question({ type: "true_false" as ExamQuestion["type"] })], 1)).toBe(false);
     expect(isValidGeneratedPaper({ questions: [question()] }, 1)).toBe(false);
+  });
+});
+
+describe("expectedPaperLength", () => {
+  const five = [1, 2, 3, 4, 5];
+  it("requires live papers to match the request exactly", () => {
+    expect(expectedPaperLength("live", five, 10)).toBe(10);
+  });
+  it("accepts a smaller built-in practice set at its real size", () => {
+    expect(expectedPaperLength("fallback", five, 20)).toBe(5);
+    expect(expectedPaperLength("offline", five, 10)).toBe(5);
+  });
+  it("still demands the requested size when a fallback is empty or oversized", () => {
+    expect(expectedPaperLength("fallback", [], 10)).toBe(10);
+    expect(expectedPaperLength("fallback", [...five, 6, 7], 5)).toBe(5);
+    expect(expectedPaperLength("fallback", null, 10)).toBe(10);
   });
 });

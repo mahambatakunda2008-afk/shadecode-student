@@ -1,6 +1,7 @@
 import type { ExamQuestion, GeneratedExam } from "@/lib/cortex/examGenerator";
+import { biologyBank } from "./curated/biology";
 
-type Seed = Omit<ExamQuestion, "id" | "topic" | "difficulty">;
+type Seed = Omit<ExamQuestion, "id" | "topic" | "difficulty"> & { topic?: string };
 type Difficulty = ExamQuestion["difficulty"];
 
 const mcq = (question: string, options: string[], modelAnswer: string, marks = 1): Seed => ({ type: "multiple_choice", question, options, marks, modelAnswer, markingCriteria: "Award full credit only for the correct option." });
@@ -16,16 +17,18 @@ export function buildFallbackExam(subject: string, topic: string, difficulty: st
   const questions: ExamQuestion[] = bank.slice(0, safeCount).map((seed, index) => ({
     ...seed,
     id: `fallback_${Date.now()}_${index + 1}_${Math.random().toString(36).slice(2, 7)}`,
-    topic: requestedTopic.slice(0, 255),
+    topic: (seed.topic ?? requestedTopic).slice(0, 255),
     difficulty: level,
   }));
   const totalMarks = questions.reduce((sum, q) => sum + q.marks, 0);
-  return { subject, title: `${subject}${topic ? ` · ${topic}` : ""} Practice Paper`, questions, totalMarks, durationMinutes: Math.max(5, Math.round(totalMarks * 2.5)), difficulty: level, topics: [requestedTopic] };
+  return { subject, title: `${subject}${topic ? ` · ${topic}` : ""} Practice Paper`, questions, totalMarks, durationMinutes: Math.max(5, Math.round(totalMarks * 2.5)), difficulty: level, topics: [...new Set(questions.map((question) => question.topic))] };
 }
 
 function getCuratedBank(subject: string, topic: string): Seed[] | null {
   const s = subject.toLowerCase();
   const t = topic.toLowerCase();
+
+  if (s.includes("biolog")) return biologyBank(t);
 
   if (s.includes("physics") && (t.includes("deformation") || t.includes("elastic"))) return [
     mcq("Which quantity is force divided by cross-sectional area?", ["Strain", "Stress", "Extension", "Young modulus"], "Stress"),

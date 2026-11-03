@@ -36,3 +36,15 @@ export function isValidGeneratedPaper(value: unknown, expectedCount: number): va
 
   return true;
 }
+
+/**
+ * How many questions a returned paper must contain to be accepted.
+ * Live and generated papers must match the request exactly. A built-in practice set
+ * (engine or curated bank) may be smaller than requested when the bank is small; that is
+ * a valid paper and should open as-is rather than fail with an error.
+ */
+export function expectedPaperLength(source: "live" | "fallback" | "offline", received: unknown, requested: number): number {
+  if (source === "live") return requested;
+  const length = Array.isArray(received) ? received.length : 0;
+  return length >= 1 && length <= requested ? length : requested;
+}

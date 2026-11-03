@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { generateExam } from "@/lib/cortex/examGenerator";
 import { buildGuaranteedExam } from "@/lib/exam/guaranteedExam";
+import { hasCuratedBank } from "@/lib/exam/fallbackExam";
 import { matchGenerators } from "@/lib/exam/engine";
 import { examAiBreaker } from "@/lib/aiCircuitBreaker";
 import { resolveLearnerSubjects, assertRequestedLearnerSubject } from "@/lib/subjects/resolveLearnerSubjects";
@@ -54,10 +55,15 @@ export async function POST(req) {
       ? topic.replace(/\s*\((?:O-Level|A-Level|University|O-Level standard|A-Level standard|university entrance standard)[^)]*\)\s*$/i, "").trim()
       : "";
 
-    // When the AI providers have been failing, skip straight to the engine, but only when the engine
-    // can actually serve this topic. Otherwise the AI stays the only option and is still attempted.
-    const engineCovers = matchGenerators(canonicalSubject.name, cleanTopic).length > 0;
-    const skipAi = engineCovers && !examAiBreaker.shouldAttempt();
+    // A blank topic reaches us as the subject name itself ("Biology (A-Level)" -> "Biology"). That means
+    // "whole syllabus", so the built-in banks must treat it as no topic rather than an unknown one.
+    const builtInTopic = cleanTopic.toLowerCase() === canonicalSubject.name.toLowerCase() ? "" : cleanTopic;
+
+    // No-AI-first: when the built-in engine or a curated bank covers this topic, serve it straight away.
+    // It is instant, works offline and is marked exactly, so a learner never waits on unreliable AI
+    // providers. AI is only attempted for topics with no built-in coverage.
+    const builtInCovers = matchGenerators(canonicalSubject.name, builtInTopic).length > 0 || hasCuratedBank(canonicalSubject.name, builtInTopic);
+    const skipAi = builtInCovers;
 
     let exam = null;
     let source = "cortex";
@@ -73,7 +79,7 @@ export async function POST(req) {
 
     if (!exam) {
       // Deterministic engine first (exact, instant), then curated questions. Never serve generic placeholders.
-      exam = buildGuaranteedExam(canonicalSubject.name, cleanTopic, difficulty, questionCount);
+      exam = buildGuaranteedExam(canonicalSubject.name, builtInTopic, difficulty, questionCount);
       source = "deterministic-fallback";
     }
 
