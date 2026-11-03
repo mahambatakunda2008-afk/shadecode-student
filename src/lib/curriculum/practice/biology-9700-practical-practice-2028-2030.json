@@ -1081,9 +1081,9 @@
           "marks": 3,
           "prompt": "Explain why Spearman's rank correlation is preferred to Pearson's linear correlation in Investigation C.",
           "answer": [
-            "The paired measurements are not normally distributed, so Pearson's test conditions are not met.",
-            "The relationship is described as monotonic, not necessarily linear.",
-            "Spearman's test uses ranked data to assess an increasing or decreasing association."
+            "Spearman's rank correlation is suitable because the investigation describes a monotonic relationship, which may be curved rather than linear.",
+            "The measurements are not normally distributed, and Spearman's method uses the ranks of paired observations rather than requiring the raw measurements to meet Pearson's parametric assumptions.",
+            "Pearson's correlation measures the strength of a linear relationship; Spearman's measures the strength and direction of a monotonic rank association."
           ]
         },
         {
@@ -1119,7 +1119,7 @@
         {
           "id": "h",
           "marks": 4,
-          "prompt": "The rank data for Investigation C are shown below. Calculate Spearman's rank correlation coefficient using ρ = 1 − [6Σd² ÷ n(n² − 1)]. Show the sum of squared rank differences and interpret your result.",
+          "prompt": "The rank data for Investigation C are shown below. There are no tied ranks. Calculate Spearman's rank correlation coefficient using ρ = 1 − [6Σd² ÷ n(n² − 1)]. Show the sum of squared rank differences and interpret your result.",
           "data": {
             "columns": [
               "Site",
