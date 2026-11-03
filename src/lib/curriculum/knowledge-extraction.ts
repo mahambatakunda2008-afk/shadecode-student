@@ -248,6 +248,8 @@ function extractCambridgePracticalAssessment(
   const lines = text.split(/\r?\n/);
   const sections: Array<{ code: string; title: string; content: string[] }> = [];
   let current: (typeof sections)[number] | undefined;
+  let collectingOverview = false;
+  const overviewLines: string[] = [];
   const flush = () => {
     if (current && current.content.length) sections.push(current);
     current = undefined;
@@ -255,22 +257,50 @@ function extractCambridgePracticalAssessment(
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
+    if (/^Practical assessment$/i.test(line)) {
+      flush();
+      collectingOverview = true;
+      continue;
+    }
     if (/^Paper\s*3(?:\s*[–-]\s*Advanced Practical Skills)?$/i.test(line)) {
       flush();
+      collectingOverview = false;
       current = { code: "P3", title: "Paper 3 – Advanced Practical Skills", content: [] };
       continue;
     }
     if (/^Paper\s*5(?:\s*[–-].*)?$/i.test(line)) {
       flush();
+      collectingOverview = false;
       current = { code: "P5", title: "Paper 5 – Planning, Analysis and Evaluation", content: [] };
       continue;
     }
-    if (/^Safety in the laboratory$/i.test(line)) { flush(); continue; }
+    if (/^Safety in the laboratory$/i.test(line)) { flush(); collectingOverview = false; continue; }
     if (current) current.content.push(line.replace(/^[•●▪–-]\s*/, ""));
+    else if (collectingOverview) overviewLines.push(line.replace(/^[•●▪–-]\s*/, ""));
   }
   flush();
 
   const items: CurriculumKnowledgeItem[] = [];
+  const overviewContent = overviewLines.join(" ").replace(/\s+/g, " ").trim();
+  const overview = overviewContent
+    ? makeItem(
+        "practical_activity",
+        "Practical assessment overview",
+        overviewContent,
+        identity,
+        { ...provenance, sectionOrPage: provenance.sectionOrPage ?? "Practical assessment" },
+        0,
+        {
+          code: "PRACTICAL-OVERVIEW",
+          metadata: {
+            extraction: "cambridge-practical-assessment-overview",
+            stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment-overview"].join("|"),
+          },
+        },
+      )
+    : undefined;
+  if (overview) items.push(overview);
+
   const paperSkills: Record<string, string[]> = {
     P3: [
       "manipulation, measurement and observation",
@@ -304,7 +334,7 @@ function extractCambridgePracticalAssessment(
         extraction: "cambridge-practical-assessment",
         stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment", section.code].join("|"),
         paper: section.code,
-      } },
+      }, parentId: overview?.id },
     );
     items.push(parent);
 
