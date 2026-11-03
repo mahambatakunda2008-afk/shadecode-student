@@ -343,7 +343,7 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
         "Paper 3 consists of two or three questions.",
         "Paper 5",
         "Paper 5 is a written paper.",
-      ].join("\\n"),
+      ].join("\n"),
       { boardId: "cambridge", qualificationId: "cambridge-as-a-level", level: "as_a_level", syllabusId: "cambridge-9700", syllabusVersion: "2028-2030", subjectId: "biology" },
       provenance,
       getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
