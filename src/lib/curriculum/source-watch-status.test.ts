@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasCurriculumVersionConflict, resolveCurriculumIngestionRunStatus, summarizeCurriculumWatchStatus } from "./source-watch-status";
+import { hasCurriculumVersionConflict, resolveCurriculumExtractionSkipReason, resolveCurriculumIngestionRunStatus, summarizeCurriculumWatchStatus } from "./source-watch-status";
 
 describe("curriculum watcher source status", () => {
   it("does not call a source successful when it discovers no documents", () => {
@@ -118,5 +118,44 @@ describe("curriculum extraction decision gate", () => {
       versionConflict: false,
       extractedText: "valid syllabus text",
     })).toBeNull();
+  });
+});
+
+
+describe("curriculum extraction requires document-backed version evidence", () => {
+  it("blocks registry-configured versions even when text is available", () => {
+    expect(resolveCurriculumExtractionSkipReason({
+      curriculumResolved: true,
+      versionConflict: false,
+      versionSource: "registry",
+      extractedText: "valid syllabus text",
+    })).toBe("unconfirmed_version");
+  });
+
+  it("blocks unresolved versions", () => {
+    expect(resolveCurriculumExtractionSkipReason({
+      curriculumResolved: true,
+      versionConflict: false,
+      versionSource: "unresolved",
+      extractedText: "valid syllabus text",
+    })).toBe("unconfirmed_version");
+  });
+
+  it("allows extraction only when the document itself identifies the version", () => {
+    expect(resolveCurriculumExtractionSkipReason({
+      curriculumResolved: true,
+      versionConflict: false,
+      versionSource: "document",
+      extractedText: "valid syllabus text",
+    })).toBeNull();
+  });
+
+  it("keeps a detected version conflict higher priority than missing evidence", () => {
+    expect(resolveCurriculumExtractionSkipReason({
+      curriculumResolved: true,
+      versionConflict: true,
+      versionSource: "registry",
+      extractedText: null,
+    })).toBe("version_conflict");
   });
 });
