@@ -67,7 +67,7 @@ export function resolveWatchedSyllabusVersion(input: {
   };
 }
 
-export type CurriculumExtractionSkipReason = "version_conflict" | "missing_curriculum" | "missing_extracted_text" | null;
+export type CurriculumExtractionSkipReason = "version_conflict" | "missing_curriculum" | "unconfirmed_version" | "missing_extracted_text" | null;
 
 /**
  * Centralise the extraction gate so a syllabus-version mismatch is checked
@@ -78,9 +78,11 @@ export function resolveCurriculumExtractionSkipReason(input: {
   curriculumResolved: boolean;
   versionConflict: boolean;
   extractedText?: string | null;
+  versionSource?: "document" | "registry" | "unresolved" | null;
 }): CurriculumExtractionSkipReason {
   if (!input.curriculumResolved) return "missing_curriculum";
   if (input.versionConflict) return "version_conflict";
+  if (input.versionSource !== "document") return "unconfirmed_version";
   if (typeof input.extractedText !== "string" || !input.extractedText.trim()) return "missing_extracted_text";
   return null;
 }
