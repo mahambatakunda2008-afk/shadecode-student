@@ -250,6 +250,17 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     expect(practical[1].content).toContain("planning, analysis, conclusions and evaluation");
     expect(practical[0].content).not.toContain("Paper 5 is");
     expect(practical.every((item) => item.kind === "assessment_requirement" && item.status === "draft")).toBe(true);
+    const skills = items.filter((item) => item.metadata?.extraction === "cambridge-practical-skill");
+    expect(skills.map((item) => item.code)).toEqual([
+      "P3-manipulation-measurement-and-observation",
+      "P3-presentation-of-data-and-observations",
+      "P5-planning",
+      "P5-analysis",
+      "P5-conclusions",
+      "P5-evaluation",
+    ]);
+    expect(skills.every((item) => item.kind === "skill" && item.status === "draft")).toBe(true);
+    expect(skills.every((item) => item.parentId === practical.find((paper) => paper.code === item.code?.slice(0, 2))?.id)).toBe(true);
   });
   it("joins wrapped Cambridge Biology subtopic headings and ignores continued repeats", async () => {
     const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
