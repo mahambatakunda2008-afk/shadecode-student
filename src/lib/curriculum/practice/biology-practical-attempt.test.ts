@@ -80,6 +80,32 @@ describe("Biology practical attempt preview", () => {
     expect(review?.totalTaskCount).toBe(2);
   });
 
+  it("recommends another task for a skill rated revisit", () => {
+    let attempt = startPracticalAttempt(set);
+    attempt = ratePracticalSkill(set, attempt, "P3-01", "variables", "revisit");
+    const recommendation = summarizePracticalAttempt(set, attempt).recommendedPractice.find((item) => item.skill === "variables");
+    expect(recommendation).toMatchObject({ taskId: "P5-01", taskTitle: "Planning", questionId: "a", rating: "revisit" });
+  });
+
+  it("does not recommend skills rated secure across every relevant task", () => {
+    let attempt = startPracticalAttempt(set);
+    for (const task of set.tasks) {
+      for (const skill of task.skills) attempt = ratePracticalSkill(set, attempt, task.id, skill, "secure");
+    }
+    const summary = summarizePracticalAttempt(set, attempt);
+    expect(summary.recommendedPractice).toEqual([]);
+    expect(summary.skillsToRevisit).toEqual([]);
+  });
+
+  it("prefers an unanswered task for a developing skill", () => {
+    let attempt = startPracticalAttempt(set);
+    attempt = ratePracticalSkill(set, attempt, "P3-01", "variables", "developing");
+    attempt = savePracticalAnswer(set, attempt, "P5-01", "a", "Already attempted");
+    const recommendation = summarizePracticalAttempt(set, attempt).recommendedPractice.find((item) => item.skill === "variables");
+    expect(recommendation?.taskId).toBe("P3-01");
+    expect(recommendation?.questionId).toBe("a");
+  });
+
   it("bounds self-awarded marks and calculates transparent totals", () => {
     let attempt = startPracticalAttempt(set);
     attempt = selfAwardPracticalMarks(set, attempt, "P3-01", "a", 2);
