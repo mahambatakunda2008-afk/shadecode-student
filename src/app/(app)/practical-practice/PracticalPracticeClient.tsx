@@ -243,7 +243,7 @@ export default function PracticalPracticeClient() {
   if (!task) return null;
 
   return (
-    <main className="min-h-full bg-[var(--background)] px-4 py-6 pb-24 text-[var(--foreground)] sm:px-6 lg:px-8">
+    <div className="min-h-full bg-[var(--background)] px-4 py-6 pb-24 text-[var(--foreground)] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary)]"><FlaskConical size={15} /> Practical skills studio</div>
@@ -489,6 +489,6 @@ export default function PracticalPracticeClient() {
 
         <footer className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]"><span className="flex items-center gap-2"><Save size={14} />{ready ? "Saved on this device" : "Loading saved attempt…"}</span><span className="flex items-center gap-1"><CheckCircle2 size={14} /> Works without AI or a live connection after the page loads</span></footer>
       </div>
-    </main>
+    </div>
   );
 }
