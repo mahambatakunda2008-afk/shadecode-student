@@ -68,7 +68,7 @@ const PRACTICAL_SKILL_ALIASES: Record<string, string[]> = {
 function practicalSkillTerms(skill: string): string[] {
   const normalized = skill.toLowerCase().trim();
   const aliases = PRACTICAL_SKILL_ALIASES[normalized] ?? [];
-  const terms = normalized.split(/[^a-z0-9]+/).filter((term) => term.length > 3);
+  const terms = normalized.split(/[^a-z0-9]+/).filter((term) => term.length > 3).flatMap((term) => term.endsWith("s") ? [term, term.slice(0, -1)] : [term]);
   return [...new Set([...terms, ...aliases])];
 }
 
