@@ -179,6 +179,30 @@ export default function PracticalPracticeClient() {
                 </svg>
                 <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Use cylinders of the same dimensions, blot each consistently before weighing, and keep immersion time and temperature constant. The six tubes represent a concentration series, not measured results.</p>
               </figure>}
+              {task.id === "P5-01" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
+                <figcaption className="mb-3 text-xs font-semibold">Photosynthesis and light intensity · planning apparatus schematic</figcaption>
+                <svg viewBox="0 0 640 300" role="img" aria-label="Aquatic plant in sodium hydrogencarbonate solution in a water bath, illuminated by a lamp at a measured distance with a ruler alongside" className="mx-auto block w-full max-w-2xl">
+                  <rect x="105" y="95" width="300" height="142" rx="9" fill="var(--primary)" opacity=".07" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M112 145 Q160 139 210 145 T310 145 T398 145" fill="none" stroke="var(--primary)" strokeWidth="2"/>
+                  <path d="M240 213 Q231 184 246 159 Q256 141 252 118 M247 170 Q219 158 207 139 M249 159 Q274 151 286 130 M241 191 Q216 184 204 166" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round"/>
+                  <path d="M205 139 Q187 126 179 139 Q189 154 205 139 M286 130 Q302 115 312 129 Q303 145 286 130 M204 166 Q184 157 178 170 Q189 182 204 166" fill="var(--primary)" opacity=".28" stroke="var(--primary)" strokeWidth="1.5"/>
+                  <text x="255" y="260" textAnchor="middle" fontSize="12" fill="currentColor">Water bath · aquatic plant + solution</text>
+                  <rect x="28" y="107" width="53" height="93" rx="7" fill="var(--surface-2)" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M40 107 V85 H69 V107" fill="none" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M54 85 L54 66" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M42 66 Q54 53 66 66" fill="none" stroke="currentColor" strokeWidth="2"/>
+                  <text x="54" y="220" textAnchor="middle" fontSize="11" fill="currentColor">Lamp</text>
+                  <path d="M84 126 L104 126 M84 151 L104 151 M84 176 L104 176" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3"/>
+                  <path d="M88 78 H405 M88 72 V84 M405 72 V84" stroke="currentColor" strokeWidth="1.5"/>
+                  <text x="246" y="66" textAnchor="middle" fontSize="11" fill="currentColor">Measure lamp distance to plant</text>
+                  <rect x="443" y="111" width="165" height="82" rx="8" fill="var(--surface-2)" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M460 132 H590 M460 151 H590 M460 170 H590" stroke="currentColor" strokeWidth="1" opacity=".45"/>
+                  <text x="525" y="91" textAnchor="middle" fontSize="12" fill="currentColor">Distance scale</text>
+                  <path d="M462 119 V185 M482 119 V185 M502 119 V185 M522 119 V185 M542 119 V185 M562 119 V185 M582 119 V185" stroke="currentColor" strokeWidth="1"/>
+                  <text x="525" y="211" textAnchor="middle" fontSize="10" fill="currentColor">Lamp positions</text>
+                </svg>
+                <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Keep the plant, solution volume and concentration, temperature and measurement interval constant. Allow the plant to acclimatise at each distance. Measure light intensity at the plant where possible; distance alone is only a proxy and room light should be controlled.</p>
+              </figure>}
               {task.id === "P3-04" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
                 <figcaption className="mb-3 text-xs font-semibold">Amylase and pH · endpoint test apparatus schematic</figcaption>
                 <svg viewBox="0 0 640 300" role="img" aria-label="Water bath containing labelled starch and amylase buffer test tubes, with a spotting tile containing iodine drops for testing starch breakdown at timed intervals" className="mx-auto block w-full max-w-2xl">
