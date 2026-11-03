@@ -176,7 +176,7 @@ const CURATED_PRACTICAL_QUESTION_SKILLS: Record<string, string[]> = {
 /** Return the deliberately curated skills for known bank questions, with a bounded fallback for new tasks. */
 export function getPracticalQuestionSkills(
   task: Pick<PracticalTask, "skills"> & Partial<Pick<PracticalTask, "id">>,
-  question: Pick<PracticalQuestion, "id" | "prompt" | "answer">,
+  question: Pick<PracticalQuestion, "prompt" | "answer"> & Partial<Pick<PracticalQuestion, "id">>,
 ): string[] {
   if (task.id) {
     const curated = CURATED_PRACTICAL_QUESTION_SKILLS[`${task.id}::${question.id}`];
