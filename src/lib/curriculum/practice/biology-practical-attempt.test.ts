@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   canAttemptPracticalSet,
   getPracticalQuestionFeedback,
+  getPracticalQuestionSkills,
   ratePracticalSkill,
   retryPracticalQuestion,
   recommendPracticalPractice,
@@ -199,6 +200,12 @@ describe("Biology practical attempt preview", () => {
     expect(getPracticalQuestionFeedback({ prompt: "Explain why osmosis causes the observed change.", answer: [] }).category).toBe("biological-knowledge");
   });
 
+  it("maps practical questions to relevant task skills", () => {
+    const task = { skills: ["independent and dependent variables", "repeats", "control of variables", "graph", "conclusion"] };
+    expect(getPracticalQuestionSkills(task, { prompt: "State the independent variable and dependent variable.", answer: ["Independent variable: temperature.", "Dependent variable: oxygen volume."] })).toContain("independent and dependent variables");
+    expect(getPracticalQuestionSkills(task, { prompt: "Describe the graph and explain the conclusion.", answer: ["Plot the mean values and describe the trend."] })).toEqual(expect.arrayContaining(["graph", "conclusion"]));
+    expect(getPracticalQuestionSkills(task, { prompt: "Explain why repeats are needed.", answer: ["Repeat each condition at least three times."] })).toContain("repeats");
+  });
   it("rejects unknown questions and skills", () => {
     const attempt = startPracticalAttempt(set);
     expect(() => savePracticalAnswer(set, attempt, "P3-01", "missing", "x")).toThrow();
