@@ -183,4 +183,46 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     expect(topics.every((item) => item.content.trim().length > 0)).toBe(true);
   });
 
+
+  it("extracts Cambridge Biology subtopics and numbered learning outcomes with parent links", async () => {
+    const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
+    const items = extractCurriculumKnowledge(
+      [
+        "1 Cell structure",
+        "Topic introduction text.",
+        "1.1 The microscope in cell studies",
+        "Learning outcomes",
+        "Candidates should be able to:",
+        "1 make temporary preparations of cellular material suitable for",
+        "viewing with a light microscope",
+        "2 draw cells from microscope slides and photomicrographs",
+        "1.2 Cells as the basic units of living organisms",
+        "Learning outcomes",
+        "Candidates should be able to:",
+        "1 recognise organelles and other cell structures found in eukaryotic cells",
+        "• cell surface membrane",
+        "• nucleus and nucleolus",
+      ].join("\n"),
+      {
+        boardId: "cambridge",
+        qualificationId: "cambridge-as-a-level",
+        level: "as_a_level",
+        syllabusId: "cambridge-9700",
+        syllabusVersion: "2028-2030",
+        subjectId: "biology",
+      },
+      provenance,
+      getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
+    );
+
+    const subtopics = items.filter((item) => item.metadata?.extraction === "cambridge-subtopic");
+    const outcomes = items.filter((item) => item.kind === "learning_outcome");
+    expect(subtopics.map((item) => item.code)).toEqual(["1.1", "1.2"]);
+    expect(outcomes.map((item) => item.code)).toEqual(["1.1.1", "1.1.2", "1.2.1"]);
+    expect(outcomes[0].content).toContain("viewing with a light microscope");
+    expect(outcomes[2].content).toContain("cell surface membrane");
+    expect(outcomes.every((item) => item.parentId === subtopics.find((parent) => parent.code === item.code?.split(".").slice(0, 2).join("."))?.id)).toBe(true);
+    expect(subtopics.every((item) => item.parentId)).toBe(true);
+    expect([...subtopics, ...outcomes].every((item) => item.status === "draft")).toBe(true);
+  });
 });
