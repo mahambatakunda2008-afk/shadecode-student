@@ -126,6 +126,23 @@ describe("Biology practical attempt preview", () => {
     expect(recommendation?.questionId).toBe("a");
   });
 
+  it("separates biological understanding, practical technique, data handling and evaluation", () => {
+    const extendedSet: PracticalPracticeSet = {
+      ...set,
+      tasks: [{ ...set.tasks[0], skills: ["osmosis", "control of variables", "graph", "limitations and improvements"] }],
+    };
+    const summary = summarizePracticalAttempt(extendedSet, startPracticalAttempt(extendedSet));
+    expect(summary.skills.map(({ skill, domain }) => [skill, domain])).toEqual([
+      ["osmosis", "biological-understanding"],
+      ["control of variables", "experimental-technique"],
+      ["graph", "data-handling"],
+      ["limitations and improvements", "evaluation"],
+    ]);
+    expect(summary.skills[0].improvementFocus).toContain("biological principle");
+    expect(summary.skills[1].improvementFocus).toContain("equipment");
+    expect(summary.skills[2].improvementFocus).toContain("units and precision");
+    expect(summary.skills[3].improvementFocus).toContain("limitation");
+  });
   it("builds a transparent practice-review summary without predicting exam readiness", () => {
     let attempt = startPracticalAttempt(set);
     let summary = summarizePracticalAttempt(set, attempt);
