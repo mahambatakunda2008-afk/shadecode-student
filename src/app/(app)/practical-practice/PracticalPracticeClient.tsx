@@ -11,6 +11,7 @@ import {
   selfAwardPracticalMarks,
   startPracticalAttempt,
   summarizePracticalAttempt,
+  togglePracticalAnswerPoint,
   type PracticalAttempt,
   type PracticalPracticeSet,
   type PracticeSkillRating,
@@ -29,7 +30,7 @@ function readAttempt(): PracticalAttempt {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as PracticalAttempt;
-        if (parsed.practiceSetId === set.id && parsed.answers && parsed.skillRatings) return parsed;
+        if (parsed.practiceSetId === set.id && parsed.answers && parsed.skillRatings) return { ...parsed, checkedAnswerPoints: parsed.checkedAnswerPoints ?? {} };
       }
     } catch { /* Start clean if local storage is unavailable or malformed. */ }
   }
@@ -138,7 +139,7 @@ export default function PracticalPracticeClient() {
                   <button type="button" onClick={() => setAttempt((current) => revealPracticalGuidance(set, current, task.id, question.id))} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold hover:bg-[var(--surface-2)]">{revealed ? <EyeOff size={14} /> : <Eye size={14} />}{revealed ? "Guidance revealed" : "Reveal self-check points"}</button>
                   <label className="ml-auto flex items-center gap-2 text-xs text-[var(--muted-foreground)]">My marks <input type="number" min={0} max={question.marks} step={1} value={attempt.selfAwardedMarks[key] ?? ""} onChange={(event) => { const value = event.target.value; if (value === "") { setAttempt((current) => ({ ...current, selfAwardedMarks: Object.fromEntries(Object.entries(current.selfAwardedMarks).filter(([savedKey]) => savedKey !== key)) })); return; } const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0 && parsed <= question.marks) setAttempt((current) => selfAwardPracticalMarks(set, current, task.id, question.id, parsed)); }} className="h-9 w-16 rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-2 text-center text-sm font-semibold tabular-nums text-[var(--foreground)]" /></label>
                 </div>
-                {revealed && <div className="mt-4 rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-4"><p className="text-xs font-bold uppercase tracking-wide text-[var(--primary)]">Self-check points</p><ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-6 text-[var(--muted-foreground)]">{question.answer.map((point, pointIndex) => <li key={pointIndex}>{point}</li>)}</ul></div>}
+                {revealed && <div className="mt-4 rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold uppercase tracking-wide text-[var(--primary)]">Answer-quality checklist</p><span className="text-[11px] text-[var(--muted-foreground)]">{(attempt.checkedAnswerPoints[key] ?? []).length}/{question.answer.length} points reviewed</span></div><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">Compare each point with your answer and tick it only if you included the idea accurately. These are guidance points, not individually weighted marks.</p><ul className="mt-3 space-y-3 text-sm leading-6">{question.answer.map((point, pointIndex) => { const checked = (attempt.checkedAnswerPoints[key] ?? []).includes(pointIndex); return <li key={pointIndex}><label className="flex cursor-pointer items-start gap-3"><input type="checkbox" checked={checked} onChange={() => setAttempt((current) => togglePracticalAnswerPoint(set, current, task.id, question.id, pointIndex))} className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]" /><span className={checked ? "text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}>{point}</span></label></li>; })}</ul><p className="mt-3 text-xs font-semibold text-[var(--muted-foreground)]">Still unchecked? Add the missing idea to your answer, then retry without looking.</p></div>}
               </article>;
             })}
 
