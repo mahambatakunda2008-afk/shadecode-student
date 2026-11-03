@@ -452,7 +452,7 @@ function extractCambridgePracticalSkillExpectations(
           },
         },
       );
-    } else if (current && !/^Back to contents page$/i.test(line) && !/^www\./i.test(line)) {
+    } else if (current && !/^Back to contents page$/i.test(line) && !/^www\./i.test(line) && !/^When using\b/i.test(line) && !/:\s*$/.test(line)) {
       current.content = `${current.content} ${line.replace(/^[-•●▪]\s*/, "")}`;
     }
   }
