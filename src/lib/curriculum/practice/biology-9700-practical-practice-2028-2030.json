@@ -216,14 +216,14 @@
         {
           "id": "b",
           "marks": 4,
-          "prompt": "A 50 µm scale bar is to be added to the photomicrograph shown in the scenario. Calculate the length of the scale bar on the image, then describe three features of a high-quality biological drawing of the observed tissue.",
+          "prompt": "A 50 µm scale bar is to be added to the photomicrograph shown in the scenario. Calculate the length of the scale bar on the image, then describe two features of a high-quality biological drawing of the observed tissue.",
           "answer": [
             "The photomicrograph magnification is ×300, so scale-bar image length = 50 µm × 300 = 15 000 µm = 15 mm.",
             "Use clear, single, continuous lines and draw large, accurate outlines with correct proportions.",
-            "Do not use shading or sketching; represent only structures actually observed.",
-            "Use straight ruled label lines that touch the correct structure and do not cross. A scale bar should be a straight measured line labelled with the actual specimen length, for example 50 µm."
+            "Do not use shading or sketching; use straight ruled label lines that touch the correct structure and do not cross. Represent only structures actually observed.",
+            "A scale bar should be a straight measured line labelled with the actual specimen length, for example 50 µm."
           ],
-          "notes": "The scale-bar calculation is 2 marks; award the remaining marks for any three distinct valid drawing conventions."
+          "notes": "Award 2 marks for the correct scale-bar calculation and one mark each for any two distinct valid drawing conventions."
         },
         {
           "id": "c",
