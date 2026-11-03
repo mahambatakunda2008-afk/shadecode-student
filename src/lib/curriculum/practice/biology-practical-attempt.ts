@@ -106,12 +106,94 @@ function practicalSkillTerms(skill: string): string[] {
   return [...new Set([...terms, ...aliases])];
 }
 
-/** Deterministic question-to-skill mapping based on prompt and self-check vocabulary. */
-export function getPracticalQuestionSkills(task: Pick<PracticalTask, "skills">, question: Pick<PracticalQuestion, "prompt" | "answer">): string[] {
+/**
+ * Curated mappings for the original 9700 practice bank. These are intentionally
+ * explicit: generic words such as "data", "control" and "table" must not create
+ * accidental skill associations merely because they appear in an answer point.
+ */
+const CURATED_PRACTICAL_QUESTION_SKILLS: Record<string, string[]> = {
+  "P3-01::a": ["independent and dependent variables"],
+  "P3-01::b": ["range and intervals"],
+  "P3-01::c": ["control of variables"],
+  "P3-01::d": ["repeats", "anomalies"],
+  "P3-01::e": ["raw data table"],
+  "P3-01::f": ["graph"],
+  "P3-01::g": ["limitations and improvements", "control of variables"],
+  "P3-01::h": ["conclusion"],
+  "P3-02::a": ["magnification", "scale bar"],
+  "P3-02::b": ["biological drawing"],
+  "P3-02::c": ["observation", "biological drawing"],
+  "P3-02::d": ["microscope use"],
+  "P5-01::a": ["prediction and hypothesis"],
+  "P5-01::b": ["variables"],
+  "P5-01::c": ["method design", "replication", "controls"],
+  "P5-01::d": ["controls"],
+  "P5-01::e": ["risk assessment"],
+  "P5-01::f": ["data processing"],
+  "P5-01::g": ["graphing", "replication"],
+  "P5-01::h": ["evaluation", "method design"],
+  "P3-03::a": ["independent and dependent variables", "percentage change"],
+  "P3-03::b": ["range and intervals"],
+  "P3-03::c": ["control of variables"],
+  "P3-03::d": ["repeats"],
+  "P3-03::e": ["table", "percentage change"],
+  "P3-03::f": ["percentage change"],
+  "P3-03::g": ["graph", "interpretation"],
+  "P3-03::h": ["evaluation"],
+  "P3-04::a": ["independent and dependent variables", "timing"],
+  "P3-04::b": ["range and intervals"],
+  "P3-04::c": ["timing", "control of variables"],
+  "P3-04::d": ["control of variables"],
+  "P3-04::e": ["repeats"],
+  "P3-04::f": ["rate calculation"],
+  "P3-04::g": ["graph"],
+  "P3-04::h": ["evaluation"],
+  "P3-05::a": ["independent and dependent variables", "measurement", "rate calculation"],
+  "P3-05::b": ["apparatus setup"],
+  "P3-05::c": ["control of variables"],
+  "P3-05::d": ["range and intervals", "measurement"],
+  "P3-05::e": ["rate calculation", "measurement"],
+  "P3-05::f": ["measurement"],
+  "P3-05::g": ["independent and dependent variables", "control of variables"],
+  "P3-05::h": ["evaluation", "apparatus setup"],
+  "P5-02::a": ["identify data type", "choose statistical test"],
+  "P5-02::b": ["calculate standard error"],
+  "P5-02::c": ["confidence intervals"],
+  "P5-02::d": ["null hypothesis", "degrees of freedom"],
+  "P5-02::e": ["calculate standard error"],
+  "P5-02::f": ["choose statistical test", "interpret probability"],
+  "P5-02::g": ["evaluate conclusion"],
+  "P5-02::h": ["calculate standard error"],
+  "P5-03::a": ["classify variables and data", "choose statistical test", "t-test assumptions", "chi-squared", "interpret correlation"],
+  "P5-03::b": ["state null hypothesis", "chi-squared"],
+  "P5-03::c": ["state null hypothesis", "t-test assumptions"],
+  "P5-03::d": ["choose statistical test", "interpret correlation"],
+  "P5-03::e": ["interpret correlation"],
+  "P5-03::f": ["evaluate sampling"],
+  "P5-03::g": ["interpret probability"],
+};
+
+/** Return the deliberately curated skills for known bank questions, with a bounded fallback for new tasks. */
+export function getPracticalQuestionSkills(
+  task: Pick<PracticalTask, "skills"> & Partial<Pick<PracticalTask, "id">>,
+  question: Pick<PracticalQuestion, "id" | "prompt" | "answer">,
+): string[] {
+  if (task.id) {
+    const curated = CURATED_PRACTICAL_QUESTION_SKILLS[`${task.id}::${question.id}`];
+    if (curated) return curated.filter((skill) => task.skills.includes(skill));
+  }
+
   const text = `${question.prompt} ${question.answer.join(" ")}`.toLowerCase();
+  const genericTerms = new Set(["data", "table", "control", "controls", "variable", "variables", "method", "test", "result", "results", "standard"]);
   const ranked = task.skills.map((skill, index) => {
-    const hits = practicalSkillTerms(skill).filter((term) => text.includes(term));
-    return { skill, index, score: hits.length };
+    const normalized = skill.toLowerCase().trim();
+    const aliases = PRACTICAL_SKILL_ALIASES[normalized] ?? [];
+    const terms = normalized.split(/[^a-z0-9]+/)
+      .filter((term) => term.length > 3 && !genericTerms.has(term))
+      .flatMap((term) => term.endsWith("s") ? [term, term.slice(0, -1)] : [term]);
+    const matches = [...new Set([...terms, ...aliases])]
+      .filter((term) => term.length > 3 && text.includes(term));
+    return { skill, index, score: matches.length };
   }).filter((item) => item.score > 0);
   ranked.sort((a, b) => b.score - a.score || a.index - b.index);
   return ranked.slice(0, 5).map((item) => item.skill);
