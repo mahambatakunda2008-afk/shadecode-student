@@ -85,5 +85,10 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(photosynthesisRates?.data?.columns).toContain("Mean oxygen production / cm³ min⁻¹");
     expect(photosynthesisRates?.data?.rows).toHaveLength(5);
     expect(photosynthesisRates?.prompt).toContain("shown below");
+    const spearman = findQuestion("P5-03", "h");
+    expect(spearman?.data?.rows).toHaveLength(8);
+    expect(spearman?.data?.columns).toContain("Species abundance rank");
+    expect(spearman?.answer.join(" ")).toContain("0.857");
+    expect(spearman?.data?.rows.every((row) => row.length === spearman.data?.columns.length)).toBe(true);
   });
 });
