@@ -80,6 +80,15 @@ describe("Biology practical attempt preview", () => {
     expect(review?.totalTaskCount).toBe(2);
   });
 
+  it("reports Paper 3 and Paper 5 coverage separately", () => {
+    let attempt = startPracticalAttempt(set);
+    attempt = savePracticalAnswer(set, attempt, "P3-01", "a", "A response");
+    attempt = selfAwardPracticalMarks(set, attempt, "P3-01", "a", 2);
+    const coverage = summarizePracticalAttempt(set, attempt).paperCoverage;
+    expect(coverage["Paper 3"]).toEqual({ taskCount: 1, questionCount: 2, answeredQuestions: 1, availableMarks: 5, selfAwardedMarks: 2 });
+    expect(coverage["Paper 5"]).toEqual({ taskCount: 1, questionCount: 1, answeredQuestions: 0, availableMarks: 2, selfAwardedMarks: 0 });
+  });
+
   it("recommends another task for a skill rated revisit", () => {
     let attempt = startPracticalAttempt(set);
     attempt = ratePracticalSkill(set, attempt, "P3-01", "variables", "revisit");
