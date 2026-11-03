@@ -43,6 +43,20 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(totalPracticeMarks).toBe(209);
   });
 
+  it("provides the scenario context needed to interpret statistical investigations", () => {
+    const statistics = practiceSet.tasks.find((task) => task.id === "P5-02");
+    const testSelection = practiceSet.tasks.find((task) => task.id === "P5-03");
+
+    expect(statistics?.scenario).toContain("untreated group n = 10");
+    expect(statistics?.scenario).toContain("treated group n = 10");
+    expect(statistics?.scenario).toContain("critical value of 2.101");
+    expect(testSelection?.scenario).toContain("Investigation A");
+    expect(testSelection?.scenario).toContain("Investigation B");
+    expect(testSelection?.scenario).toContain("Investigation C");
+    expect(testSelection?.scenario).toContain("monotonic relationship");
+    expect(testSelection?.scenario).toContain("eight randomly selected independent sites");
+  });
+
   it("covers A Level statistical analysis and appropriate test selection", () => {
     const statistics = practiceSet.tasks.find((task) => task.id === "P5-02");
     const testSelection = practiceSet.tasks.find((task) => task.id === "P5-03");
