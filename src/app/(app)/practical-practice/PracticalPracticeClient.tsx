@@ -98,7 +98,15 @@ function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
 
   const locate = (event: import("react").PointerEvent<SVGSVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    return { x: Math.max(20, Math.min(580, ((event.clientX - rect.left) / rect.width) * 600)), y: Math.max(20, Math.min(340, ((event.clientY - rect.top) / rect.height) * 360)) };
+    const rawX = ((event.clientX - rect.left) / rect.width) * 600;
+    const rawY = ((event.clientY - rect.top) / rect.height) * 360;
+    // Keep every stroke inside the microscope field, even when a pointer drifts beyond its edge.
+    const dx = rawX - 300;
+    const dy = rawY - 180;
+    const distance = Math.hypot(dx, dy);
+    const radius = 148;
+    const scale = distance > radius ? radius / distance : 1;
+    return { x: 300 + dx * scale, y: 180 + dy * scale };
   };
   const begin = (event: import("react").PointerEvent<SVGSVGElement>) => {
     event.preventDefault();
