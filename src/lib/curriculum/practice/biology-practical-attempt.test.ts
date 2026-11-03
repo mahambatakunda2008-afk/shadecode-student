@@ -269,6 +269,16 @@ describe("Biology practical attempt preview", () => {
     expect(task && question ? getPracticalQuestionSkills(task, question) : []).toContain("interpret probability");
   });
 
+  it("maps the Spearman calculation to correlation calculation and interpretation skills", () => {
+    const bank = practicalPracticeBank as unknown as PracticalPracticeSet;
+    const task = bank.tasks.find((item) => item.id === "P5-03");
+    const question = task?.questions.find((item) => item.id === "h");
+    expect(task && question ? getPracticalQuestionSkills(task, question) : []).toEqual([
+      "calculate correlation coefficient",
+      "interpret correlation",
+    ]);
+  });
+
   it("rejects unknown questions and skills", () => {
     const attempt = startPracticalAttempt(set);
     expect(() => savePracticalAnswer(set, attempt, "P3-01", "missing", "x")).toThrow();
