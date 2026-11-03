@@ -32,8 +32,12 @@ export interface PracticalAttempt {
   checkedAnswerPoints: Record<string, number[]>;
 }
 
+export type PracticalSkillDomain = "biological-understanding" | "experimental-technique" | "data-handling" | "evaluation" | "other";
+
 export interface SkillReview {
   skill: string;
+  domain: PracticalSkillDomain;
+  improvementFocus: string;
   rating: PracticeSkillRating | "not-reviewed";
   taskIds: string[];
   taskRatings: Record<string, PracticeSkillRating | "not-reviewed">;
@@ -256,8 +260,11 @@ export function summarizePracticalAttempt(
               ? "secure"
               : "developing";
 
+    const domain = classifyPracticalSkill(item.skill);
     return {
       skill: item.skill,
+      domain,
+      improvementFocus: practicalSkillImprovementFocus(domain, rating),
       rating,
       taskIds: item.taskIds,
       taskRatings: item.taskRatings,
@@ -411,4 +418,29 @@ function skillKey(taskId: string, skill: string): string {
 
 function normalizeSkill(skill: string): string {
   return skill.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function classifyPracticalSkill(skill: string): PracticalSkillDomain {
+  const value = normalizeSkill(skill);
+  if (/conclusion|limitation|improvement|evaluation|reliability|validity/.test(value)) return "evaluation";
+  if (/graph|table|calculation|statistic|standard error|confidence interval|t-test|chi-squared|correlation|anomal/.test(value)) return "data-handling";
+  if (/osmosis|enzyme|catalase|amylase|photosynthesis|microscop|magnification|potometer|biological drawing|cell|membrane/.test(value)) return "biological-understanding";
+  if (/variable|range|interval|repeat|control|risk|apparatus|measurement|sampling|method|procedure|dilution|timing|calibrat|independent|dependent/.test(value)) return "experimental-technique";
+  return "other";
+}
+
+function practicalSkillImprovementFocus(domain: PracticalSkillDomain, rating: PracticeSkillRating | "not-reviewed"): string {
+  const action = rating === "revisit"
+    ? "Repeat a different task and explain each decision as you work."
+    : rating === "developing"
+      ? "Practise another task and check which steps you can complete independently."
+      : "Complete a task in this area and record what you can do confidently.";
+  const focus: Record<PracticalSkillDomain, string> = {
+    "biological-understanding": "Strengthen the biological principle behind the observation, then connect it to the evidence.",
+    "experimental-technique": "Practise choosing equipment, controlling variables and carrying out measurements consistently.",
+    "data-handling": "Practise recording units and precision, processing results and selecting an appropriate presentation or test.",
+    evaluation: "Practise linking each limitation to its effect on results and a realistic improvement.",
+    other: "Practise the skill in a fresh context and explain the reasoning behind your method.",
+  };
+  return focus[domain] + " " + action;
 }
