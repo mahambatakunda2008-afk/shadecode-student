@@ -70,5 +70,9 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(osmosis?.data?.rows).toHaveLength(6);
     expect(amylase?.data?.rows).toHaveLength(7);
     expect(statistics?.data?.rows).toHaveLength(2);
+    const photosynthesisRates = findQuestion("P5-01", "f");
+    expect(photosynthesisRates?.data?.columns).toContain("Mean oxygen production rate");
+    expect(photosynthesisRates?.data?.rows).toHaveLength(4);
+    expect(photosynthesisRates?.prompt).toContain("shown below");
   });
 });
