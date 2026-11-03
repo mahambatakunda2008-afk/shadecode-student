@@ -51,6 +51,7 @@ export interface PracticalAttemptSummary {
   skillsToRevisit: string[];
   recommendedPractice: PracticalPracticeRecommendation[];
   paperCoverage: Record<"Paper 3" | "Paper 5", PracticalPaperCoverage>;
+  practiceReview: { answeredPercent: number; skillsReviewed: number; totalSkills: number; skillReviewPercent: number; checkedGuidancePoints: number; availableGuidancePoints: number; guidanceReviewPercent: number; status: "not-started" | "in-progress" | "reviewed" };
 }
 
 export interface PracticalPaperCoverage {
@@ -265,12 +266,41 @@ export function summarizePracticalAttempt(
     };
   });
 
+  const answeredQuestions = questions.filter(({ task, question }) =>
+    Boolean(attempt.answers[questionKey(task.id, question.id)]?.trim()),
+  ).length;
+  const totalSkills = skills.size;
+  const reviewedSkills = skillReviews.filter((item) => item.reviewedTaskCount === item.totalTaskCount).length;
+  const revealedQuestionKeys = attempt.revealedAnswers.filter((key) => {
+    const [taskId, questionId] = key.split("::");
+    return Boolean(findQuestion(set, taskId, questionId));
+  });
+  const availableGuidancePoints = revealedQuestionKeys.reduce((sum, key) => {
+    const [taskId, questionId] = key.split("::");
+    return sum + (findQuestion(set, taskId, questionId)?.answer.length ?? 0);
+  }, 0);
+  const checkedGuidancePoints = revealedQuestionKeys.reduce((sum, key) =>
+    sum + (attempt.checkedAnswerPoints?.[key] ?? []).filter((index) => Number.isInteger(index) && index >= 0).length, 0,
+  );
+  const practiceReview = {
+    answeredPercent: questions.length ? Math.round((answeredQuestions / questions.length) * 100) : 0,
+    skillsReviewed: reviewedSkills,
+    totalSkills,
+    skillReviewPercent: totalSkills ? Math.round((reviewedSkills / totalSkills) * 100) : 0,
+    checkedGuidancePoints,
+    availableGuidancePoints,
+    guidanceReviewPercent: availableGuidancePoints ? Math.round((checkedGuidancePoints / availableGuidancePoints) * 100) : 0,
+    status: (answeredQuestions === 0 && reviewedSkills === 0 && revealedQuestionKeys.length === 0
+      ? "not-started"
+      : answeredQuestions === questions.length && reviewedSkills === totalSkills && checkedGuidancePoints === availableGuidancePoints
+        ? "reviewed"
+        : "in-progress") as "not-started" | "in-progress" | "reviewed",
+  };
+
   return {
-    answeredQuestions: questions.filter(({ task, question }) =>
-      Boolean(attempt.answers[questionKey(task.id, question.id)]?.trim()),
-    ).length,
+    answeredQuestions,
     totalQuestions: questions.length,
-    revealedQuestions: attempt.revealedAnswers.length,
+    revealedQuestions: revealedQuestionKeys.length,
     selfAwardedMarks: Object.values(attempt.selfAwardedMarks).reduce((sum, value) => sum + value, 0),
     availableMarks: questions.reduce((sum, { question }) => sum + question.marks, 0),
     skills: skillReviews,
@@ -279,6 +309,7 @@ export function summarizePracticalAttempt(
       .map((item) => item.skill),
     recommendedPractice: recommendPracticalPractice(set, attempt, skillReviews),
     paperCoverage: summarizePaperCoverage(set, attempt),
+    practiceReview,
   };
 }
 
