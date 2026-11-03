@@ -235,10 +235,10 @@ function extractCambridgeNumberedLearningOutcomes(
   provenance: CurriculumKnowledgeProvenance,
   topics: CurriculumKnowledgeItem[],
 ): CurriculumKnowledgeItem[] {
-  const lines = text.split(/\\r?\\n/);
+  const lines = text.split(/\r?\n/);
   const topicByCode = new Map<string, CurriculumKnowledgeItem>();
   for (const topic of topics) {
-    const match = topic.title.match(/^(\\d{1,2})\\s+/);
+    const match = topic.title.match(/^(\d{1,2})\s+/);
     if (match) topicByCode.set(match[1], topic);
   }
 
@@ -251,7 +251,7 @@ function extractCambridgeNumberedLearningOutcomes(
 
   const flushOutcome = () => {
     if (!currentOutcome) return;
-    currentOutcome.content = currentOutcome.content.replace(/\\s+/g, " ").trim();
+    currentOutcome.content = currentOutcome.content.replace(/\s+/g, " ").trim();
     currentOutcome.title = currentOutcome.content;
     items.push(currentOutcome);
     currentOutcome = undefined;
@@ -284,7 +284,7 @@ function extractCambridgeNumberedLearningOutcomes(
     const line = lines[index].trim();
     if (!line) continue;
 
-    const subtopicMatch = line.match(/^(\\d{1,2}\\.\\d{1,2})\\s+(.+)$/);
+    const subtopicMatch = line.match(/^(\d{1,2}\.\d{1,2})\s+(.+)$/);
     if (subtopicMatch) {
       flushSubtopic();
       subtopicHeading = { code: subtopicMatch[1], title: subtopicMatch[2] };
@@ -299,7 +299,7 @@ function extractCambridgeNumberedLearningOutcomes(
     }
 
     if (inLearningOutcomes && currentSubtopic) {
-      const outcomeMatch = line.match(/^(\\d{1,2})\\s+(.+)$/);
+      const outcomeMatch = line.match(/^(\d{1,2})\s+(.+)$/);
       if (outcomeMatch) {
         flushOutcome();
         const code = `${currentSubtopic.code}.${outcomeMatch[1]}`;
@@ -312,11 +312,11 @@ function extractCambridgeNumberedLearningOutcomes(
           metadata: {
             extraction: "cambridge-numbered-learning-outcome",
             stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "learning_outcome", code].join("|"),
-            topicCode: currentTopic?.code ?? currentTopic?.title.match(/^(\\d{1,2})/)?.[1] ?? null,
+            topicCode: currentTopic?.code ?? currentTopic?.title.match(/^(\d{1,2})/)?.[1] ?? null,
           },
         });
       } else if (currentOutcome) {
-        currentOutcome.content += ` ${line.replace(/^[•●▪–-]\\s*/, "")}`;
+        currentOutcome.content += ` ${line.replace(/^[•●▪–-]\s*/, "")}`;
       }
     }
   }
