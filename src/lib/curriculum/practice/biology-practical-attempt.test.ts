@@ -126,6 +126,24 @@ describe("Biology practical attempt preview", () => {
     expect(recommendation?.questionId).toBe("a");
   });
 
+  it("builds a transparent practice-review summary without predicting exam readiness", () => {
+    let attempt = startPracticalAttempt(set);
+    let summary = summarizePracticalAttempt(set, attempt);
+    expect(summary.practiceReview).toMatchObject({
+      answeredPercent: 0, skillsReviewed: 0, totalSkills: 4, skillReviewPercent: 0,
+      checkedGuidancePoints: 0, availableGuidancePoints: 0, status: "not-started",
+    });
+    attempt = savePracticalAnswer(set, attempt, "P3-01", "a", "My answer");
+    attempt = revealPracticalGuidance(set, attempt, "P3-01", "a");
+    attempt = togglePracticalAnswerPoint(set, attempt, "P3-01", "a", 0);
+    summary = summarizePracticalAttempt(set, attempt);
+    expect(summary.practiceReview.answeredPercent).toBe(33);
+    expect(summary.practiceReview.checkedGuidancePoints).toBe(1);
+    expect(summary.practiceReview.availableGuidancePoints).toBe(2);
+    expect(summary.practiceReview.guidanceReviewPercent).toBe(50);
+    expect(summary.practiceReview.status).toBe("in-progress");
+  });
+
   it("clears only the selected question's answer and feedback state for a fresh retry", () => {
     let attempt = startPracticalAttempt(set);
     attempt = savePracticalAnswer(set, attempt, "P3-01", "a", "Initial response");
