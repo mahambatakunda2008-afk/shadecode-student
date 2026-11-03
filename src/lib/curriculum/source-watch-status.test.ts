@@ -85,3 +85,38 @@ describe("watched syllabus version resolution", () => {
     });
   });
 });
+
+
+describe("curriculum extraction decision gate", () => {
+  it("prioritises version conflicts even when PDF text extraction returned nothing", async () => {
+    const { resolveCurriculumExtractionSkipReason } = await import("./source-watch-status");
+    expect(resolveCurriculumExtractionSkipReason({
+      curriculumResolved: true,
+      versionConflict: true,
+      extractedText: null,
+    })).toBe("version_conflict");
+  });
+
+  it("blocks missing curriculum identity before extraction", async () => {
+    const { resolveCurriculumExtractionSkipReason } = await import("./source-watch-status");
+    expect(resolveCurriculumExtractionSkipReason({
+      curriculumResolved: false,
+      versionConflict: false,
+      extractedText: "syllabus text",
+    })).toBe("missing_curriculum");
+  });
+
+  it("skips empty text only after the version invariant passes", async () => {
+    const { resolveCurriculumExtractionSkipReason } = await import("./source-watch-status");
+    expect(resolveCurriculumExtractionSkipReason({
+      curriculumResolved: true,
+      versionConflict: false,
+      extractedText: "  ",
+    })).toBe("missing_extracted_text");
+    expect(resolveCurriculumExtractionSkipReason({
+      curriculumResolved: true,
+      versionConflict: false,
+      extractedText: "valid syllabus text",
+    })).toBeNull();
+  });
+});
