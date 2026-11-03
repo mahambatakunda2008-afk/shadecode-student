@@ -248,6 +248,8 @@ function extractCambridgePracticalAssessment(
   const lines = text.split(/\r?\n/);
   const sections: Array<{ code: string; title: string; content: string[] }> = [];
   let current: (typeof sections)[number] | undefined;
+  let collectingOverview = false;
+  const overviewLines: string[] = [];
   const flush = () => {
     if (current && current.content.length) sections.push(current);
     current = undefined;
@@ -271,6 +273,26 @@ function extractCambridgePracticalAssessment(
   flush();
 
   const items: CurriculumKnowledgeItem[] = [];
+  const overviewContent = overviewLines.join(" ").replace(/\\s+/g, " ").trim();
+  const overview = overviewContent
+    ? makeItem(
+        "practical_activity",
+        "Practical assessment overview",
+        overviewContent,
+        identity,
+        { ...provenance, sectionOrPage: provenance.sectionOrPage ?? "Practical assessment" },
+        0,
+        {
+          code: "PRACTICAL-OVERVIEW",
+          metadata: {
+            extraction: "cambridge-practical-assessment-overview",
+            stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment-overview"].join("|"),
+          },
+        },
+      )
+    : undefined;
+  if (overview) items.push(overview);
+
   const paperSkills: Record<string, string[]> = {
     P3: [
       "manipulation, measurement and observation",
@@ -304,7 +326,7 @@ function extractCambridgePracticalAssessment(
         extraction: "cambridge-practical-assessment",
         stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment", section.code].join("|"),
         paper: section.code,
-      } },
+      }, parentId: overview?.id },
     );
     items.push(parent);
 
