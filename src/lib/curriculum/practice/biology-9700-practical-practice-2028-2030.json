@@ -205,7 +205,7 @@
         {
           "id": "a",
           "marks": 4,
-          "prompt": "Calculate the magnification of the photomicrograph. Show the unit conversion and working.",
+          "prompt": "A photomicrograph has an image length of 36 mm. The corresponding actual specimen length is 120 µm. Calculate the magnification. Show the unit conversion and working.",
           "answer": [
             "Convert 36 mm to 36 000 µm.",
             "Magnification = image size ÷ actual size.",
