@@ -815,11 +815,13 @@
         {
           "id": "c",
           "marks": 3,
-          "prompt": "Calculate the 95% confidence interval for each mean using mean ± 1.96 × SE. Give the limits to two decimal places.",
+          "prompt": "Calculate an approximate 95% confidence interval for each mean using the t critical value 2.262 for 9 degrees of freedom: mean ± t × SE. Give the limits to two decimal places.",
           "answer": [
-            "Untreated: 4.8 ± (1.96 × 0.1897), approximately 4.43 to 5.17 mg.",
-            "Treated: 6.1 ± (1.96 × 0.2530), approximately 5.60 to 6.60 mg.",
-            "State the interval in mg and retain sensible precision."
+            "Each group has n = 10, so degrees of freedom for a one-sample mean interval are n − 1 = 9.",
+            "Use the two-tailed 95% t critical value 2.262, not the large-sample normal value 1.96.",
+            "Untreated: 4.8 ± (2.262 × 0.1897) = approximately 4.37 to 5.23 mg.",
+            "Treated: 6.1 ± (2.262 × 0.2530) = approximately 5.53 to 6.67 mg.",
+            "These are separate confidence intervals for each population mean; overlap alone is not the formal two-sample t-test decision."
           ]
         },
         {
