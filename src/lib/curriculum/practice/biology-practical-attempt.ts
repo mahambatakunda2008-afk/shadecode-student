@@ -48,6 +48,16 @@ export interface PracticalAttemptSummary {
   availableMarks: number;
   skills: SkillReview[];
   skillsToRevisit: string[];
+  recommendedPractice: PracticalPracticeRecommendation[];
+}
+
+export interface PracticalPracticeRecommendation {
+  skill: string;
+  rating: PracticeSkillRating | "not-reviewed";
+  taskId: string;
+  taskTitle: string;
+  questionId: string;
+  reason: string;
 }
 
 export function canAttemptPracticalSet(set: PracticalPracticeSet): boolean {
@@ -210,7 +220,73 @@ export function summarizePracticalAttempt(
     skillsToRevisit: skillReviews
       .filter((item) => item.rating !== "secure")
       .map((item) => item.skill),
+    recommendedPractice: recommendPracticalPractice(set, attempt, skillReviews),
   };
+}
+
+export function recommendPracticalPractice(
+  set: PracticalPracticeSet,
+  attempt: PracticalAttempt,
+  skills: SkillReview[],
+): PracticalPracticeRecommendation[] {
+  const ratingPriority: Record<PracticeSkillRating | "not-reviewed", number> = {
+    revisit: 0,
+    developing: 1,
+    "not-reviewed": 2,
+    secure: 3,
+  };
+
+  return skills
+    .filter((skill) => skill.rating !== "secure")
+    .map((skill) => {
+      const candidates = skill.taskIds
+        .map((taskId, index) => {
+          const task = set.tasks.find((item) => item.id === taskId);
+          if (!task) return null;
+          const taskRating = skill.taskRatings[taskId] ?? "not-reviewed";
+          const unanswered = task.questions.find((question) =>
+            !attempt.answers[questionKey(task.id, question.id)]?.trim(),
+          );
+          const question = unanswered ?? task.questions[0];
+          if (!question) return null;
+          return {
+            task,
+            question,
+            taskRating,
+            hasUnanswered: Boolean(unanswered),
+            index,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+
+      const alternativeToRevisit = skill.rating === "revisit"
+        ? candidates.filter((candidate) => candidate.taskRating !== "revisit")
+        : candidates;
+      const pool = alternativeToRevisit.length ? alternativeToRevisit : candidates;
+      pool.sort((a, b) =>
+        Number(b.hasUnanswered) - Number(a.hasUnanswered)
+        || ratingPriority[a.taskRating] - ratingPriority[b.taskRating]
+        || a.index - b.index,
+      );
+      const selected = pool[0];
+      if (!selected) return null;
+
+      const reason = selected.taskRating === "revisit"
+        ? "Revisit this skill with another attempt."
+        : selected.taskRating === "developing"
+          ? "Strengthen a skill you rated as developing."
+          : "This skill has not yet been reviewed across its practice tasks.";
+
+      return {
+        skill: skill.skill,
+        rating: skill.rating,
+        taskId: selected.task.id,
+        taskTitle: selected.task.title,
+        questionId: selected.question.id,
+        reason,
+      };
+    })
+    .filter((item): item is PracticalPracticeRecommendation => item !== null);
 }
 
 function findQuestion(set: PracticalPracticeSet, taskId: string, questionId: string) {
