@@ -57,6 +57,11 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(catalaseGraph?.data?.columns).toContain("Mean oxygen volume / cm³");
     expect(catalaseGraph?.prompt).toContain("results are shown below");
     expect(catalaseGraph?.data?.rows.every((row) => row.length === catalaseGraph.data?.columns.length)).toBe(true);
+    const potometerGraph = findQuestion("P3-05", "g");
+    expect(potometerGraph?.data?.rows).toHaveLength(5);
+    expect(potometerGraph?.data?.columns).toContain("Mean water uptake / mm³ min⁻¹");
+    expect(potometerGraph?.answer.join(" ")).toContain("potometer measures water uptake");
+    expect(potometerGraph?.data?.rows.every((row) => row.length === potometerGraph.data?.columns.length)).toBe(true);
   });
 
   it("supplies original numerical datasets for graphing and statistical analysis", () => {
