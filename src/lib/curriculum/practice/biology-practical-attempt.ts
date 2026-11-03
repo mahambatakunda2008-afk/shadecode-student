@@ -177,6 +177,7 @@ const CURATED_PRACTICAL_QUESTION_SKILLS: Record<string, string[]> = {
   "P5-03::e": ["interpret correlation"],
   "P5-03::f": ["evaluate sampling"],
   "P5-03::g": ["interpret probability"],
+  "P5-03::h": ["calculate correlation coefficient", "interpret correlation"],
 };
 
 /** Return the deliberately curated skills for known bank questions, with a bounded fallback for new tasks. */
