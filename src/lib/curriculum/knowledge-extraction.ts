@@ -412,7 +412,7 @@ function extractCambridgePracticalSkillExpectations(
       group = undefined;
       continue;
     }
-    if (/^#/.test(line) && inExpectations && !/^#+\s*(?:Expectations for each skill|$)/i.test(line)) {
+    if (/^#\s/.test(line) && inExpectations && !/^#\s*Expectations for each skill/i.test(line)) {
       flush();
       inExpectations = false;
       group = undefined;
