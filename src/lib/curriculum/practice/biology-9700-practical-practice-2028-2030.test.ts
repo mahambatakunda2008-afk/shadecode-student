@@ -48,4 +48,22 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(investigation?.questions.find((question) => question.id === "d")?.answer.join(" "))
       .toContain("three");
   });
+
+  it("supplies original numerical datasets for graphing and statistical analysis", () => {
+    const findQuestion = (taskId: string, questionId: string) =>
+      practiceSet.tasks.find((task) => task.id === taskId)?.questions
+        .find((question) => question.id === questionId);
+    const osmosis = findQuestion("P3-03", "g");
+    const amylase = findQuestion("P3-04", "g");
+    const statistics = findQuestion("P5-02", "b");
+    for (const question of [osmosis, amylase, statistics]) {
+      expect(question?.data).toBeDefined();
+      expect(question?.data?.columns.length).toBeGreaterThan(1);
+      expect(question?.data?.rows.length).toBeGreaterThanOrEqual(2);
+      expect(question?.data?.rows.every((row) => row.length === question.data?.columns.length)).toBe(true);
+    }
+    expect(osmosis?.data?.rows).toHaveLength(6);
+    expect(amylase?.data?.rows).toHaveLength(7);
+    expect(statistics?.data?.rows).toHaveLength(2);
+  });
 });
