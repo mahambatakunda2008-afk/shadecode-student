@@ -282,6 +282,29 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     expect(skills.every((item) => item.kind === "skill" && item.status === "draft")).toBe(true);
     expect(skills.every((item) => item.parentId === practical.find((paper) => paper.code === item.code?.slice(0, 2))?.id)).toBe(true);
   });
+  it("captures the practical overview when the PDF heading is numbered without a duplicate heading", async () => {
+    const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
+    const items = extractCurriculumKnowledge(
+      [
+        "5 Practical assessment",
+        "At least 20% of course time should be practical work.",
+        "Practical work develops investigative skills.",
+        "Paper 3 – Advanced Practical Skills",
+        "Paper 3 consists of two or three questions.",
+        "Paper 5",
+        "Paper 5 is a written paper.",
+      ].join("\\n"),
+      { boardId: "cambridge", qualificationId: "cambridge-as-a-level", level: "as_a_level", syllabusId: "cambridge-9700", syllabusVersion: "2028-2030", subjectId: "biology" },
+      provenance,
+      getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
+    );
+    const overview = items.find((item) => item.metadata?.extraction === "cambridge-practical-assessment-overview");
+    const papers = items.filter((item) => item.metadata?.extraction === "cambridge-practical-assessment");
+    expect(overview?.content).toContain("At least 20% of course time");
+    expect(overview?.content).toContain("investigative skills");
+    expect(papers.map((item) => item.code)).toEqual(["P3", "P5"]);
+    expect(papers.every((item) => item.parentId === overview?.id)).toBe(true);
+  });
   it("joins wrapped Cambridge Biology subtopic headings and ignores continued repeats", async () => {
     const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
     const items = extractCurriculumKnowledge(
