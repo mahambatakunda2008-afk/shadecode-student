@@ -8,6 +8,7 @@ import {
   selfAwardPracticalMarks,
   startPracticalAttempt,
   summarizePracticalAttempt,
+  togglePracticalAnswerPoint,
   type PracticalPracticeSet,
 } from "./biology-practical-attempt";
 
@@ -78,6 +79,15 @@ describe("Biology practical attempt preview", () => {
     expect(review?.taskRatings).toEqual({ "P3-01": "secure", "P5-01": "revisit" });
     expect(review?.reviewedTaskCount).toBe(2);
     expect(review?.totalTaskCount).toBe(2);
+  });
+
+  it("tracks self-check points independently and rejects invalid points", () => {
+    const initial = startPracticalAttempt(set);
+    const checked = togglePracticalAnswerPoint(set, initial, "P3-01", "a", 0);
+    expect(checked.checkedAnswerPoints["P3-01::a"]).toEqual([0]);
+    const unchecked = togglePracticalAnswerPoint(set, checked, "P3-01", "a", 0);
+    expect(unchecked.checkedAnswerPoints["P3-01::a"]).toEqual([]);
+    expect(() => togglePracticalAnswerPoint(set, initial, "P3-01", "a", 9)).toThrow();
   });
 
   it("reports Paper 3 and Paper 5 coverage separately", () => {
