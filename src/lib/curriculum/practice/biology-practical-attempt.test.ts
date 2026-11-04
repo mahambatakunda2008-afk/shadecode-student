@@ -68,9 +68,15 @@ describe("Biology practical attempt preview", () => {
     expect(restored.checkedAnswerPoints).toEqual({ "P3-01::a": [0, 1] });
   });
 
-  it("starts a clean attempt when restored identity or timestamp is invalid", () => {
+  it("starts clean for a different set but salvages answers when only the timestamp is damaged", () => {
     expect(restorePracticalAttempt(set, { practiceSetId: "another-set" }).practiceSetId).toBe(set.id);
-    expect(restorePracticalAttempt(set, { practiceSetId: set.id, startedAt: "not-a-date" }).answers).toEqual({});
+    const recovered = restorePracticalAttempt(set, {
+      practiceSetId: set.id,
+      startedAt: "not-a-date",
+      answers: { "P3-01::a": "Recovered answer" },
+    });
+    expect(recovered.answers).toEqual({ "P3-01::a": "Recovered answer" });
+    expect(Number.isFinite(Date.parse(recovered.startedAt))).toBe(true);
     expect(restorePracticalAttempt(set, null).skillRatings).toEqual({});
   });
 
