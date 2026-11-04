@@ -202,6 +202,17 @@ describe("Biology practical attempt preview", () => {
     expect(summary.practiceReview.status).toBe("in-progress");
   });
 
+  it("counts only unique, in-range guidance points in review progress", () => {
+    const attempt = {
+      ...revealPracticalGuidance(set, startPracticalAttempt(set), "P3-01", "a"),
+      checkedAnswerPoints: { "P3-01::a": [0, 0, 99, -1, 1.5] },
+    };
+    const review = summarizePracticalAttempt(set, attempt).practiceReview;
+    expect(review.checkedGuidancePoints).toBe(1);
+    expect(review.availableGuidancePoints).toBe(2);
+    expect(review.guidanceReviewPercent).toBe(50);
+  });
+
   it("does not call an attempt reviewed until the learner explicitly checks revealed guidance", () => {
     let attempt = startPracticalAttempt(set);
     for (const task of set.tasks) {
