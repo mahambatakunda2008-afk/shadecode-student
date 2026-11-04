@@ -257,6 +257,7 @@ export default function PracticalPracticeClient() {
   const [ready, setReady] = useState(false);
   const [activeTask, setActiveTask] = useState(set.tasks[0]?.id ?? "");
   const [showReview, setShowReview] = useState(false);
+  const [storageStatus, setStorageStatus] = useState<"saving" | "saved" | "unavailable">("saving");
 
   useEffect(() => {
     setAttempt(readAttempt());
@@ -265,7 +266,13 @@ export default function PracticalPracticeClient() {
 
   useEffect(() => {
     if (!ready) return;
-    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(attempt)); } catch { /* The session remains usable without persistence. */ }
+    setStorageStatus("saving");
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(attempt));
+      setStorageStatus("saved");
+    } catch {
+      setStorageStatus("unavailable");
+    }
   }, [attempt, ready]);
 
   const summary = useMemo(() => summarizePracticalAttempt(set, attempt), [attempt]);
@@ -298,6 +305,10 @@ export default function PracticalPracticeClient() {
   return (
     <div className="min-h-full bg-[var(--background)] px-4 py-6 pb-24 text-[var(--foreground)] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
+        <div role="status" aria-live="polite" className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${storageStatus === "unavailable" ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300" : "border-[var(--card-border)] bg-[var(--surface)] text-[var(--muted-foreground)]"}`}>
+          <Save size={14} aria-hidden="true" />
+          {storageStatus === "saving" ? "Saving your practical attempt…" : storageStatus === "saved" ? "Attempt saved on this device." : "Device storage is unavailable or full. Your current work remains open, but changes may not survive closing this page. Free device storage and keep this page open to retry saving."}
+        </div>
         <header className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary)]"><FlaskConical size={15} /> Practical skills studio</div>
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
