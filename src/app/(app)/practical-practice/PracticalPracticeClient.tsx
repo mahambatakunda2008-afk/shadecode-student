@@ -483,8 +483,9 @@ export default function PracticalPracticeClient() {
                 {question.data && <div className="mt-4 overflow-hidden rounded-xl border border-[var(--card-border)]">
                   <div className="border-b border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-2"><p className="text-xs font-semibold">Provided results</p><p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">Use these values as evidence in your answer.</p></div>
                   <div className="overflow-x-auto"><table className="w-full min-w-[320px] border-collapse text-left text-xs">
+                    <caption className="sr-only">Provided results for question {question.id}</caption>
                     <thead><tr>{question.data.columns.map((column, columnIndex) => <th key={columnIndex} scope="col" className="border-b border-[var(--card-border)] px-3 py-2 font-semibold text-[var(--foreground)]">{column}</th>)}</tr></thead>
-                    <tbody>{question.data.rows.map((row, rowIndex) => <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[var(--background)]" : "bg-[var(--surface)]"}>{row.map((value, columnIndex) => <td key={columnIndex} className="border-b border-[var(--card-border)] px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
+                    <tbody>{question.data.rows.map((row, rowIndex) => <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[var(--background)]" : "bg-[var(--surface)]"}>{row.map((value, columnIndex) => columnIndex === 0 ? <th key={columnIndex} scope="row" className="border-b border-[var(--card-border)] px-3 py-2 text-left font-medium tabular-nums">{value}</th> : <td key={columnIndex} className="border-b border-[var(--card-border)] px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
                   </table></div>
                 </div>}
                 {question.data && getPracticalQuestionSkills(task, question).some((skill) => /graph/i.test(skill)) && <PracticalGraphPlotter data={question.data} storageKey={`shadecode:practical-graph:${set.id}:${key}`} />}
