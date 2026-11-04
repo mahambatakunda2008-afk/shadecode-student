@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getUserMock, rpcMock, currentUser, rpcResult } = vi.hoisted(() => ({
+const { getUserMock, bearerGetUserMock, rpcMock, currentUser, rpcResult } = vi.hoisted(() => ({
   getUserMock: vi.fn(),
+  bearerGetUserMock: vi.fn(),
   rpcMock: vi.fn(),
   currentUser: { value: null as { id: string } | null },
   rpcResult: { value: { data: "request-123", error: null as null | { code?: string; message: string } } },
+}));
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: () => ({ auth: { getUser: bearerGetUserMock }, rpc: rpcMock }),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -25,6 +30,9 @@ beforeEach(() => {
   currentUser.value = null;
   rpcResult.value = { data: "request-123", error: null };
   getUserMock.mockReset().mockImplementation(async () => ({ data: { user: currentUser.value }, error: null }));
+  bearerGetUserMock.mockReset().mockResolvedValue({ data: { user: { id: "native-user" } }, error: null });
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-test-key";
   rpcMock.mockReset().mockImplementation(async () => rpcResult.value);
 });
 
@@ -32,6 +40,28 @@ describe("POST /api/account/deletion-request", () => {
   it("rejects cross-origin browser requests before authentication or queue access", async () => {
     const response = await post("https://attacker.example");
     expect(response.status).toBe(403);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts a verified native bearer session without a browser cookie", async () => {
+    const request = new Request("https://shadecodestudent.vercel.app/api/account/deletion-request", {
+      method: "POST",
+      headers: { authorization: "Bearer native-access-token" },
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(202);
+    expect(bearerGetUserMock).toHaveBeenCalledWith("native-access-token");
+    expect(rpcMock).toHaveBeenCalledWith("request_account_deletion");
+  });
+
+  it("rejects malformed bearer authorization headers", async () => {
+    const request = new Request("https://shadecodestudent.vercel.app/api/account/deletion-request", {
+      method: "POST",
+      headers: { authorization: "Bearer token with spaces" },
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(401);
+    expect(bearerGetUserMock).not.toHaveBeenCalled();
     expect(rpcMock).not.toHaveBeenCalled();
   });
 
