@@ -260,7 +260,7 @@ function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData;
     if (px < plot.left || px > plot.left + plot.width || py < plot.top || py > plot.top + plot.height) return;
     const x = xb.min + ((px - plot.left) / plot.width) * (xb.max - xb.min);
     const y = yb.min + ((plot.top + plot.height - py) / plot.height) * (yb.max - yb.min);
-    setPoints((current) => [...current, { x: Number(x.toPrecision(5)), y: Number(y.toPrecision(5)) }]);
+    setPoints((current) => [...current, { x: Number(x.toPrecision(5)), y: Number(y.toPrecision(5)) }].slice(-500));
   };
 
   return <section className="mt-4 rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4" aria-label="Interactive graph plotting workspace">
