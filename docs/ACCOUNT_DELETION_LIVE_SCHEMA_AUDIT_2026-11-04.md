@@ -36,8 +36,9 @@ The following tables/columns were found in `public` by scanning for `user_id`, `
 | export_logs | user_id (uuid) | Export audit |
 | feedback | user_id (uuid) | Support/feedback content |
 | focus_sessions | user_id (uuid) | Focus history |
-| generated_course_drafts | user_id (uuid) | User-generated course content |
+| generated_course_drafts | user_id, approved_by (uuid) | User-generated course content; approved_by has no FK and must be cleared on other users' drafts when this user was the approver |
 | generated_lessons | user_id (uuid) | FK to auth.users and subjects; inspect cascade behavior |
+| generated_course_approvals | approved_by (uuid) | Approver attribution; no FK found in live FK scan; clear when this user approved another user's draft, while draft-owned approval rows cascade with the draft |
 | insights | user_id (uuid) | Legacy insights |
 | insights_archive | user_id (uuid) | Archived insights |
 | learn_lessons | user_id (uuid) | User-created/assigned lesson rows |
@@ -52,12 +53,12 @@ The following tables/columns were found in `public` by scanning for `user_id`, `
 | paper_learning_transfer_questions | user_id (uuid) | Transfer questions |
 | platform_channel_identities | user_id (uuid), external_user_id (text) | WhatsApp/platform identity; delete both linkage and identifiers |
 | platform_channel_link_codes | user_id (uuid) | Temporary link codes |
-| platform_channel_message_receipts | user_id (uuid), external_user_id (text) | Message metadata and external identity |
+| platform_channel_message_receipts | user_id (uuid), external_user_id, external_message_id, phone_number_id (text) | Message metadata and external WhatsApp identifiers; delete linked receipts and ensure identifiers are not retained in orphaned payloads |
 | platform_group_members | user_id (uuid) | Membership in shared groups |
 | platform_institution_members | user_id (uuid) | Institution membership |
 | platform_user_relationships | subject_user_id, related_user_id, created_by, approved_by (uuid) | Relationship endpoints cascade; creator/approver are attribution references |
 | primary_activity_progress | user_id (uuid) | Primary activity progress |
-| profiles | id (uuid), username (text), curriculum_profile (jsonb) | Primary learner profile; id references auth.users with ON DELETE CASCADE; JSON may contain learner data |
+| profiles | id (uuid), username, display_name (text), curriculum_profile (jsonb) | Primary learner profile; id references auth.users with ON DELETE CASCADE; JSON may contain learner data |
 | project_evidence | user_id (uuid) | Evidence content may include uploaded files |
 | community_uploads | contributor_id, moderator_id (uuid), file_path (text) | Contributor-owned pending upload; clean referenced Storage object |
 | curriculum_verification_events | reviewer_id (uuid) | Reviewer identity in verification history; inspect retention/anonymization policy |
@@ -133,6 +134,8 @@ This was a targeted scan of trigger definitions/functions mentioning profile or 
 - The live Auth FK inspection found `feedback.user_id` and `exam_results.user_id` use `NO ACTION`, so these records must be explicitly deleted before Auth deletion. `profiles.id` itself cascades from `auth.users`.
 - Other Auth FKs use `SET NULL` for audit/attribution records such as `ai_usage_logs`, `ai_anomalies`, `traction_events`, `survey_responses`, `export_logs`, `community_uploads.moderator_id`, `platform_user_relationships.created_by`, and `challenge_attempts.user_id`. Review whether their remaining payloads or display names still identify the deleted learner.
 - `user_roles.assigned_by` and `exam_question_topic_proposals.reviewer_id` use `NO ACTION`; clear those attribution references before Auth deletion. Preserve the underlying role assignment/proposal only when it is not owned by the deleted account.
+- A wider identity-column scan also found `generated_course_drafts.approved_by` and `generated_course_approvals.approved_by` without an Auth FK. Delete approval rows when their draft is owned by the account; clear approver attribution on another user's draft/approval rather than deleting that other user's content.
+- `platform_channel_message_receipts` contains `external_user_id`, `external_message_id`, and `phone_number_id` in addition to `user_id`. Delete account-linked receipts and inspect any provider payload columns for residual identifiers. `profiles.display_name` is personally identifying alongside `username`.
 - `community_uploads.contributor_id` cascades from Auth and stores `file_path`; clean up the corresponding object before deleting the row.
 - The Storage buckets are private, but private does not mean account-scoped or automatically erased.
 - The live database has RLS enabled on the tables returned by the table inventory, but RLS policy coverage/semantics must be reviewed separately. RLS does not perform deletion automatically.
