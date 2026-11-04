@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpenCheck, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Eye, EyeOff, FlaskConical, RotateCcw, Save, Target } from "lucide-react";
+import { BookOpenCheck, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Download, Eye, EyeOff, FlaskConical, RotateCcw, Save, Target } from "lucide-react";
 import practiceData from "@/lib/curriculum/practice/biology-9700-practical-practice-2028-2030.json";
 import { getPracticalQuestionFeedback, getPracticalQuestionSkills } from "@/lib/curriculum/practice/biology-practical-attempt";
 import {
@@ -290,6 +290,25 @@ export default function PracticalPracticeClient() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const downloadBackup = () => {
+    const backup = {
+      format: "shadecode-biology-practical-attempt",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      practiceSetId: set.id,
+      attempt,
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `shadecode-biology-practical-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const reset = () => {
     if (!window.confirm("Clear this practical practice attempt from this device?")) return;
     setAttempt(startPracticalAttempt(set));
@@ -305,9 +324,12 @@ export default function PracticalPracticeClient() {
   return (
     <div className="min-h-full bg-[var(--background)] px-4 py-6 pb-24 text-[var(--foreground)] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
-        <div role="status" aria-live="polite" className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${storageStatus === "unavailable" ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300" : "border-[var(--card-border)] bg-[var(--surface)] text-[var(--muted-foreground)]"}`}>
-          <Save size={14} aria-hidden="true" />
-          {storageStatus === "saving" ? "Saving your practical attempt…" : storageStatus === "saved" ? "Attempt saved on this device." : "Device storage is unavailable or full. Your current work remains open, but changes may not survive closing this page. Free device storage and keep this page open to retry saving."}
+        <div className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3 py-2 text-xs ${storageStatus === "unavailable" ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300" : "border-[var(--card-border)] bg-[var(--surface)] text-[var(--muted-foreground)]"}`}>
+          <div role="status" aria-live="polite" className="flex min-w-0 flex-1 items-center gap-2">
+            <Save size={14} aria-hidden="true" />
+            {storageStatus === "saving" ? "Saving your practical attempt…" : storageStatus === "saved" ? "Attempt saved on this device." : "Device storage is unavailable or full. Your current work remains open, but changes may not survive closing this page. Download a backup before leaving."}
+          </div>
+          <button type="button" onClick={downloadBackup} className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 font-semibold text-[var(--foreground)] hover:border-[var(--primary)]"><Download size={14} aria-hidden="true" /> Download backup</button>
         </div>
         <header className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary)]"><FlaskConical size={15} /> Practical skills studio</div>
