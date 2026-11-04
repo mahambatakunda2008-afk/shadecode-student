@@ -84,7 +84,9 @@ function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
           const safeStrokes = parsed.slice(-500).filter((stroke) =>
             stroke && Array.isArray(stroke.points) && stroke.points.length > 0 &&
             stroke.points.length <= 5000 &&
-            stroke.points.every((point) => Number.isFinite(point.x) && Number.isFinite(point.y) && point.x >= 0 && point.x <= 600 && point.y >= 0 && point.y <= 360),
+            stroke.points.every((point) => point && typeof point === "object" &&
+              Number.isFinite(point.x) && Number.isFinite(point.y) &&
+              point.x >= 0 && point.x <= 600 && point.y >= 0 && point.y <= 360),
           );
           setStrokes(safeStrokes);
         }
