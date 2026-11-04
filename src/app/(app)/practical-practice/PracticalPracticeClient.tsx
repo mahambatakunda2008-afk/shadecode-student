@@ -7,6 +7,7 @@ import { getPracticalQuestionFeedback, getPracticalQuestionSkills } from "@/lib/
 import {
   canAttemptPracticalSet,
   ratePracticalSkill,
+  restorePracticalAttempt,
   retryPracticalQuestion,
   revealPracticalGuidance,
   savePracticalAnswer,
@@ -31,8 +32,8 @@ function readAttempt(): PracticalAttempt {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as PracticalAttempt;
-        if (parsed.practiceSetId === set.id && parsed.answers && parsed.skillRatings) return { ...parsed, checkedAnswerPoints: parsed.checkedAnswerPoints ?? {} };
+        const parsed: unknown = JSON.parse(raw);
+        return restorePracticalAttempt(set, parsed);
       }
     } catch { /* Start clean if local storage is unavailable or malformed. */ }
   }
