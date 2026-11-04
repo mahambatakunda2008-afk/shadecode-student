@@ -260,3 +260,18 @@ This section records local stores found in the Android and web source. These sto
 ### Local cleanup boundary
 
 A server-side deletion cannot reach devices that remain offline. The next successful app connection must receive an unambiguous deletion-completed/account-removed signal before local cleanup is triggered. If the user never reconnects, local copies can remain on that device until app data is cleared or the app is uninstalled. This limitation must be disclosed clearly; do not claim remote offline cache erasure.
+
+
+### Identity and attribution columns without an account-owner FK
+
+The final identity-column scan found additional fields that need explicit cleanup or correlation review:
+
+- `curriculum_verification_events.reviewer_id` has no direct Auth FK in the live catalog. Clear or anonymize reviewer attribution where the account reviewed shared curriculum; preserve the verification event only if the retained record is genuinely non-identifying and its integrity requirements are documented.
+- `generated_course_drafts.approved_by` and `generated_course_approvals.approved_by` have no direct Auth FK. Delete approval records belonging to the deleted account's own draft; clear approval attribution on another user's draft.
+- `experiment_assignments.anonymous_id`, `survey_responses.anonymous_id`, and `traction_events.anonymous_id` may remain linkable to the account even when `user_id` is null. Inspect application identity assignment and event correlation logic; do not retain anonymous IDs that can still be linked to the deleted learner.
+- `ai_usage_logs.session_id`, `paper_learning_attempts.session_id`, and `paper_learning_transfer_questions.session_id` are additional session references. Remove account-owned rows and verify child rows follow their parent-session cascade.
+- `sync_revisions.device_id`, `traction_events.session_id`, and platform-channel external identifiers should be treated as potentially identifying metadata, not harmless technical strings.
+
+### RLS review
+
+A live `pg_policies` inspection found many account tables with owner-scoped policies using `auth.uid() = user_id`, but the policy set is not uniform. Some operational/platform tables deny direct authenticated access and are service-role-only; some tables expose only SELECT/INSERT policies; several account tables do not expose a user DELETE policy. Public-read tables such as `challenges` also retain display fields that are not erased by deleting the Auth identity. RLS is an access-control layer, not a deletion mechanism. The worker must use a server-only privileged role, execute an explicit reviewed cleanup plan, and verify postconditions. It must never expose the service key to web or Android clients.
