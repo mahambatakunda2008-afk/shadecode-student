@@ -275,3 +275,16 @@ The final identity-column scan found additional fields that need explicit cleanu
 ### RLS review
 
 A live `pg_policies` inspection found many account tables with owner-scoped policies using `auth.uid() = user_id`, but the policy set is not uniform. Some operational/platform tables deny direct authenticated access and are service-role-only; some tables expose only SELECT/INSERT policies; several account tables do not expose a user DELETE policy. Public-read tables such as `challenges` also retain display fields that are not erased by deleting the Auth identity. RLS is an access-control layer, not a deletion mechanism. The worker must use a server-only privileged role, execute an explicit reviewed cleanup plan, and verify postconditions. It must never expose the service key to web or Android clients.
+
+
+### Additional web Project Studio stores
+
+Source inspection of Project Studio found further learner-owned local data beyond the generic IndexedDB cache:
+
+- `shadecode-student-local` / `projects`: local project records.
+- `shadecode-student-projects` / `project-records`: local project records.
+- `shadecode-project-recovery` / `snapshots`: full project snapshots, including project briefs, requirements, evidence, and generated work plans.
+- `shadecode-offline-mutations` / `mutations`: account-owned queued project and project-evidence mutations, indexed by `ownerId`.
+- `localStorage["shadecode-project-studio-v1"]`: legacy project collection.
+
+Project evidence currently syncs as text content into `project_evidence.content`; the inspected Project Studio code does not upload evidence images/files to Storage. It also queues offline project/evidence writes with the current authenticated owner ID. Confirm the full queue implementation and any other local project artifacts before release. These stores must be cleared for the deleted owner only after completion is confirmed; shared offline curriculum content must not be erased as collateral.
