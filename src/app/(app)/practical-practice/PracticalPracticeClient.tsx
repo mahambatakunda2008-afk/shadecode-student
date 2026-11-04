@@ -291,12 +291,23 @@ export default function PracticalPracticeClient() {
   };
 
   const downloadBackup = () => {
+    const workspaces: Record<string, string> = {};
+    try {
+      for (let index = 0; index < window.localStorage.length; index += 1) {
+        const key = window.localStorage.key(index);
+        if (key && (key.startsWith(`shadecode:practical-drawing:${set.id}:`) || key.startsWith(`shadecode:practical-graph:${set.id}:`))) {
+          const value = window.localStorage.getItem(key);
+          if (value !== null) workspaces[key] = value;
+        }
+      }
+    } catch { /* The attempt itself can still be exported when workspace storage is inaccessible. */ }
     const backup = {
       format: "shadecode-biology-practical-attempt",
       version: 1,
       exportedAt: new Date().toISOString(),
       practiceSetId: set.id,
       attempt,
+      workspaces,
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -306,7 +317,7 @@ export default function PracticalPracticeClient() {
     document.body.appendChild(link);
     link.click();
     link.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const reset = () => {
