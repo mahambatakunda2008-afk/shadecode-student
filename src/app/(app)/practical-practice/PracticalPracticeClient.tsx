@@ -188,9 +188,30 @@ function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData;
       const saved = window.localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved) as { xIndex?: number; yIndex?: number; points?: PlottedPoint[] };
-        if (Array.isArray(parsed.points) && parsed.points.every((point) => Number.isFinite(point.x) && Number.isFinite(point.y))) setPoints(parsed.points);
-        if (numericColumns.some((column) => column.index === parsed.xIndex)) setXIndex(parsed.xIndex!);
-        if (numericColumns.some((column) => column.index === parsed.yIndex)) setYIndex(parsed.yIndex!);
+        const validIndex = (index: number | undefined) => numericColumns.some((column) => column.index === index);
+        const savedXIndex = validIndex(parsed.xIndex) ? parsed.xIndex! : numericColumns[0]?.index;
+        const savedYIndex = validIndex(parsed.yIndex) && parsed.yIndex !== savedXIndex
+          ? parsed.yIndex!
+          : numericColumns.find((column) => column.index !== savedXIndex)?.index;
+        const axisBounds = (index: number | undefined) => {
+          const axisValues = index === undefined ? [] : data.rows.map((row) => Number(row[index])).filter(Number.isFinite);
+          const min = Math.min(...axisValues);
+          const max = Math.max(...axisValues);
+          const span = max - min || 1;
+          return { min: Math.min(0, min), max: max + span * 0.08 };
+        };
+        const savedXBounds = axisBounds(savedXIndex);
+        const savedYBounds = axisBounds(savedYIndex);
+        if (savedXIndex !== undefined) setXIndex(savedXIndex);
+        if (savedYIndex !== undefined) setYIndex(savedYIndex);
+        if (Array.isArray(parsed.points)) {
+          const safePoints = parsed.points.slice(-500).filter((point) =>
+            point && Number.isFinite(point.x) && Number.isFinite(point.y) &&
+            point.x >= savedXBounds.min && point.x <= savedXBounds.max &&
+            point.y >= savedYBounds.min && point.y <= savedYBounds.max,
+          );
+          setPoints(safePoints);
+        }
       }
     } catch { /* A damaged graph draft must not block the practical attempt. */ }
     setReady(true);
