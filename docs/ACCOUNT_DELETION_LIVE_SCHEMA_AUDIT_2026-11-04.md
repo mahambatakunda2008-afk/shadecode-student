@@ -23,7 +23,7 @@ The following tables/columns were found in `public` by scanning for `user_id`, `
 | ai_usage_aggregates | unique_users (integer) | Aggregate, not a user key |
 | ai_usage_logs | user_id (uuid) | AI usage records |
 | challenge_attempts | user_id (uuid), user_name (text) | user_id uses ON DELETE SET NULL; remove or anonymize display name and any identifying payload |
-| challenges | challenger_id (uuid), challenger_name (text) | Challenger identity has no FK; delete challenges created by the account and inspect result_id for any embedded personal reference |
+| challenges | challenger_id (uuid), challenger_name (text) | challenger_id references auth.users with ON DELETE SET NULL; delete challenges created by the account and remove/anonymize challenger_name and inspect result_id for embedded personal references |
 | cortex_events | user_id (uuid) | Cortex event history |
 | cortex_generation_jobs | user_id (uuid) | Generation job state |
 | cortex_insights | user_id (uuid) | FK to profiles.id, ON DELETE CASCADE |
@@ -127,10 +127,10 @@ This was a targeted scan of trigger definitions/functions mentioning profile or 
 ## Additional findings
 
 - `exam_logs.user_id` is text, unlike most user references. Inspect the application write path and historical format before deleting.
-- `challenges.challenger_id` and `challenger_name` have no Auth FK. Delete challenges created by the account; `challenge_attempts` on those challenges cascade, while attempts by the account on other users' challenges need separate handling and their `user_name` must not survive as a personal identifier.
+- `challenges.challenger_id` references `auth.users` with `ON DELETE SET NULL`, but `challenger_name` remains. Delete challenges created by the account and anonymize/delete their display name; `challenge_attempts` on those challenges cascade, while attempts by the account on other users' challenges need separate handling and their `user_name` must not survive as a personal identifier.
 - `sync_revisions.device_id`, `ai_usage_logs.session_id`, and `traction_events.anonymous_id`/`session_id`/`client_event_id` are additional device/session identifiers. Delete the account's rows by `user_id`; inspect JSON event properties and legacy anonymous-only records for identifiers that can still be linked to the account.
 - `challenge_attempts.user_name` may preserve a username after account deletion. Decide whether to remove, replace with a neutral label, or retain only genuinely anonymous competition results. A display name/username is not anonymous merely because the UUID is removed.
-- `platform_user_relationships` can represent another user's relationship to the account. Remove relationships where the target account appears in any of its three columns, without deleting the other person's account.
+- `platform_user_relationships` can represent another user's relationship to the account. Remove relationship rows where the target appears as `subject_user_id` or `related_user_id`; clear `created_by`/`approved_by` attribution where the target merely acted on another user's relationship. Never delete the other person's account.
 - `platform_group_members` and `platform_institution_members` must be removed, but shared group/institution records should remain if other members still use them.
 - `user_roles` is security-sensitive and must be removed for the deleted identity.
 - `published_learning_assets.reviewed_by` is an Auth FK with `ON DELETE SET NULL`; preserve the shared asset and allow attribution to be cleared.
