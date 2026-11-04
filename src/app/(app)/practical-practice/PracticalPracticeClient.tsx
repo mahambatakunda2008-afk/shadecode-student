@@ -259,6 +259,7 @@ export default function PracticalPracticeClient() {
   const [showReview, setShowReview] = useState(false);
   const [storageStatus, setStorageStatus] = useState<"saving" | "saved" | "unavailable">("saving");
   const [backupMessage, setBackupMessage] = useState("");
+  const [otherTabAttempt, setOtherTabAttempt] = useState<PracticalAttempt | null>(null);
 
   useEffect(() => {
     setAttempt(readAttempt());
@@ -267,6 +268,20 @@ export default function PracticalPracticeClient() {
 
   useEffect(() => {
     if (!ready) return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY || event.newValue === null) return;
+      try {
+        const incoming = restorePracticalAttempt(set, JSON.parse(event.newValue));
+        if (JSON.stringify(incoming) === JSON.stringify(attempt)) return;
+        setOtherTabAttempt(incoming);
+      } catch { /* Ignore malformed updates from another tab. */ }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [attempt, ready]);
+
+  useEffect(() => {
+    if (!ready || otherTabAttempt) return;
     setStorageStatus("saving");
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(attempt));
@@ -274,7 +289,7 @@ export default function PracticalPracticeClient() {
     } catch {
       setStorageStatus("unavailable");
     }
-  }, [attempt, ready]);
+  }, [attempt, otherTabAttempt, ready]);
 
   const summary = useMemo(() => summarizePracticalAttempt(set, attempt), [attempt]);
   const task = set.tasks.find((item) => item.id === activeTask) ?? set.tasks[0];
@@ -409,6 +424,14 @@ export default function PracticalPracticeClient() {
           <button type="button" onClick={() => document.getElementById("practical-backup-file")?.click()} className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 font-semibold text-[var(--foreground)] hover:border-[var(--primary)]"><Upload size={14} aria-hidden="true" /> Restore backup</button>
         </div>
         {backupMessage && <p role="status" aria-live="polite" className="rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--muted-foreground)]">{backupMessage}</p>}
+        {otherTabAttempt && <section role="alert" className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 text-sm">
+          <h2 className="font-bold">This practical attempt changed in another tab</h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">Saving is paused so this tab does not overwrite the other tab’s work. Choose which version to keep. Download a backup first if you need both.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => { setAttempt(otherTabAttempt); setOtherTabAttempt(null); setBackupMessage("Loaded the version saved by the other tab."); }} className="min-h-9 rounded-lg bg-[var(--primary)] px-3 text-xs font-semibold text-white">Load other tab’s version</button>
+            <button type="button" onClick={() => { try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(attempt)); setStorageStatus("saved"); setBackupMessage("Kept this tab’s version. It is now saved on this device."); } catch { setStorageStatus("unavailable"); setBackupMessage("Could not save this tab’s version. Download a backup before leaving."); } setOtherTabAttempt(null); }} className="min-h-9 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold">Keep this tab’s version</button>
+          </div>
+        </section>}
         <header className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary)]"><FlaskConical size={15} /> Practical skills studio</div>
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
