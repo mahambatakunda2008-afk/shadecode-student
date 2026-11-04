@@ -304,6 +304,7 @@ export default function PracticalPracticeClient() {
   const [storageStatus, setStorageStatus] = useState<"saving" | "saved" | "unavailable">("saving");
   const [backupMessage, setBackupMessage] = useState("");
   const [otherTabAttempt, setOtherTabAttempt] = useState<PracticalAttempt | null>(null);
+  const [workspaceRevision, setWorkspaceRevision] = useState(0);
 
   useEffect(() => {
     setAttempt(readAttempt());
@@ -443,6 +444,8 @@ export default function PracticalPracticeClient() {
         throw error;
       }
       setAttempt(restored);
+      // Remount workspace editors so they read the restored drawing and graph drafts.
+      setWorkspaceRevision((revision) => revision + 1);
       // A successful explicit restore resolves any pending cross-tab conflict.
       // Otherwise the conflict guard would keep autosave paused after the restore.
       setOtherTabAttempt(null);
@@ -651,7 +654,7 @@ export default function PracticalPracticeClient() {
                 </svg>
                 <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Use the schematic to practise tracing cell boundaries and choosing labels. Use the stated measurements, not the drawing dimensions, for magnification calculations.</p>
               </figure>}
-              {task.id === "P3-02" && <PracticalDrawingPad storageKey={`shadecode:practical-drawing:${set.id}:P3-02`} />}
+              {task.id === "P3-02" && <PracticalDrawingPad key={`drawing-${workspaceRevision}`} storageKey={`shadecode:practical-drawing:${set.id}:P3-02`} />}
               {task.id === "P3-05" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
                 <figcaption className="mb-3 text-xs font-semibold">Bubble potometer · apparatus schematic</figcaption>
                 <svg viewBox="0 0 620 310" role="img" aria-label="Schematic of a bubble potometer with leafy shoot in a sealed tube, a capillary containing a visible air bubble, and a water reservoir" className="mx-auto block w-full max-w-2xl">
@@ -698,7 +701,7 @@ export default function PracticalPracticeClient() {
                     <tbody>{question.data.rows.map((row, rowIndex) => <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[var(--background)]" : "bg-[var(--surface)]"}>{row.map((value, columnIndex) => columnIndex === 0 ? <th key={columnIndex} scope="row" className="border-b border-[var(--card-border)] px-3 py-2 text-left font-medium tabular-nums">{value}</th> : <td key={columnIndex} className="border-b border-[var(--card-border)] px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
                   </table></div>
                 </div>}
-                {question.data && getPracticalQuestionSkills(task, question).some((skill) => /graph/i.test(skill)) && <PracticalGraphPlotter data={question.data} storageKey={`shadecode:practical-graph:${set.id}:${key}`} />}
+                {question.data && getPracticalQuestionSkills(task, question).some((skill) => /graph/i.test(skill)) && <PracticalGraphPlotter key={`graph-${workspaceRevision}-${key}`} data={question.data} storageKey={`shadecode:practical-graph:${set.id}:${key}`} />}
                 {task.id === "P3-02" && question.id === "a" && <MagnificationCalculator />}
                 {(() => {
                   const assessedSkills = getPracticalQuestionSkills(task, question);
