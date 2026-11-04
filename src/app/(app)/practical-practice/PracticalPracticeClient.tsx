@@ -97,13 +97,23 @@ function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
     if (!ready) return;
     // Persist an in-progress stroke too, so an interrupted pointer session loses
     // at most the short debounce window rather than the entire unfinished line.
-    const timeout = window.setTimeout(() => {
+    const persist = () => {
       try {
         const recoverable = [...strokes, ...(current?.points.length ? [current] : [])].slice(-500);
         window.localStorage.setItem(storageKey, JSON.stringify(recoverable));
       } catch { /* Drawing remains usable when storage is full or disabled. */ }
-    }, 250);
-    return () => window.clearTimeout(timeout);
+    };
+    const timeout = window.setTimeout(persist, 250);
+    const flushWhenHidden = () => {
+      if (document.visibilityState === "hidden") persist();
+    };
+    window.addEventListener("pagehide", persist);
+    document.addEventListener("visibilitychange", flushWhenHidden);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener("pagehide", persist);
+      document.removeEventListener("visibilitychange", flushWhenHidden);
+    };
   }, [current, ready, storageKey, strokes]);
 
   const locate = (event: import("react").PointerEvent<SVGSVGElement>) => {
@@ -232,15 +242,25 @@ function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData;
   useEffect(() => {
     if (!ready) return;
     // Keep partial coordinate entry and graph display settings with the plotted data.
-    const timeout = window.setTimeout(() => {
+    const persist = () => {
       try {
         window.localStorage.setItem(storageKey, JSON.stringify({
           xIndex, yIndex, points: points.slice(-500), coordinateX: coordinateX.slice(0, 32),
           coordinateY: coordinateY.slice(0, 32), showBestFit,
         }));
       } catch { /* Graphing remains usable without persistence. */ }
-    }, 250);
-    return () => window.clearTimeout(timeout);
+    };
+    const timeout = window.setTimeout(persist, 250);
+    const flushWhenHidden = () => {
+      if (document.visibilityState === "hidden") persist();
+    };
+    window.addEventListener("pagehide", persist);
+    document.addEventListener("visibilitychange", flushWhenHidden);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener("pagehide", persist);
+      document.removeEventListener("visibilitychange", flushWhenHidden);
+    };
   }, [coordinateX, coordinateY, points, ready, showBestFit, storageKey, xIndex, yIndex]);
 
   if (numericColumns.length < 2) return null;
