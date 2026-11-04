@@ -7,7 +7,7 @@
 
 ## Executive finding
 
-The live database has substantially more account-linked data than the initial source-only inventory showed. A safe deletion workflow cannot rely on deleting `auth.users` or `profiles` and assuming every record cascades. Many user-owned tables have a `user_id` column but no foreign key to `auth.users` or `profiles`. Some use text identifiers. The database also has three private Storage buckets whose object ownership/path conventions still need inspection.
+The live database has substantially more account-linked data than the initial source-only inventory showed. A safe deletion workflow cannot rely on deleting `auth.users` or `profiles` and assuming every record cascades. Many user-owned tables have a `user_id` column but no foreign key to `auth.users` or `profiles`. Some use text identifiers. The database has three private Storage buckets. A follow-up metadata-only inspection found 58 objects in `past-papers` and no objects in `community-uploads-pending` or `shadecode-backups` at audit time.
 
 **Do not ship an account deletion endpoint until this inventory is reconciled with the repository migrations, Storage object ownership, and local-device caches.**
 
@@ -98,7 +98,7 @@ Live Storage introspection found these private buckets:
 - `community-uploads-pending`
 - `shadecode-backups`
 
-This query established bucket names and privacy flags only. It did not inspect object paths, owner metadata, backup contents, or whether an individual account's data is embedded in shared backup archives. Before deletion can be considered complete:
+The bucket inventory and Storage policy metadata were inspected without reading object names or file contents. At audit time, `past-papers` contained 58 objects with no per-user Storage owner metadata; `community-uploads-pending` and `shadecode-backups` contained zero objects. The backup bucket policies enforce `<auth.uid()>/...` as the first path segment for reads, writes, updates and deletes. The pending community bucket permits authenticated inserts and scopes reads to the first path segment matching the user ID (or an admin). `community_uploads.file_path` links database submissions to uploaded objects. Before deletion can be considered complete:
 1. Inspect Storage policies and object path conventions for all three buckets.
 2. Determine whether `project_evidence`, community uploads, or generated user content stores object paths.
 3. Delete user-owned objects before deleting the Auth user, because Supabase Auth deletion can fail while the user still owns Storage objects.
@@ -112,7 +112,7 @@ This query established bucket names and privacy flags only. It did not inspect o
 - `platform_user_relationships` can represent another user's relationship to the account. Remove relationships where the target account appears in any of its three columns, without deleting the other person's account.
 - `platform_group_members` and `platform_institution_members` must be removed, but shared group/institution records should remain if other members still use them.
 - `user_roles` is security-sensitive and must be removed for the deleted identity.
-- `published_learning_assets.reviewed_by` is a reviewer attribution on shared content, not a user-owned asset. Avoid cascading deletion of shared curriculum assets.
+- `published_learning_assets.reviewed_by` is an Auth FK with `ON DELETE SET NULL`; preserve the shared asset and allow attribution to be cleared.\n- The live Auth FK inspection found `feedback.user_id` and `exam_results.user_id` use `NO ACTION`, so these records must be explicitly deleted before Auth deletion. `profiles.id` itself cascades from `auth.users`.\n- Other Auth FKs use `SET NULL` for audit/attribution records such as `ai_usage_logs`, `ai_anomalies`, `traction_events`, `survey_responses`, `export_logs`, `community_uploads.moderator_id`, `platform_user_relationships.created_by`, and `challenge_attempts.user_id`. Review whether their remaining payloads or display names still identify the deleted learner.\n- `user_roles.assigned_by` and `exam_question_topic_proposals.reviewer_id` use `NO ACTION`; clear those attribution references before Auth deletion. Preserve the underlying role assignment/proposal only when it is not owned by the deleted account.\n- `community_uploads.contributor_id` cascades from Auth and stores `file_path`; clean up the corresponding object before deleting the row.
 - The Storage buckets are private, but private does not mean account-scoped or automatically erased.
 - The live database has RLS enabled on the tables returned by the table inventory, but RLS policy coverage/semantics must be reviewed separately. RLS does not perform deletion automatically.
 
@@ -130,7 +130,7 @@ This query established bucket names and privacy flags only. It did not inspect o
 
 ## Open questions before implementation
 
-- Which of the three Storage buckets contain account-owned objects, and what are the exact object path/owner conventions?
+- Which new Storage objects are created after this snapshot, and do they follow the currently observed owner/path conventions?
 - Are there account identifiers embedded in JSON payloads, metadata, event properties, logs, exports, or backups?
 - Which account-linked tables are intentionally retained in anonymized aggregate form, and how is anonymization validated?
 - Does the deployed app use a server-only Supabase service key for Admin Auth deletion, and where is it configured? Never expose it to the browser or Android app.
