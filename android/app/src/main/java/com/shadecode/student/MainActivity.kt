@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -1121,6 +1122,8 @@ private fun ProfileNativeScreen(
     var query by remember { mutableStateOf("") }
     var customSubject by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
+    var requestingDeletion by remember { mutableStateOf(false) }
+    var confirmDeletion by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
     val catalogue = remember(selectedCodes) {
@@ -1135,6 +1138,40 @@ private fun ProfileNativeScreen(
         else catalogue.filter {
             it.label.contains(term, ignoreCase = true) || it.group.contains(term, ignoreCase = true)
         }
+    }
+
+    if (confirmDeletion) {
+        AlertDialog(
+            onDismissRequest = { if (!requestingDeletion) confirmDeletion = false },
+            title = { Text("Request account deletion?") },
+            text = {
+                Text("This sends a deletion request for manual verification. Your account and personal data will not be deleted automatically yet.")
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !requestingDeletion,
+                    onClick = {
+                        confirmDeletion = false
+                        requestingDeletion = true
+                        failure = null
+                        message = null
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) { api.requestAccountDeletion(session) }
+                                message = "Request received. Shadecode will verify and process it manually. Your account has not been deleted."
+                            } catch (e: Exception) {
+                                failure = e.message ?: "Could not submit your request. Check your connection and try again."
+                            } finally {
+                                requestingDeletion = false
+                            }
+                        }
+                    },
+                ) { Text(if (requestingDeletion) "Submitting…" else "Submit request") }
+            },
+            dismissButton = {
+                TextButton(enabled = !requestingDeletion, onClick = { confirmDeletion = false }) { Text("Cancel") }
+            },
+        )
     }
 
     LazyColumn(
@@ -1248,7 +1285,14 @@ private fun ProfileNativeScreen(
             ) {
                 if (saving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Text("Save learning profile")
             }
-            TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://shadecodestudent.vercel.app/delete-account.html"))) }) { Text("Request account deletion") }
+            OutlinedButton(
+                onClick = { confirmDeletion = true; failure = null; message = null },
+                enabled = !requestingDeletion && !saving,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (requestingDeletion) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                else Text("Request account deletion")
+            }
             TextButton(onClick = onSignOut) { Text("Sign out") }
             Spacer(Modifier.height(24.dp))
         }
