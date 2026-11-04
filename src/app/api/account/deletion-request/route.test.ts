@@ -5,7 +5,7 @@ const { getUserMock, bearerGetUserMock, rpcMock, currentUser, rpcResult } = vi.h
   bearerGetUserMock: vi.fn(),
   rpcMock: vi.fn(),
   currentUser: { value: null as { id: string } | null },
-  rpcResult: { value: { data: "request-123", error: null as null | { code?: string; message: string } } },
+  rpcResult: { value: { data: "request-123" as string | null, error: null as null | { code?: string; message: string } } },
 }));
 
 vi.mock("@supabase/supabase-js", () => ({
