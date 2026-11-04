@@ -287,7 +287,11 @@ export function restorePracticalAttempt(set: PracticalPracticeSet, value: unknow
   const fallback = () => startPracticalAttempt(set);
   if (!value || typeof value !== "object" || Array.isArray(value)) return fallback();
   const saved = value as Record<string, unknown>;
-  if (saved.practiceSetId !== set.id || typeof saved.startedAt !== "string" || !Number.isFinite(Date.parse(saved.startedAt))) return fallback();
+  if (saved.practiceSetId !== set.id) return fallback();
+  // A damaged timestamp must not discard otherwise recoverable student work.
+  const startedAt = typeof saved.startedAt === "string" && Number.isFinite(Date.parse(saved.startedAt))
+    ? saved.startedAt
+    : new Date().toISOString();
   const isRecord = (item: unknown): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item);
   const answers: Record<string, string> = {};
   const revealedAnswers: string[] = [];
@@ -320,7 +324,7 @@ export function restorePracticalAttempt(set: PracticalPracticeSet, value: unknow
       if (valid.length) checkedAnswerPoints[key] = valid;
     }
   }
-  return { practiceSetId: set.id, startedAt: saved.startedAt, answers, revealedAnswers, skillRatings, selfAwardedMarks, checkedAnswerPoints };
+  return { practiceSetId: set.id, startedAt, answers, revealedAnswers, skillRatings, selfAwardedMarks, checkedAnswerPoints };
 }
 
 export function savePracticalAnswer(
