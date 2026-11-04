@@ -5,6 +5,7 @@ import {
   getPracticalQuestionFeedback,
   getPracticalQuestionSkills,
   ratePracticalSkill,
+  restorePracticalAttempt,
   retryPracticalQuestion,
   recommendPracticalPractice,
   revealPracticalGuidance,
@@ -48,6 +49,29 @@ describe("Biology practical attempt preview", () => {
     expect(canAttemptPracticalSet(set)).toBe(true);
     expect(canAttemptPracticalSet({ ...set, status: "published" })).toBe(false);
     expect(canAttemptPracticalSet({ ...set, publicationStatus: "published" })).toBe(false);
+  });
+
+  it("restores only valid state belonging to the current practice bank", () => {
+    const restored = restorePracticalAttempt(set, {
+      practiceSetId: set.id,
+      startedAt: "2026-11-03T00:00:00.000Z",
+      answers: { "P3-01::a": "Keep this", "P3-01::missing": "Discard", "P3-01::b": 42 },
+      revealedAnswers: ["P3-01::a", "P3-01::missing", "P3-01::a"],
+      skillRatings: { "P3-01::variables": "secure", "P3-01::unknown": "revisit", "P3-01::graph": "mastered" },
+      selfAwardedMarks: { "P3-01::a": 2, "P3-01::b": 99, "P3-01::missing": 1 },
+      checkedAnswerPoints: { "P3-01::a": [0, 1, 99, -1, 1], "P3-01::missing": [0] },
+    });
+    expect(restored.answers).toEqual({ "P3-01::a": "Keep this" });
+    expect(restored.revealedAnswers).toEqual(["P3-01::a"]);
+    expect(restored.skillRatings).toEqual({ "P3-01::variables": "secure" });
+    expect(restored.selfAwardedMarks).toEqual({ "P3-01::a": 2 });
+    expect(restored.checkedAnswerPoints).toEqual({ "P3-01::a": [0, 1] });
+  });
+
+  it("starts a clean attempt when restored identity or timestamp is invalid", () => {
+    expect(restorePracticalAttempt(set, { practiceSetId: "another-set" }).practiceSetId).toBe(set.id);
+    expect(restorePracticalAttempt(set, { practiceSetId: set.id, startedAt: "not-a-date" }).answers).toEqual({});
+    expect(restorePracticalAttempt(set, null).skillRatings).toEqual({});
   });
 
   it("records answers and reveals guidance only when requested", () => {
