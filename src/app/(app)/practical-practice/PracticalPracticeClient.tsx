@@ -71,6 +71,7 @@ function MagnificationCalculator() {
 function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
   const [strokes, setStrokes] = useState<DrawingStroke[]>([]);
   const [current, setCurrent] = useState<DrawingStroke | null>(null);
+  const [keyboardPoint, setKeyboardPoint] = useState({ x: 300, y: 180 });
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -122,14 +123,31 @@ function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
     if (current?.points.length) setStrokes((saved) => [...saved, current]);
     setCurrent(null);
   };
+  const handleDrawingKey = (event: import("react").KeyboardEvent<SVGSVGElement>) => {
+    if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === "Enter") {
+      setStrokes((saved) => [...saved, { points: [keyboardPoint] }]);
+      return;
+    }
+    const step = event.shiftKey ? 15 : 5;
+    const next = {
+      x: keyboardPoint.x + (event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0),
+      y: keyboardPoint.y + (event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0),
+    };
+    const dx = next.x - 300, dy = next.y - 180, distance = Math.hypot(dx, dy), radius = 148;
+    const scale = distance > radius ? radius / distance : 1;
+    setKeyboardPoint({ x: 300 + dx * scale, y: 180 + dy * scale });
+  };
   const renderStroke = (stroke: DrawingStroke, index: number) => stroke.points.length === 1
     ? <circle key={index} cx={stroke.points[0].x} cy={stroke.points[0].y} r="1.8" fill="currentColor" />
     : <polyline key={index} points={stroke.points.map((point) => `${point.x},${point.y}`).join(" ")} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />;
 
   return <section className="mt-5 rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4" aria-label="Biological drawing workspace">
     <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-xs font-bold">Biological drawing workspace</h4><p className="mt-1 text-[11px] text-[var(--muted-foreground)]">Practise a large, clear specimen drawing. Draw with a finger, stylus or mouse.</p></div><div className="flex gap-2"><button type="button" disabled={!strokes.length} onClick={() => setStrokes((saved) => saved.slice(0, -1))} className="min-h-9 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold disabled:opacity-40">Undo</button><button type="button" onClick={() => { setStrokes([]); setCurrent(null); }} className="min-h-9 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold">Clear</button></div></div>
-    <div className="mt-3 overflow-hidden rounded-lg border border-[var(--card-border)] bg-[var(--surface)]"><svg viewBox="0 0 600 360" role="img" aria-label="Blank specimen drawing field. Draw inside the circular field." onPointerDown={begin} onPointerMove={draw} onPointerUp={finish} onPointerCancel={finish} className="block w-full touch-none cursor-crosshair text-[var(--foreground)]"><rect width="600" height="360" fill="var(--surface)" /><circle cx="300" cy="180" r="150" fill="var(--background)" stroke="currentColor" strokeWidth="1.5" opacity=".9" />{strokes.map(renderStroke)}{current && renderStroke(current, -1)}</svg></div>
+    <div className="mt-3 overflow-hidden rounded-lg border border-[var(--card-border)] bg-[var(--surface)]"><svg viewBox="0 0 600 360" role="img" aria-label="Specimen drawing field. Use a pointer to draw freehand, or focus this field and use arrow keys to move the cursor and Enter to place individual marks. Hold Shift with an arrow key for larger steps." tabIndex={0} onKeyDown={handleDrawingKey} onPointerDown={begin} onPointerMove={draw} onPointerUp={finish} onPointerCancel={finish} className="block w-full touch-none cursor-crosshair text-[var(--foreground)] focus:outline focus:outline-2 focus:outline-[var(--primary)]"><rect width="600" height="360" fill="var(--surface)" /><circle cx="300" cy="180" r="150" fill="var(--background)" stroke="currentColor" strokeWidth="1.5" opacity=".9" />{strokes.map(renderStroke)}{current && renderStroke(current, -1)}<g aria-hidden="true" pointerEvents="none"><circle cx={keyboardPoint.x} cy={keyboardPoint.y} r="5" fill="none" stroke="var(--primary)" strokeWidth="1.5" strokeDasharray="2 2" /></g></svg></div>
     <div className="mt-2 flex flex-wrap justify-between gap-2 text-[11px] text-[var(--muted-foreground)]"><span>{strokes.length} stroke{strokes.length === 1 ? "" : "s"} · {ready ? "Saved on this device" : "Loading sketch…"}</span><span>Use single, clear lines. Add labels in your written answer.</span></div>
+    <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Keyboard drawing: focus the specimen field, move the cursor with the arrow keys, press Enter to place a mark, and hold Shift for larger movements. Pointer, touch and stylus drawing remain available.</p>
     <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Practical drawing checklist: draw only what is observed, use unbroken pencil-style outlines, keep cells large and in proportion, avoid shading, and use straight ruled label lines that do not cross.</p>
   </section>;
 }
