@@ -528,7 +528,9 @@ export function summarizePracticalAttempt(
     guidanceReviewPercent: availableGuidancePoints ? Math.round((checkedGuidancePoints / availableGuidancePoints) * 100) : 0,
     status: (answeredQuestions === 0 && reviewedSkills === 0 && revealedQuestionKeys.length === 0
       ? "not-started"
-      : answeredQuestions === questions.length && reviewedSkills === totalSkills && checkedGuidancePoints === availableGuidancePoints
+      : answeredQuestions === questions.length && reviewedSkills === totalSkills &&
+        revealedQuestionKeys.length > 0 && availableGuidancePoints > 0 &&
+        checkedGuidancePoints === availableGuidancePoints
         ? "reviewed"
         : "in-progress") as "not-started" | "in-progress" | "reviewed",
   };
