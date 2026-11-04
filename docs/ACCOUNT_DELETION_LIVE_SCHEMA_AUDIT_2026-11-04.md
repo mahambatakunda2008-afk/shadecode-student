@@ -111,9 +111,11 @@ The bucket inventory and Storage policy metadata were inspected without reading 
 
 ## Trigger and database-side side-effect audit
 
-A read-only scan of non-internal `public` triggers and their functions found the following user-data side effects:
+A complete read-only inventory of non-internal triggers across `auth`, `public`, `realtime`, and `storage` found 38 triggers at audit time. The account-relevant side effects include:
 
 - `learn_lessons` insert/update triggers can create `traction_events`, `cortex_events`, and `learner_curriculum_objective_progress` records. These are insert/update side effects, not DELETE triggers. A deletion worker must still explicitly remove the generated event/progress rows.
+- `learn_lessons_publish_to_library` copies lesson title, topic, subject, difficulty, blocks, and search text into the shared `lesson_library` once a lesson has at least four blocks and 30% progress. The shared row has `source_lesson_id` but no visible user owner field. Deletion must inspect and remove or safely de-identify `lesson_library` rows sourced from the deleted learner's lessons; do not assume deleting the source lesson cascades to this library table.
+- `lesson_votes_apply` runs on INSERT, UPDATE, and DELETE and adjusts aggregate helpful vote counts on `lesson_library`. Deleting a learner's votes is expected to update these aggregates through the trigger.
 - `profiles` insert/update triggers synchronize the user's subject catalog and enforce onboarding/competitive-column rules. No `profiles` DELETE trigger was found in this targeted scan.
 - `subjects` insert/update triggers enforce onboarding subject rules. No DELETE-side behavior was found in this targeted scan.
 - `user_profiles` has a generic updated-at trigger only.
