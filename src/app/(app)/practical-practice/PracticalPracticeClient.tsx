@@ -374,12 +374,12 @@ export default function PracticalPracticeClient() {
       }
       const rawAttempt = backup.attempt;
       if (!rawAttempt || typeof rawAttempt !== "object" || Array.isArray(rawAttempt) ||
-        (rawAttempt as Record<string, unknown>).practiceSetId !== set.id ||
-        typeof (rawAttempt as Record<string, unknown>).startedAt !== "string" ||
-        !Number.isFinite(Date.parse((rawAttempt as Record<string, unknown>).startedAt as string))) {
+        (rawAttempt as Record<string, unknown>).practiceSetId !== set.id) {
         throw new Error("The backup does not contain a valid attempt.");
       }
 
+      // Use the same recovery/sanitisation path as automatic restore. A damaged
+      // timestamp must not make otherwise recoverable student answers unusable.
       const restored = restorePracticalAttempt(set, rawAttempt);
       const workspaces: [string, string][] = [];
       if (backup.workspaces !== undefined) {
@@ -403,11 +403,16 @@ export default function PracticalPracticeClient() {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
         for (const [key, value] of workspaces) window.localStorage.setItem(key, value);
       } catch (error) {
-        for (const [key, value] of previous) {
+        let rollbackComplete = true;
+        // Reverse the write order so the attempt pointer is restored last.
+        for (const [key, value] of [...previous.entries()].reverse()) {
           try {
             if (value === null) window.localStorage.removeItem(key);
             else window.localStorage.setItem(key, value);
-          } catch { /* Best-effort rollback if device storage is exhausted. */ }
+          } catch { rollbackComplete = false; }
+        }
+        if (!rollbackComplete) {
+          throw new Error("Restore failed and device storage prevented a complete rollback. Do not close this page; download any remaining work if possible.");
         }
         throw error;
       }
