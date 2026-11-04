@@ -515,9 +515,16 @@ export function summarizePracticalAttempt(
     const [taskId, questionId] = key.split("::");
     return sum + (findQuestion(set, taskId, questionId)?.answer.length ?? 0);
   }, 0);
-  const checkedGuidancePoints = revealedQuestionKeys.reduce((sum, key) =>
-    sum + (attempt.checkedAnswerPoints?.[key] ?? []).filter((index) => Number.isInteger(index) && index >= 0).length, 0,
-  );
+  const checkedGuidancePoints = revealedQuestionKeys.reduce((sum, key) => {
+    const [taskId, questionId] = key.split("::");
+    const question = findQuestion(set, taskId, questionId);
+    const validIndices = new Set(
+      (attempt.checkedAnswerPoints?.[key] ?? []).filter((index) =>
+        question && Number.isInteger(index) && index >= 0 && index < question.answer.length,
+      ),
+    );
+    return sum + validIndices.size;
+  }, 0);
   const practiceReview = {
     answeredPercent: questions.length ? Math.round((answeredQuestions / questions.length) * 100) : 0,
     skillsReviewed: reviewedSkills,
