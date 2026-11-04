@@ -457,9 +457,29 @@ export default function PracticalPracticeClient() {
   };
 
   const reset = () => {
-    if (!window.confirm("Clear this practical practice attempt from this device?")) return;
+    if (!window.confirm("Clear this practical practice attempt and its drawings and graphs from this device?")) return;
     setAttempt(startPracticalAttempt(set));
     setShowReview(false);
+    setOtherTabAttempt(null);
+    // A reset must clear the whole local practice workspace, not leave old
+    // specimen sketches or plotted points attached to a fresh attempt.
+    try {
+      const prefixes = [
+        `shadecode:practical-drawing:${set.id}:`,
+        `shadecode:practical-graph:${set.id}:`,
+      ];
+      const workspaceKeys: string[] = [];
+      for (let index = 0; index < window.localStorage.length; index += 1) {
+        const key = window.localStorage.key(index);
+        if (key && prefixes.some((prefix) => key.startsWith(prefix))) workspaceKeys.push(key);
+      }
+      workspaceKeys.forEach((key) => window.localStorage.removeItem(key));
+      setWorkspaceRevision((revision) => revision + 1);
+      setBackupMessage(`Attempt reset. ${workspaceKeys.length} drawing and graph drafts cleared from this device.`);
+    } catch {
+      setBackupMessage("The attempt was reset, but device storage prevented all drawing and graph drafts from being cleared. Review the workspaces before starting again.");
+      setWorkspaceRevision((revision) => revision + 1);
+    }
   };
 
   if (!canAttemptPracticalSet(set)) {
