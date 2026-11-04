@@ -89,6 +89,14 @@ describe("Biology practical attempt preview", () => {
     expect(revealed.answers["P3-01::a"]).toBe("Temperature; oxygen volume.");
   });
 
+  it("bounds live answer drafts to the same size accepted by recovery", () => {
+    const initial = startPracticalAttempt(set);
+    const longAnswer = "x".repeat(20_500);
+    const saved = savePracticalAnswer(set, initial, "P3-01", "a", longAnswer);
+    expect(saved.answers["P3-01::a"]).toHaveLength(20_000);
+    expect(restorePracticalAttempt(set, saved).answers["P3-01::a"]).toHaveLength(20_000);
+  });
+
   it("tracks self-assessment by task skill and highlights gaps", () => {
     let attempt = startPracticalAttempt(set);
     attempt = ratePracticalSkill(set, attempt, "P3-01", "variables", "secure");
