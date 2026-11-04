@@ -58,7 +58,11 @@ The following tables/columns were found in `public` by scanning for `user_id`, `
 | platform_user_relationships | subject_user_id, related_user_id, created_by, approved_by (uuid) | Relationship endpoints cascade; creator/approver are attribution references |
 | primary_activity_progress | user_id (uuid) | Primary activity progress |
 | profiles | id (uuid), username (text), curriculum_profile (jsonb) | Primary learner profile; id references auth.users with ON DELETE CASCADE; JSON may contain learner data |
-| project_evidence | user_id (uuid) | Evidence content may include uploaded files |\n| community_uploads | contributor_id, moderator_id (uuid), file_path (text) | Contributor-owned pending upload; contributor FK cascades, moderator FK sets null; clean referenced Storage object |\n| curriculum_verification_events | reviewer_id (uuid) | Reviewer identity in verification history; inspect retention/anonymization policy |\n| exam_question_topic_proposals | reviewer_id (uuid) | Auth FK uses NO ACTION; clear reviewer attribution before Auth deletion |\n| user_roles | user_id, assigned_by (uuid) | Account role rows cascade; assigned_by uses NO ACTION and must be cleared when this account assigned another user's role |
+| project_evidence | user_id (uuid) | Evidence content may include uploaded files |
+| community_uploads | contributor_id, moderator_id (uuid), file_path (text) | Contributor-owned pending upload; clean referenced Storage object |
+| curriculum_verification_events | reviewer_id (uuid) | Reviewer identity in verification history; inspect retention/anonymization policy |
+| exam_question_topic_proposals | reviewer_id (uuid) | Auth FK uses NO ACTION; clear reviewer attribution before Auth deletion |
+| user_roles | user_id, assigned_by (uuid) | Account role rows cascade; assigned_by uses NO ACTION and must be cleared when this account assigned another user's role |
 | project_milestones | user_id (uuid) | Milestone data |
 | projects | user_id (uuid) | Project ownership |
 | published_learning_assets | reviewed_by (uuid) | Auth FK uses ON DELETE SET NULL; preserve shared assets and clear reviewer attribution |
@@ -105,6 +109,17 @@ The bucket inventory and Storage policy metadata were inspected without reading 
 4. Do not delete shared curriculum, public learning assets, or global exam papers merely because a user's row references them.
 5. Establish whether backups contain user data and define provider backup expiry / selective erasure behavior.
 
+## Trigger and database-side side-effect audit
+
+A read-only scan of non-internal `public` triggers and their functions found the following user-data side effects:
+
+- `learn_lessons` insert/update triggers can create `traction_events`, `cortex_events`, and `learner_curriculum_objective_progress` records. These are insert/update side effects, not DELETE triggers. A deletion worker must still explicitly remove the generated event/progress rows.
+- `profiles` insert/update triggers synchronize the user's subject catalog and enforce onboarding/competitive-column rules. No `profiles` DELETE trigger was found in this targeted scan.
+- `subjects` insert/update triggers enforce onboarding subject rules. No DELETE-side behavior was found in this targeted scan.
+- `user_profiles` has a generic updated-at trigger only.
+
+This was a targeted scan of trigger definitions/functions mentioning profile or user identifiers, not proof that no other trigger can affect deletion. Before worker implementation, run a complete trigger inventory (including all schemas and function bodies), inspect FK cascades recursively, and check scheduled jobs/webhooks that may recreate account data. Deleting a user-owned lesson does not itself fire the observed completion/update analytics triggers.
+
 ## Additional findings
 
 - `exam_logs.user_id` is text, unlike most user references. Inspect the application write path and historical format before deleting.
@@ -112,7 +127,11 @@ The bucket inventory and Storage policy metadata were inspected without reading 
 - `platform_user_relationships` can represent another user's relationship to the account. Remove relationships where the target account appears in any of its three columns, without deleting the other person's account.
 - `platform_group_members` and `platform_institution_members` must be removed, but shared group/institution records should remain if other members still use them.
 - `user_roles` is security-sensitive and must be removed for the deleted identity.
-- `published_learning_assets.reviewed_by` is an Auth FK with `ON DELETE SET NULL`; preserve the shared asset and allow attribution to be cleared.\n- The live Auth FK inspection found `feedback.user_id` and `exam_results.user_id` use `NO ACTION`, so these records must be explicitly deleted before Auth deletion. `profiles.id` itself cascades from `auth.users`.\n- Other Auth FKs use `SET NULL` for audit/attribution records such as `ai_usage_logs`, `ai_anomalies`, `traction_events`, `survey_responses`, `export_logs`, `community_uploads.moderator_id`, `platform_user_relationships.created_by`, and `challenge_attempts.user_id`. Review whether their remaining payloads or display names still identify the deleted learner.\n- `user_roles.assigned_by` and `exam_question_topic_proposals.reviewer_id` use `NO ACTION`; clear those attribution references before Auth deletion. Preserve the underlying role assignment/proposal only when it is not owned by the deleted account.\n- `community_uploads.contributor_id` cascades from Auth and stores `file_path`; clean up the corresponding object before deleting the row.
+- `published_learning_assets.reviewed_by` is an Auth FK with `ON DELETE SET NULL`; preserve the shared asset and allow attribution to be cleared.
+- The live Auth FK inspection found `feedback.user_id` and `exam_results.user_id` use `NO ACTION`, so these records must be explicitly deleted before Auth deletion. `profiles.id` itself cascades from `auth.users`.
+- Other Auth FKs use `SET NULL` for audit/attribution records such as `ai_usage_logs`, `ai_anomalies`, `traction_events`, `survey_responses`, `export_logs`, `community_uploads.moderator_id`, `platform_user_relationships.created_by`, and `challenge_attempts.user_id`. Review whether their remaining payloads or display names still identify the deleted learner.
+- `user_roles.assigned_by` and `exam_question_topic_proposals.reviewer_id` use `NO ACTION`; clear those attribution references before Auth deletion. Preserve the underlying role assignment/proposal only when it is not owned by the deleted account.
+- `community_uploads.contributor_id` cascades from Auth and stores `file_path`; clean up the corresponding object before deleting the row.
 - The Storage buckets are private, but private does not mean account-scoped or automatically erased.
 - The live database has RLS enabled on the tables returned by the table inventory, but RLS policy coverage/semantics must be reviewed separately. RLS does not perform deletion automatically.
 
