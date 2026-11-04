@@ -88,7 +88,7 @@ The following tables/columns were found in `public` by scanning for `user_id`, `
 | user_roles | user_id (uuid) | Authorization data; must remove account's role assignments |
 | user_saved_questions | user_id (uuid) | Saved question state |
 
-This is a column-name inventory, not proof that every listed table currently contains rows for every user. It also does not discover identifiers hidden inside JSON documents, text payloads, or object paths.
+This is a column-name inventory, not proof that every listed table currently contains rows for every user. It also does not discover identifiers hidden inside JSON documents, text payloads, or object paths. A separate identity-column scan found `challenges.challenger_id`/`challenger_name`, `profiles.display_name`, course-approval attribution fields, and provider/device identifiers; these are documented below.
 
 ## Foreign-key behavior observed
 
@@ -139,6 +139,7 @@ This was a targeted scan of trigger definitions/functions mentioning profile or 
 - `user_roles.assigned_by` and `exam_question_topic_proposals.reviewer_id` use `NO ACTION`; clear those attribution references before Auth deletion. Preserve the underlying role assignment/proposal only when it is not owned by the deleted account.
 - A wider identity-column scan also found `generated_course_drafts.approved_by` and `generated_course_approvals.approved_by` without an Auth FK. Delete approval rows when their draft is owned by the account; clear approver attribution on another user's draft/approval rather than deleting that other user's content.
 - `platform_channel_message_receipts` contains `external_user_id`, `external_message_id`, and `phone_number_id` in addition to `user_id`. Delete account-linked receipts and inspect any provider payload columns for residual identifiers. `profiles.display_name` is personally identifying alongside `username`.
+- A path/content-column scan found `community_uploads.file_path`, `project_evidence.content`, shared `past_papers.file_path`, and JSON/text payload fields in AI usage logs, generated lessons, insights, learner events, paper-learning sessions, platform identities/relationships, and published assets. Account-owned rows should be deleted in full; shared curriculum/paper assets must remain. Inspect object references in project evidence and community uploads before deleting any Storage object. Do not delete shared `past_papers` objects because they are global curriculum material.
 - `community_uploads.contributor_id` cascades from Auth and stores `file_path`; clean up the corresponding object before deleting the row.
 - The Storage buckets are private, but private does not mean account-scoped or automatically erased.
 - The live database has RLS enabled on the tables returned by the table inventory, but RLS policy coverage/semantics must be reviewed separately. RLS does not perform deletion automatically.
