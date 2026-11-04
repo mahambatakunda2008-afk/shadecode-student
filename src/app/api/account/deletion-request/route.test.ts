@@ -16,6 +16,11 @@ vi.mock("@/lib/supabase/server", () => ({
 
 import { POST } from "./route";
 
+const post = (origin?: string) => POST(new Request("https://shadecodestudent.vercel.app/api/account/deletion-request", {
+  method: "POST",
+  headers: origin ? { origin } : {},
+}));
+
 beforeEach(() => {
   currentUser.value = null;
   rpcResult.value = { data: "request-123", error: null };
@@ -24,8 +29,14 @@ beforeEach(() => {
 });
 
 describe("POST /api/account/deletion-request", () => {
+  it("rejects cross-origin browser requests before authentication or queue access", async () => {
+    const response = await post("https://attacker.example");
+    expect(response.status).toBe(403);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
   it("requires an authenticated user", async () => {
-    const response = await POST();
+    const response = await post();
     expect(response.status).toBe(401);
     expect(rpcMock).not.toHaveBeenCalled();
   });
