@@ -43,7 +43,7 @@ describe("POST /api/account/deletion-request", () => {
 
   it("creates a durable request through the identity-bound RPC", async () => {
     currentUser.value = { id: "user-1" };
-    const response = await POST();
+    const response = await post();
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({
       accepted: true,
@@ -57,7 +57,7 @@ describe("POST /api/account/deletion-request", () => {
   it("requires recent re-authentication", async () => {
     currentUser.value = { id: "user-1" };
     rpcResult.value = { data: null, error: { code: "28000", message: "Recent re-authentication required" } };
-    const response = await POST();
+    const response = await post();
     expect(response.status).toBe(403);
     expect((await response.json()).error).toMatch(/sign out and sign back in/i);
   });
@@ -65,7 +65,7 @@ describe("POST /api/account/deletion-request", () => {
   it("does not leak database error details", async () => {
     currentUser.value = { id: "user-1" };
     rpcResult.value = { data: null, error: { code: "XX000", message: "sensitive database detail" } };
-    const response = await POST();
+    const response = await post();
     expect(response.status).toBe(503);
     expect(await response.text()).not.toContain("sensitive database detail");
   });
@@ -73,7 +73,7 @@ describe("POST /api/account/deletion-request", () => {
   it("fails closed if the RPC does not return a request identifier", async () => {
     currentUser.value = { id: "user-1" };
     rpcResult.value = { data: null, error: null };
-    const response = await POST();
+    const response = await post();
     expect(response.status).toBe(503);
   });
 });
