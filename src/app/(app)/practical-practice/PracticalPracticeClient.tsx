@@ -148,7 +148,7 @@ function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
     if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) return;
     event.preventDefault();
     if (event.key === "Enter") {
-      setStrokes((saved) => [...saved, { points: [keyboardPoint] }]);
+      setStrokes((saved) => [...saved, { points: [keyboardPoint] }].slice(-500));
       return;
     }
     const step = event.shiftKey ? 15 : 5;
