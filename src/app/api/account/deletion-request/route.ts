@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     if (error.code === "28000" || /recent re-authentication/i.test(error.message)) {
       return NextResponse.json(
         { error: "For your security, sign out and sign back in before requesting account deletion." },
-        { status:  reauthStatus, headers: { "Cache-Control": "no-store" } },
+        { status: 403, headers: { "Cache-Control": "no-store" } },
       );
     }
 
@@ -93,4 +93,3 @@ export async function POST(request: Request) {
   );
 }
 
-const reauthStatus = 403;
