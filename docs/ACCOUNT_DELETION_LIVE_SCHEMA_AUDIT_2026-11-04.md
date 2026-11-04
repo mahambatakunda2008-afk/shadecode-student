@@ -168,3 +168,73 @@ This was a targeted scan of trigger definitions/functions mentioning profile or 
 ## Verification boundary
 
 The audit used read-only metadata queries against the active Shadecode Student Supabase project. No account records were selected, changed, or deleted. The schema may evolve; rerun this inventory immediately before implementing and testing the deletion workflow.
+
+
+## Complete direct Auth/Profile foreign-key inventory
+
+A follow-up catalog query against `pg_constraint` (rather than relying only on `information_schema`) enumerated every direct FK from `public` into `auth.users` or `public.profiles`. This is the authoritative direct-reference list from the audit snapshot:
+
+| Table.column | Referenced identity | ON DELETE |
+|---|---|---|
+| academic_contexts.user_id | auth.users.id | CASCADE |
+| ai_anomalies.resolved_by | auth.users.id | SET NULL |
+| ai_anomalies.user_id | auth.users.id | SET NULL |
+| ai_usage_logs.user_id | auth.users.id | SET NULL |
+| challenge_attempts.user_id | auth.users.id | SET NULL |
+| challenges.challenger_id | auth.users.id | SET NULL |
+| community_uploads.moderator_id | auth.users.id | SET NULL |
+| community_uploads.contributor_id | auth.users.id | CASCADE |
+| cortex_events.user_id | auth.users.id | CASCADE |
+| cortex_generation_jobs.user_id | auth.users.id | CASCADE |
+| cortex_memory.user_id | auth.users.id | CASCADE |
+| exam_question_topic_proposals.reviewer_id | auth.users.id | NO ACTION |
+| exam_result_questions.user_id | auth.users.id | CASCADE |
+| exam_results.user_id | auth.users.id | NO ACTION |
+| experiment_assignments.user_id | auth.users.id | CASCADE |
+| export_logs.user_id | auth.users.id | SET NULL |
+| feedback.user_id | auth.users.id | NO ACTION |
+| focus_sessions.user_id | auth.users.id | CASCADE |
+| generated_lessons.user_id | auth.users.id | CASCADE |
+| insights.user_id | auth.users.id | CASCADE |
+| learn_lessons.user_id | auth.users.id | CASCADE |
+| learner_brain_events.user_id | auth.users.id | CASCADE |
+| learner_curriculum_objective_progress.user_id | auth.users.id | CASCADE |
+| learning_paths.user_id | auth.users.id | CASCADE |
+| learning_signals.user_id | auth.users.id | CASCADE |
+| lesson_votes.user_id | auth.users.id | CASCADE |
+| paper_learning_attempts.user_id | auth.users.id | CASCADE |
+| paper_learning_sessions.user_id | auth.users.id | CASCADE |
+| paper_learning_transfer_questions.user_id | auth.users.id | CASCADE |
+| platform_group_members.user_id | auth.users.id | CASCADE |
+| platform_institution_members.user_id | auth.users.id | CASCADE |
+| platform_user_relationships.approved_by | auth.users.id | SET NULL |
+| platform_user_relationships.created_by | auth.users.id | SET NULL |
+| platform_user_relationships.related_user_id | auth.users.id | CASCADE |
+| platform_user_relationships.subject_user_id | auth.users.id | CASCADE |
+| primary_activity_progress.user_id | auth.users.id | CASCADE |
+| profiles.id | auth.users.id | CASCADE |
+| project_evidence.user_id | auth.users.id | CASCADE |
+| project_milestones.user_id | auth.users.id | CASCADE |
+| projects.user_id | auth.users.id | CASCADE |
+| published_learning_assets.reviewed_by | auth.users.id | SET NULL |
+| revision_queue.user_id | auth.users.id | CASCADE |
+| study_plans.user_id | auth.users.id | CASCADE |
+| survey_responses.user_id | auth.users.id | SET NULL |
+| sync_revisions.user_id | auth.users.id | CASCADE |
+| traction_events.user_id | auth.users.id | SET NULL |
+| user_achievements.user_id | auth.users.id | CASCADE |
+| user_past_paper_state.user_id | auth.users.id | CASCADE |
+| user_profiles.user_id | auth.users.id | CASCADE |
+| user_question_attempts.user_id | auth.users.id | CASCADE |
+| user_roles.assigned_by | auth.users.id | NO ACTION |
+| user_roles.user_id | auth.users.id | CASCADE |
+| user_saved_questions.user_id | auth.users.id | CASCADE |
+| achievements.user_id | public.profiles.id | CASCADE |
+| cortex_insights.user_id | public.profiles.id | CASCADE |
+| exams.user_id | public.profiles.id | CASCADE |
+| study_topics.user_id | public.profiles.id | CASCADE |
+| subjects.user_id | public.profiles.id | CASCADE |
+| tasks.user_id | public.profiles.id | CASCADE |
+| timetable.user_id | public.profiles.id | CASCADE |
+
+The database engine will automatically cascade or null only the relationships marked above. It will **not** remove user-owned rows that have no FK, and it will block Auth deletion on the three NO ACTION relationships (`exam_question_topic_proposals.reviewer_id`, `exam_results.user_id`, `feedback.user_id`, plus `user_roles.assigned_by`). The worker must explicitly delete the user's feedback and exam results, and clear reviewer/assigner attribution on records owned by other people before deleting Auth. Also inspect `exam_result_questions.user_id`: it has its own CASCADE FK to Auth as well as a result_id FK to exam_results.
