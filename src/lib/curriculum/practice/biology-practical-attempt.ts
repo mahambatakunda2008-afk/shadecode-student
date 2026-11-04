@@ -339,7 +339,7 @@ export function savePracticalAnswer(
 
   return {
     ...attempt,
-    answers: { ...attempt.answers, [questionKey(taskId, questionId)]: answer },
+    answers: { ...attempt.answers, [questionKey(taskId, questionId)]: answer.slice(0, 20000) },
   };
 }
 
