@@ -1113,7 +1113,6 @@ private fun ProfileNativeScreen(
     onSignOut: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     var displayName by remember(profile?.id, profile?.displayName) { mutableStateOf(profile?.displayName.orEmpty()) }
     var studyLevel by remember(profile?.id, profile?.studyLevel) { mutableStateOf(profile?.studyLevel ?: "upper-secondary") }
     var selectedCodes by remember(profile?.id, profile?.subjects) {
