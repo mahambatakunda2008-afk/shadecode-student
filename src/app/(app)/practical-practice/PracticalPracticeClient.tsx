@@ -95,8 +95,16 @@ function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
 
   useEffect(() => {
     if (!ready) return;
-    try { window.localStorage.setItem(storageKey, JSON.stringify(strokes)); } catch { /* Drawing remains usable when storage is full or disabled. */ }
-  }, [ready, storageKey, strokes]);
+    // Persist an in-progress stroke too, so an interrupted pointer session loses
+    // at most the short debounce window rather than the entire unfinished line.
+    const timeout = window.setTimeout(() => {
+      try {
+        const recoverable = [...strokes, ...(current?.points.length ? [current] : [])].slice(-500);
+        window.localStorage.setItem(storageKey, JSON.stringify(recoverable));
+      } catch { /* Drawing remains usable when storage is full or disabled. */ }
+    }, 250);
+    return () => window.clearTimeout(timeout);
+  }, [current, ready, storageKey, strokes]);
 
   const locate = (event: import("react").PointerEvent<SVGSVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -118,10 +126,10 @@ function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
   const draw = (event: import("react").PointerEvent<SVGSVGElement>) => {
     if (!current) return;
     const point = locate(event);
-    setCurrent((stroke) => stroke ? { points: [...stroke.points, point] } : stroke);
+    setCurrent((stroke) => stroke ? { points: [...stroke.points.slice(-4999), point] } : stroke);
   };
   const finish = () => {
-    if (current?.points.length) setStrokes((saved) => [...saved, current]);
+    if (current?.points.length) setStrokes((saved) => [...saved, current].slice(-500));
     setCurrent(null);
   };
   const handleDrawingKey = (event: import("react").KeyboardEvent<SVGSVGElement>) => {
