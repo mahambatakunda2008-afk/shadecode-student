@@ -238,3 +238,25 @@ A follow-up catalog query against `pg_constraint` (rather than relying only on `
 | timetable.user_id | public.profiles.id | CASCADE |
 
 The database engine will automatically cascade or null only the relationships marked above. It will **not** remove user-owned rows that have no FK, and it will block Auth deletion on four NO ACTION relationships: `exam_question_topic_proposals.reviewer_id`, `exam_results.user_id`, `feedback.user_id`, and `user_roles.assigned_by`. The worker must explicitly delete the user's feedback and exam results, and clear reviewer/assigner attribution on records owned by other people before deleting Auth. Also inspect `exam_result_questions.user_id`: it has its own CASCADE FK to Auth as well as a result_id FK to exam_results.
+
+
+## Local-device data inventory (source inspection)
+
+This section records local stores found in the Android and web source. These stores are not erased by deleting a Supabase Auth user.
+
+| Store | Location / contents | Deletion handling required |
+|---|---|---|
+| Android DataStore | `shadecode_native`: access/refresh tokens, user ID/email, cached profile, account-keyed tasks/timetable, pending native sync operations | Clear the DataStore after successful server-side deletion is confirmed; `NativeStore.clearSession()` currently clears all preferences. Do not clear merely because a request was queued. |
+| Android Room | `shadecode_student.db`: cached subjects, lessons, lesson progress, and `pending_sync` queue. The current Room schema does not attach an account ID to rows and the app is single-session. | Clear account-associated subject/lesson/progress records and pending sync rows after confirmed deletion. Because lessons may be generated per account, preserve none unless their shared/public provenance is verified. |
+| Android Snap & Extract | Private files under `filesDir/snap_extract_artifacts`; saved OCR text, edited text, title, timestamps, and optional source URI metadata | Treat as potentially personal user-generated content. Clear local files on this device after confirmed deletion if the account deletion UI promises device-local cleanup; source images are not copied by this store. |
+| Web IndexedDB | Database `shadecode-student`, stores `records` and `mutations`; generic local records and queued mutations | Clear both stores on the next authenticated client confirmation that deletion completed. Do not clear while the request is merely pending. |
+| Web service worker | `next.config.ts` states PWA service worker is intentionally disabled pending lifecycle rebuild; no active app service-worker cache is expected from this configuration. | Recheck deployed service-worker registrations before release; if one exists from an older app version, define a safe cache cleanup that does not remove shared downloadable curriculum/papers indiscriminately. |
+| Browser auth/session | Supabase browser client persists the session according to its configured storage adapter. | Sign out and clear the account's auth storage after deletion completion; avoid broad origin-wide localStorage wipes that may remove unrelated app preferences. |
+
+### Offline sync race
+
+`NativeSyncWorker` reads account-scoped pending operations from DataStore and lesson-progress operations from Room, refreshes expired sessions, and retries failures. A deletion implementation must prevent new sync writes once a deletion job is processing and must stop/revoke the worker's credentials after the account is deleted. Pending local mutations must not be replayed after a deletion request has been accepted or after the account is deleted. The app currently has no server deletion-completion signal wired into this worker, so this remains a release blocker.
+
+### Local cleanup boundary
+
+A server-side deletion cannot reach devices that remain offline. The next successful app connection must receive an unambiguous deletion-completed/account-removed signal before local cleanup is triggered. If the user never reconnects, local copies can remain on that device until app data is cleared or the app is uninstalled. This limitation must be disclosed clearly; do not claim remote offline cache erasure.
