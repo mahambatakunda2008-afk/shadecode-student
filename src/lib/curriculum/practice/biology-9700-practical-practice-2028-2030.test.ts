@@ -127,4 +127,38 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(spearmanExplanation).not.toContain("Pearson's test conditions are not met");
     expect(spearman?.data?.rows.every((row) => row.length === spearman.data?.columns.length)).toBe(true);
   });
+
+  it("keeps task and question identifiers unique and every skill mapping usable", () => {
+    const taskIds = practiceSet.tasks.map((task) => task.id);
+    expect(new Set(taskIds).size).toBe(taskIds.length);
+
+    for (const task of practiceSet.tasks) {
+      const questionIds = task.questions.map((question) => question.id);
+      expect(new Set(questionIds).size).toBe(questionIds.length);
+      expect(task.skills.length, task.id).toBeGreaterThan(0);
+      expect(task.skills.every((skill) => skill.trim().length > 0), task.id).toBe(true);
+      expect(task.questions.every((question) => question.prompt.trim().length > 0), task.id).toBe(true);
+      expect(task.questions.every((question) => question.answer.every((point) => point.trim().length > 0)), task.id).toBe(true);
+    }
+  });
+
+  it("keeps every supplied dataset rectangular and free of non-finite numeric values", () => {
+    for (const task of practiceSet.tasks) {
+      for (const question of task.questions) {
+        const data = question.data;
+        if (!data) continue;
+        expect(data.columns.length, `${task.id} question ${question.id}`).toBeGreaterThan(1);
+        expect(data.rows.length, `${task.id} question ${question.id}`).toBeGreaterThan(1);
+        for (const [rowIndex, row] of data.rows.entries()) {
+          expect(row.length, `${task.id} question ${question.id} row ${rowIndex + 1}`).toBe(data.columns.length);
+          for (const [columnIndex, value] of row.entries()) {
+            if (typeof value === "number") {
+              expect(Number.isFinite(value), `${task.id} question ${question.id} cell ${rowIndex + 1},${columnIndex + 1}`).toBe(true);
+            }
+          }
+        }
+      }
+    }
+  });
+
 });
