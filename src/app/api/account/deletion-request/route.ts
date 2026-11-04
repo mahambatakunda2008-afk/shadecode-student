@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -22,10 +23,38 @@ export async function POST(request: Request) {
     }
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const authorization = request.headers.get("authorization");
+  const bearerMatch = authorization?.match(/^Bearer\\s+([^\\s]+)$/i);
+  if (authorization && (!bearerMatch || bearerMatch[1].length > 4096)) {
+    return NextResponse.json(
+      { error: "Authentication required." },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 
-  if (authError || !user) {
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>> | ReturnType<typeof createClient>;
+  let user: { id: string } | null = null;
+  if (bearerMatch) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !anonKey) {
+      return NextResponse.json({ error: "Account deletion requests are temporarily unavailable." }, { status: 503 });
+    }
+    // Native clients authenticate with their existing short-lived access
+    // token. The anon key is public; no service-role credential reaches a device.
+    supabase = createClient(url, anonKey, {
+      global: { headers: { Authorization: `Bearer ${bearerMatch[1]}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error: authError } = await supabase.auth.getUser(bearerMatch[1]);
+    if (!authError) user = data.user ? { id: data.user.id } : null;
+  } else {
+    supabase = await createSupabaseServerClient();
+    const { data, error: authError } = await supabase.auth.getUser();
+    if (!authError && data.user) user = { id: data.user.id };
+  }
+
+  if (!user) {
     return NextResponse.json(
       { error: "Sign in to request account deletion." },
       { status: 401, headers: { "Cache-Control": "no-store" } },
@@ -33,7 +62,7 @@ export async function POST(request: Request) {
   }
 
   // Identity and recent-authentication time are derived from the signed
-  // Supabase session. No target user ID is accepted from the request body.
+  // Supabase session or verified bearer token. No target user ID is accepted.
   const { data: requestId, error } = await supabase.rpc("request_account_deletion");
 
   if (error) {
