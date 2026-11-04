@@ -282,6 +282,47 @@ export function startPracticalAttempt(
   };
 }
 
+/** Restore only state that belongs to the current bank and still matches its question/skill schema. */
+export function restorePracticalAttempt(set: PracticalPracticeSet, value: unknown): PracticalAttempt {
+  const fallback = () => startPracticalAttempt(set);
+  if (!value || typeof value !== "object" || Array.isArray(value)) return fallback();
+  const saved = value as Record<string, unknown>;
+  if (saved.practiceSetId !== set.id || typeof saved.startedAt !== "string" || !Number.isFinite(Date.parse(saved.startedAt))) return fallback();
+  const isRecord = (item: unknown): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item);
+  const answers: Record<string, string> = {};
+  const revealedAnswers: string[] = [];
+  const skillRatings: Record<string, PracticeSkillRating> = {};
+  const selfAwardedMarks: Record<string, number> = {};
+  const checkedAnswerPoints: Record<string, number[]> = {};
+  const questions = new Map<string, PracticalQuestion>();
+  const skills = new Set<string>();
+  for (const task of set.tasks) {
+    for (const question of task.questions) questions.set(questionKey(task.id, question.id), question);
+    for (const skill of task.skills) skills.add(skillKey(task.id, skill));
+  }
+  if (isRecord(saved.answers)) for (const [key, answer] of Object.entries(saved.answers)) {
+    if (questions.has(key) && typeof answer === "string") answers[key] = answer.slice(0, 20000);
+  }
+  if (Array.isArray(saved.revealedAnswers)) for (const key of saved.revealedAnswers) {
+    if (typeof key === "string" && questions.has(key) && !revealedAnswers.includes(key)) revealedAnswers.push(key);
+  }
+  if (isRecord(saved.skillRatings)) for (const [key, rating] of Object.entries(saved.skillRatings)) {
+    if (skills.has(key) && (rating === "secure" || rating === "developing" || rating === "revisit")) skillRatings[key] = rating;
+  }
+  if (isRecord(saved.selfAwardedMarks)) for (const [key, marks] of Object.entries(saved.selfAwardedMarks)) {
+    const question = questions.get(key);
+    if (question && Number.isInteger(marks) && (marks as number) >= 0 && (marks as number) <= question.marks) selfAwardedMarks[key] = marks as number;
+  }
+  if (isRecord(saved.checkedAnswerPoints)) for (const [key, indices] of Object.entries(saved.checkedAnswerPoints)) {
+    const question = questions.get(key);
+    if (question && Array.isArray(indices)) {
+      const valid = [...new Set(indices.filter((index): index is number => Number.isInteger(index) && index >= 0 && index < question.answer.length))];
+      if (valid.length) checkedAnswerPoints[key] = valid;
+    }
+  }
+  return { practiceSetId: set.id, startedAt: saved.startedAt, answers, revealedAnswers, skillRatings, selfAwardedMarks, checkedAnswerPoints };
+}
+
 export function savePracticalAnswer(
   set: PracticalPracticeSet,
   attempt: PracticalAttempt,
