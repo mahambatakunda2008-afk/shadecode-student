@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpenCheck, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Download, Eye, EyeOff, FlaskConical, RotateCcw, Save, Target } from "lucide-react";
+import { BookOpenCheck, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Download, Upload, Eye, EyeOff, FlaskConical, RotateCcw, Save, Target } from "lucide-react";
 import practiceData from "@/lib/curriculum/practice/biology-9700-practical-practice-2028-2030.json";
 import { getPracticalQuestionFeedback, getPracticalQuestionSkills } from "@/lib/curriculum/practice/biology-practical-attempt";
 import {
@@ -258,6 +258,7 @@ export default function PracticalPracticeClient() {
   const [activeTask, setActiveTask] = useState(set.tasks[0]?.id ?? "");
   const [showReview, setShowReview] = useState(false);
   const [storageStatus, setStorageStatus] = useState<"saving" | "saved" | "unavailable">("saving");
+  const [backupMessage, setBackupMessage] = useState("");
 
   useEffect(() => {
     setAttempt(readAttempt());
@@ -320,6 +321,69 @@ export default function PracticalPracticeClient() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  const restoreBackup = async (event: import("react").ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setBackupMessage("This backup is larger than 10 MB. Choose a smaller backup file.");
+      return;
+    }
+
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("The selected file is not a valid backup.");
+      const backup = parsed as Record<string, unknown>;
+      if (backup.format !== "shadecode-biology-practical-attempt" || backup.version !== 1 || backup.practiceSetId !== set.id) {
+        throw new Error("This backup does not match this Biology practical practice set.");
+      }
+      const rawAttempt = backup.attempt;
+      if (!rawAttempt || typeof rawAttempt !== "object" || Array.isArray(rawAttempt) ||
+        (rawAttempt as Record<string, unknown>).practiceSetId !== set.id ||
+        typeof (rawAttempt as Record<string, unknown>).startedAt !== "string" ||
+        !Number.isFinite(Date.parse((rawAttempt as Record<string, unknown>).startedAt as string))) {
+        throw new Error("The backup does not contain a valid attempt.");
+      }
+
+      const restored = restorePracticalAttempt(set, rawAttempt);
+      const workspaces: [string, string][] = [];
+      if (backup.workspaces !== undefined) {
+        if (!backup.workspaces || typeof backup.workspaces !== "object" || Array.isArray(backup.workspaces)) {
+          throw new Error("The backup workspace data is invalid.");
+        }
+        for (const [key, value] of Object.entries(backup.workspaces as Record<string, unknown>)) {
+          const drawingPrefix = `shadecode:practical-drawing:${set.id}:`;
+          const graphPrefix = `shadecode:practical-graph:${set.id}:`;
+          if ((!key.startsWith(drawingPrefix) && !key.startsWith(graphPrefix)) || typeof value !== "string" || value.length > 2 * 1024 * 1024) {
+            throw new Error("The backup contains unsupported workspace data.");
+          }
+          JSON.parse(value);
+          workspaces.push([key, value]);
+        }
+      }
+
+      const keys = [STORAGE_KEY, ...workspaces.map(([key]) => key)];
+      const previous = new Map(keys.map((key) => [key, window.localStorage.getItem(key)]));
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
+        for (const [key, value] of workspaces) window.localStorage.setItem(key, value);
+      } catch (error) {
+        for (const [key, value] of previous) {
+          try {
+            if (value === null) window.localStorage.removeItem(key);
+            else window.localStorage.setItem(key, value);
+          } catch { /* Best-effort rollback if device storage is exhausted. */ }
+        }
+        throw error;
+      }
+      setAttempt(restored);
+      setBackupMessage(`Backup restored. ${Object.keys(restored.answers).length} answers and ${workspaces.length} workspace drafts recovered.`);
+      setStorageStatus("saved");
+    } catch (error) {
+      setBackupMessage(error instanceof Error ? error.message : "Could not restore this backup. Your current attempt has not been replaced.");
+    }
+  };
+
   const reset = () => {
     if (!window.confirm("Clear this practical practice attempt from this device?")) return;
     setAttempt(startPracticalAttempt(set));
@@ -341,7 +405,10 @@ export default function PracticalPracticeClient() {
             {storageStatus === "saving" ? "Saving your practical attempt…" : storageStatus === "saved" ? "Attempt saved on this device." : "Device storage is unavailable or full. Your current work remains open, but changes may not survive closing this page. Download a backup before leaving."}
           </div>
           <button type="button" onClick={downloadBackup} className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 font-semibold text-[var(--foreground)] hover:border-[var(--primary)]"><Download size={14} aria-hidden="true" /> Download backup</button>
+          <input id="practical-backup-file" type="file" accept="application/json,.json" onChange={restoreBackup} className="sr-only" />
+          <button type="button" onClick={() => document.getElementById("practical-backup-file")?.click()} className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 font-semibold text-[var(--foreground)] hover:border-[var(--primary)]"><Upload size={14} aria-hidden="true" /> Restore backup</button>
         </div>
+        {backupMessage && <p role="status" aria-live="polite" className="rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--muted-foreground)]">{backupMessage}</p>}
         <header className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary)]"><FlaskConical size={15} /> Practical skills studio</div>
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
