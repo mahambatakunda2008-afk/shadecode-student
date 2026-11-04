@@ -196,7 +196,7 @@ function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData;
     try {
       const saved = window.localStorage.getItem(storageKey);
       if (saved) {
-        const parsed = JSON.parse(saved) as { xIndex?: number; yIndex?: number; points?: PlottedPoint[] };
+        const parsed = JSON.parse(saved) as { xIndex?: number; yIndex?: number; points?: PlottedPoint[]; coordinateX?: string; coordinateY?: string; showBestFit?: boolean };
         const validIndex = (index: number | undefined) => numericColumns.some((column) => column.index === index);
         const savedXIndex = validIndex(parsed.xIndex) ? parsed.xIndex! : numericColumns[0]?.index;
         const savedYIndex = validIndex(parsed.yIndex) && parsed.yIndex !== savedXIndex
@@ -213,6 +213,9 @@ function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData;
         const savedYBounds = axisBounds(savedYIndex);
         if (savedXIndex !== undefined) setXIndex(savedXIndex);
         if (savedYIndex !== undefined) setYIndex(savedYIndex);
+        if (typeof parsed.coordinateX === "string" && parsed.coordinateX.length <= 32) setCoordinateX(parsed.coordinateX);
+        if (typeof parsed.coordinateY === "string" && parsed.coordinateY.length <= 32) setCoordinateY(parsed.coordinateY);
+        if (parsed.showBestFit === true) setShowBestFit(true);
         if (Array.isArray(parsed.points)) {
           const safePoints = parsed.points.slice(-500).filter((point) =>
             point && Number.isFinite(point.x) && Number.isFinite(point.y) &&
@@ -228,8 +231,17 @@ function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData;
 
   useEffect(() => {
     if (!ready) return;
-    try { window.localStorage.setItem(storageKey, JSON.stringify({ xIndex, yIndex, points })); } catch { /* Graphing remains usable without persistence. */ }
-  }, [points, ready, storageKey, xIndex, yIndex]);
+    // Keep partial coordinate entry and graph display settings with the plotted data.
+    const timeout = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify({
+          xIndex, yIndex, points: points.slice(-500), coordinateX: coordinateX.slice(0, 32),
+          coordinateY: coordinateY.slice(0, 32), showBestFit,
+        }));
+      } catch { /* Graphing remains usable without persistence. */ }
+    }, 250);
+    return () => window.clearTimeout(timeout);
+  }, [coordinateX, coordinateY, points, ready, showBestFit, storageKey, xIndex, yIndex]);
 
   if (numericColumns.length < 2) return null;
   const addCoordinatePoint = (event: import("react").FormEvent<HTMLFormElement>) => {
@@ -237,7 +249,7 @@ function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData;
     const x = Number(coordinateX), y = Number(coordinateY);
     if (!coordinateX.trim() || !coordinateY.trim() || !Number.isFinite(x) || !Number.isFinite(y)) return;
     if (x < xb.min || x > xb.max || y < yb.min || y > yb.max) return;
-    setPoints((current) => [...current, { x: Number(x.toPrecision(5)), y: Number(y.toPrecision(5)) }]);
+    setPoints((current) => [...current, { x: Number(x.toPrecision(5)), y: Number(y.toPrecision(5)) }].slice(-500));
     setCoordinateX("");
     setCoordinateY("");
   };
