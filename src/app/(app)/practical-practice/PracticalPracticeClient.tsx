@@ -108,10 +108,12 @@ function PracticalDrawingPad({ storageKey }: { storageKey: string }) {
       if (document.visibilityState === "hidden") persist();
     };
     window.addEventListener("pagehide", persist);
+    window.addEventListener("shadecode:flush-practical-workspaces", persist);
     document.addEventListener("visibilitychange", flushWhenHidden);
     return () => {
       window.clearTimeout(timeout);
       window.removeEventListener("pagehide", persist);
+      window.removeEventListener("shadecode:flush-practical-workspaces", persist);
       document.removeEventListener("visibilitychange", flushWhenHidden);
     };
   }, [current, ready, storageKey, strokes]);
@@ -347,6 +349,8 @@ export default function PracticalPracticeClient() {
   };
 
   const downloadBackup = () => {
+    // Flush debounced drawing and graph state before collecting device-local drafts.
+    window.dispatchEvent(new Event("shadecode:flush-practical-workspaces"));
     const workspaces: Record<string, string> = {};
     try {
       for (let index = 0; index < window.localStorage.length; index += 1) {
