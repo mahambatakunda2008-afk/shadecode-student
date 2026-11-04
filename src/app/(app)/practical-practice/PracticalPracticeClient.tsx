@@ -257,10 +257,12 @@ function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData;
       if (document.visibilityState === "hidden") persist();
     };
     window.addEventListener("pagehide", persist);
+    window.addEventListener("shadecode:flush-practical-workspaces", persist);
     document.addEventListener("visibilitychange", flushWhenHidden);
     return () => {
       window.clearTimeout(timeout);
       window.removeEventListener("pagehide", persist);
+      window.removeEventListener("shadecode:flush-practical-workspaces", persist);
       document.removeEventListener("visibilitychange", flushWhenHidden);
     };
   }, [coordinateX, coordinateY, points, ready, showBestFit, storageKey, xIndex, yIndex]);
