@@ -194,6 +194,29 @@ describe("Biology practical attempt preview", () => {
     expect(summary.practiceReview.status).toBe("in-progress");
   });
 
+  it("does not call an attempt reviewed until the learner explicitly checks revealed guidance", () => {
+    let attempt = startPracticalAttempt(set);
+    for (const task of set.tasks) {
+      for (const question of task.questions) {
+        attempt = savePracticalAnswer(set, attempt, task.id, question.id, "Completed response");
+      }
+      for (const skill of task.skills) {
+        attempt = ratePracticalSkill(set, attempt, task.id, skill, "secure");
+      }
+    }
+    expect(summarizePracticalAttempt(set, attempt).practiceReview.status).toBe("in-progress");
+
+    for (const task of set.tasks) {
+      for (const question of task.questions) {
+        attempt = revealPracticalGuidance(set, attempt, task.id, question.id);
+        for (let index = 0; index < question.answer.length; index += 1) {
+          attempt = togglePracticalAnswerPoint(set, attempt, task.id, question.id, index);
+        }
+      }
+    }
+    expect(summarizePracticalAttempt(set, attempt).practiceReview.status).toBe("reviewed");
+  });
+
   it("clears only the selected question's answer and feedback state for a fresh retry", () => {
     let attempt = startPracticalAttempt(set);
     attempt = savePracticalAnswer(set, attempt, "P3-01", "a", "Initial response");
