@@ -12,6 +12,8 @@ import { matchAllowedSubject, isGeneralSubject } from "@/lib/academic/subjectCon
 import type { ExamQuestion, ExamResults } from "@/lib/exam/types";
 import { clearPendingChallenge } from "@/lib/challenge/pending";
 import { isValidGeneratedPaper } from "@/lib/exam/paperValidation";
+import { defaultExamLevelIndex } from "@/lib/exam/defaultLevel";
+import { useUser } from "@/contexts/UserContext";
 
 function decode(value: string | null) {
   if (!value) return "";
@@ -19,6 +21,7 @@ function decode(value: string | null) {
 }
 
 export default function ExamSimulationClient() {
+  const { profile } = useUser();
   const router = useRouter();
   const params = useSearchParams();
   const examInstanceId = useRef(`exam-sim:${crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`).current;
@@ -152,7 +155,7 @@ export default function ExamSimulationClient() {
   }
 
   return <>
-    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}><AcademicExamContext /><ExamWorkspace initialSubject={subject} initialTopic={topic} initialQuestionCount={safeCount} frozenQuestions={frozenQuestions ?? undefined} serverMarkChallengeId={challengeId && marking === "server" && frozenQuestions ? challengeId : undefined} onExit={() => router.push("/dashboard")} onFinished={handleFinished} /></ExamAttemptLocalBridge>;
+    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}><AcademicExamContext /><ExamWorkspace initialDifficulty={defaultExamLevelIndex(profile?.study_level)} initialSubject={subject} initialTopic={topic} initialQuestionCount={safeCount} frozenQuestions={frozenQuestions ?? undefined} serverMarkChallengeId={challengeId && marking === "server" && frozenQuestions ? challengeId : undefined} onExit={() => router.push("/dashboard")} onFinished={handleFinished} /></ExamAttemptLocalBridge>;
     {battle && challengeId && (
       <aside role="status" aria-live="polite" className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl border border-white/10 bg-[var(--card)] p-5 shadow-lg backdrop-blur">
         <p className="text-sm font-semibold text-[var(--foreground)]">{battle.won ? `You beat ${challengerName}!` : `${challengerName} takes this one.`}</p>

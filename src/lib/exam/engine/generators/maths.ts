@@ -41,6 +41,7 @@ export const mathsGenerators: QuestionGenerator[] = [
   {
     id: "maths.discriminant",
     subject: "Mathematics",
+    level: "alevel",
     topic: "Quadratic equations",
     keywords: ["quadratic", "quadratics", "discriminant", "roots", "algebra"],
     build(rng) {
@@ -60,6 +61,7 @@ export const mathsGenerators: QuestionGenerator[] = [
   {
     id: "maths.differentiate-at-point",
     subject: "Mathematics",
+    level: "alevel",
     topic: "Differentiation",
     keywords: ["differentiation", "differentiate", "calculus", "gradient", "derivative", "derivatives", "tangent", "rate"],
     build(rng) {
@@ -81,6 +83,7 @@ export const mathsGenerators: QuestionGenerator[] = [
   {
     id: "maths.definite-integral",
     subject: "Mathematics",
+    level: "alevel",
     topic: "Integration",
     keywords: ["integration", "integrate", "integral", "integrals", "calculus", "area", "definite"],
     build(rng) {
@@ -101,6 +104,7 @@ export const mathsGenerators: QuestionGenerator[] = [
   {
     id: "maths.arithmetic-sum",
     subject: "Mathematics",
+    level: "alevel",
     topic: "Sequences and series",
     keywords: ["series", "sequence", "sequences", "arithmetic", "progression", "sum"],
     build(rng) {
@@ -120,6 +124,7 @@ export const mathsGenerators: QuestionGenerator[] = [
   {
     id: "maths.geometric-infinity",
     subject: "Mathematics",
+    level: "alevel",
     topic: "Sequences and series",
     keywords: ["series", "geometric", "progression", "convergent", "convergence", "infinity", "sum"],
     build(rng) {
@@ -159,6 +164,7 @@ export const mathsGenerators: QuestionGenerator[] = [
   {
     id: "maths.logarithm",
     subject: "Mathematics",
+    level: "alevel",
     topic: "Logarithms and exponentials",
     keywords: ["logarithm", "logarithms", "log", "logs", "exponential", "exponentials", "indices", "powers"],
     build(rng) {
@@ -213,6 +219,7 @@ export const mathsGenerators: QuestionGenerator[] = [
   {
     id: "maths.binomial-coefficient",
     subject: "Mathematics",
+    level: "alevel",
     topic: "Binomial expansion and counting",
     keywords: ["binomial", "combinations", "choose", "probability", "expansion", "permutations"],
     build(rng) {

@@ -50,6 +50,26 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     expect(generateExam).not.toHaveBeenCalled();
   });
 
+  it("gives an O-Level (Forms 1-4) Maths request Form 1-4 questions and never calculus", async () => {
+    generateExam.mockImplementation(async () => { throw new Error("AI must not be used"); });
+    const aLevelTopics = ["Differentiation", "Integration", "Binomial expansion and counting", "Logarithms and exponentials", "Sequences and series"];
+    for (let attempt = 0; attempt < 15; attempt++) {
+      const { status, json } = await call({ subject: "Mathematics", topic: "Mathematics (O-Level)", difficulty: "easy", questionCount: 20 });
+      expect(status).toBe(200);
+      expect(json.questions).toHaveLength(20);
+      for (const q of json.questions) expect(aLevelTopics).not.toContain(q.topic);
+    }
+    expect(generateExam).not.toHaveBeenCalled();
+  });
+
+  it("gives an A-Level Maths request A-Level questions and no Form 1 arithmetic", async () => {
+    const juniorTopics = ["Percentages", "Ratio and proportion", "Fractions", "Angles and polygons", "Probability", "Volume", "Pythagoras theorem"];
+    for (let attempt = 0; attempt < 15; attempt++) {
+      const { json } = await call({ subject: "Mathematics", topic: "Mathematics (A-Level)", difficulty: "medium", questionCount: 20 });
+      for (const q of json.questions) expect(juniorTopics).not.toContain(q.topic);
+    }
+  });
+
   it("serves an engine-covered Physics topic without calling AI", async () => {
     const { status, json } = await call({ subject: "Physics", topic: "Kinematics", difficulty: "medium", questionCount: 10 });
     expect(status).toBe(200);

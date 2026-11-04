@@ -11,6 +11,7 @@
  */
 
 import { formulaMassIgnoringCounts } from "./generators/chemistry";
+import { JUNIOR_MISTAKES } from "./generators/mathsJuniorMistakes";
 import { mistakeAllowance, type NumericMistake } from "./numeric";
 
 type P = Record<string, number | string>;
@@ -18,7 +19,7 @@ type Entry = [value: number, id: string, hint: string];
 const n = (value: number | string) => Number(value);
 const factorial = (value: number): number => (value <= 1 ? 1 : value * factorial(value - 1));
 
-export const MISTAKES: Record<string, (p: P, exact: number) => Entry[]> = {
+const CORE_MISTAKES: Record<string, (p: P, exact: number) => Entry[]> = {
   "maths.quadratic-roots": (p) => [
     [n(p.low), "other-root", "That is the smaller root. The question asks for the larger one."],
     [-n(p.high), "sign-slip", "Check the sign: if (x − r) = 0 then x = +r."],
@@ -137,6 +138,8 @@ export const MISTAKES: Record<string, (p: P, exact: number) => Entry[]> = {
   "cs.image-file-size": (p) => [[n(p.w) * n(p.h) * n(p.depth), "left-in-bits", "That is in bits. Divide by 8 to get bytes."]],
   "cs.sound-file-size": (p) => [[n(p.rate) * n(p.seconds) * n(p.depth), "left-in-bits", "That is in bits. Divide by 8 to get bytes."]],
 };
+
+export const MISTAKES: Record<string, (p: P, exact: number) => Entry[]> = { ...CORE_MISTAKES, ...JUNIOR_MISTAKES };
 
 const MAX_MISTAKES = 4;
 

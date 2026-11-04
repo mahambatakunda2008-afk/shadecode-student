@@ -62,7 +62,7 @@ export async function POST(req) {
     // No-AI-first: when the built-in engine or a curated bank covers this topic, serve it straight away.
     // It is instant, works offline and is marked exactly, so a learner never waits on unreliable AI
     // providers. AI is only attempted for topics with no built-in coverage.
-    const builtInCovers = matchGenerators(canonicalSubject.name, builtInTopic).length > 0 || hasCuratedBank(canonicalSubject.name, builtInTopic);
+    const builtInCovers = matchGenerators(canonicalSubject.name, builtInTopic, difficulty).length > 0 || hasCuratedBank(canonicalSubject.name, builtInTopic);
     const skipAi = builtInCovers;
 
     let exam = null;

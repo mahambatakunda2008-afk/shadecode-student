@@ -90,6 +90,77 @@ const INDEPENDENT: Record<string, (p: P, exact: number) => void> = {
   "cs.hex-to-denary": (p, exact) => expect(exact).toBe(parseInt(String(p.hex), 16)),
   "cs.image-file-size": (p, exact) => expect(exact * 8).toBe(n(p.w) * n(p.h) * n(p.depth)),
   "cs.sound-file-size": (p, exact) => expect(exact * 8).toBe(n(p.rate) * n(p.seconds) * n(p.depth)),
+  // Form 1-4 Mathematics
+  "maths.jr.percentage-of": (p, exact) => near((n(p.amount) / 100) * n(p.pct), exact),
+  "maths.jr.percentage-change": (p, exact) => near((Math.abs(n(p.newValue) - n(p.oldValue)) / n(p.oldValue)) * 100, exact, 1e-9),
+  "maths.jr.simple-interest": (p, exact) => near((n(p.principal) * n(p.rate) * n(p.years)) / 100, exact),
+  "maths.jr.ratio-share": (p, exact) => {
+    const parts = n(p.a) + n(p.b);
+    expect(n(p.total) % parts).toBe(0);
+    expect(n(p.a)).not.toBe(n(p.b));
+    near((n(p.total) / parts) * Math.max(n(p.a), n(p.b)), exact);
+  },
+  "maths.jr.direct-proportion": (p, exact) => near((n(p.unitCents) * n(p.n2)) / 100, exact),
+  "maths.jr.linear-equation": (p, exact) => {
+    expect(n(p.a) * exact + n(p.b)).toBe(n(p.c) * exact + n(p.d));
+    expect(n(p.a)).toBeGreaterThan(n(p.c));
+  },
+  "maths.jr.substitution": (p, exact) => expect(n(p.a) * n(p.x) ** 2 + n(p.b) * n(p.y)).toBe(exact),
+  "maths.jr.indices": (p, exact) =>
+    p.kind === "indices"
+      ? near((n(p.base) ** n(p.p) * n(p.base) ** n(p.q)) / n(p.base) ** n(p.r), exact)
+      : near(Number(`${n(p.mantissaTenths) / 10}e${n(p.exponent)}`), exact),
+  "maths.jr.pythagoras": (p, exact) => {
+    expect(n(p.a) ** 2 + n(p.b) ** 2).toBe(n(p.c) ** 2);
+    expect(exact).toBe(n(p.findHypotenuse) === 1 ? n(p.c) : n(p.b));
+  },
+  "maths.jr.area-perimeter": (p, exact) => {
+    const a = n(p.a), b = n(p.b);
+    if (p.kind === "rectangle") expect(exact).toBe(a * b);
+    else if (p.kind === "triangle") near(0.5 * a * b, exact);
+    else if (p.kind === "circle-area") near((22 / 7) * a * a, exact);
+    else near(2 * (22 / 7) * a, exact);
+  },
+  "maths.jr.angles": (p, exact) => {
+    if (p.kind === "sum") expect(exact).toBe((n(p.a) - 2) * 180);
+    else if (p.kind === "regular") {
+      expect(360 % n(p.a)).toBe(0);
+      expect(exact).toBe(180 - 360 / n(p.a));
+    } else expect(exact).toBe(180 - n(p.a) - n(p.b));
+    expect(exact).toBeGreaterThan(0);
+  },
+  "maths.jr.speed-distance-time": (p, exact) => {
+    expect(Number.isInteger(n(p.distance))).toBe(true);
+    near(n(p.speed) * n(p.time), n(p.distance));
+    near(p.kind === "speed" ? n(p.distance) / n(p.time) : p.kind === "time" ? n(p.distance) / n(p.speed) : n(p.speed) * n(p.time), exact);
+  },
+  "maths.jr.hcf-lcm": (p, exact) => {
+    const a = n(p.a), b = n(p.b);
+    let g = 1;
+    for (let d = Math.min(a, b); d >= 1; d--) if (a % d === 0 && b % d === 0) { g = d; break; }
+    expect(exact).toBe(n(p.askHcf) === 1 ? g : (a * b) / g);
+  },
+  "maths.jr.probability": (p, exact) => {
+    expect(n(p.blue)).toBeGreaterThan(0);
+    expect(n(p.green)).toBeGreaterThan(0);
+    expect(Math.abs(n(p.red) / (n(p.red) + n(p.blue) + n(p.green)) - exact)).toBeLessThan(0.0006);
+  },
+  "maths.jr.nth-term": (p, exact) => {
+    let term = n(p.first);
+    for (let i = 1; i < n(p.n); i++) term += n(p.diff);
+    expect(term).toBe(exact);
+  },
+  "maths.jr.fractions": (p, exact) => {
+    if (p.kind === "of") expect((n(p.a) / n(p.q)) * n(p.p)).toBe(exact);
+    else expect(Math.abs(n(p.p) / n(p.q) + n(p.r) / n(p.s) - exact)).toBeLessThan(0.0006);
+  },
+  "maths.jr.volume": (p, exact) => (p.kind === "cuboid" ? expect(n(p.a) * n(p.b) * n(p.c)).toBe(exact) : near((22 / 7) * n(p.a) ** 2 * n(p.b), exact)),
+  "maths.jr.median-range": (p, exact) => {
+    const data = String(p.data).split(",").map(Number).sort((x, y) => x - y);
+    expect(new Set(data).size).toBe(data.length);
+    if (n(p.askMedian) === 1) expect(data[Math.floor(data.length / 2)]).toBe(exact);
+    else expect(data[data.length - 1] - data[0]).toBe(exact);
+  },
 };
 
 describe("generator catalogue", () => {

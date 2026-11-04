@@ -13,13 +13,14 @@ import { tokenize } from "@/lib/topicMastery/resolver";
 import { chemistryGenerators } from "./generators/chemistry";
 import { computingGenerators } from "./generators/computing";
 import { mathsGenerators } from "./generators/maths";
+import { mathsJuniorGenerators } from "./generators/mathsJunior";
 import { physicsGenerators } from "./generators/physics";
 import { type NumericSpec } from "./numeric";
 import { mistakesFor } from "./mistakes";
 import { createRng, freshSeed } from "./rng";
-import type { EngineSubject, QuestionGenerator } from "./types";
+import type { EngineLevel, EngineSubject, QuestionGenerator } from "./types";
 
-export const ALL_GENERATORS: QuestionGenerator[] = [...mathsGenerators, ...physicsGenerators, ...chemistryGenerators, ...computingGenerators];
+export const ALL_GENERATORS: QuestionGenerator[] = [...mathsGenerators, ...mathsJuniorGenerators, ...physicsGenerators, ...chemistryGenerators, ...computingGenerators];
 
 const GENERIC_TOPIC_WORDS = new Set(["core", "concept", "general", "mixed", "all", "revision", "practice", "paper", "exam", "topic", "full", "past", "stated", "overview", "everything", "random", "quick", "test"]);
 
@@ -33,18 +34,37 @@ export function engineSubjectFor(subject: string): EngineSubject | null {
   return null;
 }
 
-export function matchGenerators(subject: string, topic: string): QuestionGenerator[] {
+/** The exam setup encodes the learner's stage in `difficulty`: O-Level = easy, A-Level = medium, University = hard. */
+export function levelForDifficulty(difficulty?: string): EngineLevel | null {
+  if (difficulty === "easy") return "olevel";
+  if (difficulty === "medium" || difficulty === "hard") return "alevel";
+  return null;
+}
+
+/**
+ * Generators for a subject and topic. When a stage is known, a broad request only gets content suited to it
+ * (a Form 2 student never receives calculus). An explicitly requested topic is still honoured even if only
+ * other-stage generators cover it. Callers that pass no stage, such as re-marking, see everything.
+ */
+export function matchGenerators(subject: string, topic: string, difficulty?: string): QuestionGenerator[] {
   const engineSubject = engineSubjectFor(subject);
   if (!engineSubject) return [];
   const pool = ALL_GENERATORS.filter((generator) => generator.subject === engineSubject);
+  const stage = levelForDifficulty(difficulty);
+  const fitsStage = (generator: QuestionGenerator) => !stage || !generator.level || generator.level === stage;
 
   const topicTokens = tokenize(topic);
-  if (!topicTokens.length || topicTokens.every((token) => GENERIC_TOPIC_WORDS.has(token))) return pool;
+  if (!topicTokens.length || topicTokens.every((token) => GENERIC_TOPIC_WORDS.has(token))) {
+    const atStage = pool.filter(fitsStage);
+    return atStage.length ? atStage : pool;
+  }
 
-  return pool.filter((generator) => {
+  const topical = pool.filter((generator) => {
     const vocabulary = new Set([...generator.keywords, ...generator.topic.split(/\s+/)].flatMap((word) => tokenize(word)));
     return topicTokens.some((token) => vocabulary.has(token));
   });
+  const atStage = topical.filter(fitsStage);
+  return atStage.length ? atStage : topical;
 }
 
 /** Display form of the answer, honouring the rounding the question asked for. */
@@ -111,7 +131,7 @@ export function weightedOrder(generators: QuestionGenerator[], weights: Record<s
 }
 
 export function buildEngineExam({ subject, topic, difficulty, count, seed = freshSeed(), weights }: EngineExamOptions): EngineExam | null {
-  const matched = matchGenerators(subject, topic);
+  const matched = matchGenerators(subject, topic, difficulty);
   if (!matched.length) return null;
 
   const level: ExamQuestion["difficulty"] = difficulty === "hard" ? "hard" : difficulty === "easy" ? "easy" : "medium";

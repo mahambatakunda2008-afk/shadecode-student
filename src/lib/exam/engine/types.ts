@@ -14,6 +14,8 @@ export interface BuiltItem {
   params: Record<string, number | string>;
 }
 
+export type EngineLevel = "olevel" | "alevel";
+
 export interface QuestionGenerator {
   id: string;
   subject: EngineSubject;
@@ -21,5 +23,10 @@ export interface QuestionGenerator {
   topic: string;
   /** Lower-case words a student or plan might use for this topic. */
   keywords: string[];
+  /**
+   * Restricts the generator to one stage. Unset means it suits both. O-Level (Forms 1-4) never receives
+   * `alevel` content in a broad paper; an explicitly requested topic is still honoured.
+   */
+  level?: EngineLevel;
   build(rng: Rng): BuiltItem;
 }
