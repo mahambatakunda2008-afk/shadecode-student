@@ -232,7 +232,8 @@ function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData;
         if (parsed.showBestFit === true) setShowBestFit(true);
         if (Array.isArray(parsed.points)) {
           const safePoints = parsed.points.slice(-500).filter((point) =>
-            point && Number.isFinite(point.x) && Number.isFinite(point.y) &&
+            point && typeof point === "object" && !Array.isArray(point) &&
+            Number.isFinite(point.x) && Number.isFinite(point.y) &&
             point.x >= savedXBounds.min && point.x <= savedXBounds.max &&
             point.y >= savedYBounds.min && point.y <= savedYBounds.max,
           );
