@@ -19,10 +19,10 @@ The following tables/columns were found in `public` by scanning for `user_id`, `
 |---|---|---|
 | academic_contexts | user_id (uuid) | Learner context |
 | achievements | user_id (uuid) | FK to profiles.id, ON DELETE CASCADE |
-| ai_anomalies | user_id (uuid) | AI operations/diagnostics |
+| ai_anomalies | user_id (uuid), resolved_by (uuid) | AI operations/diagnostics and resolver attribution |
 | ai_usage_aggregates | unique_users (integer) | Aggregate, not a user key |
 | ai_usage_logs | user_id (uuid) | AI usage records |
-| challenge_attempts | user_id (uuid), user_name (text) | Both account-linked and potentially identifying |
+| challenge_attempts | user_id (uuid), user_name (text) | user_id uses ON DELETE SET NULL; remove or anonymize display name and any identifying payload |
 | cortex_events | user_id (uuid) | Cortex event history |
 | cortex_generation_jobs | user_id (uuid) | Generation job state |
 | cortex_insights | user_id (uuid) | FK to profiles.id, ON DELETE CASCADE |
@@ -55,13 +55,13 @@ The following tables/columns were found in `public` by scanning for `user_id`, `
 | platform_channel_message_receipts | user_id (uuid), external_user_id (text) | Message metadata and external identity |
 | platform_group_members | user_id (uuid) | Membership in shared groups |
 | platform_institution_members | user_id (uuid) | Institution membership |
-| platform_user_relationships | subject_user_id, related_user_id, created_by (uuid) | Three user references; consider both sides and creator |
+| platform_user_relationships | subject_user_id, related_user_id, created_by, approved_by (uuid) | Relationship endpoints cascade; creator/approver are attribution references |
 | primary_activity_progress | user_id (uuid) | Primary activity progress |
-| profiles | id (uuid), username (text) | Primary learner profile; id references auth.users |
-| project_evidence | user_id (uuid) | Evidence content may include uploaded files |
+| profiles | id (uuid), username (text), curriculum_profile (jsonb) | Primary learner profile; id references auth.users with ON DELETE CASCADE; JSON may contain learner data |
+| project_evidence | user_id (uuid) | Evidence content may include uploaded files |\n| community_uploads | contributor_id, moderator_id (uuid), file_path (text) | Contributor-owned pending upload; contributor FK cascades, moderator FK sets null; clean referenced Storage object |\n| curriculum_verification_events | reviewer_id (uuid) | Reviewer identity in verification history; inspect retention/anonymization policy |\n| exam_question_topic_proposals | reviewer_id (uuid) | Auth FK uses NO ACTION; clear reviewer attribution before Auth deletion |\n| user_roles | user_id, assigned_by (uuid) | Account role rows cascade; assigned_by uses NO ACTION and must be cleared when this account assigned another user's role |
 | project_milestones | user_id (uuid) | Milestone data |
 | projects | user_id (uuid) | Project ownership |
-| published_learning_assets | reviewed_by (uuid) | Reviewer identity, not ordinary learner-owned data; preserve shared assets and anonymize reviewer attribution only if policy requires |
+| published_learning_assets | reviewed_by (uuid) | Auth FK uses ON DELETE SET NULL; preserve shared assets and clear reviewer attribution |
 | revision_queue | user_id (uuid) | Revision queue |
 | revisions | user_id (uuid) | Revision history |
 | study_plans | user_id (uuid) | Study plans |
@@ -86,7 +86,7 @@ This is a column-name inventory, not proof that every listed table currently con
 
 ## Foreign-key behavior observed
 
-The live FK metadata confirms only a subset of the account relationships. Confirmed profile cascades include `achievements`, `cortex_insights`, `exams`, `study_topics`, `subjects`, `tasks`, and `timetable`. There are other non-account FKs that cascade child records, including paper-learning attempts/transfer questions under sessions, result questions under exam results, project evidence/milestones under projects, and lesson prerequisites under lessons.
+The live FK metadata confirms many account relationships, but it also exposes several important blockers and attribution references. Confirmed profile cascades include `achievements`, `cortex_insights`, `exams`, `study_topics`, `subjects`, `tasks`, and `timetable`. There are other non-account FKs that cascade child records, including paper-learning attempts/transfer questions under sessions, result questions under exam results, project evidence/milestones under projects, and lesson prerequisites under lessons.
 
 Many account-linked tables in the inventory above do **not** show a direct FK to `auth.users` or `profiles`. The deletion workflow must explicitly delete those rows by the correct typed owner key, in dependency order, and verify zero remaining matches before deleting the Auth identity. Never use broad text matching or cast text identifiers blindly.
 
