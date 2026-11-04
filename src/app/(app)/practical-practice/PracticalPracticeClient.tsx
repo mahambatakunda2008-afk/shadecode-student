@@ -417,6 +417,9 @@ export default function PracticalPracticeClient() {
         throw error;
       }
       setAttempt(restored);
+      // A successful explicit restore resolves any pending cross-tab conflict.
+      // Otherwise the conflict guard would keep autosave paused after the restore.
+      setOtherTabAttempt(null);
       setBackupMessage(`Backup restored. ${Object.keys(restored.answers).length} answers and ${workspaces.length} workspace drafts recovered.`);
       setStorageStatus("saved");
     } catch (error) {
