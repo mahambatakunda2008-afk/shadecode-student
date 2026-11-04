@@ -354,14 +354,16 @@ function ActionCard({
   title,
   description,
   onClick,
+  disabled = false,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
-    <button type="button" onClick={onClick} className="ssc-card-interactive flex min-h-24 items-center justify-between gap-4 p-5 text-left">
+    <button type="button" onClick={onClick} disabled={disabled} className="ssc-card-interactive flex min-h-24 items-center justify-between gap-4 p-5 text-left disabled:cursor-not-allowed disabled:opacity-60">
       <span className="flex min-w-0 items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)]">{icon}</span>
         <span className="min-w-0">
