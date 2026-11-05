@@ -397,3 +397,8 @@ Deletion rules:
 - Delete pending-bucket objects under the exact account UID prefix and delete the account's `community_uploads` rows.
 - Do not delete a promoted object from `past-papers`; it is now shared curriculum/exam material, not the user's private upload.
 - Removing the `community_uploads` row also removes the direct contributor-to-submission link. The surviving `source_url` contains only the random submission UUID, not the account ID; verify no separate audit/export record maps it back to the deleted contributor.
+
+
+### Backup bucket path verified
+
+The local-first backup implementation stores one opaque encrypted object at `shadecode-backups/<auth.uid()>/latest.scsync`. It uses browser-side encryption and the Storage policy enforces the first path segment as the authenticated UID. The worker should delete the exact `<uid>/latest.scsync` object (or the exact UID prefix if the format later expands), never the entire bucket. The current live Storage inventory showed only 58 shared `past-papers` objects and zero objects in both `shadecode-backups` and `community-uploads-pending` at audit time.
