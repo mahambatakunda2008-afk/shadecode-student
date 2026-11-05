@@ -1,2 +1,52 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#06111C"><title>Shadecode Student · Offline</title><style>body{margin:0;background:#06111C;color:#F5F7FA;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:grid;place-items:center}.card{max-width:520px;margin:24px;padding:32px;border:1px solid #233447;border-radius:24px;background:#0B1824}h1{margin:0 0 12px;font-size:28px}p{color:#A8B4C2;line-height:1.6}button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}</style></head><body><main class="card"><h1>You're offline.</h1><p>Shadecode Student is designed to keep your learning going. Reconnect and open the app again if this page appears before your saved learning workspace is available.</p><button onclick="location.reload()">Try again</button></main></body></html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#06111C"><title>Shadecode Student · Offline</title>
+<style>
+body{margin:0;background:#06111C;color:#F5F7FA;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:grid;place-items:center}
+.card{max-width:520px;width:calc(100% - 48px);margin:24px;padding:32px;border:1px solid #233447;border-radius:24px;background:#0B1824;box-sizing:border-box}
+h1{margin:0 0 12px;font-size:28px}h2{margin:24px 0 10px;font-size:15px;color:#F5F7FA}
+p{color:#A8B4C2;line-height:1.6;margin:0 0 12px}
+button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;min-height:44px}
+.saved{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:0;padding:0;list-style:none}
+.saved a{display:flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid #233447;border-radius:12px;background:#0F2030;color:#F5F7FA;text-decoration:none;font-weight:600;font-size:14px;box-sizing:border-box}
+.saved a:focus-visible,button:focus-visible{outline:2px solid #22D3EE;outline-offset:2px}
+[hidden]{display:none}
+</style></head>
+<body><main class="card">
+<h1>You're offline.</h1>
+<p>This screen isn't saved on your device yet, so it can't open without internet.</p>
+<section id="saved" hidden><h2>Open a saved screen</h2><ul class="saved" id="savedList"></ul></section>
+<p id="hint">Open your screens once while you're online and Shadecode saves them for next time.</p>
+<button id="retry" type="button">Try again</button>
+</main>
+<script>
+(function () {
+  var ROUTES = [["/dashboard","Dashboard"],["/learn","Learn"],["/exam-sim","Practice exams"],["/exam-hub","Past papers"],["/exams","Exam schedule"],["/study","Study"],["/study-plan","Study plan"],["/curriculum","Curriculum"],["/focus","Focus timer"],["/tasks","Tasks"],["/timetable","Timetable"],["/achievements","Achievements"]];
+  document.getElementById("retry").addEventListener("click", function () { location.reload(); });
+  window.addEventListener("online", function () { location.reload(); });
+  if (!("caches" in window)) return;
+  caches.keys().then(function (names) {
+    var pages = names.filter(function (n) { return n.indexOf("shadecode-pages-") === 0; });
+    if (!pages.length) return;
+    return caches.open(pages[pages.length - 1]).then(function (cache) {
+      return Promise.all(ROUTES.map(function (r) {
+        return cache.match(location.origin + r[0], { ignoreVary: true }).then(function (hit) { return hit ? r : null; });
+      }));
+    }).then(function (found) {
+      var list = document.getElementById("savedList");
+      var any = false;
+      found.forEach(function (r) {
+        if (!r) return;
+        any = true;
+        var li = document.createElement("li");
+        var a = document.createElement("a");
+        a.href = r[0];
+        a.textContent = r[1];
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+      if (any) { document.getElementById("saved").hidden = false; document.getElementById("hint").hidden = true; }
+    });
+  }).catch(function () {});
+})();
+</script>
+</body></html>
