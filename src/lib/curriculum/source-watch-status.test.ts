@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveCurriculumIngestionRunStatus, summarizeCurriculumWatchStatus } from "./source-watch-status";
+import { hasCurriculumVersionConflict, resolveCurriculumIngestionRunStatus, summarizeCurriculumWatchStatus } from "./source-watch-status";
 
 describe("curriculum watcher source status", () => {
   it("does not call a source successful when it discovers no documents", () => {
@@ -34,5 +34,17 @@ describe("curriculum ingestion run outcome", () => {
     expect(resolveCurriculumIngestionRunStatus("failed", 0)).toBe("failed");
     expect(resolveCurriculumIngestionRunStatus("no_documents", 0)).toBe("failed");
     expect(resolveCurriculumIngestionRunStatus(undefined, 0)).toBe("failed");
+  });
+});
+
+describe("curriculum syllabus version conflict guard", () => {
+  it("blocks ingestion when discovered and configured versions disagree", () => {
+    expect(hasCurriculumVersionConflict("2028-2030", "2025-2027")).toBe(true);
+  });
+
+  it("allows matching versions and sources without a discovered version", () => {
+    expect(hasCurriculumVersionConflict("2028-2030", "2028-2030")).toBe(false);
+    expect(hasCurriculumVersionConflict("2028-2030", null)).toBe(false);
+    expect(hasCurriculumVersionConflict(null, "2025-2027")).toBe(false);
   });
 });
