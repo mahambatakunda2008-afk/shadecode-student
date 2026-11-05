@@ -41,9 +41,9 @@ begin
   loop
     if not exists (
       select 1 from pg_constraint
-      where conname = v_constraint.column1
+      where conname = v_constraint.constraint_name
         and contype = 'f'
-        and confdeltype = v_constraint.column2
+        and confdeltype = v_constraint.delete_action
         and convalidated
     ) then
       raise exception 'Expected validated FK % with delete action %', v_constraint.column1, v_constraint.column2;
@@ -69,27 +69,32 @@ begin
   end if;
 
   if not has_function_privilege('service_role', 'public.claim_account_deletion_request(integer)', 'EXECUTE')
-     or has_function_privilege('authenticated', 'public.claim_account_deletion_request(integer)', 'EXECUTE') then
+     or has_function_privilege('authenticated', 'public.claim_account_deletion_request(integer)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.claim_account_deletion_request(integer)', 'EXECUTE') then
     raise exception 'claim_account_deletion_request grants are too broad or missing';
   end if;
 
   if not has_function_privilege('service_role', 'public.renew_account_deletion_request(uuid,uuid,integer)', 'EXECUTE')
-     or has_function_privilege('authenticated', 'public.renew_account_deletion_request(uuid,uuid,integer)', 'EXECUTE') then
+     or has_function_privilege('authenticated', 'public.renew_account_deletion_request(uuid,uuid,integer)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.renew_account_deletion_request(uuid,uuid,integer)', 'EXECUTE') then
     raise exception 'renew_account_deletion_request grants are too broad or missing';
   end if;
 
   if not has_function_privilege('service_role', 'public.release_account_deletion_request(uuid,uuid,text,boolean)', 'EXECUTE')
-     or has_function_privilege('authenticated', 'public.release_account_deletion_request(uuid,uuid,text,boolean)', 'EXECUTE') then
+     or has_function_privilege('authenticated', 'public.release_account_deletion_request(uuid,uuid,text,boolean)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.release_account_deletion_request(uuid,uuid,text,boolean)', 'EXECUTE') then
     raise exception 'release_account_deletion_request grants are too broad or missing';
   end if;
 
   if not has_function_privilege('service_role', 'public.complete_account_deletion_request(uuid,uuid)', 'EXECUTE')
-     or has_function_privilege('authenticated', 'public.complete_account_deletion_request(uuid,uuid)', 'EXECUTE') then
+     or has_function_privilege('authenticated', 'public.complete_account_deletion_request(uuid,uuid)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.complete_account_deletion_request(uuid,uuid)', 'EXECUTE') then
     raise exception 'complete_account_deletion_request grants are too broad or missing';
   end if;
 
   if not has_function_privilege('service_role', 'public.recover_completed_account_deletion_requests()', 'EXECUTE')
-     or has_function_privilege('authenticated', 'public.recover_completed_account_deletion_requests()', 'EXECUTE') then
+     or has_function_privilege('authenticated', 'public.recover_completed_account_deletion_requests()', 'EXECUTE')
+     or has_function_privilege('anon', 'public.recover_completed_account_deletion_requests()', 'EXECUTE') then
     raise exception 'recover_completed_account_deletion_requests grants are too broad or missing';
   end if;
 end;
