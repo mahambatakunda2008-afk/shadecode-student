@@ -333,3 +333,15 @@ This is a preparatory control, not a deletion worker. The migration has been com
 - shared `past-papers` objects that must remain untouched.
 
 The preview counts are not sufficient authorization to delete: storage object ownership must be verified by exact metadata/path and application provenance, and the worker must separately resolve unlinked WhatsApp receipts, anonymous identifiers, processor retention, and all nested JSON identity fields.
+
+
+## Missing Auth FK remediation
+
+A live orphan check for the 14 non-FK UUID identity/attribution columns returned **zero orphan rows** in every column. The legacy `exam_logs` table currently has zero rows; its `user_id` remains text and is not converted without an application-level compatibility review.
+
+Migration `20261105110000_add_missing_account_identity_foreign_keys.sql` now proposes validated Auth FKs for:
+- Cascade-owned rows: `daily_focus.user_id`, `generated_course_drafts.user_id`, `insights_archive.user_id`, `learning_events.user_id`, `platform_channel_identities.user_id`, `platform_channel_link_codes.user_id`, `platform_channel_message_receipts.user_id`, `revisions.user_id`, `topic_mastery.user_id`, and `user_careers.user_id`, `user_cortex.user_id`.
+- Attribution-only rows: `curriculum_verification_events.reviewer_id` and `generated_course_drafts.approved_by` use `ON DELETE SET NULL`.
+- `generated_course_approvals.approved_by` is changed to nullable and receives `ON DELETE SET NULL`, preserving another user's approval record while removing the deleted approver identity.
+
+These migrations are branch-only and have not been applied to production. The orphan scan is a point-in-time check; the migration's constraint validation is the final database guard. Re-run the orphan checks immediately before applying. Review RLS and trigger behaviour separately: adding FKs does not make user-facing DELETE policies necessary because the worker will use its privileged server role.
