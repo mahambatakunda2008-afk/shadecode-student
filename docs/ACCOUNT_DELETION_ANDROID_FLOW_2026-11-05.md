@@ -26,7 +26,7 @@ Updated: 5 November 2026
 
 ## Known local ownership limitation
 
-Snap & Extract artifacts currently live in a device-local directory without an account ID in their file schema. The deletion flow deliberately does not erase those files because it cannot prove which account owns them on a multi-account device. Before treating local deletion as fully complete, introduce account ownership metadata and a safe migration for existing artifacts, or provide an explicit device-level local-data removal step with clear scope.
+New Snap & Extract artifacts are stored in a validated per-account directory and carry an owner ID in their JSON record. Server-confirmed deletion removes only that account's directory. Pre-migration extracts remain in a separate legacy root without an owner ID; they are deliberately preserved and must be reviewed/cleared by the device owner rather than assigned to the deleting account. The app discloses this legacy boundary in the saved-extract screen.
 
 The Room database also uses a single active learner context rather than account-keyed rows. The current cleanup matches the app's single-active-account model. If multi-account offline profiles are introduced, Room rows must gain owner IDs before this cleanup can be reused unchanged.
 
