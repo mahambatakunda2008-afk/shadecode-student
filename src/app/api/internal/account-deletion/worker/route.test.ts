@@ -171,7 +171,7 @@ describe("POST /api/internal/account-deletion/worker", () => {
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ processed: true, completed: false, recoveryRequired: true });
     expect(deleteUserMock).toHaveBeenCalledWith("user-1");
-    expect(rpcMock).toHaveBeenCalledTimes(7);
+    expect(rpcMock).toHaveBeenCalledTimes(11);
     expect(rpcMock).not.toHaveBeenCalledWith("release_account_deletion_request", expect.anything());
   });
 });
