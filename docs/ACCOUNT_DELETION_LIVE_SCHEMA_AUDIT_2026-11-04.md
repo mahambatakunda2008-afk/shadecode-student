@@ -387,3 +387,13 @@ Migration `20261105130000_account_deletion_worker_lease_lifecycle.sql` adds:
 - `recover_completed_account_deletion_requests()`: finalizes a processing request whose Auth user was already deleted if the worker crashed between Auth deletion and queue completion.
 
 All are service-role-only. The completion gate enforces the critical order: database and Storage cleanup first, Auth deletion last, queue completion after Auth deletion. These functions still do not delete account data themselves.
+
+
+### Community upload lifecycle verified from application routes
+
+The submission route writes PDFs to `community-uploads-pending/<auth.uid()>/<timestamp>_...` and stores that exact key in `community_uploads.file_path`. The admin approval route downloads that private object, copies it into the shared `past-papers` bucket under the canonical syllabus path, upserts the global `past_papers` catalog row with `source_url = community_upload:<submission-id>`, marks the submission approved, then removes the pending object.
+
+Deletion rules:
+- Delete pending-bucket objects under the exact account UID prefix and delete the account's `community_uploads` rows.
+- Do not delete a promoted object from `past-papers`; it is now shared curriculum/exam material, not the user's private upload.
+- Removing the `community_uploads` row also removes the direct contributor-to-submission link. The surviving `source_url` contains only the random submission UUID, not the account ID; verify no separate audit/export record maps it back to the deleted contributor.
