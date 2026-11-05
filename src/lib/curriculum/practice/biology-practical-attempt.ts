@@ -602,10 +602,32 @@ export function recommendPracticalPractice(
           const task = set.tasks.find((item) => item.id === taskId);
           if (!task) return null;
           const taskRating = skill.taskRatings[taskId] ?? "not-reviewed";
-          const unanswered = task.questions.find((question) =>
+          const relevantQuestions = task.questions
+            .map((question, questionIndex) => ({ question, questionIndex }))
+            .filter(({ question }) => {
+              const mappedSkills = getPracticalQuestionSkills(task, question);
+              return mappedSkills.some((mapped) => normalizeSkill(mapped) === normalizeSkill(skill.skill));
+            });
+          const questionPool = relevantQuestions.length
+            ? relevantQuestions
+            : task.questions.map((question, questionIndex) => ({ question, questionIndex }));
+          const unanswered = questionPool.find(({ question }) =>
             !attempt.answers[questionKey(task.id, question.id)]?.trim(),
           );
-          const question = unanswered ?? task.questions[0];
+          // When every relevant question has an answer, recommend the least-reviewed
+          // one so the learner is sent to a useful retry rather than a completed first item.
+          const leastReviewed = [...questionPool].sort((a, b) => {
+            const aKey = questionKey(task.id, a.question.id);
+            const bKey = questionKey(task.id, b.question.id);
+            const aRevealed = attempt.revealedAnswers.includes(aKey);
+            const bRevealed = attempt.revealedAnswers.includes(bKey);
+            const aChecked = new Set(attempt.checkedAnswerPoints?.[aKey] ?? []).size;
+            const bChecked = new Set(attempt.checkedAnswerPoints?.[bKey] ?? []).size;
+            const aCoverage = aRevealed ? aChecked / Math.max(1, a.question.answer.length) : 0;
+            const bCoverage = bRevealed ? bChecked / Math.max(1, b.question.answer.length) : 0;
+            return aCoverage - bCoverage || aChecked - bChecked || a.questionIndex - b.questionIndex;
+          })[0];
+          const question = (unanswered ?? leastReviewed)?.question;
           if (!question) return null;
           return {
             task,
