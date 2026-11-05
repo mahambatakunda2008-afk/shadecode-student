@@ -288,3 +288,34 @@ Source inspection of Project Studio found further learner-owned local data beyon
 - `localStorage["shadecode-project-studio-v1"]`: legacy project collection.
 
 Project evidence currently syncs as text content into `project_evidence.content`; the inspected Project Studio code does not upload evidence images/files to Storage. It also queues offline project/evidence writes with the current authenticated owner ID. Confirm the full queue implementation and any other local project artifacts before release. These stores must be cleared for the deleted owner only after completion is confirmed; shared offline curriculum content must not be erased as collateral.
+
+
+## Second-pass user ownership scan: tables with no Auth FK
+
+A second live catalog pass enumerated every likely ownership/identity column and tested whether the exact column has a foreign key. These account-linked columns have **no direct FK**, so Auth deletion will not remove their rows automatically:
+
+| Table.column | Type | Required handling |
+|---|---|---|
+| `daily_focus.user_id` | uuid | Delete rows for the account. Contains focus subject/topic, reason and suggested task JSON. |
+| `exam_logs.user_id` | text | Determine whether stored as UUID text or another legacy identifier; delete matching rows only after verifying the write path. `prompt` and `exam_text` can contain personal work. |
+| `generated_course_drafts.user_id` | uuid | Delete all drafts owned by the account; JSON draft/result and error fields may contain personal content. |
+| `insights_archive.user_id` | uuid | Delete archived insights and metadata for the account. |
+| `learning_events.user_id` | uuid | Delete learning events and metadata for the account. |
+| `platform_channel_identities.user_id` | uuid | Delete identity link and external channel ID/metadata for the account. |
+| `platform_channel_link_codes.user_id` | uuid | Delete outstanding/used link codes for the account. |
+| `platform_channel_message_receipts.user_id` | uuid, nullable | Delete linked receipts; additionally correlate external_user_id/phone_number_id for account messages where user_id is null. |
+| `revisions.user_id` | uuid | Delete revision content, flashcards and questions. |
+| `topic_mastery.user_id` | uuid | Delete learner mastery profile and metrics. |
+| `user_careers.user_id` | uuid | Delete learner career selections. |
+| `user_cortex.user_id` | uuid | Delete Cortex learner profile and aggregate learning metrics. |
+| `curriculum_verification_events.reviewer_id` | uuid, nullable | Clear/anonymize reviewer attribution; inspect notes/evidence JSON for identity before retaining shared curriculum verification. |
+
+The scan also confirms that `exam_question_topic_proposals.reviewer_id`, `exam_results.user_id`, `feedback.user_id`, and `user_roles.assigned_by` do have NO ACTION Auth foreign keys, and must be handled before Auth deletion. `generated_course_drafts.approved_by` has no FK and needs attribution cleanup on other users' drafts.
+
+### Important correction to the previous inventory
+
+The earlier identity scan was incomplete: `daily_focus`, `exam_logs`, `generated_course_drafts`, `insights_archive`, `learning_events`, `platform_channel_identities`, `platform_channel_link_codes`, `platform_channel_message_receipts`, `revisions`, `topic_mastery`, `user_careers`, and `user_cortex` were omitted from its table-level summary. They are now explicitly included. A production deletion worker must use a reviewed explicit table list, not assume FK cascade is comprehensive.
+
+### Operational channel data
+
+WhatsApp/channel records require coordinated deletion: remove link codes and identity mappings; remove linked message receipts; clear external IDs from any unlinked receipts only where the account-to-channel mapping can be proven. Do not delete a shared phone-number configuration or channel-wide integration secret. Processor-side message retention/deletion must be separately requested from Meta where applicable and disclosed according to its actual retention capabilities.
