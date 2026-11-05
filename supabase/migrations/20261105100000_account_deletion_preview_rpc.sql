@@ -126,6 +126,25 @@ begin
   handling := 'review_shared_copy_before_delete';
   return next;
 
+
+  -- Receipts may have lost their Auth user_id after an earlier account unlink.
+  -- Correlate only through the still-existing channel identity mapping.
+  select count(*)::bigint into v_count
+  from public.platform_channel_message_receipts r
+  where r.user_id is null
+    and exists (
+      select 1
+      from public.platform_channel_identities i
+      where i.user_id = p_user_id
+        and i.channel = r.channel
+        and i.external_user_id = r.external_user_id
+    );
+  resource := 'platform_channel_message_receipts';
+  identity_column := 'external_user_id via platform_channel_identities (unlinked receipts)';
+  matching_rows := coalesce(v_count, 0);
+  handling := 'delete_correlated_receipts_before_removing_channel_identity';
+  return next;
+
   -- Storage object counts are prefix-scoped. These are previews only; the
   -- worker must use the Storage API and verify exact object ownership.
   select count(*)::bigint into v_count
