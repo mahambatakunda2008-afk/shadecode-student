@@ -149,7 +149,13 @@ export async function POST(request: Request) {
     for (const item of manifest.data as Array<{ bucket_id?: string; object_name?: string }>) {
       const bucket = item.bucket_id;
       const objectName = item.object_name;
-      if (!bucket || !objectName || !ALLOWED_PRIVATE_BUCKETS.has(bucket)) {
+      if (
+        !bucket
+        || !objectName
+        || !ALLOWED_PRIVATE_BUCKETS.has(bucket)
+        || !objectName.startsWith(`${job.user_id}/`)
+        || objectName.split("/").some((segment) => segment === ".." || segment === ".")
+      ) {
         throw Object.assign(new Error("unsafe_storage_manifest"), { code: "unsafe_storage_manifest" });
       }
       const names = objectsByBucket.get(bucket) ?? new Set<string>();
