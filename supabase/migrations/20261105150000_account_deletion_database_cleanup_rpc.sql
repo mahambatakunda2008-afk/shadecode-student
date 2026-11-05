@@ -215,7 +215,7 @@ end;
 $$;
 
 revoke all on function public.execute_account_deletion_cleanup(uuid, uuid) from public, anon, authenticated;
-grant execute on function public.execute_account_deletion_cleanup(uuid) to service_role;
+grant execute on function public.execute_account_deletion_cleanup(uuid, uuid) to service_role;
 
 comment on function public.execute_account_deletion_cleanup(uuid, uuid) is
   'Transactional database cleanup for the account attached to a valid active request lease. Storage must be removed first. Auth user deletion is intentionally left to the worker as the final step.';
