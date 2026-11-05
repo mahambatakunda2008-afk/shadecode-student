@@ -218,6 +218,10 @@ begin
   get diagnostics v_count = row_count;
   v_counts := v_counts || jsonb_build_object('experiment_assignments', v_count);
 
+  delete from public.focus_sessions where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('focus_sessions', v_count);
+
   delete from public.insights where user_id = v_user_id;
   get diagnostics v_count = row_count;
   v_counts := v_counts || jsonb_build_object('insights', v_count);
