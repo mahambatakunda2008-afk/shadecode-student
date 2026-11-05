@@ -227,9 +227,9 @@ export async function POST(request: Request) {
     console.error("[AccountDeletionWorker] Job failed", { code });
 
     if (job && !authDeleted) {
-      await releaseLease(admin, job, true, code).catch(() => undefined);
+      try { await releaseLease(admin, job, true, code); } catch { /* lease expiry remains the recovery path */ }
     } else if (authDeleted) {
-      await admin.rpc("recover_completed_account_deletion_requests").catch(() => undefined);
+      try { await admin.rpc("recover_completed_account_deletion_requests"); } catch { /* next worker tick retries recovery */ }
     }
 
     return NextResponse.json(
