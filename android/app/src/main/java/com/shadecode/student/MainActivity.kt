@@ -1156,8 +1156,11 @@ private fun ProfileNativeScreen(
                         message = null
                         scope.launch {
                             try {
-                                withContext(Dispatchers.IO) { api.requestAccountDeletion(session) }
-                                message = "Request received. Shadecode will verify and process it manually. Your account has not been deleted."
+                                val accepted = withContext(Dispatchers.IO) { api.requestAccountDeletion(session) }
+                                val requestId = accepted.optString("requestId")
+                                if (requestId.isBlank()) error("The server accepted the request without a tracking ID. Please contact support before signing out.")
+                                sessionStore.markDeletionPending(requestId)
+                                message = "Request received. Sync is paused on this device while Shadecode verifies and processes your request. Your account has not been deleted yet."
                             } catch (e: Exception) {
                                 failure = e.message ?: "Could not submit your request. Check your connection and try again."
                             } finally {
