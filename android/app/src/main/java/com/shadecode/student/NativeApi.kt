@@ -192,6 +192,20 @@ class NativeApi {
     }
 
     /** Submit an authenticated account-deletion request from the native Profile screen. */
+    fun loadAccountDeletionStatus(requestId: String): JSONObject {
+        require(requestId.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}"))) {
+            "Invalid deletion request identifier."
+        }
+        val encoded = java.net.URLEncoder.encode(requestId, "UTF-8")
+        return JSONObject(
+            request(
+                "GET",
+                "/api/account/deletion-status?requestId=$encoded",
+                urlBase = BuildConfig.APP_BASE_URL.trimEnd('/'),
+            ),
+        )
+    }
+
     fun requestAccountDeletion(session: NativeSession): JSONObject {
         val response = request(
             "POST",
