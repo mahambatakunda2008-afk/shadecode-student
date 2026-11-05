@@ -345,3 +345,24 @@ Migration `20261105110000_add_missing_account_identity_foreign_keys.sql` now pro
 - `generated_course_approvals.approved_by` is changed to nullable and receives `ON DELETE SET NULL`, preserving another user's approval record while removing the deleted approver identity.
 
 These migrations are branch-only and have not been applied to production. The orphan scan is a point-in-time check; the migration's constraint validation is the final database guard. Re-run the orphan checks immediately before applying. Review RLS and trigger behaviour separately: adding FKs does not make user-facing DELETE policies necessary because the worker will use its privileged server role.
+
+
+## Third-pass identity correlation findings
+
+The broader UUID/text identity-column scan reconfirmed the following cleanup details:
+
+- `challenge_attempts.user_name` and `challenges.challenger_name` are retained display-name fields. The worker must delete the target user's own attempts and challenges, not merely rely on Auth `SET NULL`.
+- `experiment_assignments.anonymous_id`, `survey_responses.anonymous_id`, and `traction_events.anonymous_id` may be linkable identifiers. Delete account-owned rows before any `SET NULL` FK action can orphan the anonymous ID. Do not retain an anonymous identifier if the app can still map it to the deleted account.
+- `sync_revisions.device_id`, `ai_usage_logs.session_id`, `paper_learning_attempts.session_id`, `paper_learning_transfer_questions.session_id`, and `traction_events.session_id` are device/session metadata. Delete user-owned rows; do not attempt a global delete by device/session ID without proving the identifier is not shared by another account/device.
+- `platform_channel_message_receipts` may have `user_id IS NULL` but still be linkable by `channel + external_user_id` to a row in `platform_channel_identities`. The read-only preview RPC now counts these unlinked-but-correlated receipts separately. The worker must collect the identity mapping first, delete those receipts, and only then remove the channel identity. Do not delete channel-wide `phone_number_id` configuration.
+- `exam_logs` currently contains zero rows. Its `user_id` remains text and is not safe to convert to UUID without checking historical write formats if the table is populated later.
+
+### RLS detail for non-FK ownership tables
+
+The live RLS policy inventory confirms:
+- `daily_focus`, `learning_events`, and `user_cortex` expose owner-scoped SELECT policies but no user DELETE policy.
+- `generated_course_drafts` permits owner insert/read and admin moderation, but has no owner DELETE policy.
+- `revisions`, `topic_mastery`, and `user_careers` have owner-scoped deletion or ALL policies, but the server worker should not depend on client RLS permissions.
+- `exam_logs`, `insights_archive`, `curriculum_verification_events`, and platform-channel tables deny public/anon/authenticated API access entirely.
+
+This reinforces that the worker must use a narrowly scoped server-side privileged connection and a reviewed explicit plan. No browser or Android client receives the service-role key.
