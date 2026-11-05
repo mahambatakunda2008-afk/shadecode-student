@@ -409,3 +409,10 @@ Source of truth: docs/roadmaps/SUBJECT_MANAGEMENT_AND_PERSONALISATION_WORK_REGIS
 - [ ] Release gate: verify exact commit CI, deployed web behavior and real-device Android behavior before marking complete. Update the focused register and master register with evidence.
 
 Do not call this complete while the only evidence is a committed endpoint, a successful build, a catalogue list, or a local screenshot.
+
+## 2026-11-05 Android 16 Play compatibility
+
+- [x] Raise Android `compileSdk` and `targetSdk` to 36 and install Android SDK Platform 36 / Build Tools 36.0.0 in CI; package verification asserts `targetSdkVersion:'36'`.
+- [x] Verify the PR head with GitHub Actions: Android App run #329 and CI run #4866 both completed successfully.
+- [x] Merge PR #549 into `main` (squash commit `e12e30bf84d372cad3910d7367cb705494c6a438`).
+- [ ] Release gate remains open: run a signed build from the merged `main` commit, inspect the resulting APK/AAB metadata and signature, and test install/upgrade/runtime behavior on a physical Android 16 device. API-level targeting alone is not Play Store or device-readiness certification.
