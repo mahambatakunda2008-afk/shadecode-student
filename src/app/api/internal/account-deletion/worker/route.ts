@@ -178,7 +178,7 @@ export async function POST(request: Request) {
           || /not found|object not found/i.test(storageError.message ?? "")
         ));
         if (error && !alreadyMissing) {
-          throw Object.assign(new Error("storage_cleanup_failed"), { code: error.code });
+          throw Object.assign(new Error("storage_cleanup_failed"), { code: storageError?.statusCode ?? "storage_cleanup_failed" });
         }
       }
     }
