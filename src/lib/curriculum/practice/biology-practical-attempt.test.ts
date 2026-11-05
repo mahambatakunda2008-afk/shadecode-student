@@ -376,6 +376,28 @@ describe("Biology practical attempt preview", () => {
     ]);
   });
 
+  it("recommends a relevant least-reviewed question when every question is answered", () => {
+    let attempt = startPracticalAttempt(set);
+    attempt = savePracticalAnswer(set, attempt, "P3-01", "a", "Answered variables.");
+    attempt = savePracticalAnswer(set, attempt, "P3-01", "b", "Answered repeats.");
+    attempt = savePracticalAnswer(set, attempt, "P5-01", "a", "Answered planning.");
+
+    const recommendation = recommendPracticalPractice(set, attempt, [{
+      skill: "repeats",
+      domain: "experimental-technique",
+      improvementFocus: "Practise repeats.",
+      rating: "revisit",
+      taskIds: ["P3-01"],
+      taskRatings: { "P3-01": "revisit" },
+      reviewedTaskCount: 1,
+      totalTaskCount: 1,
+    }]);
+
+    expect(recommendation).toHaveLength(1);
+    expect(recommendation[0].taskId).toBe("P3-01");
+    expect(recommendation[0].questionId).toBe("b");
+  });
+
   it("rejects unknown questions and skills", () => {
     const attempt = startPracticalAttempt(set);
     expect(() => savePracticalAnswer(set, attempt, "P3-01", "missing", "x")).toThrow();
