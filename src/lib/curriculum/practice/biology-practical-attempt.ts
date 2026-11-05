@@ -448,6 +448,11 @@ export function selfAwardPracticalMarks(
   };
 }
 
+function validSelfAwardedMarks(attempt: PracticalAttempt, question: PracticalQuestion, key: string): number {
+  const marks = attempt.selfAwardedMarks?.[key];
+  return Number.isInteger(marks) && marks >= 0 && marks <= question.marks ? marks : 0;
+}
+
 export function summarizePracticalAttempt(
   set: PracticalPracticeSet,
   attempt: PracticalAttempt,
@@ -546,7 +551,7 @@ export function summarizePracticalAttempt(
     answeredQuestions,
     totalQuestions: questions.length,
     revealedQuestions: revealedQuestionKeys.length,
-    selfAwardedMarks: Object.values(attempt.selfAwardedMarks).reduce((sum, value) => sum + value, 0),
+    selfAwardedMarks: questions.reduce((sum, { task, question }) => sum + validSelfAwardedMarks(attempt, question, questionKey(task.id, question.id)), 0),
     availableMarks: questions.reduce((sum, { question }) => sum + question.marks, 0),
     skills: skillReviews,
     skillsToRevisit: skillReviews
@@ -571,7 +576,7 @@ export function summarizePaperCoverage(set: PracticalPracticeSet, attempt: Pract
       paper.questionCount += 1;
       paper.availableMarks += question.marks;
       if (attempt.answers[key]?.trim()) paper.answeredQuestions += 1;
-      paper.selfAwardedMarks += attempt.selfAwardedMarks[key] ?? 0;
+      paper.selfAwardedMarks += validSelfAwardedMarks(attempt, question, key);
     }
   }
   return coverage;
