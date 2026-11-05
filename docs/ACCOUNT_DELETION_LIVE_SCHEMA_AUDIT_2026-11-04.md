@@ -476,3 +476,6 @@ Still required before enabling the worker:
 - Verify all Auth-linked rows are gone or intentionally anonymized after Auth deletion, including nested JSON/evidence and any legacy unlinked channel identifiers.
 - Verify browser/Android local stores are cleared on a later reconnect and no pending mutation can sync after deletion is accepted.
 - Complete processor-side deletion/retention review for AI providers, Sentry, Vercel logs, and Meta/WhatsApp.
+
+
+The cleanup RPC also clears reviewer-authored free-text notes when the deleted account was the moderator/reviewer/approver: `community_uploads.moderator_notes`, `generated_course_approvals.notes`, and `curriculum_verification_events.notes`. This prevents attribution removal from leaving reviewer-written text attached to a now-anonymous record. Structured curriculum evidence is retained for now and remains subject to a separate nested-JSON PII review before activation.
