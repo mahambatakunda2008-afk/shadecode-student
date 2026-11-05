@@ -35,13 +35,12 @@ begin
         r.status = 'pending'
         or (
           r.status = 'processing'
-          and r.lease_expires_at is not null
-          and r.lease_expires_at < now()
+          and (r.lease_expires_at is null or r.lease_expires_at < now())
         )
       )
     order by r.requested_at asc
-    for update skip locked
     limit 1
+    for update skip locked
   )
   update public.account_deletion_requests r
      set status = 'processing',
