@@ -1125,6 +1125,50 @@ private fun ProfileNativeScreen(
     var confirmDeletion by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
+    var deletionPending by remember(session.userId) { mutableStateOf(false) }
+    var deletionStatus by remember(session.userId) { mutableStateOf("pending") }
+    var deletionStateLoaded by remember(session.userId) { mutableStateOf(false) }
+    val appContext = LocalContext.current.applicationContext
+
+    LaunchedEffect(session.userId) {
+        val pending = withContext(Dispatchers.IO) { sessionStore.isDeletionPending() }
+        deletionPending = pending
+        deletionStateLoaded = true
+        if (pending) {
+            val requestId = withContext(Dispatchers.IO) { sessionStore.deletionRequestId() }
+            if (requestId.isNullOrBlank()) {
+                deletionStatus = "tracking_unavailable"
+            } else {
+                while (true) {
+                    try {
+                        val status = withContext(Dispatchers.IO) { api.loadAccountDeletionStatus(requestId) }
+                        deletionStatus = status.optString("status", "pending")
+                        if (status.optBoolean("completed", false)) {
+                            withContext(Dispatchers.IO) {
+                                val database = NativeDatabase.get(appContext)
+                                database.withTransaction {
+                                    database.sync().clearAll()
+                                    database.progress().clearAll()
+                                    database.subjects().clear()
+                                    // Keep shared offline lesson content, but remove its learner progress.
+                                    database.lessons().resetCachedLessonProgress()
+                                }
+                                // Snap & Extract artifacts are device-local and currently have no
+                                // account owner field, so do not erase them as if ownership were known.
+                                sessionStore.clearDeletedAccountData(session.userId)
+                            }
+                            deletionPending = false
+                            onSignOut()
+                            break
+                        }
+                    } catch (_: Exception) {
+                        // Keep the lock and retry. A transient network error must never unlock sync.
+                    }
+                    delay(30_000)
+                }
+            }
+        }
+    }
     val catalogue = remember(selectedCodes) {
         val known = NativeSubjectCatalog.all.distinctBy { it.code }
         known + selectedCodes.filterNot { code -> known.any { it.code == code } }.map { code ->
@@ -1137,6 +1181,35 @@ private fun ProfileNativeScreen(
         else catalogue.filter {
             it.label.contains(term, ignoreCase = true) || it.group.contains(term, ignoreCase = true)
         }
+    }
+
+    if (!deletionStateLoaded) {
+        Column(Modifier.fillMaxSize().padding(padding).padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator()
+            Spacer(Modifier.height(12.dp))
+            Text("Checking account status…")
+        }
+        return
+    }
+    if (deletionPending) {
+        Column(Modifier.fillMaxSize().padding(padding).padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator()
+            Spacer(Modifier.height(16.dp))
+            Text("Account deletion requested", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                when (deletionStatus) {
+                    "failed" -> "Your request needs manual review. Sync remains paused. Please contact shadecodetech@gmail.com."
+                    "processing" -> "Shadecode is processing your request. This screen will update when deletion is complete."
+                    "tracking_unavailable" -> "Your request is saved, but its tracking ID is unavailable. Sync remains paused. Contact shadecodetech@gmail.com."
+                    else -> "Your request is awaiting verification. Sync and offline changes remain paused on this device."
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(12.dp))
+            Text("This device will clear account-owned data and sign out only after the server confirms completion.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
     }
 
     if (confirmDeletion) {
