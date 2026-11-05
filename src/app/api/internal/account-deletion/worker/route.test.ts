@@ -145,6 +145,25 @@ describe("POST /api/internal/account-deletion/worker", () => {
     }));
   });
 
+  it("rejects object keys outside the claimed account prefix", async () => {
+    rpcMock.mockImplementation(async (name: string) => {
+      if (name === "recover_completed_account_deletion_requests") return { data: 0, error: null };
+      if (name === "claim_account_deletion_request") return { data: [JOB], error: null };
+      if (name === "renew_account_deletion_request") return { data: true, error: null };
+      if (name === "preview_account_deletion") return { data: [{ resource: "profiles" }], error: null };
+      if (name === "account_deletion_storage_manifest") {
+        return { data: [{ bucket_id: "shadecode-backups", object_name: "another-user/latest.scsync" }], error: null };
+      }
+      if (name === "release_account_deletion_request") return { data: true, error: null };
+      throw new Error(`Unexpected RPC: ${name}`);
+    });
+
+    const response = await POST(request());
+    expect(response.status).toBe(500);
+    expect(storageFromMock).not.toHaveBeenCalled();
+    expect(deleteUserMock).not.toHaveBeenCalled();
+  });
+
   it("does not delete Auth if Storage cleanup fails", async () => {
     removeMock.mockResolvedValue({ data: null, error: { code: "storage_unavailable" } });
     const response = await POST(request());
