@@ -1384,13 +1384,13 @@ private fun SnapExtractScreen(padding: PaddingValues, accountId: String) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val extractStore = remember(accountId) { NativeExtractStore(context, accountId) }
-    var savedArtifacts by remember { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
+    var savedArtifacts by remember(accountId) { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
     var legacyArtifactCount by remember(accountId) { mutableStateOf(0) }
     var confirmLegacyClear by remember { mutableStateOf(false) }
     var artifactSearch by remember { mutableStateOf("") }
     var activeArtifactId by remember { mutableStateOf<String?>(null) }
     var artifactTitle by remember { mutableStateOf("") }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(accountId) {
         savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
         legacyArtifactCount = withContext(Dispatchers.IO) { extractStore.legacyArtifactCount() }
     }
