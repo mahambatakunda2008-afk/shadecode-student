@@ -21,6 +21,9 @@ class NativeSyncWorker(
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val store = NativeStore(applicationContext)
         val database = NativeDatabase.get(applicationContext)
+        // A deletion request is a hard sync barrier. Never refresh credentials or replay
+        // queued writes while the account is awaiting server-side deletion.
+        if (store.isDeletionPending()) return@withContext Result.success()
         var session = store.readSession() ?: return@withContext Result.success()
         val api = NativeApi()
 
@@ -28,6 +31,7 @@ class NativeSyncWorker(
         // rewrite a later completion's local ID to its server ID, so a stale snapshot
         // must never be used for the next operation.
         while (true) {
+            if (store.isDeletionPending()) return@withContext Result.success()
             val item = store.pendingOperations(session.userId).firstOrNull() ?: break
             try {
                 executePendingOperation(item, session, api, store)
@@ -50,6 +54,7 @@ class NativeSyncWorker(
 
         // Keep the existing Room-backed lesson-progress queue working.
         for (item in database.sync().pending()) {
+            if (store.isDeletionPending()) return@withContext Result.success()
             try {
                 if (item.operation != "lesson_progress") {
                     database.sync().delete(item)
