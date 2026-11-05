@@ -402,3 +402,13 @@ Deletion rules:
 ### Backup bucket path verified
 
 The local-first backup implementation stores one opaque encrypted object at `shadecode-backups/<auth.uid()>/latest.scsync`. It uses browser-side encryption and the Storage policy enforces the first path segment as the authenticated UID. The worker should delete the exact `<uid>/latest.scsync` object (or the exact UID prefix if the format later expands), never the entire bucket. The current live Storage inventory showed only 58 shared `past-papers` objects and zero objects in both `shadecode-backups` and `community-uploads-pending` at audit time.
+
+
+### Storage deletion manifest
+
+Migration `20261105140000_account_deletion_storage_manifest.sql` adds `account_deletion_storage_manifest(uuid)`, a service-role-only read-only RPC returning exact object keys from:
+- `shadecode-backups` under the user's UID prefix;
+- `community-uploads-pending` under the user's UID prefix;
+- exact `community_uploads.file_path` values for rows contributed by the user (covers any legacy path not following the current prefix convention).
+
+The manifest deliberately cannot return `past-papers` objects. The worker must remove returned objects using the Supabase Storage API, treat already-missing objects as success, and only then proceed to database row deletion. It must not delete by wildcard outside the two private buckets.
