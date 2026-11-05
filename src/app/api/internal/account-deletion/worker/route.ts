@@ -38,6 +38,21 @@ function safeErrorCode(error: { code?: string | null } | null | undefined): stri
     : "worker_error";
 }
 
+
+async function renewLease(
+  admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  job: ClaimedDeletion,
+) {
+  const { data, error } = await admin.rpc("renew_account_deletion_request", {
+    p_request_id: job.request_id,
+    p_lease_token: job.lease_token,
+    p_lease_seconds: 300,
+  });
+  if (error || data !== true) {
+    throw Object.assign(new Error("lease_lost"), { code: error?.code ?? "lease_lost" });
+  }
+}
+
 async function releaseLease(
   admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
   job: ClaimedDeletion,
@@ -107,6 +122,8 @@ export async function POST(request: Request) {
       throw Object.assign(new Error("invalid_claim_payload"), { code: "invalid_claim_payload" });
     }
 
+    await renewLease(admin, job);
+
     // The preview is read-only. Refuse to continue if the inventory RPC is
     // missing or malformed, rather than guessing what data to remove.
     const preview = await admin.rpc("preview_account_deletion", {
@@ -118,6 +135,7 @@ export async function POST(request: Request) {
       });
     }
 
+    await renewLease(admin, job);
     const manifest = await admin.rpc("account_deletion_storage_manifest", {
       p_user_id: job.user_id,
     });
@@ -144,6 +162,7 @@ export async function POST(request: Request) {
     for (const [bucket, names] of objectsByBucket) {
       const objectNames = [...names];
       for (let offset = 0; offset < objectNames.length; offset += STORAGE_REMOVE_BATCH_SIZE) {
+        await renewLease(admin, job);
         const batch = objectNames.slice(offset, offset + STORAGE_REMOVE_BATCH_SIZE);
         const { error } = await admin.storage.from(bucket).remove(batch);
         if (error) throw Object.assign(new Error("storage_cleanup_failed"), { code: error.code });
@@ -153,6 +172,7 @@ export async function POST(request: Request) {
     // This is one database transaction, bound to the active lease. It removes
     // NO ACTION blockers and account-owned non-FK rows but deliberately leaves
     // Auth deletion until after database and Storage cleanup have succeeded.
+    await renewLease(admin, job);
     const cleanup = await admin.rpc("execute_account_deletion_cleanup", {
       p_request_id: job.request_id,
       p_lease_token: job.lease_token,
@@ -163,6 +183,7 @@ export async function POST(request: Request) {
 
     // Auth deletion is the final destructive step. The queue FK sets user_id
     // to NULL, allowing the completion RPC and crash-recovery RPC to verify it.
+    await renewLease(admin, job);
     const deletion = await admin.auth.admin.deleteUser(job.user_id);
     if (deletion.error) {
       throw Object.assign(new Error("auth_deletion_failed"), { code: deletion.error.code });
