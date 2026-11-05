@@ -438,3 +438,21 @@ Supabase Storage also has internal `protect_objects_delete` and `protect_buckets
 ### Full public-to-public NO ACTION/RESTRICT FK scan
 
 A separate scan of every public-schema FK using `NO ACTION` or `RESTRICT` found only curriculum-document/knowledge/version relationships plus the already identified Auth blockers. No additional public-to-public RESTRICT dependency was found that blocks deleting the learner-owned rows in the cleanup RPC. The curriculum RESTRICT relationships must remain intact: account deletion must not delete shared `curriculum_documents`, `curriculum_knowledge`, or `curriculum_versions`.
+
+
+## Worker HTTP orchestration (disabled by default)
+
+The internal route `POST /api/internal/account-deletion/worker` now orchestrates the queue lifecycle:
+1. Requires a constant-time checked `ACCOUNT_DELETION_WORKER_SECRET` bearer token.
+2. Refuses to run unless `ACCOUNT_DELETION_WORKER_ENABLED=true`.
+3. Recovers requests whose Auth deletion completed before a worker crash.
+4. Claims one request and renews its lease between phases.
+5. Requires the read-only inventory and exact Storage manifest RPCs to succeed.
+6. Removes only objects from `shadecode-backups` or `community-uploads-pending`, and additionally requires every object key to start with the claimed user's exact UID prefix. `past-papers` is not allowlisted.
+7. Runs the lease-bound database cleanup transaction.
+8. Deletes the Supabase Auth user last, then marks the request complete. If completion fails after Auth deletion, it invokes crash recovery rather than requeueing a null-user request.
+9. Retries transient failures up to five attempts, then leaves the request failed for manual review. Logs contain only sanitized error codes.
+
+Route tests cover authorization, disabled state, empty queue, successful phase ordering, unexpected buckets, cross-account object keys, Storage failures, and post-Auth crash recovery.
+
+The route is intentionally **not activated**. No cron schedule or production secret/feature flag has been configured, no migrations have been applied to the live Supabase project, and the destructive path has not yet been run against disposable fixtures. Do not set `ACCOUNT_DELETION_WORKER_ENABLED=true` until all migrations and integration tests pass and the privacy/processor/local-device work is signed off.
