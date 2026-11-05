@@ -456,3 +456,23 @@ The internal route `POST /api/internal/account-deletion/worker` now orchestrates
 Route tests cover authorization, disabled state, empty queue, successful phase ordering, unexpected buckets, cross-account object keys, Storage failures, and post-Auth crash recovery.
 
 The route is intentionally **not activated**. No cron schedule or production secret/feature flag has been configured, no migrations have been applied to the live Supabase project, and the destructive path has not yet been run against disposable fixtures. Do not set `ACCOUNT_DELETION_WORKER_ENABLED=true` until all migrations and integration tests pass and the privacy/processor/local-device work is signed off.
+
+
+## Pre-activation verification checklist
+
+The worker route test suite currently covers:
+- invalid secret and disabled feature flag;
+- empty queue behavior;
+- happy-path ordering (Storage removal, database cleanup, Auth deletion, queue completion);
+- rejection of the shared `past-papers` bucket;
+- rejection of object keys outside the claimed user's UID prefix;
+- Storage failure before any database/Auth deletion;
+- recovery when Auth deletion succeeds but queue completion fails.
+
+Still required before enabling the worker:
+- Run repository TypeScript, ESLint, Vitest and Next.js production build on the complete PR.
+- Apply all new migrations to a disposable Supabase project and validate the read-only preview, Storage manifest, lease lifecycle, FK validation, and cleanup transaction.
+- Seed two disposable accounts with overlapping attribution (reviewer/moderator/approver/relationship creator) and prove the second account's owned records remain intact.
+- Verify all Auth-linked rows are gone or intentionally anonymized after Auth deletion, including nested JSON/evidence and any legacy unlinked channel identifiers.
+- Verify browser/Android local stores are cleared on a later reconnect and no pending mutation can sync after deletion is accepted.
+- Complete processor-side deletion/retention review for AI providers, Sentry, Vercel logs, and Meta/WhatsApp.
