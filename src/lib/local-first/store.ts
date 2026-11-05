@@ -20,6 +20,8 @@ function compareRecords(a: LocalRecord, b: LocalRecord): number { if (a.version 
 
 export class LocalFirstStore {
   async deviceId(): Promise<string> { return getDeviceId(); }
+  /** Remove only records, operations and conflicts owned by a confirmed-deleted account. */
+  async clearUser(userId: string): Promise<void> { if (!userId) throw new Error("A user ID is required to clear local account data"); await localFirstDB.clearUser(userId); }
   async get<T>(id: string): Promise<LocalRecord<T> | null> { return localFirstDB.getRecord<T>(id); }
   async list<T = unknown>(userId: string): Promise<LocalRecord<T>[]>;
   async list<T = unknown>(entity: LocalEntity, userId: string): Promise<LocalRecord<T>[]>;
