@@ -194,7 +194,26 @@ for (const source of report.sources ?? []) {
 
       const resolved = curriculumFromSource(source, document);
       if (!resolved || !extractedText) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
-      const provenance = provenanceFor(source, document, { versionConflict: resolved.conflict });
+
+      // A discovered syllabus version that disagrees with the explicitly registered
+      // version must never create a curriculum version under either identity. Keep
+      // the source/document evidence, record the conflict for review, and fail closed.
+      if (resolved.conflict) {
+        await recordChange(
+          runId,
+          upsert.data.id,
+          null,
+          "syllabus_version_conflict",
+          { configuredVersion: resolved.configuredVersion },
+          { discoveredVersion: resolved.discoveredVersion },
+          "critical",
+        );
+        extractionSkipped += 1;
+        sourceExtractionSkipped += 1;
+        continue;
+      }
+
+      const provenance = provenanceFor(source, document);
       const profile = getCurriculumExtractionProfile(source.id);
       const extracted = extractCurriculumKnowledge(extractedText, resolved.curriculum, provenance, profile);
       if (!extracted.length) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
