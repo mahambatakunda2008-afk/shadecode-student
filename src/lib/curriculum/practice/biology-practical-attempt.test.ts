@@ -213,6 +213,15 @@ describe("Biology practical attempt preview", () => {
     expect(review.guidanceReviewPercent).toBe(50);
   });
 
+  it("counts each revealed question only once when summarising malformed attempt state", () => {
+    const revealed = revealPracticalGuidance(set, startPracticalAttempt(set), "P3-01", "a");
+    const attempt = { ...revealed, revealedAnswers: [...revealed.revealedAnswers, "P3-01::a", "P3-01::missing"] };
+    const summary = summarizePracticalAttempt(set, attempt);
+    expect(summary.revealedQuestions).toBe(1);
+    expect(summary.practiceReview.availableGuidancePoints).toBe(2);
+    expect(summary.practiceReview.checkedGuidancePoints).toBe(0);
+  });
+
   it("does not call an attempt reviewed until the learner explicitly checks revealed guidance", () => {
     let attempt = startPracticalAttempt(set);
     for (const task of set.tasks) {
