@@ -479,3 +479,6 @@ Still required before enabling the worker:
 
 
 The cleanup RPC also clears reviewer-authored free-text notes when the deleted account was the moderator/reviewer/approver: `community_uploads.moderator_notes`, `generated_course_approvals.notes`, and `curriculum_verification_events.notes`. This prevents attribution removal from leaving reviewer-written text attached to a now-anonymous record. Structured curriculum evidence is retained for now and remains subject to a separate nested-JSON PII review before activation.
+
+
+The branch also includes `supabase/tests/account_deletion_contract.sql`, a read-only disposable-database contract script that verifies queue RLS, browser-role denial, validated FK delete actions, and service-role-only RPC grants. It does not create fixtures or execute the destructive cleanup function; full two-account integration fixtures are still required.
