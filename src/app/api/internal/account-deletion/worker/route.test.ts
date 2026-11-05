@@ -122,6 +122,13 @@ describe("POST /api/internal/account-deletion/worker", () => {
     });
   });
 
+  it("treats already-missing private objects as an idempotent success", async () => {
+    removeMock.mockResolvedValue({ data: null, error: { code: "404", statusCode: "404", message: "Object not found" } });
+    const response = await POST(request());
+    expect(response.status).toBe(200);
+    expect(deleteUserMock).toHaveBeenCalledWith("user-1");
+  });
+
   it("fails closed on an unexpected Storage bucket and never reaches Auth deletion", async () => {
     rpcMock.mockImplementation(async (name: string) => {
       if (name === "recover_completed_account_deletion_requests") return { data: 0, error: null };
