@@ -20,10 +20,16 @@ data class NativeExtractArtifact(
     val sourceUri: String?,
     val createdAt: Long,
     val updatedAt: Long,
+    val ownerId: String,
 )
 
-class NativeExtractStore(context: Context) {
-    private val directory = File(context.applicationContext.filesDir, "snap_extract_artifacts")
+class NativeExtractStore(context: Context, private val accountId: String) {
+    init {
+        require(accountId.matches(Regex("[a-fA-F0-9-]{36}"))) { "A valid signed-in account is required for private extracts." }
+    }
+
+    private val rootDirectory = File(context.applicationContext.filesDir, "snap_extract_artifacts")
+    private val directory = File(rootDirectory, accountId)
     private val maxArtifacts = 20
     private val maxTextChars = 120_000
 
@@ -33,6 +39,7 @@ class NativeExtractStore(context: Context) {
         return directory.listFiles { file -> file.isFile && file.extension == "json" }
             .orEmpty()
             .mapNotNull { file -> runCatching { decode(file.readText()) }.getOrNull() }
+            .filter { artifact -> artifact.ownerId == accountId }
             .sortedByDescending { it.updatedAt }
     }
 
@@ -53,6 +60,7 @@ class NativeExtractStore(context: Context) {
             sourceUri = sourceUri?.toString() ?: existing?.sourceUri,
             createdAt = existing?.createdAt ?: now,
             updatedAt = now,
+            ownerId = accountId,
         )
         val atomicFile = AtomicFile(fileFor(artifact.id))
         val output = atomicFile.startWrite()
@@ -67,12 +75,18 @@ class NativeExtractStore(context: Context) {
         return artifact
     }
 
-    /** Remove all private extracts from this device after server-confirmed account deletion. */
+    /** Remove only this account's private extracts after server-confirmed account deletion. */
     @Synchronized
-    fun clearAll(): Boolean {
+    fun clearAccount(): Boolean {
         if (!directory.exists()) return true
-        return directory.listFiles().orEmpty().filter { it.isFile }.all { it.delete() }
+        return directory.deleteRecursively()
     }
+
+    /** Count pre-account-scoping extracts. They remain unassigned until the device owner reviews them. */
+    @Synchronized
+    fun legacyArtifactCount(): Int =
+        rootDirectory.listFiles { file -> file.isFile && file.extension == "json" }
+            .orEmpty().size
 
     @Synchronized
     fun delete(id: String): Boolean {
@@ -93,7 +107,8 @@ class NativeExtractStore(context: Context) {
         .put("id", artifact.id).put("title", artifact.title)
         .put("rawOcr", artifact.rawOcr).put("editedText", artifact.editedText)
         .put("sourceUri", artifact.sourceUri).put("createdAt", artifact.createdAt)
-        .put("updatedAt", artifact.updatedAt).toString()
+        .put("updatedAt", artifact.updatedAt)
+        .put("ownerId", artifact.ownerId).toString()
 
     private fun decode(encoded: String): NativeExtractArtifact {
         val json = JSONObject(encoded)
@@ -102,6 +117,7 @@ class NativeExtractStore(context: Context) {
             rawOcr = json.optString("rawOcr"), editedText = json.optString("editedText"),
             sourceUri = json.optString("sourceUri").takeIf { it.isNotBlank() && it != "null" },
             createdAt = json.optLong("createdAt"), updatedAt = json.optLong("updatedAt"),
+            ownerId = json.optString("ownerId"),
         )
     }
 }
