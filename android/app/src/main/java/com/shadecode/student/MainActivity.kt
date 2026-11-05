@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.room.withTransaction
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
