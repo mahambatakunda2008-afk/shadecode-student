@@ -1,3 +1,12 @@
+## 2026-11-05 — Android 16 Play compatibility prerequisite merged
+
+- Merged PR #549 into `main` as `e12e30bf84d372cad3910d7367cb705494c6a438`.
+- Android `compileSdk` and `targetSdk` are now 36; CI installs Android SDK Platform 36 and Build Tools 36.0.0 and checks the packaged APK target SDK metadata.
+- The PR head passed GitHub Actions: Android App run #329 and CI run #4866.
+- This closes the API 36 configuration prerequisite only. A signed artifact from the merged main commit and physical Android 16 install/upgrade/runtime testing remain release gates.
+
+---
+
 ## 2026-10-25 (implementation pass 1) — Added opt-in glass surface foundation
 
 - Added semantic glass tokens to `src/app/globals.css` for light and dark themes: translucent/strong surfaces, border, highlight, shadow, blur and saturation.
