@@ -187,7 +187,13 @@ export function getPracticalQuestionSkills(
 ): string[] {
   if (task.id) {
     const curated = CURATED_PRACTICAL_QUESTION_SKILLS[`${task.id}::${question.id}`];
-    if (curated) return curated.filter((skill) => task.skills.includes(skill));
+    if (curated) {
+      const applicable = curated.filter((skill) => task.skills.includes(skill));
+      // Synthetic sets and later bank revisions can reuse a curated question
+      // identifier with a different skill schema. Only trust a mapping when it
+      // applies to this task; otherwise use the bounded text matcher below.
+      if (applicable.length > 0) return applicable;
+    }
   }
 
   const text = `${question.prompt} ${question.answer.join(" ")}`.toLowerCase();
