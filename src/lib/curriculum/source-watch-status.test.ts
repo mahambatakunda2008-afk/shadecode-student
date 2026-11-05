@@ -36,3 +36,41 @@ describe("curriculum ingestion run outcome", () => {
     expect(resolveCurriculumIngestionRunStatus(undefined, 0)).toBe("failed");
   });
 });
+
+
+describe("watched syllabus version resolution", () => {
+  it("preserves a version discovered in the PDF even when it conflicts with the registry", async () => {
+    const { resolveWatchedSyllabusVersion } = await import("./source-watch-status");
+    expect(resolveWatchedSyllabusVersion({
+      configuredVersion: "2028-2030",
+      discoveredVersion: "2025-2027",
+      discoveryConfidence: "high",
+      discoveryEvidence: ["The PDF cover states 2025-2027."],
+    })).toEqual({
+      version: "2025-2027",
+      source: "document",
+      confidence: "high",
+      evidence: ["The PDF cover states 2025-2027."],
+    });
+  });
+
+  it("uses the registry version only when the PDF does not identify one", async () => {
+    const { resolveWatchedSyllabusVersion } = await import("./source-watch-status");
+    expect(resolveWatchedSyllabusVersion({ configuredVersion: "2028-2030" })).toEqual({
+      version: "2028-2030",
+      source: "registry",
+      confidence: "high",
+      evidence: ["Source registry explicitly configured this syllabus version."],
+    });
+  });
+
+  it("does not invent a version when neither source identifies one", async () => {
+    const { resolveWatchedSyllabusVersion } = await import("./source-watch-status");
+    expect(resolveWatchedSyllabusVersion({})).toEqual({
+      version: null,
+      source: "unresolved",
+      confidence: "unresolved",
+      evidence: [],
+    });
+  });
+});
