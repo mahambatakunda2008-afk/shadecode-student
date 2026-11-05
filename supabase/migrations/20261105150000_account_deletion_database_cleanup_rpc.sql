@@ -86,7 +86,8 @@ begin
   v_counts := v_counts || jsonb_build_object('platform_relationship_attribution_cleared', v_count);
 
   update public.community_uploads
-     set moderator_id = null
+     set moderator_id = null,
+         moderator_notes = null
    where moderator_id = v_user_id;
   get diagnostics v_count = row_count;
   v_counts := v_counts || jsonb_build_object('community_upload_moderator_cleared', v_count);
@@ -98,7 +99,8 @@ begin
   v_counts := v_counts || jsonb_build_object('course_draft_approver_cleared', v_count);
 
   update public.generated_course_approvals
-     set approved_by = null
+     set approved_by = null,
+         notes = null
    where approved_by = v_user_id;
   get diagnostics v_count = row_count;
   v_counts := v_counts || jsonb_build_object('course_approval_approver_cleared', v_count);
@@ -110,7 +112,8 @@ begin
   v_counts := v_counts || jsonb_build_object('published_asset_reviewer_cleared', v_count);
 
   update public.curriculum_verification_events
-     set reviewer_id = null
+     set reviewer_id = null,
+         notes = null
    where reviewer_id = v_user_id;
   get diagnostics v_count = row_count;
   v_counts := v_counts || jsonb_build_object('curriculum_reviewer_cleared', v_count);
