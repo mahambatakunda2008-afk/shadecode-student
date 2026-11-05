@@ -319,3 +319,17 @@ The earlier identity scan was incomplete: `daily_focus`, `exam_logs`, `generated
 ### Operational channel data
 
 WhatsApp/channel records require coordinated deletion: remove link codes and identity mappings; remove linked message receipts; clear external IDs from any unlinked receipts only where the account-to-channel mapping can be proven. Do not delete a shared phone-number configuration or channel-wide integration secret. Processor-side message retention/deletion must be separately requested from Meta where applicable and disclosed according to its actual retention capabilities.
+
+
+## Read-only worker preparation RPC
+
+Migration `20261105100000_account_deletion_preview_rpc.sql` adds `public.preview_account_deletion(uuid)` as a service-role-only, read-only inventory function. It returns table/identity-column counts and a handling label for the explicitly enumerated direct-FK and non-FK account references, shared lesson-library copies (joined through the user's source lessons), and the two user-prefix Storage buckets. It does not return row content, identifiers belonging to other users, or mutate any records.
+
+This is a preparatory control, not a deletion worker. The migration has been committed to the feature branch only and has **not** been applied to production. Before applying it, validate the function against a disposable Supabase database with representative fixtures for:
+- an account with rows in every enumerated ownership table;
+- another account's records where the target user is only a reviewer/moderator/approver/assigner;
+- a shared lesson-library copy sourced from the target account;
+- pending community uploads and backup objects under the target prefix;
+- shared `past-papers` objects that must remain untouched.
+
+The preview counts are not sufficient authorization to delete: storage object ownership must be verified by exact metadata/path and application provenance, and the worker must separately resolve unlinked WhatsApp receipts, anonymous identifiers, processor retention, and all nested JSON identity fields.
