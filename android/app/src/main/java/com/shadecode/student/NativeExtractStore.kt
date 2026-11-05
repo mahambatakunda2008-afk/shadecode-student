@@ -88,6 +88,14 @@ class NativeExtractStore(context: Context, private val accountId: String) {
         rootDirectory.listFiles { file -> file.isFile && file.extension == "json" }
             .orEmpty().size
 
+    /** Delete only unassigned pre-migration files after an explicit device-owner confirmation. */
+    @Synchronized
+    fun clearLegacyArtifacts(): Boolean {
+        if (!rootDirectory.exists()) return true
+        val legacyFiles = rootDirectory.listFiles { file -> file.isFile && file.extension == "json" }.orEmpty()
+        return legacyFiles.all { it.delete() }
+    }
+
     @Synchronized
     fun delete(id: String): Boolean {
         val file = fileFor(id)
