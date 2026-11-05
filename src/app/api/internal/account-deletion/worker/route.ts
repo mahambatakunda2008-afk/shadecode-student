@@ -171,7 +171,15 @@ export async function POST(request: Request) {
         await renewLease(admin, job);
         const batch = objectNames.slice(offset, offset + STORAGE_REMOVE_BATCH_SIZE);
         const { error } = await admin.storage.from(bucket).remove(batch);
-        if (error) throw Object.assign(new Error("storage_cleanup_failed"), { code: error.code });
+        const storageError = error as (typeof error & { statusCode?: string; status?: number }) | null;
+        const alreadyMissing = Boolean(storageError && (
+          storageError.statusCode === "404"
+          || storageError.status === 404
+          || /not found|object not found/i.test(storageError.message ?? "")
+        ));
+        if (error && !alreadyMissing) {
+          throw Object.assign(new Error("storage_cleanup_failed"), { code: error.code });
+        }
       }
     }
 
@@ -219,9 +227,9 @@ export async function POST(request: Request) {
     console.error("[AccountDeletionWorker] Job failed", { code });
 
     if (job && !authDeleted) {
-      await releaseLease(admin, job, true, code);
+      await releaseLease(admin, job, true, code).catch(() => undefined);
     } else if (authDeleted) {
-      await admin.rpc("recover_completed_account_deletion_requests");
+      await admin.rpc("recover_completed_account_deletion_requests").catch(() => undefined);
     }
 
     return NextResponse.json(
