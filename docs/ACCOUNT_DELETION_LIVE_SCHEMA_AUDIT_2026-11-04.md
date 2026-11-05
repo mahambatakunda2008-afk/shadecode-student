@@ -377,3 +377,13 @@ Migration `20261105120000_account_deletion_worker_leases.sql` adds an atomic lea
 - A processing request with a missing lease expiry (created before lease support) can be reclaimed safely. A non-expired lease cannot be stolen.
 
 The future worker must renew or extend leases for long jobs, verify the lease token before every phase transition, make Storage and database phases idempotent, and never mark a request complete until Auth deletion has succeeded. The worker must also distinguish transient failures (requeue) from unsafe/incomplete inventory (fail for manual review). These migrations remain branch-only and have not been applied to production.
+
+
+### Lease heartbeat, completion gate and crash recovery
+
+Migration `20261105130000_account_deletion_worker_lease_lifecycle.sql` adds:
+- `renew_account_deletion_request()`: extends only the caller's matching, unexpired lease, with a bounded 30–900 second duration.
+- `complete_account_deletion_request()`: refuses to mark a job complete while its `user_id` is still present. The worker must delete the Auth user last, which causes the queue FK to set `user_id = NULL`, then complete with the same lease token.
+- `recover_completed_account_deletion_requests()`: finalizes a processing request whose Auth user was already deleted if the worker crashed between Auth deletion and queue completion.
+
+All are service-role-only. The completion gate enforces the critical order: database and Storage cleanup first, Auth deletion last, queue completion after Auth deletion. These functions still do not delete account data themselves.
