@@ -1253,25 +1253,6 @@ private fun ProfileNativeScreen(
         )
     }
 
-    if (confirmLegacyClear) {
-        AlertDialog(
-            onDismissRequest = { confirmLegacyClear = false },
-            title = { Text("Delete unassigned old extracts?") },
-            text = { Text("This permanently removes $legacyArtifactCount older extracts from this device. They are not assigned to any account, so this action is separate from account deletion.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmLegacyClear = false
-                    scope.launch {
-                        val cleared = withContext(Dispatchers.IO) { extractStore.clearLegacyArtifacts() }
-                        legacyArtifactCount = withContext(Dispatchers.IO) { extractStore.legacyArtifactCount() }
-                        message = if (cleared) "Unassigned older extracts removed from this device." else "Some older extracts could not be removed. Try again."
-                    }
-                }) { Text("Delete old extracts") }
-            },
-            dismissButton = { TextButton(onClick = { confirmLegacyClear = false }) { Text("Cancel") } },
-        )
-    }
-
     LazyColumn(
         Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -1514,6 +1495,25 @@ private fun SnapExtractScreen(padding: PaddingValues, accountId: String) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("Shadecode extracted text", value))
         message = "Copied the selected text representation. The source image was not changed."
+    }
+
+    if (confirmLegacyClear) {
+        AlertDialog(
+            onDismissRequest = { confirmLegacyClear = false },
+            title = { Text("Delete unassigned old extracts?") },
+            text = { Text("This permanently removes $legacyArtifactCount older extracts from this device. They are not assigned to any account, so this action is separate from account deletion.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmLegacyClear = false
+                    scope.launch {
+                        val cleared = withContext(Dispatchers.IO) { extractStore.clearLegacyArtifacts() }
+                        legacyArtifactCount = withContext(Dispatchers.IO) { extractStore.legacyArtifactCount() }
+                        message = if (cleared) "Unassigned older extracts removed from this device." else "Some older extracts could not be removed. Try again."
+                    }
+                }) { Text("Delete old extracts") }
+            },
+            dismissButton = { TextButton(onClick = { confirmLegacyClear = false }) { Text("Cancel") } },
+        )
     }
 
     LazyColumn(
