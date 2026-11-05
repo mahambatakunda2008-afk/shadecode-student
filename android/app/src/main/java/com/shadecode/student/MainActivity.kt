@@ -1156,7 +1156,9 @@ private fun ProfileNativeScreen(
                                 }
                                 // Remove only Snap & Extract files written under this account's private directory.
                                 // Legacy unassigned extracts are preserved for explicit device-owner review.
-                                NativeExtractStore(appContext, session.userId).clearAccount()
+                                check(NativeExtractStore(appContext, session.userId).clearAccount()) {
+                                    "Could not clear this account's saved extracts. Keep this device locked and retry."
+                                }
                                 sessionStore.clearDeletedAccountData(session.userId)
                             }
                             deletionPending = false
@@ -1248,6 +1250,25 @@ private fun ProfileNativeScreen(
             dismissButton = {
                 TextButton(enabled = !requestingDeletion, onClick = { confirmDeletion = false }) { Text("Cancel") }
             },
+        )
+    }
+
+    if (confirmLegacyClear) {
+        AlertDialog(
+            onDismissRequest = { confirmLegacyClear = false },
+            title = { Text("Delete unassigned old extracts?") },
+            text = { Text("This permanently removes $legacyArtifactCount older extracts from this device. They are not assigned to any account, so this action is separate from account deletion.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmLegacyClear = false
+                    scope.launch {
+                        val cleared = withContext(Dispatchers.IO) { extractStore.clearLegacyArtifacts() }
+                        legacyArtifactCount = withContext(Dispatchers.IO) { extractStore.legacyArtifactCount() }
+                        message = if (cleared) "Unassigned older extracts removed from this device." else "Some older extracts could not be removed. Try again."
+                    }
+                }) { Text("Delete old extracts") }
+            },
+            dismissButton = { TextButton(onClick = { confirmLegacyClear = false }) { Text("Cancel") } },
         )
     }
 
@@ -1383,11 +1404,14 @@ private fun SnapExtractScreen(padding: PaddingValues, accountId: String) {
     val scope = rememberCoroutineScope()
     val extractStore = remember(accountId) { NativeExtractStore(context, accountId) }
     var savedArtifacts by remember { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
+    var legacyArtifactCount by remember(accountId) { mutableStateOf(0) }
+    var confirmLegacyClear by remember { mutableStateOf(false) }
     var artifactSearch by remember { mutableStateOf("") }
     var activeArtifactId by remember { mutableStateOf<String?>(null) }
     var artifactTitle by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
+        legacyArtifactCount = withContext(Dispatchers.IO) { extractStore.legacyArtifactCount() }
     }
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -1614,7 +1638,12 @@ private fun SnapExtractScreen(padding: PaddingValues, accountId: String) {
                 Column(Modifier.fillMaxWidth().padding(18.dp)) {
                     Text("Saved extracts for this account", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(6.dp))
-                    Text("Private to this signed-in account on this device. Up to 20 recent extracts are kept; older ones are removed automatically. Source images are not stored. Extracts saved before account-scoped storage are kept separately and are not attributed to any account.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text("Private to this signed-in account on this device. Up to 20 recent extracts are kept; older ones are removed automatically. Source images are not stored.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    if (legacyArtifactCount > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("$legacyArtifactCount older extracts are unassigned to an account. Review them here or remove them separately before deleting your account.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                        TextButton(onClick = { confirmLegacyClear = true }, modifier = Modifier.fillMaxWidth()) { Text("Remove unassigned older extracts") }
+                    }
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = artifactSearch,
