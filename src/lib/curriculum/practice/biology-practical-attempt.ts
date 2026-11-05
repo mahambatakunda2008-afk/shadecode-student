@@ -507,7 +507,7 @@ export function summarizePracticalAttempt(
   ).length;
   const totalSkills = skills.size;
   const reviewedSkills = skillReviews.filter((item) => item.reviewedTaskCount === item.totalTaskCount).length;
-  const revealedQuestionKeys = attempt.revealedAnswers.filter((key) => {
+  const revealedQuestionKeys = [...new Set(attempt.revealedAnswers)].filter((key) => {
     const [taskId, questionId] = key.split("::");
     return Boolean(findQuestion(set, taskId, questionId));
   });
