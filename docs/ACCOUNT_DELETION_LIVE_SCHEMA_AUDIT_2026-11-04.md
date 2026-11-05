@@ -433,3 +433,8 @@ It returns only the target user UUID and per-table counts, not row contents. It 
 A dedicated trigger scan for DELETE event definitions found one application-data trigger: `lesson_votes_apply` fires after INSERT, UPDATE, and DELETE and adjusts `lesson_library.helpful_up/helpful_down`. Deleting a learner's source-linked `lesson_library` row cascades its votes (including other learners' votes on that shared lesson); the aggregate trigger may run during this cascade. This is intentional if the published copy must be removed as user-originated content, but should be covered by integration tests.
 
 Supabase Storage also has internal `protect_objects_delete` and `protect_buckets_delete` triggers. This is another reason the worker must use the Storage API rather than deleting rows directly from `storage.objects` or `storage.buckets`.
+
+
+### Full public-to-public NO ACTION/RESTRICT FK scan
+
+A separate scan of every public-schema FK using `NO ACTION` or `RESTRICT` found only curriculum-document/knowledge/version relationships plus the already identified Auth blockers. No additional public-to-public RESTRICT dependency was found that blocks deleting the learner-owned rows in the cleanup RPC. The curriculum RESTRICT relationships must remain intact: account deletion must not delete shared `curriculum_documents`, `curriculum_knowledge`, or `curriculum_versions`.
