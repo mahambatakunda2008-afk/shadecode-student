@@ -67,6 +67,13 @@ class NativeExtractStore(context: Context) {
         return artifact
     }
 
+    /** Remove all private extracts from this device after server-confirmed account deletion. */
+    @Synchronized
+    fun clearAll(): Boolean {
+        if (!directory.exists()) return true
+        return directory.listFiles().orEmpty().filter { it.isFile }.all { it.delete() }
+    }
+
     @Synchronized
     fun delete(id: String): Boolean {
         val file = fileFor(id)
