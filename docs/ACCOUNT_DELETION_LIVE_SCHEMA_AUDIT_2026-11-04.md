@@ -366,3 +366,14 @@ The live RLS policy inventory confirms:
 - `exam_logs`, `insights_archive`, `curriculum_verification_events`, and platform-channel tables deny public/anon/authenticated API access entirely.
 
 This reinforces that the worker must use a narrowly scoped server-side privileged connection and a reviewed explicit plan. No browser or Android client receives the service-role key.
+
+
+## Worker queue lease mechanics
+
+Migration `20261105120000_account_deletion_worker_leases.sql` adds an atomic lease to the durable request queue:
+- `claim_account_deletion_request()` uses row locking with `SKIP LOCKED` to claim one pending or expired-processing request, assigns a random lease token, increments attempts, and bounds lease duration to 30–900 seconds.
+- `release_account_deletion_request()` requires the exact request ID and lease token, sanitizes the error code, and either requeues or marks the request failed.
+- Both functions are service-role-only. They do not delete account records, Storage objects, or Auth identities.
+- A processing request with a missing lease expiry (created before lease support) can be reclaimed safely. A non-expired lease cannot be stolen.
+
+The future worker must renew or extend leases for long jobs, verify the lease token before every phase transition, make Storage and database phases idempotent, and never mark a request complete until Auth deletion has succeeded. The worker must also distinguish transient failures (requeue) from unsafe/incomplete inventory (fail for manual review). These migrations remain branch-only and have not been applied to production.
