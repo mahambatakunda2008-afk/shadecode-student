@@ -196,6 +196,120 @@ begin
   get diagnostics v_count = row_count;
   v_counts := v_counts || jsonb_build_object('user_cortex', v_count);
 
+  -- Explicitly remove account-owned rows from tables without an Auth FK.
+  -- Their data would otherwise survive deletion of auth.users.
+  delete from public.academic_contexts where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('academic_contexts', v_count);
+
+  delete from public.cortex_events where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('cortex_events', v_count);
+
+  delete from public.cortex_generation_jobs where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('cortex_generation_jobs', v_count);
+
+  delete from public.cortex_memory where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('cortex_memory', v_count);
+
+  delete from public.experiment_assignments where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('experiment_assignments', v_count);
+
+  delete from public.insights where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('insights', v_count);
+
+  delete from public.learner_brain_events where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('learner_brain_events', v_count);
+
+  delete from public.learner_curriculum_objective_progress where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('learner_curriculum_objective_progress', v_count);
+
+  delete from public.learning_paths where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('learning_paths', v_count);
+
+  delete from public.learning_signals where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('learning_signals', v_count);
+
+  delete from public.lesson_votes where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('lesson_votes', v_count);
+
+  delete from public.paper_learning_attempts where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('paper_learning_attempts', v_count);
+
+  delete from public.paper_learning_transfer_questions where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('paper_learning_transfer_questions', v_count);
+
+  delete from public.paper_learning_sessions where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('paper_learning_sessions', v_count);
+
+  delete from public.platform_group_members where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('platform_group_members', v_count);
+
+  delete from public.platform_institution_members where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('platform_institution_members', v_count);
+
+  delete from public.primary_activity_progress where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('primary_activity_progress', v_count);
+
+  delete from public.project_evidence where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('project_evidence', v_count);
+
+  delete from public.project_milestones where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('project_milestones', v_count);
+
+  delete from public.projects where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('projects', v_count);
+
+  delete from public.revision_queue where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('revision_queue', v_count);
+
+  delete from public.study_plans where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('study_plans', v_count);
+
+  delete from public.sync_revisions where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('sync_revisions', v_count);
+
+  delete from public.user_achievements where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('user_achievements', v_count);
+
+  delete from public.user_past_paper_state where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('user_past_paper_state', v_count);
+
+  delete from public.user_profiles where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('user_profiles', v_count);
+
+  delete from public.user_question_attempts where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('user_question_attempts', v_count);
+
+  delete from public.user_saved_questions where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('user_saved_questions', v_count);
+
   -- Delete account-owned relationships. Cascading Auth FKs remove the
   -- remaining account-owned learning, exam, project, profile and Cortex rows.
   delete from public.platform_user_relationships
