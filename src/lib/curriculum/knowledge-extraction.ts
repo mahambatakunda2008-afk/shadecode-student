@@ -49,7 +49,7 @@ interface HeadingInfo {
 
 function headingInfo(line: string): HeadingInfo | null {
   const cleaned = line.replace(/^#+\s*/, "").trim();
-  const match = cleaned.match(/^(?:(\d+(?:\.\d+)*?)[.)]?\s+)?([A-Za-z][A-Za-z /&'_-]{2,100})\s*:?$/);
+  const match = cleaned.match(/^(?:(\d+(?:\.\d+)*?)[.)]?\s+)?([A-Za-z][A-Za-z ,/&'_-]{2,100})\s*:?$/);
   if (!match) return null;
   const level = match[1] ? match[1].split(".").length : 1;
   return { normalized: normalizeHeading(match[2]), level, raw: cleaned };
@@ -105,11 +105,14 @@ function extractSectionBlocks(
   const flush = (endLine: number) => {
     if (!currentHeading) return;
     const content = buffer.join(" ").replace(/\s+/g, " ").trim();
-    if (!content) return;
     const kind = profile.sectionKinds?.[currentHeading.normalized] ?? DEFAULT_SECTION_KINDS[currentHeading.normalized];
-    if (!kind) return;
+    if (!kind || (!content && kind !== "topic")) return;
+    // Topic headings are useful draft structure even when a source extractor
+    // has not attached body text yet. Keep the title as a non-empty placeholder
+    // so downstream knowledge records remain valid and reviewable.
+    const sectionContent = content || currentHeading.raw;
     const parent = topicStack.length ? topicStack[topicStack.length - 1] : undefined;
-    const chunks = content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
+    const chunks = sectionContent.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
     chunks.forEach((chunk, index) => {
       const headingTitle = currentHeading!.raw;
       const item = makeItem(kind, headingTitle, chunk.trim(), identity, {
@@ -237,7 +240,7 @@ export function extractCurriculumKnowledge(
 
   const seen = new Set<string>();
   return [...sectionItems, ...objectives, ...assessments, ...papers].filter((item) => {
-    const key = `${item.kind}:${item.code ?? ""}:${item.content.toLowerCase().replace(/\s+/g, " ")}`;
+    const key = `${item.kind}:${item.code ?? ""}:${item.kind === "topic" ? item.title.toLowerCase() + ":" : ""}${item.content.toLowerCase().replace(/\s+/g, " ")}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
