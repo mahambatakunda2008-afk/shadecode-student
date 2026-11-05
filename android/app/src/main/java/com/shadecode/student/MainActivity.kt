@@ -466,7 +466,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                 },
                 focusStatus = focusStatus,
             )
-            3 -> SnapExtractScreen(padding)
+            3 -> SnapExtractScreen(padding, session.userId)
             else -> ProfileNativeScreen(
                 padding = padding,
                 session = session,
@@ -1154,8 +1154,9 @@ private fun ProfileNativeScreen(
                                     // Keep shared offline lesson content, but remove its learner progress.
                                     database.lessons().resetCachedLessonProgress()
                                 }
-                                // Snap & Extract artifacts are device-local and currently have no
-                                // account owner field, so do not erase them as if ownership were known.
+                                // Remove only Snap & Extract files written under this account's private directory.
+                                // Legacy unassigned extracts are preserved for explicit device-owner review.
+                                NativeExtractStore(appContext, session.userId).clearAccount()
                                 sessionStore.clearDeletedAccountData(session.userId)
                             }
                             deletionPending = false
@@ -1377,10 +1378,10 @@ private fun ProfileNativeScreen(
 
 
 @Composable
-private fun SnapExtractScreen(padding: PaddingValues) {
+private fun SnapExtractScreen(padding: PaddingValues, accountId: String) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val extractStore = remember { NativeExtractStore(context) }
+    val extractStore = remember(accountId) { NativeExtractStore(context, accountId) }
     var savedArtifacts by remember { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
     var artifactSearch by remember { mutableStateOf("") }
     var activeArtifactId by remember { mutableStateOf<String?>(null) }
@@ -1611,9 +1612,9 @@ private fun SnapExtractScreen(padding: PaddingValues) {
         item {
             Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
                 Column(Modifier.fillMaxWidth().padding(18.dp)) {
-                    Text("Saved extracts on this device", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Saved extracts for this account", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(6.dp))
-                    Text("Private to this app on this device. Up to 20 recent extracts are kept; older ones are removed automatically. Source images are not stored.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text("Private to this signed-in account on this device. Up to 20 recent extracts are kept; older ones are removed automatically. Source images are not stored. Extracts saved before account-scoped storage are kept separately and are not attributed to any account.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = artifactSearch,
