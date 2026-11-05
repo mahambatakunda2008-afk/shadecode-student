@@ -42,16 +42,24 @@ This document records data flows confirmed from the repository and identifies wh
 
 ## Account deletion implementation requirements
 
-The public request route is `/delete-account.html`. Web Settings and native Android Profile link to it. It currently submits a request to `shadecodetech@gmail.com`; it does **not** execute automated deletion.
+The public request page is `/delete-account.html`. It remains a mail-based fallback: it opens an email to `shadecodetech@gmail.com` and does not itself submit to the authenticated queue or execute deletion. Web Settings and native Android Profile also have in-app account-deletion controls in the account-deletion feature branch.
 
-Before declaring account deletion fully supported:
-- Build a server-side, authenticated deletion workflow with ownership verification and re-authentication/confirmation.
-- Enumerate and delete/anonymize all account-owned rows and storage objects transactionally or through an idempotent, resumable job.
-- Delete the Supabase Auth identity only after dependent data cleanup is safely handled.
-- Remove local account-scoped DataStore, Room, IndexedDB, service-worker and offline-paper data where appropriate.
-- Request deletion from processors where applicable and record completion without retaining unnecessary personal data.
-- Test cross-account isolation, partial failure, retry, and complete deletion.
-- Define any narrowly necessary retention exceptions and disclose them clearly.
+### Current implementation status (feature branch, not yet released)
+
+The branch adds an authenticated request endpoint at `POST /api/account/deletion-request`. It accepts the signed-in user's own request only, requires recent re-authentication (or a verified short-lived bearer token), and creates a durable deletion-queue request. A request being accepted means **queued**, not deleted.
+
+A status endpoint at `GET /api/account/deletion-status` exposes only the opaque request's status and completion timestamp. The branch also contains a server-only worker and database/storage cleanup functions. The worker is **disabled by default** behind `ACCOUNT_DELETION_WORKER_ENABLED`; no production schedule or secret is configured. The branch's migrations have not been applied to the live Supabase project, and no production account or user data has been deleted.
+
+### Remaining prerequisites before declaring deletion fully supported
+
+- Apply and validate the migrations in a disposable/staging Supabase project, including the read-only inventory, exact Storage manifest, queue leases, FK actions and transactional cleanup RPC.
+- Run two-account integration fixtures covering every ownership table, cross-account reviewer/moderator/approver attribution, shared lesson votes, channel receipts, pending uploads and backup objects. Prove unrelated users' data remains intact.
+- Review nested JSON/evidence for personal information and resolve legacy unlinked channel identifiers.
+- Complete browser and Android local-store deletion/reconnect tests, including prevention of queued offline mutations syncing after a deletion request.
+- Complete processor-side deletion/retention review for AI providers, Sentry, Vercel logs and Meta/WhatsApp.
+- Reconcile the final production schema, environment flags, scheduled worker configuration and actual completion evidence before any Play Console declaration.
+
+Do not enable the worker, merge/release the feature as complete, or describe a queued request as completed deletion until these prerequisites pass. Define and disclose any narrowly necessary retention exceptions.
 
 ## Play Console follow-up
 
@@ -60,6 +68,6 @@ Do not complete the Data safety or account-deletion declarations from assumption
 - the complete Supabase schema and storage inventory;
 - Android dependency/SDK inventory;
 - Sentry and Vercel project settings;
-- actual account-deletion test evidence.
+- disposable-database integration tests and actual account-deletion completion evidence.
 
-The public deletion request page is an entry point, not proof that deletion is being fulfilled. Keep Play production release blocked until the end-to-end workflow is verified.
+The public deletion page is a mail-based entry point, while the in-app feature branch queues authenticated requests. Neither is proof that deletion has been fulfilled. Keep Play production release blocked until the end-to-end workflow is verified.
