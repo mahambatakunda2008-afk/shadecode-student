@@ -272,6 +272,22 @@ describe("Biology practical attempt preview", () => {
     expect(() => selfAwardPracticalMarks(set, attempt, "P3-01", "a", 4)).toThrow();
   });
 
+  it("excludes malformed and orphaned self-awarded marks from all summary totals", () => {
+    const attempt = {
+      ...startPracticalAttempt(set),
+      selfAwardedMarks: {
+        "P3-01::a": 99,
+        "P3-01::b": -2,
+        "P5-01::a": 1.5,
+        "P3-01::missing": 3,
+      },
+    };
+    const summary = summarizePracticalAttempt(set, attempt);
+    expect(summary.selfAwardedMarks).toBe(0);
+    expect(summary.paperCoverage["Paper 3"].selfAwardedMarks).toBe(0);
+    expect(summary.paperCoverage["Paper 5"].selfAwardedMarks).toBe(0);
+  });
+
 
   it("gives targeted question-level coaching across practical skill categories", () => {
     expect(getPracticalQuestionFeedback({ prompt: "Calculate the percentage change in mass.", answer: [] }).category).toBe("calculations");
