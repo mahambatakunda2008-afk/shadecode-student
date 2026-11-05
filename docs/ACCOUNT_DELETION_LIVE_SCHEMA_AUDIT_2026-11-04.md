@@ -412,3 +412,17 @@ Migration `20261105140000_account_deletion_storage_manifest.sql` adds `account_d
 - exact `community_uploads.file_path` values for rows contributed by the user (covers any legacy path not following the current prefix convention).
 
 The manifest deliberately cannot return `past-papers` objects. The worker must remove returned objects using the Supabase Storage API, treat already-missing objects as success, and only then proceed to database row deletion. It must not delete by wildcard outside the two private buckets.
+
+
+## Transactional database cleanup phase
+
+Migration `20261105150000_account_deletion_database_cleanup_rpc.sql` adds `execute_account_deletion_cleanup(request_id, lease_token)`. It derives the target user from the queue row itself and requires a matching, unexpired processing lease. The caller cannot supply an arbitrary user ID.
+
+The function performs one database transaction and:
+- removes the source-linked shared lesson-library copies before deleting the learner's lessons;
+- removes channel receipts linked by either user_id or the channel identity mapping before deleting that mapping;
+- clears NO ACTION reviewer/assigner references and other-user attribution;
+- deletes feedback, exam results, AI usage/anomaly records, exports, survey responses, traction events, own challenge attempts/challenges, account-owned non-FK records, platform relationships and community upload rows;
+- leaves Auth deletion to the worker as the final destructive step.
+
+It returns only the target user UUID and per-table counts, not row contents. It does not delete Storage objects, Auth users, or third-party processor data. Storage cleanup must succeed before this RPC is called. The function is branch-only, has not been applied to production, and still requires disposable-database integration tests against representative ownership and cross-user attribution fixtures before activation.
