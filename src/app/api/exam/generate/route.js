@@ -73,20 +73,25 @@ export async function POST(req) {
       } catch {
         exam = null;
       }
-      if (exam) examAiBreaker.recordSuccess();
-      else examAiBreaker.recordFailure();
+      if (exam?.questions?.length === questionCount) examAiBreaker.recordSuccess();
+      else {
+        exam = null;
+        examAiBreaker.recordFailure();
+      }
     }
 
     if (!exam) {
       // Deterministic engine first (exact, instant), then curated questions. Never serve generic placeholders.
       exam = buildGuaranteedExam(canonicalSubject.name, builtInTopic, difficulty, questionCount);
-      source = "deterministic-fallback";
+      source = matchGenerators(canonicalSubject.name, builtInTopic, difficulty).length > 0
+        ? "deterministic-engine"
+        : "curated-bank";
     }
 
-    if (!exam) {
+    if (!exam || !Array.isArray(exam.questions) || exam.questions.length !== questionCount) {
       return NextResponse.json({
-        error: "Live question generation is busy right now, so we couldn't build this paper. Nothing was lost. Please try again in a minute, or choose a different topic.",
-        code: "GENERATION_UNAVAILABLE",
+        error: "We couldn't build the full number of verified questions requested for this topic. No shortened paper was presented as complete. Try a smaller paper or another covered topic.",
+        code: "INSUFFICIENT_QUESTION_COVERAGE",
         retryable: true,
       }, { status: 503 });
     }

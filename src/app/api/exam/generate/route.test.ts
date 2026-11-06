@@ -28,7 +28,7 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     const { status, json } = await call({ subject: "Biology", topic: "Enzymes (A-Level standard)", difficulty: "medium", questionCount: 10 });
     expect(status).toBe(200);
     expect(generateExam).not.toHaveBeenCalled();
-    expect(json.metadata.source).toBe("deterministic-fallback");
+    expect(json.metadata.source).toBe("curated-bank");
     expect(json.questions).toHaveLength(10);
     for (const q of json.questions) expect(q.options).toContain(q.modelAnswer);
   });
@@ -93,7 +93,7 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     const { status, json } = await call({ subject: "Geography", topic: "Geography (A-Level)", difficulty: "medium", questionCount: 10 });
     expect(generateExam).toHaveBeenCalledTimes(1);
     expect(status).toBe(503);
-    expect(json.code).toBe("GENERATION_UNAVAILABLE");
+    expect(json.code).toBe("INSUFFICIENT_QUESTION_COVERAGE");
   });
 
   it("still tries AI for a topic with no built-in coverage, and is honest when it fails", async () => {
@@ -101,7 +101,7 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     const { status, json } = await call({ subject: "Geography", topic: "Rivers", difficulty: "medium", questionCount: 10 });
     expect(generateExam).toHaveBeenCalledTimes(1);
     expect(status).toBe(503);
-    expect(json.code).toBe("GENERATION_UNAVAILABLE");
+    expect(json.code).toBe("INSUFFICIENT_QUESTION_COVERAGE");
   });
 
   it("returns the live AI paper for an uncovered topic when AI works", async () => {
@@ -109,5 +109,26 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     const { status, json } = await call({ subject: "Geography", topic: "Rivers", difficulty: "medium", questionCount: 1 });
     expect(status).toBe(200);
     expect(json.metadata.source).toBe("cortex");
+  });
+
+  it("refuses to return an underfilled AI paper as complete", async () => {
+    generateExam.mockResolvedValue({ title: "Geo", questions: [{ id: 1, type: "short_answer", question: "Define erosion.", marks: 2, topic: "Rivers", difficulty: "medium" }], totalMarks: 2, durationMinutes: 5 });
+    const { status, json } = await call({ subject: "Geography", topic: "Rivers", difficulty: "medium", questionCount: 5 });
+    expect(status).toBe(503);
+    expect(json.code).toBe("INSUFFICIENT_QUESTION_COVERAGE");
+  });
+
+  it("refuses to silently truncate deterministic papers above engine capacity", async () => {
+    generateExam.mockImplementation(async () => { throw new Error("AI must not be used"); });
+    const { status, json } = await call({ subject: "Physics", topic: "Kinematics", difficulty: "medium", questionCount: 50 });
+    expect(status).toBe(503);
+    expect(json.code).toBe("INSUFFICIENT_QUESTION_COVERAGE");
+    expect(generateExam).not.toHaveBeenCalled();
+  });
+
+  it("identifies deterministic-engine provenance separately from curated banks", async () => {
+    const { status, json } = await call({ subject: "Physics", topic: "Kinematics", difficulty: "medium", questionCount: 10 });
+    expect(status).toBe(200);
+    expect(json.metadata.source).toBe("deterministic-engine");
   });
 });
