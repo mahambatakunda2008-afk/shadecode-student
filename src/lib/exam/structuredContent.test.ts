@@ -34,13 +34,12 @@ describe("normalizeExamContent", () => {
     if (blocks[1]?.type === "table") expect(blocks[1].rows).toHaveLength(30);
   });
 
-  it("does not pass markup through as raw HTML", () => {
+  it("keeps markup as text and relies on the existing math renderer to escape it", () => {
     const blocks = normalizeExamContent([{ type: "text", text: '<img src=x onerror="alert(1)"> $x^2$' }]);
-    expect(blocks).toEqual([{ type: "text", text: '<img src=x onerror="alert(1)"> $x^2
-  });
-}); }]);
+    expect(blocks).toEqual([{ type: "text", text: '<img src=x onerror="alert(1)"> $x^2$' }]);
     const rendered = renderMath(blocks[0].type === "text" ? blocks[0].text : "");
     expect(rendered).not.toContain("<img");
     expect(rendered).toContain("&lt;img");
+    expect(rendered).toContain("katex");
   });
 });
