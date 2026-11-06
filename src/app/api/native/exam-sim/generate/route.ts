@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generateExam } from "@/lib/cortex/examGenerator";
+import { buildGuaranteedExamForTopics } from "@/lib/exam/guaranteedExam";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
@@ -30,11 +31,34 @@ export async function POST(request: Request) {
     if (!requestedSubject) return NextResponse.json({ error: "Choose a subject first." }, { status: 400 });
     const access = await resolveLearnerSubject(supabase, user.id, requestedSubject, body?.subjectId);
     if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
-    const exam = await generateExam(access.subject, topics, difficulty, count, user.id);
-    if (!exam || !Array.isArray(exam.questions) || exam.questions.length < 1) {
-      return NextResponse.json({ error: "Cortex could not produce a verified paper. No placeholder questions were used. Please retry." }, { status: 503 });
+    if (body?.learningMode === "classic") {
+      const offlineExam = buildGuaranteedExamForTopics(access.subject, topics, difficulty, count);
+      if (!offlineExam || offlineExam.questions.length !== count) {
+        return NextResponse.json({ error: "Traditional mode does not yet have enough verified offline questions for every selected topic.", code: "OFFLINE_COVERAGE_UNAVAILABLE" }, { status: 503 });
+      }
+      return NextResponse.json({ exam: offlineExam, subject: access.subject, subjectId: access.subjectId, generationMode: "deterministic_offline" });
     }
-    return NextResponse.json({ exam, subject: access.subject, subjectId: access.subjectId });
+
+    const exam = await generateExam(access.subject, topics, difficulty, count, user.id);
+    if (exam && Array.isArray(exam.questions) && exam.questions.length === count) {
+      return NextResponse.json({ exam, subject: access.subject, subjectId: access.subjectId, generationMode: "cortex_ai" });
+    }
+
+    const offlineExam = buildGuaranteedExamForTopics(access.subject, topics, difficulty, count);
+    if (offlineExam && offlineExam.questions.length === count) {
+      return NextResponse.json({
+        exam: offlineExam,
+        subject: access.subject,
+        subjectId: access.subjectId,
+        generationMode: "deterministic_offline",
+        notice: "Cortex AI was unavailable. This paper was built from verified offline question generators and curated questions.",
+      });
+    }
+
+    return NextResponse.json({
+      error: "Cortex could not produce a verified paper, and there is not yet enough offline coverage for every selected topic. No placeholder questions were used.",
+      code: "INSUFFICIENT_VERIFIED_COVERAGE",
+    }, { status: 503 });
   } catch (error) {
     console.error("[native exam-sim generate]", error);
     return NextResponse.json({ error: "Could not generate this exam right now." }, { status: 502 });
