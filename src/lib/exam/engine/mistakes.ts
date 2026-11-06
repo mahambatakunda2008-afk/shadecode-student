@@ -66,12 +66,26 @@ const CORE_MISTAKES: Record<string, (p: P, exact: number) => Entry[]> = {
     [n(p.h) * Math.cos((n(p.theta) * Math.PI) / 180), "used-cosine", "The side opposite the angle uses sine (SOH), not cosine."],
   ],
   "maths.mean": (p) => [[String(p.data).split(",").map(Number).reduce((s, v) => s + v, 0), "forgot-to-divide", "Divide the total by how many values there are."]],
+  "maths.median": (p) => [[Math.max(...String(p.data).split(",").map(Number)), "used-largest-value", "The median is the middle value after sorting, not the largest value." ]],
+  "maths.independent-probability": (p) => [
+    [1 / n(p.a), "considered-first-event-only", "For both independent events, multiply their probabilities."],
+    [1 / n(p.b), "considered-second-event-only", "You must include the probability of both events."],
+    [1 / n(p.a) + 1 / n(p.b), "added-independent-events", "For both events, multiply. Addition is used for mutually exclusive alternatives."],
+  ],
   "maths.binomial-coefficient": (p) => [[factorial(n(p.n)) / factorial(n(p.n) - n(p.r)), "permutation", "Order does not matter here, so also divide by r!."]],
   "maths.gradient": (p) => [
     [1 / n(p.m), "inverted", "Gradient is change in y ÷ change in x, not the other way round."],
     [-n(p.m), "sign-slip", "Check the signs when you subtract the coordinates."],
   ],
 
+  "physics.density": (p) => [
+    [n(p.mass) * n(p.volume), "multiplied-instead-of-divided", "Density is mass divided by volume, not mass multiplied by volume."],
+    [n(p.volume) / n(p.mass), "inverted-density", "Density is mass per unit volume. Check the order of the division."],
+  ],
+  "physics.acceleration-from-data": (p) => [
+    [n(p.v2) - n(p.v1), "forgot-time-interval", "Acceleration is change in velocity divided by the time interval."],
+    [n(p.v2) / n(p.t2), "used-origin-gradient", "Use the two supplied readings to calculate the gradient between them."],
+  ],
   "physics.suvat-v": (p) => [[n(p.a) * n(p.t), "forgot-initial-speed", "Add the initial speed: v = u + at."]],
   "physics.suvat-s": (p) => [
     [n(p.u) * n(p.t) + n(p.a) * n(p.t) ** 2, "forgot-half", "The acceleration term has a ½: s = ut + ½at²."],
@@ -109,6 +123,8 @@ const CORE_MISTAKES: Record<string, (p: P, exact: number) => Entry[]> = {
     [n(p.start) / 2, "one-half-life-only", "Apply the halving once for every half-life that has passed."],
   ],
 
+  "chemistry.atom-economy": (_p, exact) => [[100 - exact, "used-waste-fraction", "Atom economy is the fraction of product mass that is useful, not the waste fraction." ]],
+  "chemistry.percentage-composition": (p) => [[((n(p.mr) - n(p.elementMass)) / n(p.mr)) * 100, "used-other-element", "Use the mass of the specified element, not the remaining elements in the formula." ]],
   "chemistry.relative-formula-mass": (p) => [[formulaMassIgnoringCounts(String(p.formula)), "ignored-subscripts", "Multiply each Aᵣ by the number of atoms in the formula."]],
   "chemistry.moles-from-mass": (p, exact) => [
     [1 / exact, "inverted", "n = m ÷ Mᵣ, not Mᵣ ÷ m."],
@@ -133,6 +149,8 @@ const CORE_MISTAKES: Record<string, (p: P, exact: number) => Entry[]> = {
   ],
   "chemistry.dilution": (p) => [[(n(p.c2) * n(p.v1)) / n(p.c1), "inverted-ratio", "Use c₁V₁ = c₂V₂, so V₂ = c₁V₁ ÷ c₂."]],
 
+  "cs.twos-complement": (p) => [[parseInt(String(p.bits), 2), "read-as-unsigned", "The most significant bit is the sign bit in two’s complement, so this is a negative value." ]],
+  "cs.binary-addition": (p) => [[n(p.sum) + 1, "addition-carry-slip", "Recheck each column and carry any pair of 1s into the next column." ]],
   "cs.binary-to-denary": (p) => [[parseInt(String(p.bits).split("").reverse().join(""), 2), "reversed-bits", "The leftmost bit is worth the most (128), not the least."]],
   "cs.hex-to-denary": (p) => [[parseInt(String(p.hex)[0], 16) * 10 + parseInt(String(p.hex)[1], 16), "read-as-decimal", "Each hex digit is worth 16 times the one to its right, not 10."]],
   "cs.image-file-size": (p) => [[n(p.w) * n(p.h) * n(p.depth), "left-in-bits", "That is in bits. Divide by 8 to get bytes."]],

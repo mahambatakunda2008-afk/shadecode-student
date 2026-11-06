@@ -54,6 +54,11 @@ const INDEPENDENT: Record<string, (p: P, exact: number) => void> = {
     expect(exact).toBeLessThan(n(p.h));
     near(Math.hypot(exact, n(p.h) * Math.cos((n(p.theta) * Math.PI) / 180)), n(p.h), 1e-9);
   },
+  "maths.median": (p, exact) => {
+    const values = String(p.data).split(",").map(Number).sort((a, b) => a - b);
+    expect(values[3]).toBe(exact);
+  },
+  "maths.independent-probability": (p, exact) => near(1 / (n(p.a) * n(p.b)), exact),
   "maths.mean": (p, exact) => {
     const data = String(p.data).split(",").map(Number);
     near(data.reduce((s, v) => s + v, 0) / data.length, exact);

@@ -278,7 +278,7 @@ export const mathsGenerators: QuestionGenerator[] = [
     id: "maths.independent-probability",
     subject: "Mathematics",
     level: "alevel",
-    topic: "Probability",
+    topic: "A-Level Probability",
     keywords: ["probability", "independent", "events", "statistics"],
     build(rng) {
       const a = rng.int(2, 8), b = rng.int(2, 8);

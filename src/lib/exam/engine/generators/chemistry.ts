@@ -202,7 +202,7 @@ export const chemistryGenerators: QuestionGenerator[] = [
     keywords: ["atom economy", "economy", "percentage", "yield", "sustainability", "green chemistry"],
     build(rng) {
       const desiredMr = rng.int(20, 100);
-      const totalMr = desiredMr + rng.int(10, 100);
+      const totalMr = desiredMr + rng.int(desiredMr + 1, desiredMr + 100);
       const exact = (desiredMr / totalMr) * 100;
       const { value, tolerance } = roundSF(exact, 3);
       return {
