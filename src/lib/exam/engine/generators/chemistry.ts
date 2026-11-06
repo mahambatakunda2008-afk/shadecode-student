@@ -201,16 +201,16 @@ export const chemistryGenerators: QuestionGenerator[] = [
     topic: "Yield and efficiency",
     keywords: ["atom economy", "economy", "percentage", "yield", "sustainability", "green chemistry"],
     build(rng) {
-      const desired = rng.int(2, 20) * 10;
-      const waste = rng.int(1, 15) * 10;
-      const exact = (desired / (desired + waste)) * 100;
+      const desiredMr = rng.int(20, 100);
+      const totalMr = desiredMr + rng.int(10, 100);
+      const exact = (desiredMr / totalMr) * 100;
       const { value, tolerance } = roundSF(exact, 3);
       return {
-        question: `A reaction produces ${desired} g of the desired product and ${waste} g of by-products. Calculate the atom economy, to 3 significant figures (%).`,
+        question: `A reaction produces a desired product with Mᵣ = ${desiredMr}. The sum of the Mᵣ values of all products is ${totalMr}. Calculate the atom economy, to 3 significant figures (%).`,
         numeric: { exact, tolerance, unit: "%" },
-        working: ["Atom economy = (Mr of desired product ÷ total Mr of products) × 100.", `= (${desired} ÷ (${desired} + ${waste})) × 100 = ${value}%.`],
+        working: ["Atom economy = (Mr of desired product ÷ total Mr of products) × 100.", `= (${desiredMr} ÷ ${totalMr}) × 100 = ${value}%.`],
         marks: 2,
-        params: { desired, waste },
+        params: { desiredMr, totalMr },
       };
     },
   },
@@ -222,7 +222,7 @@ export const chemistryGenerators: QuestionGenerator[] = [
     build(rng) {
       const formula = rng.pick(["H2O", "CO2", "NH3", "NaCl", "MgO"] as const);
       const element = formula.match(/[A-Z][a-z]?/)?.[0] ?? "H";
-      const count = Number(formula.match(new RegExp(element + "(\\\\d*)"))?.[1] || 1);
+      const count = Number(formula.match(new RegExp(element + "(\\d*)"))?.[1] || 1);
       const elementMass = AR[element] * count;
       const mr = formulaMass(formula);
       const exact = (elementMass / mr) * 100;
