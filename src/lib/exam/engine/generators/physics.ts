@@ -250,7 +250,7 @@ export const physicsGenerators: QuestionGenerator[] = [
       const v1 = u + a * t1;
       const v2 = u + a * t2;
       return {
-        question: `A motion sensor records the following data:\n\n| Time / s | ${t1} | ${t2} |\n|---|---:|---:|\n| Velocity / m s⁻¹ | ${v1} | ${v2} |\n\nCalculate the acceleration between the two readings (m s⁻²).`,
+        question: `A motion sensor records a velocity of ${v1} m s⁻¹ at ${t1} s and ${v2} m s⁻¹ at ${t2} s. Calculate the acceleration between these readings (m s⁻²).`,
         numeric: exactInteger((v2 - v1) / interval),
         working: [`Acceleration is the gradient of a velocity-time graph.`, `a = (v₂ − v₁)/(t₂ − t₁) = (${v2} − ${v1})/(${t2} − ${t1}) = ${a} m s⁻².`],
         marks: 2,
