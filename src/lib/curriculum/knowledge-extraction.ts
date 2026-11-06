@@ -384,6 +384,19 @@ function extractCambridgeNumberedLearningOutcomes(
     const line = lines[index].trim();
     if (!line) continue;
 
+    // A new top-level topic ends the previous topic's learning-outcome
+    // section. Otherwise its number can be mistaken for another outcome.
+    const topicHeadingMatch = line.match(/^(\d{1,2})\s+(.+)$/);
+    if (
+      topicHeadingMatch &&
+      topicByCode.has(topicHeadingMatch[1]) &&
+      currentSubtopic?.code.split(".")[0] !== topicHeadingMatch[1]
+    ) {
+      flushSubtopic();
+      inLearningOutcomes = false;
+      continue;
+    }
+
     const subtopicMatch = line.match(/^(\d{1,2}\.\d{1,2})\s+(.+)$/);
     if (subtopicMatch) {
       const headingTitle = subtopicMatch[2].replace(/\s*\(continued\)$/i, "").trim();
