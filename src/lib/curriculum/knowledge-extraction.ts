@@ -452,6 +452,12 @@ function extractCambridgePracticalSkillExpectations(
     }
     if (!group) continue;
 
+    const nestedBullet = rawLine.match(/^\s{2,}[-•●▪]\s+(.+)$/);
+    if (nestedBullet && current) {
+      current.content = current.content + " " + nestedBullet[1];
+      continue;
+    }
+
     const bullet = line.match(/^(?:[-•●▪]\s+)(.+)$/);
     if (bullet) {
       flush();
