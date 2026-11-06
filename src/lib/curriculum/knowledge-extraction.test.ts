@@ -361,7 +361,8 @@ describe("Cambridge Biology practical extraction detail", () => {
     expect(overview?.content).toContain("At least 20% of course time");
     expect(papers.map((item) => item.code)).toEqual(["P3", "P5"]);
     expect(papers.every((item) => item.parentId === overview?.id)).toBe(true);
-    expect([...papers, overview].every((item) => item.status === "draft")).toBe(true);
+    expect(overview?.status).toBe("draft");
+    expect(papers.every((item) => item.status === "draft")).toBe(true);
   });
 
   it("extracts detailed Paper 3 and Paper 5 skill expectations as unpublished draft records", async () => {
