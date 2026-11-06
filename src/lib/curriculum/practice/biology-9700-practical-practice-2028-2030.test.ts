@@ -32,8 +32,9 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
 
   it("includes the five-value investigation expectation and repeat measurements", () => {
     const investigation = practiceSet.tasks.find((task) => task.id === "P3-01");
-    expect(investigation?.questions.find((question) => question.id === "b")?.answer.join(" "))
-      .toContain("five");
+    const rangeQuestion = investigation?.questions.find((question) => question.id === "b");
+    expect(rangeQuestion?.prompt.toLowerCase()).toContain("at least five");
+    expect(rangeQuestion?.answer.join(" ")).toContain("10, 20, 30, 40, 50 and 60");
     expect(investigation?.questions.find((question) => question.id === "d")?.answer.join(" "))
       .toContain("three");
   });
