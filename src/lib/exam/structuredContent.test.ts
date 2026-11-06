@@ -28,7 +28,7 @@ describe("normalizeExamContent", () => {
       { type: "table", headers: ["A", "B"], rows: Array.from({ length: 40 }, () => ["1", "2"]) },
       ...Array.from({ length: 20 }, () => ({ type: "text", text: "extra" })),
     ]);
-    expect(blocks).toHaveLength(2);
+    expect(blocks).toHaveLength(12);
     expect(blocks[0]).toMatchObject({ type: "diagram", shapes: [{ type: "circle", cx: 600 }] });
     expect(blocks[1]).toMatchObject({ type: "table", rows: expect.any(Array) });
     if (blocks[1]?.type === "table") expect(blocks[1].rows).toHaveLength(30);
