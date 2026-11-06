@@ -110,4 +110,25 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     expect(status).toBe(200);
     expect(json.metadata.source).toBe("cortex");
   });
+
+  it("refuses to return an underfilled AI paper as complete", async () => {
+    generateExam.mockResolvedValue({ title: "Geo", questions: [{ id: 1, type: "short_answer", question: "Define erosion.", marks: 2, topic: "Rivers", difficulty: "medium" }], totalMarks: 2, durationMinutes: 5 });
+    const { status, json } = await call({ subject: "Geography", topic: "Rivers", difficulty: "medium", questionCount: 5 });
+    expect(status).toBe(503);
+    expect(json.code).toBe("INSUFFICIENT_QUESTION_COVERAGE");
+  });
+
+  it("refuses to silently truncate deterministic papers above engine capacity", async () => {
+    generateExam.mockImplementation(async () => { throw new Error("AI must not be used"); });
+    const { status, json } = await call({ subject: "Physics", topic: "Kinematics", difficulty: "medium", questionCount: 50 });
+    expect(status).toBe(503);
+    expect(json.code).toBe("INSUFFICIENT_QUESTION_COVERAGE");
+    expect(generateExam).not.toHaveBeenCalled();
+  });
+
+  it("identifies deterministic-engine provenance separately from curated banks", async () => {
+    const { status, json } = await call({ subject: "Physics", topic: "Kinematics", difficulty: "medium", questionCount: 10 });
+    expect(status).toBe(200);
+    expect(json.metadata.source).toBe("deterministic-engine");
+  });
 });
