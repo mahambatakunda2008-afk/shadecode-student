@@ -28,7 +28,7 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     const { status, json } = await call({ subject: "Biology", topic: "Enzymes (A-Level standard)", difficulty: "medium", questionCount: 10 });
     expect(status).toBe(200);
     expect(generateExam).not.toHaveBeenCalled();
-    expect(json.metadata.source).toBe("deterministic-fallback");
+    expect(json.metadata.source).toBe("curated-bank");
     expect(json.questions).toHaveLength(10);
     for (const q of json.questions) expect(q.options).toContain(q.modelAnswer);
   });
@@ -93,7 +93,7 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     const { status, json } = await call({ subject: "Geography", topic: "Geography (A-Level)", difficulty: "medium", questionCount: 10 });
     expect(generateExam).toHaveBeenCalledTimes(1);
     expect(status).toBe(503);
-    expect(json.code).toBe("GENERATION_UNAVAILABLE");
+    expect(json.code).toBe("INSUFFICIENT_QUESTION_COVERAGE");
   });
 
   it("still tries AI for a topic with no built-in coverage, and is honest when it fails", async () => {
