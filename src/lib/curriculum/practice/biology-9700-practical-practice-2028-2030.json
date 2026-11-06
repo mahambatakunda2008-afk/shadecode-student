@@ -106,7 +106,39 @@
             "Mean oxygen volume in 60 s / cm³ on the y-axis.",
             "Linear scales use most of the available grid and have labelled axes with units.",
             "Plot points accurately and draw a suitable best-fit line or smooth curve; do not join points dot-to-dot without justification."
-          ]
+          ],
+          "data": {
+            "columns": [
+              "Temperature / °C",
+              "Mean oxygen volume in 60 s / cm³"
+            ],
+            "rows": [
+              [
+                10,
+                4.2
+              ],
+              [
+                20,
+                8.1
+              ],
+              [
+                30,
+                13.6
+              ],
+              [
+                40,
+                18.4
+              ],
+              [
+                50,
+                15.2
+              ],
+              [
+                60,
+                7.3
+              ]
+            ]
+          }
         },
         {
           "id": "g",
@@ -198,6 +230,394 @@
       "markingGuide": {
         "totalPracticeMarks": 14,
         "principle": "Magnification is image size divided by actual size, with both sizes in the same units. Drawing criteria are practice guidance, not an official mark scheme."
+      }
+    },
+    {
+      "id": "P3-03",
+      "paper": "Paper 3",
+      "title": "Osmosis in plant tissue",
+      "format": "Investigation, percentage change and graph interpretation",
+      "skills": [
+        "independent and dependent variables",
+        "percentage change",
+        "range and intervals",
+        "control of variables",
+        "repeats",
+        "table",
+        "graph",
+        "interpretation",
+        "evaluation"
+      ],
+      "scenario": "A learner investigates how sucrose concentration affects the mass of potato cylinders. Equal-sized cylinders are blotted consistently before weighing and are left in each solution for the same time.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Identify the independent and dependent variables. State how the dependent variable is measured.",
+          "answer": [
+            "Independent variable: sucrose solution concentration, in mol dm⁻³.",
+            "Dependent variable: change in mass of each potato cylinder, measured in g.",
+            "Use the same balance and record initial and final mass."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 3,
+          "prompt": "Suggest a suitable range of at least five sucrose concentrations and explain why a range is needed.",
+          "answer": [
+            "Use a justified series such as 0.0, 0.2, 0.4, 0.6, 0.8 and 1.0 mol dm⁻³.",
+            "A range should include concentrations on both sides of the isotonic point if possible.",
+            "Equal intervals make the pattern easier to compare."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 4,
+          "prompt": "Describe four variables to control and how to control them.",
+          "answer": [
+            "Use potato cylinders of the same diameter and length, cut with the same cork borer and ruler.",
+            "Use the same volume of solution in each labelled container.",
+            "Keep immersion time constant with a timer.",
+            "Blot each cylinder using the same paper and procedure before final weighing.",
+            "Keep temperature constant because it affects osmosis rate."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Explain why repeats are needed and how the results should be summarised.",
+          "answer": [
+            "Use at least three cylinders at each concentration.",
+            "Repeats reveal biological variation and help identify anomalies.",
+            "Calculate a mean percentage change using concordant results."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 3,
+          "prompt": "Describe a suitable results table, including the measurements and calculated values.",
+          "answer": [
+            "Record concentration with units in the first column.",
+            "Record initial mass and final mass for each repeat in separate columns.",
+            "Calculate change in mass and percentage change using consistent precision."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 4,
+          "prompt": "Calculate the percentage change in mass for a cylinder that changes from 2.50 g to 2.20 g. Show the formula and working.",
+          "answer": [
+            "Percentage change = (change in mass ÷ initial mass) × 100.",
+            "Change in mass = 2.20 − 2.50 = −0.30 g.",
+            "Percentage change = (−0.30 ÷ 2.50) × 100 = −12%.",
+            "The negative sign shows a loss of mass."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Plot mean percentage change in mass against sucrose concentration and describe the trend.",
+          "answer": [
+            "Put sucrose concentration / mol dm⁻³ on the x-axis.",
+            "Put mean percentage change in mass / % on the y-axis.",
+            "Use a suitable scale, plot points accurately and draw a best-fit line or curve.",
+            "The isotonic concentration is estimated where percentage change is zero."
+          ],
+          "data": {
+            "columns": [
+              "Sucrose concentration / mol dm⁻³",
+              "Mean percentage change in mass / %"
+            ],
+            "rows": [
+              [
+                0,
+                18
+              ],
+              [
+                0.2,
+                11
+              ],
+              [
+                0.4,
+                5
+              ],
+              [
+                0.6,
+                -2
+              ],
+              [
+                0.8,
+                -9
+              ],
+              [
+                1,
+                -15
+              ]
+            ]
+          }
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "Evaluate two limitations of this method and suggest a linked improvement for each.",
+          "answer": [
+            "Potato cylinders may differ in surface area: cut equal lengths with a cork borer and trim consistently.",
+            "Blotting may remove different amounts of surface water: standardise blotting time and pressure.",
+            "Tissue from different regions may vary: use matched cylinders from the same potato or repeat with several potatoes.",
+            "Temperature may drift: use a thermostatically controlled water bath."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 27,
+        "principle": "Original self-review mark points, not an official Cambridge mark scheme."
+      }
+    },
+    {
+      "id": "P3-04",
+      "paper": "Paper 3",
+      "title": "Amylase activity and pH",
+      "format": "Enzyme investigation, timing and rate calculation",
+      "skills": [
+        "independent and dependent variables",
+        "range and intervals",
+        "timing",
+        "control of variables",
+        "repeats",
+        "rate calculation",
+        "graph",
+        "evaluation"
+      ],
+      "scenario": "A learner investigates the effect of pH on amylase activity by mixing amylase with starch and testing samples with iodine at regular intervals. The endpoint is the first sample that no longer turns iodine blue-black.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "State the independent and dependent variables and explain how the dependent variable is measured.",
+          "answer": [
+            "Independent variable: pH of the reaction mixture.",
+            "Dependent variable: time taken for starch to disappear, measured in seconds.",
+            "Use the same sampling interval and a consistent iodine endpoint."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 3,
+          "prompt": "Suggest at least five pH values that would provide a useful range.",
+          "answer": [
+            "A suitable range could be pH 3, 4, 5, 6, 7 and 8.",
+            "The range should cover acidic, near-neutral and alkaline conditions.",
+            "Smaller intervals can be added around the pH giving the shortest time."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 4,
+          "prompt": "Describe how to measure the endpoint consistently and calculate an activity rate.",
+          "answer": [
+            "Place equal volumes of iodine in labelled wells before starting.",
+            "Mix fixed volumes of starch and amylase at the target pH.",
+            "Transfer a drop at fixed time intervals to iodine.",
+            "Record the first time iodine remains brown-orange rather than blue-black.",
+            "Estimate rate as 1 ÷ time when the endpoint is reached."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Explain how temperature and substrate concentration should be controlled.",
+          "answer": [
+            "Use a thermostatically controlled water bath and pre-equilibrate solutions.",
+            "Use the same starch concentration and volume for every pH.",
+            "Use the same amylase concentration and volume."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 3,
+          "prompt": "Explain the value of repeating each pH treatment.",
+          "answer": [
+            "Repeat each pH at least three times.",
+            "Repeats reveal variation in timing and endpoint judgement.",
+            "Calculate a mean time or mean rate and investigate anomalies."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 4,
+          "prompt": "A reaction reaches the endpoint in 40 s. Calculate the rate using 1 ÷ time and give the unit.",
+          "answer": [
+            "Rate = 1 ÷ 40 s.",
+            "Rate = 0.025 s⁻¹.",
+            "The reciprocal-time rate is an index for comparing treatments, not a direct concentration measurement.",
+            "Use the same definition and unit for every pH."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Plot mean reciprocal time against pH and identify the optimum pH shown by the data.",
+          "answer": [
+            "Put pH on the x-axis.",
+            "Put mean rate / s⁻¹ on the y-axis.",
+            "Plot the mean values and draw a smooth best-fit curve.",
+            "The optimum is the pH with the highest mean rate."
+          ],
+          "data": {
+            "columns": [
+              "pH",
+              "Mean rate / s⁻¹"
+            ],
+            "rows": [
+              [
+                3,
+                0.006
+              ],
+              [
+                4,
+                0.012
+              ],
+              [
+                5,
+                0.02
+              ],
+              [
+                6,
+                0.028
+              ],
+              [
+                7,
+                0.021
+              ],
+              [
+                8,
+                0.009
+              ]
+            ]
+          }
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "Evaluate two sources of uncertainty and give realistic improvements.",
+          "answer": [
+            "The endpoint is judged by colour: use a colorimeter or standardised colour chart if available.",
+            "Sampling intervals limit timing precision: use shorter intervals near the expected endpoint.",
+            "Temperature may vary between tubes: maintain a water bath and monitor it.",
+            "Different drop sizes affect iodine tests: use calibrated pipettes."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 27,
+        "principle": "Original self-review mark points, not an official Cambridge mark scheme."
+      }
+    },
+    {
+      "id": "P3-05",
+      "paper": "Paper 3",
+      "title": "Transpiration using a potometer",
+      "format": "Apparatus setup, measurement and rate calculation",
+      "skills": [
+        "independent and dependent variables",
+        "measurement",
+        "rate calculation",
+        "apparatus setup",
+        "control of variables",
+        "range and intervals",
+        "evaluation"
+      ],
+      "scenario": "A learner uses a bubble potometer to estimate water uptake by a leafy shoot under different environmental conditions. The shoot is cut under water and the apparatus is checked for leaks.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "State what a potometer measures and explain why this is an estimate of transpiration rate.",
+          "answer": [
+            "It measures water uptake by the shoot, often from movement of an air bubble.",
+            "Some absorbed water is used in photosynthesis or retained in tissues.",
+            "Water uptake is therefore an estimate, not a direct measurement, of water lost by transpiration."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 3,
+          "prompt": "Describe how to assemble a potometer so that the apparatus is airtight.",
+          "answer": [
+            "Cut the shoot under water to prevent air entering the xylem.",
+            "Insert the shoot into the apparatus under water where possible.",
+            "Seal joints with petroleum jelly or suitable sealant and check for leaks.",
+            "Introduce a single air bubble into the capillary tube."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 4,
+          "prompt": "Identify four variables that should be controlled when comparing light intensity treatments.",
+          "answer": [
+            "Use the same shoot or comparable shoots with similar leaf area.",
+            "Keep temperature constant using a controlled room or water bath around the apparatus.",
+            "Keep air movement constant unless wind speed is the independent variable.",
+            "Maintain humidity and measurement duration consistently."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Explain how to create a range of light-intensity treatments and measure the intensity.",
+          "answer": [
+            "Use at least five measured light-intensity levels.",
+            "Move a lamp to different distances or use neutral-density filters.",
+            "Measure intensity at the leaves with a light meter rather than treating distance as intensity."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 3,
+          "prompt": "A bubble moves 18 mm along a capillary tube in 6 minutes. Calculate the mean movement rate.",
+          "answer": [
+            "Rate = distance ÷ time.",
+            "Rate = 18 mm ÷ 6 min.",
+            "Mean movement rate = 3.0 mm min⁻¹."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 3,
+          "prompt": "Describe how to reset the potometer and improve measurement precision between trials.",
+          "answer": [
+            "Open the reservoir or tap to return the bubble to the start mark.",
+            "Allow the shoot to acclimatise before timing.",
+            "Measure bubble movement over a longer fixed interval and repeat the trial.",
+            "Use a capillary tube with a clearly calibrated scale."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 4,
+          "prompt": "Explain how leaf area and water availability could affect the comparison between shoots.",
+          "answer": [
+            "Larger leaf area usually provides more stomatal surface for water loss.",
+            "Use shoots with similar leaf area or measure and express uptake per unit leaf area.",
+            "Ensure the water supply remains available and the apparatus does not run dry.",
+            "Use comparable healthy shoots and avoid damaged leaves."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "Evaluate two limitations and propose improvements.",
+          "answer": [
+            "Leaks cause apparent water uptake unrelated to transpiration: test all joints before each run.",
+            "Bubble movement may be difficult to measure precisely: use a calibrated capillary and repeat readings.",
+            "Environmental conditions may drift: monitor light, temperature and humidity.",
+            "A potometer measures uptake rather than water vapour loss: use a mass-loss method for direct comparison."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 27,
+        "principle": "Original self-review mark points, not an official Cambridge mark scheme."
       }
     },
     {
@@ -320,7 +740,35 @@
             "Plot light intensity on the x-axis and mean oxygen production rate on the y-axis.",
             "Use labelled axes with units and a suitable scale.",
             "Show variation using range bars or another justified measure of spread; state what the bars represent."
-          ]
+          ],
+          "data": {
+            "columns": [
+              "Light intensity / arbitrary units",
+              "Mean oxygen production / cm³ min⁻¹"
+            ],
+            "rows": [
+              [
+                10,
+                1.2
+              ],
+              [
+                20,
+                2.4
+              ],
+              [
+                30,
+                3.1
+              ],
+              [
+                40,
+                3.6
+              ],
+              [
+                50,
+                3.7
+              ]
+            ]
+          }
         },
         {
           "id": "h",
@@ -337,6 +785,253 @@
       "markingGuide": {
         "totalPracticeMarks": 29,
         "principle": "Practice mark allocation is original. A valid plan must be sufficiently detailed for another student to repeat and must distinguish the measured light intensity from lamp distance."
+      }
+    },
+    {
+      "id": "P5-02",
+      "paper": "Paper 5",
+      "title": "Comparing two biological samples statistically",
+      "format": "Standard error, confidence intervals and hypothesis testing",
+      "skills": [
+        "identify data type",
+        "choose statistical test",
+        "calculate standard error",
+        "confidence intervals",
+        "null hypothesis",
+        "degrees of freedom",
+        "interpret probability",
+        "evaluate conclusion"
+      ],
+      "scenario": "A student compares a continuous measurement from two independent groups of plants grown under different conditions. The data are approximately normally distributed and the groups contain independent biological replicates.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Identify the data type and state what information is needed before choosing a statistical test.",
+          "answer": [
+            "The measurement is continuous numerical data.",
+            "The groups are independent samples.",
+            "Check distribution, sample size, independence and whether the comparison concerns means or association."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 3,
+          "prompt": "A sample has standard deviation 4.8 and 16 replicates. Calculate its standard error.",
+          "answer": [
+            "Standard error = standard deviation ÷ square root of sample size.",
+            "SE = 4.8 ÷ √16.",
+            "SE = 1.2 in the same units as the measurement."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 4,
+          "prompt": "Explain what a 95% confidence interval communicates and what it does not mean.",
+          "answer": [
+            "It gives a range of plausible values for the population parameter under the method's assumptions.",
+            "It reflects sampling uncertainty.",
+            "It does not mean 95% of individual observations lie in the interval.",
+            "It does not prove that a treatment caused a difference."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "State a suitable null hypothesis for comparing the means of two independent groups.",
+          "answer": [
+            "The population means for the two conditions are equal.",
+            "Any observed difference between sample means is due to sampling variation.",
+            "The hypothesis is tested using an appropriate test and its assumptions."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 3,
+          "prompt": "Explain how standard error differs from standard deviation.",
+          "answer": [
+            "Standard deviation describes spread among individual observations.",
+            "Standard error describes uncertainty in an estimated sample mean.",
+            "SE generally decreases as sample size increases, if variability is similar."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 4,
+          "prompt": "A two-sample t-test gives p = 0.03 at a 5% significance level. Interpret the result.",
+          "answer": [
+            "p = 0.03 is below 0.05.",
+            "Reject the null hypothesis at the 5% significance level.",
+            "The result is statistically significant under the test assumptions.",
+            "The p-value is not the probability that the null hypothesis is true."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Explain how you would present the two groups and show variation between replicates.",
+          "answer": [
+            "Use a clearly labelled graph with the independent group on the x-axis and measurement with units on the y-axis.",
+            "Show individual points where practical and include mean with suitable error bars.",
+            "State whether error bars represent SD, SE or a confidence interval."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "Evaluate the conclusion if the groups have different means but overlapping confidence intervals.",
+          "answer": [
+            "Overlapping intervals alone do not determine statistical significance.",
+            "Use the planned appropriate statistical test and report its statistic, degrees of freedom and p-value.",
+            "Consider effect size and biological importance, not only significance.",
+            "Check assumptions, sample independence and sample size."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 27,
+        "principle": "Original statistical practice guidance. The chosen test must match the design, data type and assumptions."
+      }
+    },
+    {
+      "id": "P5-03",
+      "paper": "Paper 5",
+      "title": "Choosing and interpreting statistical tests",
+      "format": "Chi-squared, t-test, correlation and Spearman rank",
+      "skills": [
+        "classify variables and data",
+        "choose statistical test",
+        "t-test assumptions",
+        "chi-squared",
+        "state null hypothesis",
+        "interpret correlation",
+        "evaluate sampling",
+        "interpret probability",
+        "calculate correlation coefficient"
+      ],
+      "scenario": "A research team studies three different questions: whether two categorical traits are associated, whether the means of two independent groups differ, and whether two continuous variables are correlated. You must choose and interpret an appropriate statistical approach for each design.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Classify the variables in a study of phenotype category and habitat category, and choose a suitable test of association.",
+          "answer": [
+            "Both variables are categorical.",
+            "A chi-squared test of association is suitable for testing whether observed frequencies differ from expected frequencies under independence.",
+            "Check that expected frequencies are sufficiently large for the approximation."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 3,
+          "prompt": "State the null hypothesis for a chi-squared test of association and explain the role of expected frequencies.",
+          "answer": [
+            "Null hypothesis: the two categorical variables are independent; there is no association.",
+            "Expected frequencies are calculated assuming the null hypothesis is true.",
+            "Compare observed and expected frequencies using the chi-squared statistic."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 3,
+          "prompt": "State two assumptions or design requirements for an independent-samples t-test.",
+          "answer": [
+            "The response variable is continuous and observations are independent.",
+            "The data are approximately normally distributed within groups, especially for small samples.",
+            "Use a suitable version of the test if variances are unequal."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 4,
+          "prompt": "Choose a statistical test for each design: two independent group means, association between categorical variables, and correlation between paired numerical measurements.",
+          "answer": [
+            "Two independent group means: independent-samples t-test if assumptions are met.",
+            "Association between categorical variables: chi-squared test.",
+            "Correlation between paired numerical measurements: a correlation method such as Pearson or Spearman, chosen to fit the data and assumptions.",
+            "A test must match the study design and data type."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 3,
+          "prompt": "Explain the difference between correlation and causation, and interpret a positive correlation.",
+          "answer": [
+            "Positive correlation means larger values of one variable tend to occur with larger values of the other.",
+            "Correlation does not show that one variable causes the other to change.",
+            "A third variable or sampling bias may explain the association."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 4,
+          "prompt": "A field study samples plants only beside a footpath. Identify two sampling limitations and explain how to improve the design.",
+          "answer": [
+            "The sample may not represent the whole habitat because conditions beside the path differ.",
+            "Use random or stratified sampling across the study area.",
+            "Use multiple independent sampling locations and adequate sample size.",
+            "Standardise quadrat placement and sampling effort."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 4,
+          "prompt": "A test gives p = 0.008. Interpret this probability in relation to a 1% significance level.",
+          "answer": [
+            "p = 0.008 is less than 0.01.",
+            "The result is statistically significant at the 1% level under the null model and test assumptions.",
+            "If the null hypothesis were true, results at least this extreme would have probability 0.8%.",
+            "The p-value is not the probability that the null hypothesis is true."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "The ranks for six paired samples are shown. Calculate Spearman's rank correlation coefficient, show the working and interpret the result.",
+          "answer": [
+            "For each pair, calculate d = rank X − rank Y. The differences are −1, 1, −1, 1, −1 and 1.",
+            "Square each difference. Every d² value is 1, so Σd² = 6.",
+            "There are n = 6 paired observations.",
+            "rₛ = 1 − [6Σd² ÷ n(n² − 1)] = 1 − [36 ÷ (6 × 35)] = 0.829 (3 s.f.).",
+            "This indicates a strong positive rank correlation. It does not establish that one variable causes the other to change."
+          ],
+          "data": {
+            "columns": [
+              "Rank of variable X",
+              "Rank of variable Y"
+            ],
+            "rows": [
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                4
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                5,
+                6
+              ],
+              [
+                6,
+                5
+              ]
+            ]
+          }
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 28,
+        "principle": "Original practice mark allocations and guidance, not official Cambridge mark schemes."
       }
     }
   ],
