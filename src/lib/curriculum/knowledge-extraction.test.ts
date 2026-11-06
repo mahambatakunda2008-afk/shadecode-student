@@ -333,3 +333,73 @@ describe("Cambridge Biology curriculum stage metadata", () => {
     expect(outcomes.map(stageOf)).toEqual(["as_level_core", "a_level_extension"]);
   });
 });
+
+
+describe("Cambridge Biology practical extraction detail", () => {
+  it("preserves the practical overview and links Paper 3 and Paper 5 beneath it", async () => {
+    const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
+    const items = extractCurriculumKnowledge(
+      [
+        "5 Practical assessment",
+        "At least 20% of course time should be practical work.",
+        "Practical work develops investigative skills and supports biological understanding.",
+        "Paper 3 – Advanced Practical Skills",
+        "Paper 3 consists of two or three questions, totalling 40 marks.",
+        "manipulation, measurement and observation",
+        "Paper 5",
+        "Paper 5 is a timetabled written paper.",
+        "planning, analysis, conclusions and evaluation",
+      ].join("\\n"),
+      { boardId: "cambridge", qualificationId: "cambridge-as-a-level", level: "as_a_level", syllabusId: "cambridge-9700", syllabusVersion: "2028-2030", subjectId: "biology" },
+      provenance,
+      getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
+    );
+    const overview = items.find((item) => item.metadata?.extraction === "cambridge-practical-assessment-overview");
+    const papers = items.filter((item) => item.metadata?.extraction === "cambridge-practical-assessment");
+    expect(overview?.kind).toBe("practical_activity");
+    expect(overview?.code).toBe("PRACTICAL-OVERVIEW");
+    expect(overview?.content).toContain("At least 20% of course time");
+    expect(papers.map((item) => item.code)).toEqual(["P3", "P5"]);
+    expect(papers.every((item) => item.parentId === overview?.id)).toBe(true);
+    expect([...papers, overview].every((item) => item.status === "draft")).toBe(true);
+  });
+
+  it("extracts detailed Paper 3 and Paper 5 skill expectations as unpublished draft records", async () => {
+    const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
+    const items = extractCurriculumKnowledge(
+      [
+        "5 Practical assessment",
+        "Overview of practical assessment.",
+        "Paper 3 – Advanced Practical Skills",
+        "Paper 3 practical assessment.",
+        "Paper 5",
+        "Paper 5 practical assessment.",
+        "# Expectations for each skill (Paper 3)",
+        "## Decisions relating to measurements and observations",
+        "- identify the independent variable and dependent variable",
+        "- decide the number of different values (a minimum of five)",
+        "## Collection of data and observations",
+        "- follow instructions to collect results",
+        "## Recording data and observations",
+        "- record raw and calculated results in an appropriate table",
+        "  - descriptive headings, including required units",
+        "# Expectations for each skill (Paper 5)",
+        "### Defining the problem",
+        "- state a relevant prediction and link this to an underlying hypothesis",
+        "### Methods",
+        "- describe how to vary the independent variable",
+        "- prepare a simple risk assessment of their plans",
+      ].join("\\n"),
+      { boardId: "cambridge", qualificationId: "cambridge-as-a-level", level: "as_a_level", syllabusId: "cambridge-9700", syllabusVersion: "2028-2030", subjectId: "biology" },
+      provenance,
+      getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
+    );
+    const papers = items.filter((item) => item.metadata?.extraction === "cambridge-practical-assessment");
+    const expectations = items.filter((item) => item.metadata?.extraction === "cambridge-practical-skill-expectation");
+    expect(expectations).toHaveLength(7);
+    expect(expectations.some((item) => item.content.includes("minimum of five"))).toBe(true);
+    expect(expectations.some((item) => item.content.includes("descriptive headings"))).toBe(true);
+    expect(expectations.every((item) => item.kind === "skill" && item.status === "draft")).toBe(true);
+    expect(expectations.every((item) => item.parentId === papers.find((paper) => paper.code === item.metadata?.paper)?.id)).toBe(true);
+  });
+});
