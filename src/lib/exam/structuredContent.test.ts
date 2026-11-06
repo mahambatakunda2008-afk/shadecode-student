@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeExamContent } from "@/lib/exam/structuredContent";
+import { renderMath } from "@/lib/exam/mathText";
 
 describe("normalizeExamContent", () => {
   it("accepts bounded text, tables, graphs and primitive diagrams", () => {
@@ -27,13 +28,19 @@ describe("normalizeExamContent", () => {
       { type: "table", headers: ["A", "B"], rows: Array.from({ length: 40 }, () => ["1", "2"]) },
       ...Array.from({ length: 20 }, () => ({ type: "text", text: "extra" })),
     ]);
-    expect(blocks.length).toBeLessThanOrEqual(12);
-    expect(blocks[0]).toMatchObject({ type: "table", rows: expect.any(Array) });
-    if (blocks[0]?.type === "table") expect(blocks[0].rows).toHaveLength(30);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]).toMatchObject({ type: "diagram", shapes: [{ type: "circle", cx: 600 }] });
+    expect(blocks[1]).toMatchObject({ type: "table", rows: expect.any(Array) });
+    if (blocks[1]?.type === "table") expect(blocks[1].rows).toHaveLength(30);
   });
 
   it("does not pass markup through as raw HTML", () => {
     const blocks = normalizeExamContent([{ type: "text", text: '<img src=x onerror="alert(1)"> $x^2$' }]);
-    expect(blocks).toEqual([{ type: "text", text: '<img src=x onerror="alert(1)"> $x^2$' }]);
+    expect(blocks).toEqual([{ type: "text", text: '<img src=x onerror="alert(1)"> $x^2
+  });
+}); }]);
+    const rendered = renderMath(blocks[0].type === "text" ? blocks[0].text : "");
+    expect(rendered).not.toContain("<img");
+    expect(rendered).toContain("&lt;img");
   });
 });
