@@ -1,0 +1,361 @@
+{
+  "schemaVersion": 1,
+  "id": "cambridge-9700-practical-practice-2028-2030",
+  "title": "Biology 9700 Practical Skills: Original Practice Set 1",
+  "subject": "biology",
+  "syllabus": "cambridge-9700",
+  "syllabusVersion": "2028-2030",
+  "board": "Cambridge International",
+  "level": "AS and A Level",
+  "status": "draft",
+  "publicationStatus": "unpublished",
+  "provenance": {
+    "sourceTitle": "Cambridge International AS & A Level Biology 9700 syllabus, 2028–2030",
+    "sourceUrl": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "sourceUse": "Assessment skill coverage and terminology only. The questions, datasets, mark points and contexts in this practice set are original and are not Cambridge past-paper questions.",
+    "sourceSections": [
+      "Practical assessment",
+      "Expectations for each skill (Paper 3)",
+      "Expectations for each skill (Paper 5)"
+    ]
+  },
+  "assessmentNotice": "Original practice material. Practice mark allocations and mark points are author-created, are not official Cambridge mark schemes, and must not be presented as predictions of examination questions.",
+  "tasks": [
+    {
+      "id": "P3-01",
+      "paper": "Paper 3",
+      "title": "Catalase activity and temperature",
+      "format": "Investigation design, data handling and evaluation",
+      "skills": [
+        "independent and dependent variables",
+        "range and intervals",
+        "repeats",
+        "control of variables",
+        "risk assessment",
+        "raw data table",
+        "graph",
+        "anomalies",
+        "conclusion",
+        "limitations and improvements"
+      ],
+      "scenario": "A student investigates the effect of temperature on the rate at which catalase breaks down hydrogen peroxide. The student uses a fixed volume and concentration of hydrogen peroxide, a fixed volume of catalase solution and measures the volume of oxygen collected in 60 seconds.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "State the independent variable and dependent variable. Give the unit for the dependent variable.",
+          "answer": [
+            "Independent variable: temperature of the reaction mixture, in °C.",
+            "Dependent variable: volume of oxygen collected in 60 s, in cm³."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 4,
+          "prompt": "Suggest a suitable set of at least five temperature values covering a useful range. Explain why the intervals should be appropriate.",
+          "answer": [
+            "One suitable set is 10, 20, 30, 40, 50 and 60 °C.",
+            "Values span a range likely to show a trend and possible decline at high temperature.",
+            "Equal 10 °C intervals make comparison straightforward.",
+            "The range should avoid unsafe heating and should be refined if preliminary results show the optimum is outside it."
+          ],
+          "notes": "Other scientifically justified sets earn credit."
+        },
+        {
+          "id": "c",
+          "marks": 5,
+          "prompt": "Describe five variables that should be controlled and how each should be kept constant.",
+          "answer": [
+            "Hydrogen peroxide concentration and volume: use the same stock solution and measured volume.",
+            "Catalase concentration and volume: use the same prepared batch and measured volume.",
+            "Reaction time: start timing at the same defined point and stop after 60 s.",
+            "pH: use the same buffer at the same pH and volume.",
+            "Total reaction volume/apparatus: use the same vessel and gas-collection arrangement.",
+            "Allow solutions to reach the target temperature before mixing."
+          ],
+          "notes": "Award credit for a control paired with a workable method."
+        },
+        {
+          "id": "d",
+          "marks": 4,
+          "prompt": "Explain why repeats are needed and propose a suitable number of repeats at each temperature.",
+          "answer": [
+            "Repeat each temperature at least three times.",
+            "Repeats reveal variation and help identify anomalous results.",
+            "Calculate a mean from concordant results.",
+            "Investigate or justify excluding an anomalous result rather than silently deleting it."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 4,
+          "prompt": "Construct a results table suitable for recording the investigation.",
+          "answer": [
+            "First column identifies temperature / °C.",
+            "Separate columns show each repeat and the mean oxygen volume / cm³.",
+            "Units appear in headings, not repeated in every cell.",
+            "Values are recorded to consistent precision and raw data are distinguishable from calculated values."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 4,
+          "prompt": "Describe the graph that should be drawn and how the data should be presented.",
+          "answer": [
+            "Temperature / °C on the x-axis.",
+            "Mean oxygen volume in 60 s / cm³ on the y-axis.",
+            "Linear scales use most of the available grid and have labelled axes with units.",
+            "Plot points accurately and draw a suitable best-fit line or smooth curve; do not join points dot-to-dot without justification."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 4,
+          "prompt": "Give two limitations and a practical improvement for each.",
+          "answer": [
+            "Temperature may change during reaction: use a thermostatically controlled water bath and pre-equilibrate solutions.",
+            "Gas may leak: check airtight connections and use a gas syringe with a secure seal.",
+            "Manual timing or mixing causes variation: standardise mixing and use the same timing trigger, or use a sensor/data logger.",
+            "Enzyme activity may vary between preparations: use one well-mixed enzyme batch and consistent storage."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 2,
+          "prompt": "State a conclusion that could be supported if the mean oxygen volume rises to 40 °C and then falls at higher temperatures.",
+          "answer": [
+            "Rate/activity increases with temperature up to around 40 °C, then decreases.",
+            "The decrease at higher temperatures is consistent with enzyme denaturation, but the data alone do not prove the molecular mechanism."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 30,
+        "principle": "Use the mark points as a self-check, not as an official Cambridge mark scheme. Credit equivalent valid methods and correctly justified alternatives."
+      }
+    },
+    {
+      "id": "P3-02",
+      "paper": "Paper 3",
+      "title": "Microscope drawing and scale calculation",
+      "format": "Observation, biological drawing and magnification",
+      "skills": [
+        "microscope use",
+        "observation",
+        "biological drawing",
+        "measurement",
+        "magnification",
+        "scale bar"
+      ],
+      "scenario": "A prepared plant tissue slide is viewed under a light microscope. The field of view is calibrated using a stage micrometer. A representative cell measures 36 mm on a printed photomicrograph. The actual cell length is 120 µm.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 4,
+          "prompt": "Calculate the magnification of the photomicrograph. Show the unit conversion and working.",
+          "answer": [
+            "Convert 36 mm to 36 000 µm.",
+            "Magnification = image size ÷ actual size.",
+            "36 000 ÷ 120 = ×300.",
+            "Magnification has no units."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 4,
+          "prompt": "Describe four features of a high-quality biological drawing of the observed tissue.",
+          "answer": [
+            "Use clear, single, continuous lines.",
+            "Draw large, accurate outlines with correct proportions.",
+            "Do not use shading or sketching.",
+            "Use straight ruled label lines that touch the correct structure and do not cross.",
+            "Include a suitable title and scale information where required."
+          ],
+          "notes": "Any four distinct valid features."
+        },
+        {
+          "id": "c",
+          "marks": 3,
+          "prompt": "Explain why the drawing should represent the observed specimen rather than an idealised textbook cell.",
+          "answer": [
+            "It must record actual observable features.",
+            "It should preserve relative sizes and proportions.",
+            "It should not add structures that cannot be seen or were not observed."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Give three precautions when using a light microscope to obtain a clear image.",
+          "answer": [
+            "Begin with low-power objective and focus before increasing magnification.",
+            "Use coarse focus only at low power; use fine focus at high power.",
+            "Adjust illumination/diaphragm and centre the specimen.",
+            "Handle slides carefully and avoid allowing the objective lens to strike the slide."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 14,
+        "principle": "Magnification is image size divided by actual size, with both sizes in the same units. Drawing criteria are practice guidance, not an official mark scheme."
+      }
+    },
+    {
+      "id": "P5-01",
+      "paper": "Paper 5",
+      "title": "Planning an investigation into light intensity and photosynthesis",
+      "format": "Written planning, data analysis and evaluation",
+      "skills": [
+        "prediction and hypothesis",
+        "variables",
+        "method design",
+        "replication",
+        "controls",
+        "risk assessment",
+        "data processing",
+        "graphing",
+        "conclusion",
+        "evaluation"
+      ],
+      "scenario": "A student plans to investigate the effect of light intensity on the rate of photosynthesis in an aquatic plant. The student can vary the distance of a lamp from the plant and can collect oxygen in a gas syringe. The lamp may also heat the water.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Write a prediction and a linked biological hypothesis.",
+          "answer": [
+            "Prediction: as light intensity increases, the rate of oxygen production will increase initially and may eventually level off.",
+            "Hypothesis: increasing light intensity increases the rate of the light-dependent reactions until another factor becomes limiting.",
+            "The prediction is measurable and the hypothesis gives a biological explanation."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 4,
+          "prompt": "Identify the independent and dependent variables and explain how each should be measured.",
+          "answer": [
+            "Independent variable: light intensity, measured with a light meter at the plant; distance can be changed to alter intensity but distance is only a proxy.",
+            "Dependent variable: rate of oxygen production, measured as oxygen volume per unit time using a gas syringe.",
+            "Use a fixed measurement interval after allowing the plant to acclimatise.",
+            "Record the actual light intensity rather than relying only on lamp distance where a light meter is available."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 5,
+          "prompt": "Describe a method that produces reliable, comparable results.",
+          "answer": [
+            "Use the same species and similar lengths of healthy aquatic plant.",
+            "Place the plant at measured light intensities, allowing it to acclimatise at each level.",
+            "Measure oxygen volume over the same timed interval.",
+            "Repeat each intensity at least three times and calculate a mean rate.",
+            "Keep carbon dioxide availability, pH, plant length, water volume and measurement time constant.",
+            "Randomise or alternate intensity order if drift over time is likely."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Explain how you would control the heating effect of the lamp and identify one other relevant control.",
+          "answer": [
+            "Use a heat filter, LED lamp or water bath to minimise heating.",
+            "Monitor and maintain water temperature with a thermometer or thermostatic bath.",
+            "Keep dissolved carbon dioxide availability constant, for example with the same buffer concentration and volume."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 3,
+          "prompt": "State two safety risks and suitable precautions.",
+          "answer": [
+            "Electrical equipment near water: keep connections dry, use low-voltage equipment and keep the power supply away from spills.",
+            "Hot lamp or water: allow equipment to cool and handle hot apparatus carefully.",
+            "Glassware/gas syringe breakage: secure apparatus and handle glass carefully."
+          ],
+          "notes": "Any two correctly paired risk and precaution points."
+        },
+        {
+          "id": "f",
+          "marks": 4,
+          "prompt": "The mean oxygen production rates are shown below. Calculate the percentage increase from 20 to 40 arbitrary light-intensity units and identify the trend.",
+          "data": {
+            "columns": [
+              "Light intensity / arbitrary units",
+              "Mean oxygen production / cm³ min⁻¹"
+            ],
+            "rows": [
+              [
+                10,
+                1.2
+              ],
+              [
+                20,
+                2.4
+              ],
+              [
+                30,
+                3.1
+              ],
+              [
+                40,
+                3.6
+              ],
+              [
+                50,
+                3.7
+              ]
+            ]
+          },
+          "answer": [
+            "Percentage increase = ((3.6 − 2.4) ÷ 2.4) × 100 = 50%.",
+            "Rate increases as light intensity rises, but the increase becomes smaller at higher intensities.",
+            "The results suggest the response is approaching a plateau; another factor may become limiting."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Describe an appropriate graph and one way to show variation between repeats.",
+          "answer": [
+            "Plot light intensity on the x-axis and mean oxygen production rate on the y-axis.",
+            "Use labelled axes with units and a suitable scale.",
+            "Show variation using range bars or another justified measure of spread; state what the bars represent."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "Evaluate the method by identifying two limitations and explaining improvements.",
+          "answer": [
+            "Distance from a lamp does not directly measure intensity and may not give a linear change; measure intensity at the plant with a light meter.",
+            "Oxygen may dissolve in water or leak; use a sealed, checked collection system and allow consistent equilibration.",
+            "Photosynthesis may change with time; standardise acclimatisation and randomise treatment order.",
+            "Plant samples differ; use comparable material and repeat with independent specimens."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 29,
+        "principle": "Practice mark allocation is original. A valid plan must be sufficiently detailed for another student to repeat and must distinguish the measured light intensity from lamp distance."
+      }
+    }
+  ],
+  "learnerWorkflow": {
+    "attemptOrder": [
+      "Read the scenario and underline the command words.",
+      "Answer without opening the guidance.",
+      "Check units, variables, controls and whether each method step is repeatable.",
+      "Compare with the answer points and record missed skills.",
+      "Retry the question from a blank page after feedback."
+    ],
+    "selfAssessment": [
+      "I identified variables precisely and gave units.",
+      "I selected a justified range with at least five values where an investigation requires it.",
+      "I described repeats, controls and standardisation.",
+      "My method is detailed enough to reproduce.",
+      "My table and graph have correct headings, units and scales.",
+      "My conclusion is supported by the data.",
+      "My evaluation links a limitation to a practical improvement."
+    ]
+  }
+}
