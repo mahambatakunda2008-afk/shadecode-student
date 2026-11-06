@@ -390,7 +390,7 @@ function extractCambridgeNumberedLearningOutcomes(
     if (
       topicHeadingMatch &&
       topicByCode.get(topicHeadingMatch[1])?.title.trim().toLowerCase() === line.toLowerCase() &&
-      currentSubtopic?.code.split(".")[0] !== topicHeadingMatch[1]
+      currentSubtopic?.code?.split(".")[0] !== topicHeadingMatch[1]
     ) {
       flushSubtopic();
       inLearningOutcomes = false;
