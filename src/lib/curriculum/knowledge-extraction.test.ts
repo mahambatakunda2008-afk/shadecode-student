@@ -294,3 +294,42 @@ describe("Cambridge Biology 9700 2028–2030 extraction profile", () => {
     expect(items.filter((item) => item.kind === "learning_outcome").map((item) => item.code)).toEqual(["1.1.1"]);
   });
 });
+
+describe("Cambridge Biology curriculum stage metadata", () => {
+  it("tags topics, subtopics and learning outcomes as AS core or A Level extension", async () => {
+    const { getCurriculumExtractionProfile } = await import("./extraction-profiles");
+    const items = extractCurriculumKnowledge(
+      [
+        "1 Cell structure",
+        "1.1 The microscope in cell studies",
+        "Learning outcomes",
+        "Candidates should be able to:",
+        "1 use a light microscope",
+        "12 Energy and respiration",
+        "12.1 Respiration",
+        "Learning outcomes",
+        "Candidates should be able to:",
+        "1 explain the role of ATP",
+      ].join("\n"),
+      {
+        boardId: "cambridge",
+        qualificationId: "cambridge-as-a-level",
+        level: "as_a_level",
+        syllabusId: "cambridge-9700",
+        syllabusVersion: "2028-2030",
+        subjectId: "biology",
+      },
+      provenance,
+      getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700-2028-2030"),
+    );
+
+    const stageOf = (item: (typeof items)[number]) => item.metadata?.curriculumStage;
+    expect(items.find((item) => item.kind === "topic" && item.title.startsWith("1 ")) && stageOf(items.find((item) => item.kind === "topic" && item.title.startsWith("1 "))!)).toBe("as_level_core");
+    expect(items.find((item) => item.kind === "topic" && item.title.startsWith("12 ")) && stageOf(items.find((item) => item.kind === "topic" && item.title.startsWith("12 "))!)).toBe("a_level_extension");
+
+    const subtopics = items.filter((item) => item.metadata?.extraction === "cambridge-subtopic");
+    const outcomes = items.filter((item) => item.kind === "learning_outcome");
+    expect(subtopics.map(stageOf)).toEqual(["as_level_core", "a_level_extension"]);
+    expect(outcomes.map(stageOf)).toEqual(["as_level_core", "a_level_extension"]);
+  });
+});

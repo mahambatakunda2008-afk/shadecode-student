@@ -68,6 +68,13 @@ function isHeading(line: string, profile: CurriculumExtractionProfile): HeadingI
   return allowed.has(info.normalized) ? info : null;
 }
 
+function getBiologyCurriculumStage(identity: CurriculumKnowledgeIdentity, topicCode?: string | null): string | undefined {
+  if (identity.boardId !== "cambridge" || identity.subjectId !== "biology" || identity.syllabusId !== "cambridge-9700" || identity.syllabusVersion !== "2028-2030" || !topicCode) return undefined;
+  const number = Number(topicCode.split(".")[0]);
+  if (!Number.isInteger(number) || number < 1 || number > 19) return undefined;
+  return number <= 11 ? "as_level_core" : "a_level_extension";
+}
+
 function makeItem(
   kind: CurriculumKnowledgeKind,
   title: string,
@@ -133,6 +140,7 @@ function extractSectionBlocks(
           lineEnd: endLine,
           chunkIndex: index,
           parentKnowledgeKey: parent?.key ?? null,
+          ...(kind === "topic" ? { curriculumStage: getBiologyCurriculumStage(identity, headingTitle.match(/^(\d{1,2})\s+/)?.[1]) } : {}),
           stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, kind, headingTitle, chunk.trim()].join("|"),
         },
       });
@@ -366,6 +374,7 @@ function extractCambridgeNumberedLearningOutcomes(
         extraction: "cambridge-subtopic",
         stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "subtopic", code].join("|"),
         parentTopicCode: parentCode,
+        curriculumStage: currentTopic?.metadata?.curriculumStage ?? getBiologyCurriculumStage(identity, parentCode),
       },
     });
     inLearningOutcomes = false;
@@ -374,6 +383,19 @@ function extractCambridgeNumberedLearningOutcomes(
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index].trim();
     if (!line) continue;
+
+    // A new top-level topic ends the previous topic's learning-outcome
+    // section. Otherwise its number can be mistaken for another outcome.
+    const topicHeadingMatch = line.match(/^(\d{1,2})\s+(.+)$/);
+    if (
+      topicHeadingMatch &&
+      topicByCode.get(topicHeadingMatch[1])?.title.trim().toLowerCase() === line.toLowerCase() &&
+      currentSubtopic?.code?.split(".")[0] !== topicHeadingMatch[1]
+    ) {
+      flushSubtopic();
+      inLearningOutcomes = false;
+      continue;
+    }
 
     const subtopicMatch = line.match(/^(\d{1,2}\.\d{1,2})\s+(.+)$/);
     if (subtopicMatch) {
@@ -417,6 +439,7 @@ function extractCambridgeNumberedLearningOutcomes(
             extraction: "cambridge-numbered-learning-outcome",
             stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "learning_outcome", code].join("|"),
             topicCode: currentTopic?.code ?? currentTopic?.title.match(/^(\d{1,2})/)?.[1] ?? null,
+            curriculumStage: currentTopic?.metadata?.curriculumStage ?? getBiologyCurriculumStage(identity, currentTopic?.code ?? currentTopic?.title.match(/^(\d{1,2})/)?.[1]),
           },
         });
       } else if (currentOutcome) {
