@@ -15,11 +15,19 @@ export default function ExperienceRouteGuard() {
   const router = useRouter();
   const { profile, loading } = useUser();
   const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
+  const hasBiologySubject = JSON.stringify([
+    profile?.subjects,
+    profile?.curriculum_subjects,
+  ]).toLowerCase().includes("biology");
+  const isBiologyPracticalRoute =
+    pathname === "/practical-practice" || pathname.startsWith("/practical-practice/");
 
   useEffect(() => {
     if (loading || !profile || pathname === "/dashboard") return;
-    if (!routeAllowed(pathname, experience.allowedRoutes)) router.replace("/dashboard");
-  }, [experience.allowedRoutes, loading, pathname, profile, router]);
+    const allowedByStage = routeAllowed(pathname, experience.allowedRoutes);
+    const allowedByBiologySubject = isBiologyPracticalRoute && hasBiologySubject;
+    if (!allowedByStage && !allowedByBiologySubject) router.replace("/dashboard");
+  }, [experience.allowedRoutes, hasBiologySubject, isBiologyPracticalRoute, loading, pathname, profile, router]);
 
   return null;
 }
