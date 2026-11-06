@@ -517,10 +517,10 @@ export default function PracticalPracticeClient() {
           </div>
         </section>}
         <header className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary)]"><FlaskConical size={15} /> Practical skills studio</div>
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary)]"><FlaskConical size={16} /> Practical skills studio</div>
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Biology practical practice</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Work through original Cambridge 9700-style practical tasks. Write your own answers, reveal the self-check points when ready, then review the skills you need to strengthen.</p></div>
-            <button type="button" onClick={reset} className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-xl border border-[var(--card-border)] px-3 text-sm font-medium text-[var(--muted-foreground)] hover:bg-[var(--surface)] sm:self-auto"><RotateCcw size={15} /> Reset attempt</button>
+            <button type="button" onClick={reset} className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-xl border border-[var(--card-border)] px-3 text-sm font-medium text-[var(--muted-foreground)] hover:bg-[var(--surface)] sm:self-auto"><RotateCcw size={16} /> Reset attempt</button>
           </div>
           <p className="rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-xs leading-5 text-[var(--muted-foreground)]">{set.assessmentNotice} Your answers are saved on this device only.</p>
         </header>
@@ -745,7 +745,7 @@ export default function PracticalPracticeClient() {
             })}
 
             <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-5">
-              <div className="flex items-center gap-2"><Target size={17} className="text-[var(--primary)]" /><h3 className="font-semibold">Rate your practical skills</h3></div>
+              <div className="flex items-center gap-2"><Target size={18} className="text-[var(--primary)]" /><h3 className="font-semibold">Rate your practical skills</h3></div>
               <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">Be honest. These ratings help you decide what to practise next.</p>
               <div className="mt-4 divide-y divide-[var(--card-border)]">
                 {task.skills.map((skill) => {
