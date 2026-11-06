@@ -255,4 +255,42 @@ export const mathsGenerators: QuestionGenerator[] = [
       };
     },
   },
+
+  {
+    id: "maths.median",
+    subject: "Mathematics",
+    topic: "Statistics",
+    keywords: ["statistics", "median", "quartile", "data", "averages"],
+    build(rng) {
+      const data = Array.from({ length: 7 }, () => rng.int(4, 60));
+      const ordered = [...data].sort((a, b) => a - b);
+      const value = ordered[3];
+      return {
+        question: `The data set is ${data.join(", ")}. Find the median.`,
+        numeric: exactInteger(value),
+        working: [`Arrange in ascending order: ${ordered.join(", ")}`, `There are 7 values, so the median is the 4th value: ${value}.`],
+        marks: 2,
+        params: { data: data.join(","), ordered: ordered.join(",") },
+      };
+    },
+  },
+  {
+    id: "maths.independent-probability",
+    subject: "Mathematics",
+    level: "alevel",
+    topic: "Probability",
+    keywords: ["probability", "independent", "events", "statistics"],
+    build(rng) {
+      const a = rng.int(2, 8), b = rng.int(2, 8);
+      const exact = 1 / a * 1 / b;
+      const { tolerance } = roundSF(exact, 3);
+      return {
+        question: `Two independent events have probabilities 1/${a} and 1/${b}. Find the probability that both events occur, giving your answer to 3 significant figures.`,
+        numeric: { exact, tolerance },
+        working: [`For independent events, P(A and B) = P(A) × P(B).`, `= 1/${a} × 1/${b} = ${(exact).toPrecision(3)}.`],
+        marks: 2,
+        params: { a, b },
+      };
+    },
+  },
 ];

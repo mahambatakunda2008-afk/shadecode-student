@@ -22,6 +22,15 @@ describe("matchGenerators", () => {
     expect(matchGenerators("Chemistry", "moles").length).toBeGreaterThanOrEqual(3);
     expect(matchGenerators("Physics", "Magnetism")).toEqual([]);
   });
+  it("includes additional topic-specific generators across the core subjects", () => {
+    expect(matchGenerators("Mathematics", "median").map((g) => g.id)).toContain("maths.median");
+    expect(matchGenerators("Physics", "density").map((g) => g.id)).toContain("physics.density");
+    expect(matchGenerators("Physics", "acceleration from data").map((g) => g.id)).toContain("physics.acceleration-from-data");
+    expect(matchGenerators("Computer Science", "two's complement").map((g) => g.id)).toContain("cs.twos-complement");
+    expect(matchGenerators("Computer Science", "binary addition").map((g) => g.id)).toContain("cs.binary-addition");
+    expect(matchGenerators("Chemistry", "atom economy").map((g) => g.id)).toContain("chemistry.atom-economy");
+    expect(matchGenerators("Chemistry", "percentage composition").map((g) => g.id)).toContain("chemistry.percentage-composition");
+  });
   it("uses the whole subject for generic or empty topics", () => {
     const all = matchGenerators("Physics", "");
     expect(all.length).toBeGreaterThanOrEqual(10);
