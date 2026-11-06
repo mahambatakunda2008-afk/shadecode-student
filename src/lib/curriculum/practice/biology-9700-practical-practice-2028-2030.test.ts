@@ -7,7 +7,7 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(practiceSet.publicationStatus).toBe("unpublished");
     expect(practiceSet.provenance.sourceUrl).toContain("cambridgeinternational.org");
     expect(practiceSet.assessmentNotice).toContain("not official Cambridge mark schemes");
-    expect(practiceSet.tasks).toHaveLength(3);
+    expect(practiceSet.tasks).toHaveLength(8);
   });
 
   it("covers Paper 3 practical skills and Paper 5 planning and evaluation", () => {
@@ -38,4 +38,29 @@ describe("Cambridge Biology 9700 practical practice set 1", () => {
     expect(investigation?.questions.find((question) => question.id === "d")?.answer.join(" "))
       .toContain("three");
   });
+  it("contains the complete eight-task, sixty-question practice bank with consistent marks", () => {
+    expect(practiceSet.tasks.reduce((sum, task) => sum + task.questions.length, 0)).toBe(60);
+    expect(practiceSet.tasks.reduce((sum, task) => sum + task.markingGuide.totalPracticeMarks, 0)).toBe(209);
+    expect(practiceSet.tasks.every((task) => task.questions.length >= 4)).toBe(true);
+  });
+
+  it("provides numeric datasets for all curated graph-practice questions", () => {
+    const graphQuestions = [
+      ["P3-01", "f"], ["P3-03", "g"], ["P3-04", "g"], ["P5-01", "g"],
+    ] as const;
+    for (const [taskId, questionId] of graphQuestions) {
+      const question = practiceSet.tasks.find((task) => task.id === taskId)?.questions.find((item) => item.id === questionId);
+      expect(question?.data?.rows.length, taskId + " question " + questionId).toBeGreaterThan(1);
+      expect(question?.data?.columns.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("includes a worked Spearman rank calculation with paired observations", () => {
+    const task = practiceSet.tasks.find((item) => item.id === "P5-03");
+    const question = task?.questions.find((item) => item.id === "h");
+    expect(question?.data?.rows).toHaveLength(6);
+    expect(question?.answer.join(" ")).toContain("Σd² = 6");
+    expect(question?.answer.join(" ")).toContain("0.829");
+  });
+
 });
