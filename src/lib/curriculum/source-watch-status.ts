@@ -19,3 +19,70 @@ export function resolveCurriculumIngestionRunStatus(sourceStatus: string | null 
   if (sourceStatus === "partial" || (sourceStatus === "ok" && extractionSkipped > 0)) return "partial";
   return "failed";
 }
+
+/** A configured syllabus version is authoritative; disagreement must block ingestion. */
+export function hasCurriculumVersionConflict(configuredVersion: string | null | undefined, discoveredVersion: string | null | undefined): boolean {
+  return Boolean(configuredVersion && discoveredVersion && configuredVersion !== discoveredVersion);
+}
+
+export interface WatchedSyllabusVersion {
+  version: string | null;
+  source: "document" | "registry" | "unresolved";
+  confidence: string;
+  evidence: string[];
+}
+
+/**
+ * Keep the version discovered inside the official PDF separate from the
+ * registry's expected version. Ingestion needs both values to detect a
+ * mismatch and fail closed instead of silently labelling a new PDF as old.
+ */
+export function resolveWatchedSyllabusVersion(input: {
+  configuredVersion?: string | null;
+  discoveredVersion?: string | null;
+  discoveryConfidence?: string | null;
+  discoveryEvidence?: string[];
+}): WatchedSyllabusVersion {
+  if (input.discoveredVersion) {
+    return {
+      version: input.discoveredVersion,
+      source: "document",
+      confidence: input.discoveryConfidence ?? "unknown",
+      evidence: input.discoveryEvidence ?? [],
+    };
+  }
+  if (input.configuredVersion) {
+    return {
+      version: input.configuredVersion,
+      source: "registry",
+      confidence: "registry-configured",
+      evidence: ["Source registry explicitly configured this syllabus version; the PDF itself did not expose a version string."],
+    };
+  }
+  return {
+    version: null,
+    source: "unresolved",
+    confidence: input.discoveryConfidence ?? "unresolved",
+    evidence: input.discoveryEvidence ?? [],
+  };
+}
+
+export type CurriculumExtractionSkipReason = "version_conflict" | "missing_curriculum" | "unconfirmed_version" | "missing_extracted_text" | null;
+
+/**
+ * Centralise the extraction gate so a syllabus-version mismatch is checked
+ * before missing-text handling. Version conflicts must be recorded even when
+ * PDF text extraction failed.
+ */
+export function resolveCurriculumExtractionSkipReason(input: {
+  curriculumResolved: boolean;
+  versionConflict: boolean;
+  extractedText?: string | null;
+  versionSource?: "document" | "registry" | "unresolved" | null;
+}): CurriculumExtractionSkipReason {
+  if (!input.curriculumResolved) return "missing_curriculum";
+  if (input.versionConflict) return "version_conflict";
+  if (input.versionSource !== "document") return "unconfirmed_version";
+  if (typeof input.extractedText !== "string" || !input.extractedText.trim()) return "missing_extracted_text";
+  return null;
+}

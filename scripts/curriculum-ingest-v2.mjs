@@ -6,7 +6,7 @@ import { extractCurriculumKnowledge } from "../src/lib/curriculum/knowledge-extr
 import { getCurriculumExtractionProfile } from "../src/lib/curriculum/extraction-profiles.ts";
 import { evaluateCurriculumDocumentEvidence, shouldProcessCurriculumDocument } from "../src/lib/curriculum/document-evidence.ts";
 import { fingerprintExtractedText } from "../src/lib/curriculum/source-fingerprint.ts";
-import { resolveCurriculumIngestionRunStatus } from "../src/lib/curriculum/source-watch-status.ts";
+import { hasCurriculumVersionConflict, resolveCurriculumExtractionSkipReason, resolveCurriculumIngestionRunStatus } from "../src/lib/curriculum/source-watch-status.ts";
 
 const reportPath = process.env.CURRICULUM_WATCH_REPORT ?? ".curriculum-watch/latest-report.json";
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -26,7 +26,7 @@ function curriculumFromSource(source, document) {
   const discovered = document.syllabusVersion ?? null;
   const configured = source.syllabusVersion ?? null;
   const version = discovered || configured || "unversioned";
-  const conflict = Boolean(discovered && configured && discovered !== configured);
+  const conflict = hasCurriculumVersionConflict(configured, discovered);
   return {
     curriculum: {
       boardId: source.boardId,
@@ -50,6 +50,7 @@ function provenanceFor(source, document, extra = {}) {
     retrievedAt: report.runAt,
     ...(document.syllabusVersionEvidence?.length ? { versionEvidence: document.syllabusVersionEvidence } : {}),
     ...(document.syllabusVersionSource ? { versionSource: document.syllabusVersionSource } : {}),
+    ...(document.syllabusVersionConfidence ? { versionConfidence: document.syllabusVersionConfidence } : {}),
     ...(extra.sectionOrPage ? { sectionOrPage: extra.sectionOrPage } : {}),
     ...(extra.versionConflict ? { versionConflict: true } : {}),
     mappingStatus: "pending",
@@ -142,6 +143,9 @@ for (const source of report.sources ?? []) {
           watcherVersion: report.watcherVersion,
           sourceReportedCharacters: document.characters ?? null,
           syllabusVersion: document.syllabusVersion ?? null,
+          syllabusVersionSource: document.syllabusVersionSource ?? "legacy-or-unknown",
+          syllabusVersionConfidence: document.syllabusVersionConfidence ?? "unknown",
+          syllabusVersionEvidence: document.syllabusVersionEvidence ?? [],
           textPersisted: evidence.extractionSucceeded,
         },
       }, { onConflict: "source_id,url,content_hash", ignoreDuplicates: true });
@@ -161,6 +165,9 @@ for (const source of report.sources ?? []) {
             watcherVersion: report.watcherVersion,
             sourceReportedCharacters: document.characters ?? null,
             syllabusVersion: document.syllabusVersion ?? null,
+            syllabusVersionSource: document.syllabusVersionSource ?? "legacy-or-unknown",
+            syllabusVersionConfidence: document.syllabusVersionConfidence ?? "unknown",
+            syllabusVersionEvidence: document.syllabusVersionEvidence ?? [],
             textPersisted: true,
           },
         }).eq("source_id", sourceRow.id).eq("url", document.url)
@@ -193,8 +200,32 @@ for (const source of report.sources ?? []) {
         previous ? "warning" : "info");
 
       const resolved = curriculumFromSource(source, document);
-      if (!resolved || !extractedText) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
-      const provenance = provenanceFor(source, document, { versionConflict: resolved.conflict });
+      const skipReason = resolveCurriculumExtractionSkipReason({
+        curriculumResolved: Boolean(resolved),
+        versionConflict: resolved?.conflict ?? false,
+        versionSource: document.syllabusVersionSource ?? null,
+        extractedText,
+      });
+
+      if ((skipReason === "version_conflict" || skipReason === "unconfirmed_version") && resolved) {
+        // Record the mismatch even when PDF text extraction failed.
+        await recordChange(
+          runId,
+          upsert.data.id,
+          null,
+          skipReason === "version_conflict" ? "syllabus_version_conflict" : "syllabus_version_unconfirmed",
+          { configuredVersion: resolved.configuredVersion },
+          { discoveredVersion: resolved.discoveredVersion, versionSource: document.syllabusVersionSource ?? "legacy-or-unknown", versionConfidence: document.syllabusVersionConfidence ?? "unknown" },
+          "critical",
+        );
+      }
+      if (skipReason) {
+        extractionSkipped += 1;
+        sourceExtractionSkipped += 1;
+        continue;
+      }
+
+      const provenance = provenanceFor(source, document);
       const profile = getCurriculumExtractionProfile(source.id);
       const extracted = extractCurriculumKnowledge(extractedText, resolved.curriculum, provenance, profile);
       if (!extracted.length) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
