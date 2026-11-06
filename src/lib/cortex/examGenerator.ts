@@ -41,7 +41,7 @@ QUALITY STANDARD
 - Do not invent impossible facts, ambiguous conditions, missing numerical data, or contradictory instructions.
 - Do not repeat the same task with superficial wording changes.
 - Do not use vague phrases such as “a key principle” or “an important concept” without naming the exact examinable target.
-- If a topic is supplied, ALL questions must stay inside that topic. Do not silently substitute a neighbouring topic.
+- If one topic is supplied, ALL questions must stay inside that topic. If multiple topics are supplied, every question must belong to one of those selected topics; distribute questions across the selected topics as evenly as the requested question count allows. Never silently substitute an unselected neighbouring topic.
 - Difficulty must be meaningful: easy = direct one-step application, medium = multi-step/application, hard = unfamiliar or integrated reasoning.
 - Marks must match the work required.
 - Model answers must actually answer the question. Marking criteria must be specific enough for an examiner to use.
@@ -115,14 +115,15 @@ function isQuestion(value: unknown): value is Partial<ExamQuestion> {
   return typeof q.question === "string" && q.question.trim().length >= 24 && Number.isFinite(Number(q.marks));
 }
 
-function topicMatches(requestedTopic: string, questionTopic: string, questionText: string): boolean {
-  if (!requestedTopic) return true;
-  const wanted = normalizedText(cleanTopic(requestedTopic));
+export function topicMatchesAny(requestedTopics: string[], questionTopic: string, questionText: string): boolean {
+  const wanted = requestedTopics.map(topic => normalizedText(cleanTopic(topic))).filter(Boolean);
+  if (!wanted.length) return true;
+
   const actual = normalizedText(cleanTopic(questionTopic));
   const text = normalizedText(questionText);
-  if (!wanted) return true;
-  if (!actual) return text.includes(wanted);
-  return actual.includes(wanted) || wanted.includes(actual) || text.includes(wanted);
+  return wanted.some(topic =>
+    actual ? actual.includes(topic) || topic.includes(actual) || text.includes(topic) : text.includes(topic)
+  );
 }
 
 function dedupeQuestions(questions: Partial<ExamQuestion>[]): Partial<ExamQuestion>[] {
@@ -146,11 +147,11 @@ function dedupeQuestions(questions: Partial<ExamQuestion>[]): Partial<ExamQuesti
   return result;
 }
 
-function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: string, requestedTopic: string): ExamQuestion | null {
+function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: string, requestedTopics: string[]): ExamQuestion | null {
   if (!isQuestion(q) || looksGeneric(q.question!)) return null;
 
   const questionTopic = typeof q.topic === "string" ? cleanTopic(q.topic.trim()) : "";
-  if (!topicMatches(requestedTopic, questionTopic, q.question!)) return null;
+  if (!topicMatchesAny(requestedTopics, questionTopic, q.question!)) return null;
 
   const rawType = q.type as string;
   const requestedType: QuestionType = ["multiple_choice", "short_answer", "structured", "essay"].includes(rawType) ? rawType as QuestionType : "short_answer";
@@ -179,7 +180,7 @@ function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: 
     question: q.question!.trim().slice(0, 5000),
     options,
     marks,
-    topic: questionTopic.slice(0, 255) || cleanTopic(requestedTopic).slice(0, 255) || "General",
+    topic: questionTopic.slice(0, 255) || requestedTopics.map(cleanTopic).join(", ").slice(0, 255) || "General",
     difficulty: normalizedDifficulty,
     modelAnswer: modelAnswer.slice(0, 5000),
     markingCriteria: markingCriteria.slice(0, 2500),
@@ -195,7 +196,7 @@ function buildPrompt(subject: string, topics: string[], difficulty: string, coun
   const primaryTopic = cleanTopics[0] || "the full syllabus";
   const weakAreas = Array.isArray(memory.weakTopics) ? memory.weakTopics : [];
   const candidateCount = Math.min(24, Math.max(count + 3, Math.ceil(count * 1.35)));
-  return `${EXAM_SYSTEM_PROMPT}\n\nEXAM BRIEF\nSubject: ${subject}\nRequested topic(s): ${cleanTopics.join(", ") || "Full syllabus"}\nPrimary topic constraint: ${primaryTopic}\nDifficulty: ${difficulty}\nStudent level: ${memory.level}\nNumber of final questions required: ${count}\nNumber of candidates to generate: ${candidateCount}\nStrengths: ${(memory.strongSubjects ?? []).join(", ") || "none"}\nWeak areas: ${weakAreas.join(", ") || "none"}\n\nIMPORTANT: Generate enough strong candidates for local validation, but do not sacrifice correctness for quantity. If a single topic is requested, do not drift into another topic.`;
+  return `${EXAM_SYSTEM_PROMPT}\n\nEXAM BRIEF\nSubject: ${subject}\nRequested topic(s): ${cleanTopics.join(", ") || "Full syllabus"}\nTopic constraints: ${cleanTopics.length ? cleanTopics.join(" | ") : "full syllabus"}\n${cleanTopics.length > 1 ? "Distribute the paper across all selected topics as evenly as possible." : `Primary topic constraint: ${primaryTopic}`}\nDifficulty: ${difficulty}\nStudent level: ${memory.level}\nNumber of final questions required: ${count}\nNumber of candidates to generate: ${candidateCount}\nStrengths: ${(memory.strongSubjects ?? []).join(", ") || "none"}\nWeak areas: ${weakAreas.join(", ") || "none"}\n\nIMPORTANT: Generate enough strong candidates for local validation, but do not sacrifice correctness for quantity. If a single topic is requested, do not drift into another topic.`;
 }
 
 export async function generateExam(subject: string, topics: string[], difficulty: string, questionCount: number, userId: string): Promise<GeneratedExam | null> {
@@ -235,7 +236,7 @@ export async function generateExam(subject: string, topics: string[], difficulty
 
     const candidates = dedupeQuestions(parsed.questions.filter(isQuestion));
     const questions = candidates
-      .map((q, i) => normalizeQuestion(q, i, difficulty, safeTopics[0] || ""))
+      .map((q, i) => normalizeQuestion(q, i, difficulty, safeTopics))
       .filter((q): q is ExamQuestion => Boolean(q));
 
     if (questions.length < safeCount) {
