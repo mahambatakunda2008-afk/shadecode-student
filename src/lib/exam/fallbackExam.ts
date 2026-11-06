@@ -1,5 +1,6 @@
 import type { ExamQuestion, GeneratedExam } from "@/lib/cortex/examGenerator";
 import { biologyBank } from "./curated/biology";
+import { geographyBank } from "./curated/geography";
 
 type Seed = Omit<ExamQuestion, "id" | "topic" | "difficulty"> & { topic?: string };
 type Difficulty = ExamQuestion["difficulty"];
@@ -12,7 +13,7 @@ const structured = (question: string, modelAnswer: string, marks = 4): Seed => (
 export function buildFallbackExam(subject: string, topic: string, difficulty: string, count: number): GeneratedExam {
   const level: Difficulty = difficulty === "hard" ? "hard" : difficulty === "easy" ? "easy" : "medium";
   const requestedTopic = topic.trim() || "core concepts";
-  const bank = getBank(subject, requestedTopic);
+  const bank = getBank(subject, requestedTopic, difficulty);
   const safeCount = Math.max(1, Math.min(Math.round(Number(count) || 10), bank.length));
   const questions: ExamQuestion[] = bank.slice(0, safeCount).map((seed, index) => ({
     ...seed,
@@ -24,11 +25,12 @@ export function buildFallbackExam(subject: string, topic: string, difficulty: st
   return { subject, title: `${subject}${topic ? ` · ${topic}` : ""} Practice Paper`, questions, totalMarks, durationMinutes: Math.max(5, Math.round(totalMarks * 2.5)), difficulty: level, topics: [...new Set(questions.map((question) => question.topic))] };
 }
 
-function getCuratedBank(subject: string, topic: string): Seed[] | null {
+function getCuratedBank(subject: string, topic: string, difficulty?: string): Seed[] | null {
   const s = subject.toLowerCase();
   const t = topic.toLowerCase();
 
   if (s.includes("biolog")) return biologyBank(t);
+  if (s.includes("geograph")) return geographyBank(t, difficulty);
 
   if (s.includes("physics") && (t.includes("deformation") || t.includes("elastic"))) return [
     mcq("Which quantity is force divided by cross-sectional area?", ["Strain", "Stress", "Extension", "Young modulus"], "Stress"),
@@ -102,13 +104,13 @@ function getGenericBank(subject: string, topic: string): Seed[] {
   ];
 }
 
-function getBank(subject: string, topic: string): Seed[] {
-  return getCuratedBank(subject, topic) ?? getGenericBank(subject, topic);
+function getBank(subject: string, topic: string, difficulty?: string): Seed[] {
+  return getCuratedBank(subject, topic, difficulty) ?? getGenericBank(subject, topic);
 }
 
 /** True only when hand-written, correct questions exist for this exact subject and topic. */
-export function hasCuratedBank(subject: string, topic: string): boolean {
-  return getCuratedBank(subject, topic.trim() || "core concepts") !== null;
+export function hasCuratedBank(subject: string, topic: string, difficulty?: string): boolean {
+  return getCuratedBank(subject, topic.trim() || "core concepts", difficulty) !== null;
 }
 
 /**
@@ -117,5 +119,5 @@ export function hasCuratedBank(subject: string, topic: string): boolean {
  * message (docs/EXAM_GENERATION_QA_V2.md: never silently downgrade to fabricated questions).
  */
 export function buildCuratedFallbackExam(subject: string, topic: string, difficulty: string, count: number): GeneratedExam | null {
-  return hasCuratedBank(subject, topic) ? buildFallbackExam(subject, topic, difficulty, count) : null;
+  return hasCuratedBank(subject, topic, difficulty) ? buildFallbackExam(subject, topic, difficulty, count) : null;
 }

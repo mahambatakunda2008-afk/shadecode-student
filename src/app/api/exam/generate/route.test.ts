@@ -77,6 +77,25 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     expect(json.questions).toHaveLength(10);
   });
 
+  it("serves O-Level Geography from the built-in bank with no AI", async () => {
+    generateExam.mockImplementation(async () => { throw new Error("AI must not be used"); });
+    for (const topic of ["Geography (O-Level)", "Rivers (O-Level)", "Weather and climate"]) {
+      const { status, json } = await call({ subject: "Geography", topic, difficulty: "easy", questionCount: 10 });
+      expect(status, topic).toBe(200);
+      expect(json.questions.length, topic).toBeGreaterThanOrEqual(8);
+      for (const q of json.questions) expect(q.options).toContain(q.modelAnswer);
+    }
+    expect(generateExam).not.toHaveBeenCalled();
+  });
+
+  it("does not serve O-Level Geography to an A-Level learner: AI is tried, and failure is honest", async () => {
+    generateExam.mockImplementation(async () => { throw new Error("providers down"); });
+    const { status, json } = await call({ subject: "Geography", topic: "Geography (A-Level)", difficulty: "medium", questionCount: 10 });
+    expect(generateExam).toHaveBeenCalledTimes(1);
+    expect(status).toBe(503);
+    expect(json.code).toBe("GENERATION_UNAVAILABLE");
+  });
+
   it("still tries AI for a topic with no built-in coverage, and is honest when it fails", async () => {
     generateExam.mockImplementation(async () => { throw new Error("providers down"); });
     const { status, json } = await call({ subject: "Geography", topic: "Rivers", difficulty: "medium", questionCount: 10 });

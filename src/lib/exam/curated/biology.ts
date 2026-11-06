@@ -9,29 +9,13 @@
  * paper is described to learners as "verified".
  */
 
-export interface BiologyMcq {
-  question: string;
-  options: string[];
-  answer: string;
-}
+import { buildBank, matchTopics, type CuratedMcq, type CuratedSeed, type CuratedTopic } from "./bank";
 
-export interface BiologyTopic {
-  topic: string;
-  keywords: string[];
-  questions: BiologyMcq[];
-}
+export type BiologyMcq = CuratedMcq;
+export type BiologyTopic = CuratedTopic;
+export type BiologySeed = CuratedSeed;
 
-export interface BiologySeed {
-  topic: string;
-  type: "multiple_choice";
-  question: string;
-  options: string[];
-  marks: number;
-  modelAnswer: string;
-  markingCriteria: string;
-}
-
-export const BIOLOGY_TOPICS: BiologyTopic[] = [
+export const BIOLOGY_TOPICS: CuratedTopic[] = [
   {
     topic: "Cell structure",
     keywords: ["cell structure", "cell", "cells", "organelle*", "microscop*", "nucleus", "ribosome", "eukaryot*", "prokaryot*"],
@@ -156,54 +140,8 @@ export const BIOLOGY_TOPICS: BiologyTopic[] = [
 
 const MIXED_WORDS = /\b(biology|core|concepts?|mixed|all|general|revision|practice|paper|overview|full|random|everything|test|quick)\b/;
 
-function shuffled<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
-const toSeed = (topic: string, item: BiologyMcq): BiologySeed => ({
-  topic,
-  type: "multiple_choice",
-  question: item.question,
-  options: item.options,
-  marks: 1,
-  modelAnswer: item.answer,
-  markingCriteria: "Award full credit only for the correct option.",
-});
-
-/** Stems end in `*` (prefix match at a word start); other keywords match whole words, with an optional plural. */
-function keywordMatches(text: string, keyword: string): boolean {
-  const isStem = keyword.endsWith("*");
-  const word = (isStem ? keyword.slice(0, -1) : keyword).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`\\b${word}${isStem ? "" : "(?:s|es)?\\b"}`).test(text);
-}
-
 /** Topics whose keywords appear in the requested topic text; every topic for a generic request. */
-export function matchBiologyTopics(topic: string): BiologyTopic[] {
-  const text = topic.toLowerCase().trim();
-  const hits = BIOLOGY_TOPICS.filter((entry) => entry.keywords.some((keyword) => keywordMatches(text, keyword)));
-  if (hits.length) return hits;
-  return !text || MIXED_WORDS.test(text) ? BIOLOGY_TOPICS : [];
-}
+export const matchBiologyTopics = (topic: string): CuratedTopic[] => matchTopics(BIOLOGY_TOPICS, topic, MIXED_WORDS);
 
-/**
- * Questions for a Biology paper, or null when the topic is not covered (so callers show an honest
- * message rather than invented questions). A broad request is interleaved across topics so a short
- * paper samples the whole syllabus; every request is shuffled so a retake is not identical.
- */
-export function biologyBank(topic: string): BiologySeed[] | null {
-  const matched = matchBiologyTopics(topic);
-  if (!matched.length) return null;
-  const pools = matched.map((entry) => shuffled(entry.questions).map((item) => toSeed(entry.topic, item)));
-  if (pools.length === 1) return pools[0];
-  const order = shuffled(pools);
-  const mixed: BiologySeed[] = [];
-  for (let i = 0; order.some((pool) => i < pool.length); i += 1) {
-    for (const pool of order) if (i < pool.length) mixed.push(pool[i]);
-  }
-  return mixed;
-}
+/** Questions for a Biology paper, or null when the topic is not covered. */
+export const biologyBank = (topic: string): CuratedSeed[] | null => buildBank(BIOLOGY_TOPICS, topic, MIXED_WORDS);
