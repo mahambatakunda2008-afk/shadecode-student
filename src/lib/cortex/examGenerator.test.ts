@@ -13,7 +13,7 @@ describe("topicMatchesAny", () => {
   });
 
   it("uses the question text when the model omits its topic label", () => {
-    expect(topicMatchesAny(["Kinematics", "Forces"], "", "Calculate the acceleration from the change in velocity.")).toBe(true);
+    expect(topicMatchesAny(["Kinematics", "Forces"], "", "Use kinematics to calculate acceleration from the change in velocity.")).toBe(true);
     expect(topicMatchesAny(["Kinematics", "Forces"], "", "Explain the structure of an ionic lattice.")).toBe(false);
   });
 
