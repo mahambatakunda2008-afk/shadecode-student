@@ -247,33 +247,50 @@ function extractCambridgePracticalAssessment(
 ): CurriculumKnowledgeItem[] {
   const lines = text.split(/\r?\n/);
   const sections: Array<{ code: string; title: string; content: string[] }> = [];
+  const overviewLines: string[] = [];
   let current: (typeof sections)[number] | undefined;
   let collectingOverview = false;
-  const overviewLines: string[] = [];
+
   const flush = () => {
     if (current && current.content.length) sections.push(current);
     current = undefined;
   };
+
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
+
+    if (/^(?:\d+(?:\.\d+)?\s+)?Practical assessment$/i.test(line)) {
+      flush();
+      collectingOverview = true;
+      continue;
+    }
     if (/^Paper\s*3(?:\s*[–-]\s*Advanced Practical Skills)?$/i.test(line)) {
       flush();
+      collectingOverview = false;
       current = { code: "P3", title: "Paper 3 – Advanced Practical Skills", content: [] };
       continue;
     }
     if (/^Paper\s*5(?:\s*[–-].*)?$/i.test(line)) {
       flush();
+      collectingOverview = false;
       current = { code: "P5", title: "Paper 5 – Planning, Analysis and Evaluation", content: [] };
       continue;
     }
-    if (/^Safety in the laboratory$/i.test(line)) { flush(); continue; }
-    if (current) current.content.push(line.replace(/^[•●▪–-]\s*/, ""));
+    if (/^Safety in the laboratory$/i.test(line)) {
+      flush();
+      collectingOverview = false;
+      continue;
+    }
+
+    const cleaned = line.replace(/^[•●▪–-]\s*/, "");
+    if (current) current.content.push(cleaned);
+    else if (collectingOverview) overviewLines.push(cleaned);
   }
   flush();
 
   const items: CurriculumKnowledgeItem[] = [];
-  const overviewContent = overviewLines.join(" ").replace(/\\s+/g, " ").trim();
+  const overviewContent = overviewLines.join(" ").replace(/\s+/g, " ").trim();
   const overview = overviewContent
     ? makeItem(
         "practical_activity",
@@ -317,27 +334,40 @@ function extractCambridgePracticalAssessment(
       "evaluation",
     ],
   };
+
   sections.forEach((section, index) => {
     const content = section.content.join(" ").replace(/\s+/g, " ").trim();
     const parent = makeItem(
-      "assessment_requirement", section.title, content,
-      identity, { ...provenance, sectionOrPage: provenance.sectionOrPage ?? section.title }, index,
-      { code: section.code, metadata: {
-        extraction: "cambridge-practical-assessment",
-        stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment", section.code].join("|"),
-        paper: section.code,
-      }, parentId: overview?.id },
+      "assessment_requirement",
+      section.title,
+      content,
+      identity,
+      { ...provenance, sectionOrPage: provenance.sectionOrPage ?? section.title },
+      index,
+      {
+        code: section.code,
+        metadata: {
+          extraction: "cambridge-practical-assessment",
+          stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment", section.code].join("|"),
+          paper: section.code,
+        },
+        parentId: overview?.id,
+      },
     );
     items.push(parent);
 
-    const relevantSkills = paperSkills[section.code] ?? [];
-    for (const label of relevantSkills) {
-      if (!new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(content)) continue;
+    for (const label of paperSkills[section.code] ?? []) {
+      const escapedLabel = label.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+      if (!new RegExp(escapedLabel, "i").test(content)) continue;
       items.push(makeItem(
-        "skill", label[0].toUpperCase() + label.slice(1), label,
-        identity, { ...provenance, sectionOrPage: section.title }, items.length,
+        "skill",
+        label[0].toUpperCase() + label.slice(1),
+        label,
+        identity,
+        { ...provenance, sectionOrPage: section.title },
+        items.length,
         {
-          code: `${section.code}-${label.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "")}`,
+          code: section.code + "-" + label.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, ""),
           parentId: parent.id,
           metadata: {
             extraction: "cambridge-practical-skill",
@@ -348,6 +378,7 @@ function extractCambridgePracticalAssessment(
       ));
     }
   });
+
   return items;
 }
 function extractCambridgePracticalSkillExpectations(
