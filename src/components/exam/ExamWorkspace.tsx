@@ -20,10 +20,11 @@ import { sendLearningSignals } from "@/lib/learning/client";
 import { signalsFromMarkedPaper } from "@/lib/learning/signals";
 import { renderMath as math } from "@/lib/exam/mathText";
 import ExamQuestionContent from "./ExamQuestionContent";
+import type { ExamContentBlock } from "@/lib/exam/types";
 import { expectedPaperLength, isValidGeneratedPaper } from "@/lib/exam/paperValidation";
 import { trackEvent } from "@/lib/traction/client";
 
-export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string; content?: unknown };
+export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string; content?: ExamContentBlock[] };
 export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
 export type ExamResults = { totalScore: number; maxScore: number; percentage: number; grade: string; weakAreas: string[]; strongAreas: string[]; cortexInsight: string; results: ExamResult[]; timeTaken: number };
 type Answer = { questionId: number; answer: string; timeSpent: number };
