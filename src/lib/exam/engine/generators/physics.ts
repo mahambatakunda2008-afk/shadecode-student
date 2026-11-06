@@ -216,4 +216,46 @@ export const physicsGenerators: QuestionGenerator[] = [
       };
     },
   },
+
+  {
+    id: "physics.density",
+    subject: "Physics",
+    topic: "Pressure and density",
+    keywords: ["density", "mass", "volume", "matter"],
+    build(rng) {
+      const mass = rng.int(2, 80) * 10;
+      const volume = rng.int(2, 20) / 10;
+      const exact = mass / volume;
+      const { rounded, numeric } = sf3(exact, "kg m^-3");
+      return {
+        question: `A solid has mass ${mass} kg and volume ${volume} m³. Calculate its density to 3 significant figures (kg m⁻³).`,
+        numeric,
+        working: ["Density = mass ÷ volume.", `ρ = ${mass} ÷ ${volume} = ${rounded} kg m⁻³.`],
+        marks: 2,
+        params: { mass, volume },
+      };
+    },
+  },
+  {
+    id: "physics.acceleration-from-data",
+    subject: "Physics",
+    topic: "Kinematics",
+    keywords: ["kinematics", "motion", "velocity", "time", "acceleration", "data", "gradient"],
+    build(rng) {
+      const t1 = rng.int(1, 4);
+      const interval = rng.int(2, 6);
+      const u = rng.int(1, 12);
+      const a = rng.int(1, 5);
+      const t2 = t1 + interval;
+      const v1 = u + a * t1;
+      const v2 = u + a * t2;
+      return {
+        question: `A motion sensor records a velocity of ${v1} m s⁻¹ at ${t1} s and ${v2} m s⁻¹ at ${t2} s. Calculate the acceleration between these readings (m s⁻²).`,
+        numeric: exactInteger((v2 - v1) / interval),
+        working: [`Acceleration is the gradient of a velocity-time graph.`, `a = (v₂ − v₁)/(t₂ − t₁) = (${v2} − ${v1})/(${t2} − ${t1}) = ${a} m s⁻².`],
+        marks: 2,
+        params: { t1, t2, v1, v2, a },
+      };
+    },
+  },
 ];

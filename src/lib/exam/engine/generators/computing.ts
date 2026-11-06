@@ -70,4 +70,40 @@ export const computingGenerators: QuestionGenerator[] = [
       };
     },
   },
+
+  {
+    id: "cs.twos-complement",
+    subject: "Computer Science",
+    topic: "Data representation",
+    keywords: ["binary", "two's complement", "twos complement", "negative", "signed", "denary", "data", "representation"],
+    build(rng) {
+      const magnitude = rng.int(1, 127);
+      const bits = (256 - magnitude).toString(2).padStart(8, "0");
+      return {
+        question: `An 8-bit value uses two's complement representation. Convert ${bits} to denary.`,
+        numeric: exactInteger(-magnitude),
+        working: [`The most significant bit is 1, so the value is negative.`, `Invert the bits and add 1 to find the magnitude: ${magnitude}.`, `The denary value is −${magnitude}.`],
+        marks: 2,
+        params: { bits, magnitude },
+      };
+    },
+  },
+  {
+    id: "cs.binary-addition",
+    subject: "Computer Science",
+    topic: "Data representation",
+    keywords: ["binary", "addition", "arithmetic", "overflow", "data", "representation"],
+    build(rng) {
+      const a = rng.int(1, 120);
+      const b = rng.int(1, 135);
+      const sum = a + b;
+      return {
+        question: `Add the two 8-bit binary values ${a.toString(2).padStart(8, "0")} and ${b.toString(2).padStart(8, "0")}. Give the denary value of the result.`,
+        numeric: exactInteger(sum),
+        working: [`Convert or add the place values: ${a} + ${b}.`, `The denary result is ${sum}.`],
+        marks: 2,
+        params: { a, b, sum },
+      };
+    },
+  },
 ];

@@ -54,12 +54,24 @@ const INDEPENDENT: Record<string, (p: P, exact: number) => void> = {
     expect(exact).toBeLessThan(n(p.h));
     near(Math.hypot(exact, n(p.h) * Math.cos((n(p.theta) * Math.PI) / 180)), n(p.h), 1e-9);
   },
+  "maths.median": (p, exact) => {
+    const values = String(p.data).split(",").map(Number).sort((a, b) => a - b);
+    expect(values[3]).toBe(exact);
+  },
+  "maths.independent-probability": (p, exact) => near(1 / (n(p.a) * n(p.b)), exact),
   "maths.mean": (p, exact) => {
     const data = String(p.data).split(",").map(Number);
     near(data.reduce((s, v) => s + v, 0) / data.length, exact);
   },
   "maths.binomial-coefficient": (p, exact) => expect(exact).toBe(factorial(n(p.n)) / (factorial(n(p.r)) * factorial(n(p.n) - n(p.r)))),
   "maths.gradient": (p, exact) => expect((n(p.y1) + n(p.m) * n(p.dx) - n(p.y1)) / ((n(p.x1) + n(p.dx)) - n(p.x1))).toBe(exact),
+  "physics.density": (p, exact) => near(n(p.mass) / n(p.volume), exact),
+  "physics.acceleration-from-data": (p, exact) => {
+    const elapsed = n(p.t2) - n(p.t1);
+    expect(elapsed).toBeGreaterThan(0);
+    near((n(p.v2) - n(p.v1)) / elapsed, exact);
+    expect(exact).toBe(n(p.a));
+  },
   "physics.suvat-v": (p, exact) => expect(exact).toBe(n(p.u) + n(p.a) * n(p.t)),
   "physics.suvat-s": (p, exact) => near(((n(p.u) + (n(p.u) + n(p.a) * n(p.t))) / 2) * n(p.t), exact),
   "physics.newton-second": (p, exact) => near(exact * n(p.m) + n(p.f), n(p.applied)),
@@ -75,6 +87,14 @@ const INDEPENDENT: Record<string, (p: P, exact: number) => void> = {
     expect(exact * 2 ** n(p.halfLives)).toBe(n(p.start));
     expect(Number.isInteger(exact)).toBe(true);
   },
+  "chemistry.atom-economy": (p, exact) => {
+    expect(n(p.totalMr)).toBeGreaterThan(n(p.desiredMr));
+    near((n(p.desiredMr) / n(p.totalMr)) * 100, exact);
+  },
+  "chemistry.percentage-composition": (p, exact) => {
+    near((n(p.elementMass) / formulaMass(String(p.formula))) * 100, exact);
+    expect(n(p.count)).toBeGreaterThanOrEqual(1);
+  },
   "chemistry.relative-formula-mass": (p, exact) => near(exact, formulaMass(String(p.formula))),
   "chemistry.moles-from-mass": (p, exact) => near(exact * formulaMass(String(p.formula)), n(p.mass)),
   "chemistry.mass-from-moles": (p, exact) => near(exact / n(p.n), formulaMass(String(p.formula))),
@@ -86,6 +106,19 @@ const INDEPENDENT: Record<string, (p: P, exact: number) => void> = {
     expect(exact).toBeLessThan(100);
   },
   "chemistry.dilution": (p, exact) => near(0 + exact * n(p.c2), n(p.c1) * n(p.v1)),
+  "cs.twos-complement": (p, exact) => {
+    const bits = String(p.bits);
+    expect(bits).toMatch(/^[01]{8}$/);
+    expect(bits[0]).toBe("1");
+    expect(parseInt(bits, 2) - 256).toBe(exact);
+    expect(exact).toBe(-n(p.magnitude));
+  },
+  "cs.binary-addition": (p, exact) => {
+    expect(n(p.a)).toBeGreaterThan(0);
+    expect(n(p.b)).toBeGreaterThan(0);
+    expect(n(p.a) + n(p.b)).toBe(n(p.sum));
+    expect(exact).toBe(n(p.sum));
+  },
   "cs.binary-to-denary": (p, exact) => expect(exact).toBe(parseInt(String(p.bits), 2)),
   "cs.hex-to-denary": (p, exact) => expect(exact).toBe(parseInt(String(p.hex), 16)),
   "cs.image-file-size": (p, exact) => expect(exact * 8).toBe(n(p.w) * n(p.h) * n(p.depth)),
