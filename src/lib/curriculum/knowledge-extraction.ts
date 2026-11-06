@@ -247,30 +247,69 @@ function extractCambridgePracticalAssessment(
 ): CurriculumKnowledgeItem[] {
   const lines = text.split(/\r?\n/);
   const sections: Array<{ code: string; title: string; content: string[] }> = [];
+  const overviewLines: string[] = [];
   let current: (typeof sections)[number] | undefined;
+  let collectingOverview = false;
+
   const flush = () => {
     if (current && current.content.length) sections.push(current);
     current = undefined;
   };
+
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
+
+    if (/^(?:\d+(?:\.\d+)?\s+)?Practical assessment$/i.test(line)) {
+      flush();
+      collectingOverview = true;
+      continue;
+    }
     if (/^Paper\s*3(?:\s*[–-]\s*Advanced Practical Skills)?$/i.test(line)) {
       flush();
+      collectingOverview = false;
       current = { code: "P3", title: "Paper 3 – Advanced Practical Skills", content: [] };
       continue;
     }
     if (/^Paper\s*5(?:\s*[–-].*)?$/i.test(line)) {
       flush();
+      collectingOverview = false;
       current = { code: "P5", title: "Paper 5 – Planning, Analysis and Evaluation", content: [] };
       continue;
     }
-    if (/^Safety in the laboratory$/i.test(line)) { flush(); continue; }
-    if (current) current.content.push(line.replace(/^[•●▪–-]\s*/, ""));
+    if (/^Safety in the laboratory$/i.test(line)) {
+      flush();
+      collectingOverview = false;
+      continue;
+    }
+
+    const cleaned = line.replace(/^[•●▪–-]\s*/, "");
+    if (current) current.content.push(cleaned);
+    else if (collectingOverview) overviewLines.push(cleaned);
   }
   flush();
 
   const items: CurriculumKnowledgeItem[] = [];
+  const overviewContent = overviewLines.join(" ").replace(/\s+/g, " ").trim();
+  const overview = overviewContent
+    ? makeItem(
+        "practical_activity",
+        "Practical assessment overview",
+        overviewContent,
+        identity,
+        { ...provenance, sectionOrPage: provenance.sectionOrPage ?? "Practical assessment" },
+        0,
+        {
+          code: "PRACTICAL-OVERVIEW",
+          metadata: {
+            extraction: "cambridge-practical-assessment-overview",
+            stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment-overview"].join("|"),
+          },
+        },
+      )
+    : undefined;
+  if (overview) items.push(overview);
+
   const paperSkills: Record<string, string[]> = {
     P3: [
       "manipulation, measurement and observation",
@@ -295,27 +334,40 @@ function extractCambridgePracticalAssessment(
       "evaluation",
     ],
   };
+
   sections.forEach((section, index) => {
     const content = section.content.join(" ").replace(/\s+/g, " ").trim();
     const parent = makeItem(
-      "assessment_requirement", section.title, content,
-      identity, { ...provenance, sectionOrPage: provenance.sectionOrPage ?? section.title }, index,
-      { code: section.code, metadata: {
-        extraction: "cambridge-practical-assessment",
-        stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment", section.code].join("|"),
-        paper: section.code,
-      } },
+      "assessment_requirement",
+      section.title,
+      content,
+      identity,
+      { ...provenance, sectionOrPage: provenance.sectionOrPage ?? section.title },
+      index,
+      {
+        code: section.code,
+        metadata: {
+          extraction: "cambridge-practical-assessment",
+          stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-assessment", section.code].join("|"),
+          paper: section.code,
+        },
+        parentId: overview?.id,
+      },
     );
     items.push(parent);
 
-    const relevantSkills = paperSkills[section.code] ?? [];
-    for (const label of relevantSkills) {
-      if (!new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(content)) continue;
+    for (const label of paperSkills[section.code] ?? []) {
+      const escapedLabel = label.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+      if (!new RegExp(escapedLabel, "i").test(content)) continue;
       items.push(makeItem(
-        "skill", label[0].toUpperCase() + label.slice(1), label,
-        identity, { ...provenance, sectionOrPage: section.title }, items.length,
+        "skill",
+        label[0].toUpperCase() + label.slice(1),
+        label,
+        identity,
+        { ...provenance, sectionOrPage: section.title },
+        items.length,
         {
-          code: `${section.code}-${label.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "")}`,
+          code: section.code + "-" + label.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, ""),
           parentId: parent.id,
           metadata: {
             extraction: "cambridge-practical-skill",
@@ -326,8 +378,126 @@ function extractCambridgePracticalAssessment(
       ));
     }
   });
+
   return items;
 }
+function extractCambridgePracticalSkillExpectations(
+  text: string,
+  identity: CurriculumKnowledgeIdentity,
+  provenance: CurriculumKnowledgeProvenance,
+  paperItems: CurriculumKnowledgeItem[],
+): CurriculumKnowledgeItem[] {
+  const paperByCode = new Map(
+    paperItems
+      .filter((item) => item.metadata?.extraction === "cambridge-practical-assessment")
+      .map((item) => [String(item.code), item]),
+  );
+  const allowedGroups: Record<string, Set<string>> = {
+    P3: new Set([
+      "decisions relating to measurements and observations",
+      "collection of data and observations",
+      "recording data and observations",
+      "display of calculation and reasoning",
+      "layout of data and observations",
+      "interpreting data and observations",
+      "drawing conclusions",
+      "identifying sources of error and suggesting improvements",
+    ]),
+    P5: new Set(["defining the problem", "methods", "dealing with data", "conclusions", "evaluation"]),
+  };
+  const lines = text.split(/\r?\n/);
+  const items: CurriculumKnowledgeItem[] = [];
+  let paper: "P3" | "P5" | undefined;
+  let inExpectations = false;
+  let group: string | undefined;
+  let current: CurriculumKnowledgeItem | undefined;
+
+  const flush = () => {
+    if (!current) return;
+    current.content = current.content.replace(/\s+/g, " ").trim();
+    current.title = current.content.length > 110 ? current.content.slice(0, 107) + "…" : current.content;
+    items.push(current);
+    current = undefined;
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const expectationHeader = line
+      .replace(/^#+\s*/, "")
+      .match(/^Expectations for each skill \(Paper\s*(3|5)\)$/i);
+    if (expectationHeader) {
+      flush();
+      paper = expectationHeader[1] === "3" ? "P3" : "P5";
+      inExpectations = true;
+      group = undefined;
+      continue;
+    }
+
+    if (/^#\s/.test(line) && inExpectations) {
+      flush();
+      inExpectations = false;
+      group = undefined;
+      paper = undefined;
+      continue;
+    }
+    if (!inExpectations || !paper) continue;
+
+    const heading = line.replace(/^#+\s*/, "").toLowerCase();
+    if (allowedGroups[paper].has(heading)) {
+      flush();
+      group = heading;
+      continue;
+    }
+    if (!group) continue;
+
+    const nestedBullet = rawLine.match(/^\s{2,}[-•●▪]\s+(.+)$/);
+    if (nestedBullet && current) {
+      current.content = current.content + " " + nestedBullet[1];
+      continue;
+    }
+
+    const bullet = line.match(/^(?:[-•●▪]\s+)(.+)$/);
+    if (bullet) {
+      flush();
+      const parent = paperByCode.get(paper);
+      if (!parent) continue;
+      const groupCode = group.toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const ordinal = items.filter(
+        (item) => item.parentId === parent.id && item.metadata?.skillGroup === group,
+      ).length + 1;
+      const code = paper + "-EXPECT-" + groupCode + "-" + String(ordinal).padStart(2, "0");
+      current = makeItem(
+        "skill",
+        bullet[1],
+        bullet[1],
+        identity,
+        { ...provenance, sectionOrPage: "Paper " + paper.slice(1) + ": " + group },
+        items.length,
+        {
+          code,
+          parentId: parent.id,
+          metadata: {
+            extraction: "cambridge-practical-skill-expectation",
+            paper,
+            skillGroup: group,
+            stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "practical-skill-expectation", paper, group, ordinal].join("|"),
+          },
+        },
+      );
+      continue;
+    }
+
+    if (current && !/^Back to contents page$/i.test(line) && !/^www\./i.test(line) && !/^When using\b/i.test(line) && !/:\s*$/.test(line)) {
+      current.content = current.content + " " + line.replace(/^[-•●▪]\s*/, "");
+    }
+  }
+
+  flush();
+  return items;
+}
+
 function extractCambridgeNumberedLearningOutcomes(
   text: string,
   identity: CurriculumKnowledgeIdentity,
@@ -465,12 +635,15 @@ export function extractCurriculumKnowledge(
   const practicalAssessment = profile.cambridgeNumberedLearningOutcomes
     ? extractCambridgePracticalAssessment(text, identity, provenance)
     : [];
+  const practicalSkillExpectations = profile.cambridgeNumberedLearningOutcomes
+    ? extractCambridgePracticalSkillExpectations(text, identity, provenance, practicalAssessment)
+    : [];
   const objectives = extractNumberedObjectives(text, identity, provenance, profile.objectiveCodePattern);
   const assessments = extractPatternLines(text, identity, provenance, profile.assessmentPatterns, "assessment_requirement");
   const papers = extractPatternLines(text, identity, provenance, profile.paperPatterns, "paper_component");
 
   const seen = new Set<string>();
-  return [...sectionItems, ...biologyStructure, ...practicalAssessment, ...objectives, ...assessments, ...papers].filter((item) => {
+  return [...sectionItems, ...biologyStructure, ...practicalAssessment, ...practicalSkillExpectations, ...objectives, ...assessments, ...papers].filter((item) => {
     const key = `${item.kind}:${item.code ?? ""}:${item.kind === "topic" ? item.title.toLowerCase() + ":" : ""}${item.content.toLowerCase().replace(/\s+/g, " ")}`;
     if (seen.has(key)) return false;
     seen.add(key);
