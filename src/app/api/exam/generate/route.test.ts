@@ -101,7 +101,7 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     const { status, json } = await call({ subject: "Geography", topic: "Rivers", difficulty: "medium", questionCount: 10 });
     expect(generateExam).toHaveBeenCalledTimes(1);
     expect(status).toBe(503);
-    expect(json.code).toBe("GENERATION_UNAVAILABLE");
+    expect(json.code).toBe("INSUFFICIENT_QUESTION_COVERAGE");
   });
 
   it("returns the live AI paper for an uncovered topic when AI works", async () => {
