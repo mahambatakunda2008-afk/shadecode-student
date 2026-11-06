@@ -3,6 +3,8 @@ import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { getMemory } from "./memory";
 import type { NumericSpec } from "@/lib/exam/engine/numeric";
+import type { ExamContentBlock } from "@/lib/exam/types";
+import { normalizeExamContent } from "@/lib/exam/structuredContent";
 
 export type QuestionType = "multiple_choice" | "short_answer" | "structured" | "essay";
 export interface ExamQuestion {
@@ -17,6 +19,7 @@ export interface ExamQuestion {
   markingCriteria?: string;
   /** Set by the deterministic engine: the answer is marked exactly, offline, with no model. */
   numeric?: NumericSpec;
+  content?: ExamContentBlock[];
 }
 export interface GeneratedExam {
   subject: string;
@@ -55,7 +58,7 @@ SUBJECT-SPECIFIC EXPECTATIONS
 - Economics/Business/Accounting/Geography/History/English: realistic scenarios, source/data interpretation, structured analysis, evaluation, and evidence where appropriate.
 
 QUESTION MIX
-Create a deliberate mix of question types. MCQs must have exactly four plausible, distinct options with one clearly correct answer. For structured questions use parts (a), (b), (c) where useful. Keep the full question in one string.
+Create a deliberate mix of question types. MCQs must have exactly four plausible, distinct options with one clearly correct answer. For structured questions use parts (a), (b), (c) where useful. Keep the full question in one string. When a question genuinely needs visual evidence, include optional typed content blocks: text {type:"text",text}, table {type:"table",caption?,headers,rows}, graph {type:"graph",caption?,xLabel,yLabel,points:[{x,y}]}, or diagram {type:"diagram",caption?,shapes:[{type:"line",x1,y1,x2,y2,label?}|{type:"rect",x,y,width,height,label?}|{type:"circle",cx,cy,r,label?}|{type:"text",x,y,text}]}. Use numeric graph coordinates and simple diagram primitives only. Do not put HTML, SVG markup, image URLs or code in content. Use tables/graphs/diagrams only when they materially improve the question, not as decoration.
 
 JSON SHAPE
 {
@@ -71,7 +74,8 @@ JSON SHAPE
       "topic": "exact requested topic",
       "difficulty": "easy|medium|hard",
       "modelAnswer": "...",
-      "markingCriteria": "..."
+      "markingCriteria": "...",
+      "content": [{ "type": "table", "caption": "Measurements", "headers": ["Time / s", "Distance / m"], "rows": [["0", "0"], ["2", "8"]] }]
     }
   ]
 }
@@ -184,6 +188,7 @@ function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: 
     difficulty: normalizedDifficulty,
     modelAnswer: modelAnswer.slice(0, 5000),
     markingCriteria: markingCriteria.slice(0, 2500),
+    content: normalizeExamContent((q as { content?: unknown }).content),
   };
 }
 
