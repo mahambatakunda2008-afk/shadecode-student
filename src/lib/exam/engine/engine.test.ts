@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { sanitizeQuestions } from "@/lib/challenge/questions";
 import { markExamOffline } from "@/lib/local-first/exam-marker";
 import type { ExamAnswer, ExamQuestion } from "@/lib/exam/types";
-import { buildGuaranteedExam } from "../guaranteedExam";
+import { buildGuaranteedExam, buildGuaranteedExamForTopics } from "../guaranteedExam";
 import { buildEngineExam, engineSubjectFor, formatAnswer, matchGenerators } from "./index";
 
 describe("engineSubjectFor", () => {
@@ -47,6 +47,19 @@ describe("buildEngineExam", () => {
   it("returns null when it cannot cover the topic honestly", () => {
     expect(buildEngineExam({ subject: "Physics", topic: "Magnetism", difficulty: "medium", count: 5 })).toBeNull();
     expect(buildEngineExam({ subject: "Biology", topic: "Cells", difficulty: "medium", count: 5 })).toBeNull();
+  });
+
+  it("builds a balanced deterministic paper across every selected topic", () => {
+    const exam = buildGuaranteedExamForTopics("Physics", ["Kinematics", "Momentum"], "medium", 6, 123);
+    expect(exam?.questions).toHaveLength(6);
+    expect(exam?.questions.filter((question) => question.topic === "Kinematics").length).toBe(3);
+    expect(exam?.questions.filter((question) => question.topic === "Momentum").length).toBe(3);
+    expect(new Set(exam?.questions.map((question) => question.id)).size).toBe(6);
+  });
+
+  it("refuses to silently omit a selected topic or over-select topics", () => {
+    expect(buildGuaranteedExamForTopics("Physics", ["Kinematics", "Magnetism"], "medium", 6, 123)).toBeNull();
+    expect(buildGuaranteedExamForTopics("Physics", ["Kinematics", "Momentum"], "medium", 1, 123)).toBeNull();
   });
 });
 
