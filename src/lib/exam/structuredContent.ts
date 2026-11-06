@@ -4,27 +4,28 @@ const obj = (v: unknown): v is R => !!v && typeof v === "object" && !Array.isArr
 const str = (v: unknown, max = 500): string | null => typeof v === "string" && v.trim().length > 0 && v.length <= max ? v : null;
 const num = (v: unknown): number | null => typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= 1_000_000 ? v : null;
 const coord = (v: unknown): number | null => { const n = num(v); return n === null ? null : Math.max(0, Math.min(600, n)); };
+const coordY = (v: unknown): number | null => { const n = num(v); return n === null ? null : Math.max(0, Math.min(360, n)); };
 
 function shapeOf(v: unknown): ExamDiagramShape | null {
   if (!obj(v) || typeof v.type !== "string") return null;
   const label = str(v.label, 100) ?? undefined;
   if (v.type === "line") {
-    const [x1,y1,x2,y2] = [v.x1,v.y1,v.x2,v.y2].map(coord);
+    const [x1,y1,x2,y2] = [coord(v.x1),coordY(v.y1),coord(v.x2),coordY(v.y2)];
     if ([x1,y1,x2,y2].some(x => x === null)) return null;
     return {type:"line",x1:x1!,y1:y1!,x2:x2!,y2:y2!,...(label?{label}:{})};
   }
   if (v.type === "rect") {
-    const x=coord(v.x),y=coord(v.y),width=num(v.width),height=num(v.height);
+    const x=coord(v.x),y=coordY(v.y),width=num(v.width),height=num(v.height);
     if(x===null||y===null||width===null||height===null||width<=0||height<=0||width>600||height>360)return null;
     return {type:"rect",x,y,width,height,...(label?{label}:{})};
   }
   if (v.type === "circle") {
-    const cx=coord(v.cx),cy=coord(v.cy),r=num(v.r);
+    const cx=coord(v.cx),cy=coordY(v.cy),r=num(v.r);
     if(cx===null||cy===null||r===null||r<=0||r>180)return null;
     return {type:"circle",cx,cy,r,...(label?{label}:{})};
   }
   if (v.type === "text") {
-    const x=coord(v.x),y=coord(v.y),content=str(v.text,160);
+    const x=coord(v.x),y=coordY(v.y),content=str(v.text,160);
     if(x===null||y===null||!content)return null;
     return {type:"text",x,y,text:content};
   }

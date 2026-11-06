@@ -31,7 +31,7 @@ export interface GeneratedExam {
   topics: string[];
 }
 
-const GENERATOR_VERSION = "exam-quality-v4";
+const GENERATOR_VERSION = "exam-quality-v5";
 const EXAM_SYSTEM_PROMPT = `You are a senior Cambridge/International A-Level exam setter and assessment editor for Shadecode Student.
 
 Your job is to write REAL exam questions, not study prompts, definitions, conversation starters, or generic AI questions.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeExamContent } from "@/lib/exam/structuredContent";
+import { normalizeExamContent } from "@/components/exam/ExamQuestionContent";
 
 describe("normalizeExamContent", () => {
   it("accepts bounded text, tables, graphs and primitive diagrams", () => {
