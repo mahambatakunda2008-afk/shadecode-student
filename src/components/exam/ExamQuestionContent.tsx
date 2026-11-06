@@ -1,351 +1,106 @@
 "use client";
+import { renderMath } from "@/lib/exam/mathText";
+import type { ExamContentBlock, ExamDiagramShape } from "@/lib/exam/types";
 
-import "katex/dist/katex.min.css";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Calculator, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Clock3, CloudOff, Flag, FlagOff, Grid2X2, Lightbulb, Loader2, Menu, MoreHorizontal, Paperclip, Pencil, RotateCcw, Save, Wifi, X, Zap } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
-import { fetchWithTimeout, FetchTimeoutError } from "@/lib/async/fetchWithTimeout";
-import { useCortexVerify } from "@/hooks/useCortexVerify";
-import StudyCanvas from "@/components/studyspace/StudyCanvas";
-import { createStudySession, deleteStudySession, getStudySession, saveStudySession } from "@/lib/studyspace/session";
-import { saveWorkObject } from "@/lib/studyspace/store";
-import type { StudySpaceMode } from "@/lib/studyspace/types";
-import { buildGuaranteedExam } from "@/lib/exam/guaranteedExam";
-import ExamSourceNotice from "./ExamSourceNotice";
-import { markExamOffline } from "@/lib/local-first/exam-marker";
-import { sanitizeQuestions } from "@/lib/challenge/questions";
-import ChallengeFriend from "./ChallengeFriend";
-import { sendLearningSignals } from "@/lib/learning/client";
-import { signalsFromMarkedPaper } from "@/lib/learning/signals";
-import { renderMath as math } from "@/lib/exam/mathText";
-import ExamQuestionContent from "./ExamQuestionContent";
-import { expectedPaperLength, isValidGeneratedPaper } from "@/lib/exam/paperValidation";
-import { trackEvent } from "@/lib/traction/client";
+type R = Record<string, unknown>;
+const obj = (v: unknown): v is R => !!v && typeof v === "object" && !Array.isArray(v);
+const str = (v: unknown, max = 500): string | null => typeof v === "string" && v.trim() && v.length <= max ? v : null;
+const num = (v: unknown): number | null => typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= 1_000_000 ? v : null;
+const coord = (v: unknown): number | null => { const n = num(v); return n === null ? null : Math.max(0, Math.min(600, n)); };
 
-export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string; content?: unknown };
-export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
-export type ExamResults = { totalScore: number; maxScore: number; percentage: number; grade: string; weakAreas: string[]; strongAreas: string[]; cortexInsight: string; results: ExamResult[]; timeTaken: number };
-type Answer = { questionId: number; answer: string; timeSpent: number };
-type Props = { initialSubject?: string; initialTopic?: string; initialDifficulty?: number; initialQuestionCount?: number; onExit?: () => void; onFinished?: (result: ExamResults) => void; frozenQuestions?: ExamQuestion[]; serverMarkChallengeId?: string };
-
-const LEVELS = [{ label: "O-Level", api: "easy" as const, curriculum: "O-Level standard", accent: "var(--brand-cyan)" }, { label: "A-Level", api: "medium" as const, curriculum: "A-Level standard", accent: "var(--brand-blue)" }, { label: "University", api: "hard" as const, curriculum: "university entrance standard", accent: "var(--brand-violet)" }];
-const SUBJECTS = ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Science", "English", "Geography", "History", "Economics", "Accounting", "Business Studies", "Other"];
-const COUNTS = [5, 10, 15, 20];
-const KEY = "shadecode-exam-workspace";
-
-function removeLocalExamSnapshot(userId: string) {
-  if (!userId) return;
-  try {
-    localStorage.removeItem(`${KEY}:${userId}`);
-  } catch {
-    // The submitted result must remain successful even if browser storage is blocked.
+function shapeOf(v: unknown): ExamDiagramShape | null {
+  if (!obj(v) || typeof v.type !== "string") return null;
+  const label = str(v.label, 100) ?? undefined;
+  if (v.type === "line") {
+    const [x1,y1,x2,y2] = [v.x1,v.y1,v.x2,v.y2].map(coord);
+    if ([x1,y1,x2,y2].some(x => x === null)) return null;
+    return { type:"line", x1:x1!, y1:y1!, x2:x2!, y2:y2!, ...(label ? {label} : {}) };
   }
+  if (v.type === "rect") {
+    const x=coord(v.x), y=coord(v.y), width=num(v.width), height=num(v.height);
+    if (x===null || y===null || width===null || height===null || width<=0 || height<=0 || width>600 || height>360) return null;
+    return {type:"rect",x,y,width,height,...(label?{label}:{})};
+  }
+  if (v.type === "circle") {
+    const cx=coord(v.cx), cy=coord(v.cy), r=num(v.r);
+    if (cx===null || cy===null || r===null || r<=0 || r>180) return null;
+    return {type:"circle",cx,cy,r,...(label?{label}:{})};
+  }
+  if (v.type === "text") {
+    const x=coord(v.x), y=coord(v.y), content=str(v.text,160);
+    if (x===null || y===null || !content) return null;
+    return {type:"text",x,y,text:content};
+  }
+  return null;
 }
 
-function grade(p: number) { return p >= 90 ? "A*" : p >= 80 ? "A" : p >= 70 ? "B" : p >= 60 ? "C" : p >= 50 ? "D" : p >= 40 ? "E" : "U"; }
-function time(s: number) { const n = Math.max(0, Math.floor(s)); const h = Math.floor(n / 3600); const m = Math.floor((n % 3600) / 60); const sec = n % 60; return h ? `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`; }
-function id() { return `${Date.now()}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`; }
-function formulas(subject: string) { const s = subject.toLowerCase(); if (s.includes("math")) return ["a² + b² = c²", "ax² + bx + c = 0", "sin²θ + cos²θ = 1", "gradient = Δy / Δx"]; if (s.includes("physics")) return ["v = u + at", "s = ut + ½at²", "F = ma", "p = mv", "V = IR"]; if (s.includes("chem")) return ["n = m/M", "c = n/V", "PV = nRT", "pH = −log₁₀[H⁺]"]; if (s.includes("computer")) return ["T(n) = O(n)", "binary search: O(log n)", "1 byte = 8 bits"]; return ["State definitions precisely.", "Show method where marks depend on it.", "Check units, assumptions and final statements."]; }
-
-export default function ExamWorkspace({ initialSubject = "", initialTopic = "", initialDifficulty = 1, initialQuestionCount = 10, onExit, onFinished, frozenQuestions, serverMarkChallengeId }: Props) {
-  const [subject, setSubject] = useState(initialSubject), [topic, setTopic] = useState(initialTopic), [level, setLevel] = useState(Math.max(0, Math.min(2, initialDifficulty))), [count, setCount] = useState(initialQuestionCount);
-  const levelChosen = useRef(false);
-  // The profile can finish loading after this screen mounts. Follow it until the learner picks a level.
-  useEffect(() => { if (!levelChosen.current) setLevel(Math.max(0, Math.min(2, initialDifficulty))); }, [initialDifficulty]);
-  const [questions, setQuestions] = useState<ExamQuestion[]>([]), [answers, setAnswers] = useState<Answer[]>([]), [current, setCurrent] = useState(0), [seconds, setSeconds] = useState(0), [totalSeconds, setTotalSeconds] = useState(0), [startedAt, setStartedAt] = useState(0);
-  const [mode, setMode] = useState<"setup" | "exam" | "marking" | "results">("setup"), [generating, setGenerating] = useState(false), [error, setError] = useState<string | null>(null), [userId, setUserId] = useState(""), [online, setOnline] = useState(true), [savedAt, setSavedAt] = useState<number | null>(null);
-  const [flags, setFlags] = useState<number[]>([]), [panel, setPanel] = useState<"canvas" | "calculator" | "formulae" | "hint" | "upload">("canvas"), [canvasOpen, setCanvasOpen] = useState(true), [mobileNav, setMobileNav] = useState(false), [more, setMore] = useState(false), [confirmSubmit, setConfirmSubmit] = useState(false);
-  const [calculator, setCalculator] = useState(""), [calcResult, setCalcResult] = useState<string | null>(null), [hint, setHint] = useState<string | null>(null), [hintLoading, setHintLoading] = useState(false), [attachment, setAttachment] = useState<string | null>(null), [resumeId, setResumeId] = useState<string | null>(null), [results, setResults] = useState<ExamResults | null>(null);
-  const workId = useRef<string | null>(null), answersRef = useRef(answers), questionsRef = useRef(questions), currentRef = useRef(current), secondsRef = useRef(seconds), totalRef = useRef(totalSeconds), canvasRef = useRef(""), fileRef = useRef<HTMLInputElement>(null), submitRef = useRef(false);
-  const { help } = useCortexVerify();
-  useEffect(() => { answersRef.current = answers; }, [answers]); useEffect(() => { questionsRef.current = questions; }, [questions]); useEffect(() => { currentRef.current = current; }, [current]); useEffect(() => { secondsRef.current = seconds; }, [seconds]); useEffect(() => { totalRef.current = totalSeconds; }, [totalSeconds]);
-  useEffect(() => { const f = () => setOnline(navigator.onLine); f(); addEventListener("online", f); addEventListener("offline", f); return () => { removeEventListener("online", f); removeEventListener("offline", f); }; }, []);
-  useEffect(() => { (async () => { const { data } = await createClient().auth.getUser(); if (data.user) setUserId(data.user.id); })(); }, []);
-  useEffect(() => { if (!userId || mode !== "setup") return; try { const raw = localStorage.getItem(`${KEY}:${userId}`); if (raw) { const saved = JSON.parse(raw) as { workId: string; questions: ExamQuestion[] }; if (saved.questions?.length) getStudySession(saved.workId).then((session) => { if (session && (session.status === "active" || session.status === "paused")) setResumeId(saved.workId); }); } } catch {} }, [mode, userId]);
-  const persist = useCallback(async () => { if (!workId.current || !questionsRef.current.length || !userId) return; const payload = { questions: questionsRef.current, answers: answersRef.current, current: currentRef.current, seconds: secondsRef.current, totalSeconds: totalRef.current, startedAt, flags, canvas: canvasRef.current }; try { await saveWorkObject({ id: workId.current, mode: "exam" as StudySpaceMode, status: "draft", subject, topic: topic || undefined, prompt: `${subject} exam`, response: JSON.stringify(payload), working: canvasRef.current || undefined, createdAt: new Date(startedAt || Date.now()).toISOString(), updatedAt: new Date().toISOString() }); const session = await getStudySession(workId.current); await saveStudySession(session ? { ...session, updatedAt: new Date().toISOString(), remainingMs: secondsRef.current * 1000 } : createStudySession(workId.current, "exam", secondsRef.current * 1000)); localStorage.setItem(`${KEY}:${userId}`, JSON.stringify({ ...payload, workId: workId.current, subject, topic, level, count })); setSavedAt(Date.now()); } catch {} }, [count, flags, level, startedAt, subject, topic, userId]);
-  useEffect(() => { if (mode !== "exam") return; const t = setTimeout(() => void persist(), 600); return () => clearTimeout(t); }, [answers, current, flags, mode, persist, seconds]);
-  useEffect(() => { if (mode !== "exam") return; const timer = setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000); return () => clearInterval(timer); }, [mode]);
-  useEffect(() => { if (mode === "exam" && seconds === 0 && totalSeconds > 0) setConfirmSubmit(true); }, [mode, seconds, totalSeconds]);
-
-  const q = questions[current], answer = answers.find((a) => a.questionId === q?.id)?.answer ?? "", answered = useMemo(() => new Set(answers.filter((a) => a.answer.trim()).map((a) => a.questionId)), [answers]), progress = questions.length ? Math.round(answered.size / questions.length * 100) : 0, danger = seconds <= Math.max(60, totalSeconds * 0.2), formulasForSubject = useMemo(() => formulas(subject), [subject]), flaggedCount = flags.length;
-  const setAnswer = (value: string) => { if (!q) return; setAnswers((old) => { const next = [...old], index = next.findIndex((a) => a.questionId === q.id), payload = { questionId: q.id, answer: value, timeSpent: 0 }; if (index >= 0) next[index] = payload; else next.push(payload); return next; }); };
-  const go = (index: number) => { if (questions[index]) { setCurrent(index); setHint(null); } };
-  const flag = () => q && setFlags((old) => old.includes(q.id) ? old.filter((x) => x !== q.id) : [...old, q.id]);
-
-  // Battle mode: both players sit the identical frozen question set instead of generating a new exam.
-  const frozenStarted = useRef(false);
-  const [savedResultId, setSavedResultId] = useState<string | null>(null);
-  // "fallback" = a built-in curated practice set was used because live generation was unavailable.
-  const [paperSource, setPaperSource] = useState<"live" | "curated-bank" | "deterministic-engine" | "offline">("live");
-  useEffect(() => {
-    if (!frozenQuestions?.length || frozenStarted.current || mode !== "setup") return;
-    frozenStarted.current = true;
-    const total = frozenQuestions.length * 120;
-    workId.current = `exam:battle:${id()}`;
-    setQuestions(frozenQuestions);
-    setAnswers([]);
-    setFlags([]);
-    setCurrent(0);
-    setTotalSeconds(total);
-    setSeconds(total);
-    setStartedAt(Date.now());
-    setMode("exam");
-    setPanel("canvas");
-  }, [frozenQuestions, mode]);
-
-  const generate = async () => {
-    if (!subject || generating) return;
-    setGenerating(true);
-    setError(null);
-    // Funnel telemetry: exam_started only means the setup screen opened, so record the real steps.
-    const requestedAt = Date.now();
-    const telemetry = { subject, topic: topic || null, level: LEVELS[level].api, questionCount: count };
-    void trackEvent("exam_generation_requested", { ...telemetry, online });
-    try {
-      if (!online) {
-        const difficulty = LEVELS[level].api;
-        const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
-        const generated = buildGuaranteedExam(subject, cleanTopic, difficulty, count);
-        if (!generated) { void trackEvent("exam_generation_failed", { ...telemetry, reason: "offline_no_set" }); setError("You're offline and there's no saved practice set for this topic yet. Reconnect to generate a fresh paper."); return; }
-        const fallbackQuestions = generated.questions.map((q, idx) => ({
-          id: idx + 1,
-          type: q.type,
-          question: q.question,
-          options: q.options,
-          marks: q.marks,
-          topic: q.topic,
-          modelAnswer: q.modelAnswer,
-          markingCriteria: q.markingCriteria,
-          numeric: q.numeric,
-        }));
-        if (!isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("offline", fallbackQuestions, count))) {
-          setError("The offline practice set failed question validation. Reconnect and try generating a fresh paper.");
-          return;
-        }
-        setPaperSource("offline");
-        const total = fallbackQuestions.length * 120;
-        workId.current = `exam:offline:${id()}`;
-        void trackEvent("exam_paper_ready", { ...telemetry, source: "offline", ms: Date.now() - requestedAt });
-        setQuestions(fallbackQuestions);
-        setAnswers([]);
-        setFlags([]);
-        setCurrent(0);
-        setTotalSeconds(total);
-        setSeconds(total);
-        setStartedAt(Date.now());
-        setMode("exam");
-        setResumeId(null);
-        setPanel("canvas");
-        return;
-      }
-
-      const { data: { session } } = await createClient().auth.getSession();
-      const res = await fetchWithTimeout("/api/exam/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
-        },
-        body: JSON.stringify({
-          subject,
-          topic: topic ? `${topic} (${LEVELS[level].curriculum})` : `${subject} (${LEVELS[level].curriculum})`,
-          difficulty: LEVELS[level].api,
-          questionCount: count
-        })
-      }, 45000);
-      const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "Question generation is temporarily unavailable.");
-      const source = data?.metadata?.source;
-      const builtInPaper = source === "deterministic-engine" || source === "curated-bank";
-      if (!isValidGeneratedPaper(data?.questions, expectedPaperLength(builtInPaper ? "fallback" : "live", data?.questions, count))) {
-        throw new Error("The generated paper did not pass question validation. Trying a verified local practice fallback.");
-      }
-      const total = data.questions.length * 120;
-      workId.current = `exam:${id()}`;
-      void trackEvent("exam_paper_ready", { ...telemetry, source: source ?? "live", ms: Date.now() - requestedAt });
-      setPaperSource(source === "curated-bank" || source === "deterministic-engine" ? source : "live");
-      setQuestions(data.questions);
-      setAnswers([]);
-      setFlags([]);
-      setCurrent(0);
-      setTotalSeconds(total);
-      setSeconds(total);
-      setStartedAt(Date.now());
-      setMode("exam");
-      setResumeId(null);
-      setPanel("canvas");
-    } catch (e) {
-      // Graceful fallback to offline questions if online generation fails
-      const difficulty = LEVELS[level].api;
-      const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
-      const generated = buildGuaranteedExam(subject, cleanTopic, difficulty, count);
-      const fallbackQuestions = generated?.questions?.map((q, idx) => ({
-        id: idx + 1,
-        type: q.type,
-        question: q.question,
-        options: q.options,
-        marks: q.marks,
-        topic: q.topic,
-        modelAnswer: q.modelAnswer,
-        markingCriteria: q.markingCriteria,
-        numeric: q.numeric,
-      }));
-      if (fallbackQuestions && isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("fallback", fallbackQuestions, count))) {
-        setPaperSource("offline");
-        const total = fallbackQuestions.length * 120;
-        workId.current = `exam:offline:${id()}`;
-        void trackEvent("exam_paper_ready", { ...telemetry, source: "offline", serverFailed: true, ms: Date.now() - requestedAt });
-        setQuestions(fallbackQuestions);
-        setAnswers([]);
-        setFlags([]);
-        setCurrent(0);
-        setTotalSeconds(total);
-        setSeconds(total);
-        setStartedAt(Date.now());
-        setMode("exam");
-        setResumeId(null);
-        setPanel("canvas");
-      } else {
-        void trackEvent("exam_generation_failed", { ...telemetry, reason: e instanceof FetchTimeoutError ? "timeout" : "error", ms: Date.now() - requestedAt });
-        setError(e instanceof FetchTimeoutError ? "Question generation is taking too long right now. Nothing was lost. Please try again in a minute." : e instanceof Error ? e.message : "Could not generate the exam. Please try again.");
-      }
-    } finally {
-      setGenerating(false);
+/** Accepts only bounded, typed blocks. Unknown or malformed provider content is ignored. */
+export function normalizeExamContent(value: unknown): ExamContentBlock[] {
+  if (!Array.isArray(value)) return [];
+  const out: ExamContentBlock[] = [];
+  for (const item of value.slice(0,12)) {
+    if (!obj(item) || typeof item.type !== "string") continue;
+    const caption=str(item.caption,180) ?? undefined;
+    if (item.type==="text") {
+      const content=str(item.text,4000); if(content) out.push({type:"text",text:content});
+    } else if (item.type==="table" && Array.isArray(item.headers) && Array.isArray(item.rows)) {
+      const headers=item.headers.slice(0,8).map(v=>str(v,120));
+      const rows=item.rows.slice(0,30).map(row=>Array.isArray(row)?row.slice(0,8).map(v=>str(v,160)):[]);
+      if(headers.length>=2 && headers.every(Boolean) && rows.length && rows.every(row=>row.length===headers.length && row.every(Boolean)))
+        out.push({type:"table",headers:headers as string[],rows:rows as string[][],...(caption?{caption}:{})});
+    } else if(item.type==="graph" && Array.isArray(item.points)) {
+      const xLabel=str(item.xLabel,100), yLabel=str(item.yLabel,100);
+      const points=item.points.slice(0,40).map(p=>obj(p)?{x:num(p.x),y:num(p.y)}:null);
+      if(xLabel && yLabel && points.length>=2 && points.every(p=>p && p.x!==null && p.y!==null))
+        out.push({type:"graph",xLabel,yLabel,points:points as Array<{x:number;y:number}>,...(caption?{caption}:{})});
+    } else if(item.type==="diagram" && Array.isArray(item.shapes)) {
+      const shapes=item.shapes.slice(0,40).map(shapeOf).filter((s):s is ExamDiagramShape=>s!==null);
+      if(shapes.length) out.push({type:"diagram",shapes,...(caption?{caption}:{})});
     }
-  };
-  const resume = async () => { if (!resumeId || !userId) return; try { const raw = localStorage.getItem(`${KEY}:${userId}`); if (!raw) return; const saved = JSON.parse(raw) as { workId: string; subject: string; topic: string; questions: ExamQuestion[]; answers: Answer[]; current: number; seconds: number; totalSeconds: number; startedAt: number; flags: number[]; level: number; count: number }; const session = await getStudySession(saved.workId); if (!session) return; workId.current = saved.workId; setSubject(saved.subject); setTopic(saved.topic); setLevel(saved.level); setCount(saved.count); setQuestions(saved.questions); setAnswers(saved.answers); setCurrent(saved.current); setTotalSeconds(saved.totalSeconds); setSeconds(Math.max(0, Math.round((session.remainingMs ?? saved.seconds * 1000) / 1000))); setStartedAt(saved.startedAt); setFlags(saved.flags || []); setMode("exam"); setResumeId(null); } catch { setError("That saved exam could not be restored."); } };
-  const askHint = async () => { if (!q || hintLoading) return; setHintLoading(true); setPanel("hint"); try { const response = await help({ mode: "help", subject, question: q.question, level: "hint" }); setHint(response?.hint || response?.content || (online ? "Cortex could not produce a hint right now." : "You're offline. Keep working on the Canvas and ask Cortex when you reconnect.")); } finally { setHintLoading(false); } };
-  const submit = async () => {
-    if (submitRef.current || !questions.length) return;
-    submitRef.current = true;
-    setConfirmSubmit(false);
-    setMode("marking");
-    try {
-      let markingData: ExamResults | null = null;
-      if (serverMarkChallengeId) {
-        // Verified battle: the browser holds no answer key, so the server marks and records the attempt.
-        try {
-          const res = await fetchWithTimeout("/api/challenge/mark", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ challenge_id: serverMarkChallengeId, answers: answersRef.current, timeTaken: totalRef.current - secondsRef.current })
-          }, 25000);
-          if (res.ok) markingData = await res.json();
-        } catch {
-          // handled below
-        }
-        if (!markingData) throw new Error(online ? "We couldn't submit your battle just now. Your answers are saved, so please try again." : "You're offline. Reconnect to submit your battle. Your answers are saved.");
-      } else if (online) {
-        try {
-          const { data: { session } } = await createClient().auth.getSession();
-          const res = await fetchWithTimeout("/api/exam/mark", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
-            },
-            body: JSON.stringify({
-              subject,
-              difficulty: LEVELS[level].curriculum,
-              questions,
-              answers: answersRef.current,
-              timeTaken: totalRef.current - secondsRef.current
-            })
-          }, 35000);
-          if (res.ok) {
-            markingData = await res.json();
-          }
-        } catch {
-          // Cloud mark failed, proceed to local deterministic marking
-        }
-      }
-
-      if (!markingData) {
-        const timeTaken = totalRef.current - secondsRef.current;
-        const localMarked = markExamOffline(questions, answersRef.current, timeTaken);
-        markingData = {
-          totalScore: localMarked.totalScore,
-          maxScore: localMarked.maxScore,
-          percentage: localMarked.percentage,
-          grade: localMarked.grade,
-          weakAreas: localMarked.weakAreas,
-          strongAreas: localMarked.strongAreas,
-          cortexInsight: localMarked.cortexInsight,
-          results: localMarked.results,
-          timeTaken: localMarked.timeTaken,
-        };
-      }
-
-      setResults(markingData);
-      // Learning loop: record each question's outcome (and any diagnosed mistake). Battles are recorded by the server.
-      if (userId && !serverMarkChallengeId) sendLearningSignals(signalsFromMarkedPaper(questions as ExamQuestion[], markingData.results ?? []));
-      if (userId) {
-        const correct = markingData.results?.filter((r: ExamResult) => r.correct).length ?? 0;
-        try {
-          const supabase = createClient();
-          const { data: saved } = await supabase.from("exam_results").insert({
-            user_id: userId,
-            subject,
-            topic: topic || null,
-            difficulty: LEVELS[level].label,
-            score: markingData.percentage,
-            total_questions: questions.length,
-            correct_answers: correct,
-            weak_areas: markingData.weakAreas ?? [],
-            time_taken: totalRef.current - secondsRef.current
-          }).select("id").single();
-          // Keep the sat questions so this result can later be turned into a fair battle.
-          const frozen = sanitizeQuestions(questions);
-          if (saved?.id) setSavedResultId(saved.id);
-          if (saved?.id && frozen && !serverMarkChallengeId) await supabase.from("exam_result_questions").insert({ result_id: saved.id, user_id: userId, questions: frozen });
-        } catch {}
-      }
-      if (workId.current) {
-        try {
-          const sessionState = await getStudySession(workId.current);
-          if (sessionState) await saveStudySession({ ...sessionState, status: "submitted", updatedAt: new Date().toISOString(), remainingMs: 0 });
-        } catch {}
-      }
-      removeLocalExamSnapshot(userId);
-      setMode("results");
-      onFinished?.(markingData);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Marking failed. Your work is still saved.");
-      setMode("exam");
-    } finally {
-      submitRef.current = false;
-    }
-  };
-  const reset = async () => { if (workId.current) await deleteStudySession(workId.current).catch(() => undefined); removeLocalExamSnapshot(userId); workId.current = null; setMode("setup"); setQuestions([]); setAnswers([]); setFlags([]); setResults(null); setSeconds(0); setTotalSeconds(0); setResumeId(null); };
-  const calc = () => { try { if (!/^[0-9+\-*/().%\s]+$/.test(calculator)) throw new Error("Basic arithmetic only"); const value = Function(`"use strict"; return (${calculator})`)(); setCalcResult(Number.isFinite(value) ? String(value) : "Invalid"); } catch (e) { setCalcResult(e instanceof Error ? e.message : "Invalid"); } };
-  const attach = (file?: File) => { if (!file || !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) return; const reader = new FileReader(); reader.onload = () => setAttachment(String(reader.result || "")); reader.readAsDataURL(file); };
-
-  if (mode === "setup") return <div className="min-h-[calc(100dvh-4rem)] px-4 py-6 sm:px-6 lg:px-8"><div className="mx-auto max-w-6xl"><div className="mb-6 flex justify-between gap-4"><div><div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--primary)]"><ShadecodeFeatureIcon feature="exam-sim" size="sm" /> <span>Exam Simulation</span></div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">Build your exam room.</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">A realistic exam workstation with a paper view, Canvas, timer, marking, Cortex help and offline-safe autosave.</p></div><button onClick={onExit} className="hidden h-fit rounded-xl border border-[var(--card-border)] px-4 py-2.5 text-sm font-bold sm:block">Exit</button></div>{resumeId && <div className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--brand-blue)_24%,transparent)] bg-[var(--primary-glow)] p-4"><div className="flex gap-3"><Save className="text-[var(--primary)]" size={20} /><div><p className="text-sm font-bold">Unfinished exam saved</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">Resume it even without a connection.</p></div></div><button onClick={() => void resume()} className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-black text-[var(--primary-foreground)]">Resume</button></div>}<div className="grid gap-5 lg:grid-cols-[1.3fr_.7fr]"><section className="ssc-surface-raised rounded-2xl p-5 sm:p-7"><p className="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Exam blueprint</p><h2 className="mt-1 text-xl font-black">Choose your paper</h2><label className="mt-6 block text-sm font-bold">Subject<select value={subject} onChange={(e) => setSubject(e.target.value)} className="ssc-focus-ring mt-2 min-h-12 w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface-raised)] px-3.5 py-3 text-sm text-[var(--foreground)]"><option value="">Choose a subject…</option>{SUBJECTS.map((s) => <option key={s}>{s}</option>)}</select></label><label className="mt-4 block text-sm font-bold">Topic <span className="font-normal text-[var(--muted-foreground)]">optional</span><input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. mechanics, calculus, organic chemistry" className="ssc-focus-ring mt-2 min-h-12 w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface-raised)] px-3.5 py-3 text-sm text-[var(--foreground)]" /></label><p className="mt-5 text-sm font-bold">Level</p><div className="mt-2 grid gap-2 sm:grid-cols-3">{LEVELS.map((item, i) => <button key={item.label} onClick={() => { levelChosen.current = true; setLevel(i); }} aria-pressed={level === i} className={`ssc-focus-ring min-h-24 rounded-2xl border p-4 text-left transition-colors ${level === i ? "border-[color-mix(in_srgb,var(--primary)_55%,transparent)] bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--muted)]"}`}><div className="flex justify-between text-sm font-black">{item.label}<span className="h-2.5 w-2.5 rounded-full" style={{ background: item.accent }} /></div><p className="mt-1 text-xs text-[var(--muted-foreground)]">{item.curriculum}</p></button>)}</div><p className="mt-5 text-sm font-bold">Questions</p><div className="mt-2 grid grid-cols-4 gap-2">{COUNTS.map((n) => <button key={n} onClick={() => setCount(n)} aria-pressed={count === n} className={`ssc-focus-ring min-h-11 rounded-xl border py-3 text-sm font-black transition-colors ${count === n ? "border-[color-mix(in_srgb,var(--primary)_50%,transparent)] bg-[var(--primary-glow)] text-[var(--primary)]" : "border-[var(--card-border)] bg-[var(--muted)]"}`}>{n}</button>)}</div>{error && <div role="alert" className="mt-4 rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger-soft)] p-4 text-sm text-[var(--danger)]">{error}</div>}{!online && <div className="mt-4 flex gap-3 rounded-2xl bg-[var(--muted)] p-4 text-xs"><CloudOff size={18} /><span>Offline mode active: standard syllabus papers and local marking ready on device.</span></div>}<button disabled={!subject || generating} onClick={() => void generate()} className="ssc-focus-ring mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] px-5 py-4 text-sm font-black text-[var(--primary-foreground)] transition hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-50">{generating ? <><Loader2 size={18} className="animate-spin" /> Cortex is building your paper…</> : <>Enter exam room <ArrowRight size={18} /></>}</button></section><div className="space-y-3">{[[Clock3, "Real exam pacing", "Visible timer, question timing and review controls."], [Pencil, "Working matters", "Use Canvas for calculations, diagrams and rough work."], [Lightbulb, "Cortex after the paper", "Weak areas, strong areas and next revision moves."], [CloudOff, "Offline-safe", "Answers and session state stay on this device when the network drops."]].map(([Icon, title, text]) => <div key={String(title)} className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><Icon size={18} className="text-[var(--primary)]" /><p className="mt-3 text-sm font-black">{String(title)}</p><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{String(text)}</p></div>)}</div></div></div></div>;
-  if (mode === "marking") return <div className="flex min-h-[70vh] items-center justify-center px-4 text-center" role="status" aria-live="polite"><div className="max-w-md"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)]"><Loader2 className="animate-spin" size={30} /></div><h2 className="mt-5 text-2xl font-black">Marking your paper</h2><p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">We’re checking your answers and preparing feedback. If cloud marking is unavailable, Shadecode can fall back to local marking.</p><div className="mt-5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4 text-left text-xs text-[var(--muted-foreground)]"><p className="font-bold text-[var(--text-primary)]">Your work is already saved</p><p className="mt-1">You can safely wait here. Do not close the page while the result is being prepared.</p></div></div></div>;
-  if (mode === "results" && results) return <><Results results={results} subject={subject} topic={topic} onNew={() => void reset()} onExit={onExit} />{savedResultId && !frozenQuestions?.length && <ChallengeFriend resultId={savedResultId} subject={subject} percentage={Math.round(results.percentage)} />}</>;
-  if (!q) return null;
-  const qNo = current + 1, flagged = flags.includes(q.id), timerPercent = totalSeconds ? seconds / totalSeconds * 100 : 100;
-
-  return <div className="min-h-screen">{paperSource !== "live" && <ExamSourceNotice source={paperSource} />}<header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--background)]/95 backdrop-blur"><div className="mx-auto flex max-w-[1800px] items-center gap-3 px-3 py-3 sm:px-5"><button onClick={() => setMobileNav(true)} aria-label="Open question navigator" className="rounded-xl border border-[var(--card-border)] p-2 lg:hidden"><Menu size={18} aria-hidden="true" /></button><button onClick={onExit} aria-label="Exit exam simulation" className="hidden items-center gap-1 rounded-xl px-2 py-2 text-sm font-bold text-[var(--muted-foreground)] lg:flex"><ArrowLeft size={16} aria-hidden="true" /> Exam Simulation</button><div className="hidden h-5 w-px bg-[var(--card-border)] lg:block" /><div className="min-w-0 flex-1"><div className="flex items-center gap-2 text-sm font-bold"><span className="truncate">{subject}</span><ChevronRight size={14} /><span className="truncate text-[var(--muted-foreground)]">{topic || "Mixed topics"}</span></div><p className="text-[11px] text-[var(--muted-foreground)]">{LEVELS[level].label} · Paper 1 · {questions.length} questions</p></div><span className={`hidden items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold sm:flex ${online ? "border-emerald-500/20 text-emerald-500" : "border-amber-500/20 text-amber-500"}`}>{online ? <Wifi size={14} /> : <CloudOff size={14} />}{online ? "Online" : "Offline"}</span><span className={`flex items-center gap-2 rounded-xl border px-3 py-2 font-mono text-sm font-black ${danger ? "border-red-500/30 text-red-500" : "border-[var(--card-border)]"}`} aria-label={`${time(seconds)} remaining${danger ? ", time is running low" : ""}`}><Clock3 size={16} aria-hidden="true" />{time(seconds)}</span><button onClick={() => setConfirmSubmit(true)} className="hidden rounded-xl bg-[var(--primary)] px-4 py-2.5 text-xs font-black text-[var(--primary-foreground)] sm:block">Submit</button></div></header>
-  <div className="sr-only" aria-live="polite" aria-atomic="true">Question {qNo} of {questions.length}. {answered.has(q.id) ? "Answered." : "Not answered."} {flagged ? "Flagged for review." : ""} {time(seconds)} remaining.</div>
-  <div className="mx-auto grid max-w-[1800px] gap-3 p-3 sm:p-5 lg:grid-cols-[220px_minmax(480px,1fr)_300px]"><aside className="hidden rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-3 lg:block"><div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Question paper</p><p className="mt-1 text-sm font-black">Paper 1</p></div><Grid2X2 size={16} className="text-[var(--primary)]" /></div><div className="mt-3 max-h-[calc(100vh-180px)] overflow-auto rounded-xl bg-[var(--muted)] p-2">{questions.map((question, i) => <button key={question.id} onClick={() => go(i)} aria-current={i === current ? "step" : undefined} aria-label={`Question ${i + 1}: ${question.topic}${answered.has(question.id) ? ", answered" : ", not answered"}${flags.includes(question.id) ? ", flagged" : ""}`} className={`flex min-h-11 w-full items-center gap-2 rounded-xl p-2.5 text-left ${i === current ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--card)]"}`}><span className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black ${i === current ? "bg-white/30" : answered.has(question.id) ? "bg-emerald-500/15 text-emerald-500" : "bg-[var(--card)]"}`}>{i + 1}</span><span className="min-w-0 flex-1 truncate text-xs font-semibold">{question.topic}</span>{flags.includes(question.id) && <Flag size={12} fill="currentColor" />}</button>)}</div></aside>
-  <div className="min-w-0"><div className="mb-3 flex flex-wrap items-center gap-1 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-2"><ToolButton active={panel === "canvas"} onClick={() => { setPanel("canvas"); setCanvasOpen(true); }} icon={<Pencil size={14} />} label="Canvas" /><ToolButton active={panel === "calculator"} onClick={() => setPanel("calculator")} icon={<Calculator size={14} />} label="Calculator" /><ToolButton active={panel === "formulae"} onClick={() => setPanel("formulae")} icon={<BookOpen size={14} />} label="Formulae" /><ToolButton active={panel === "hint"} onClick={() => void askHint()} icon={<Lightbulb size={14} />} label="AI Hint" /><ToolButton active={panel === "upload"} onClick={() => { setPanel("upload"); fileRef.current?.click(); }} icon={<Paperclip size={14} />} label="Upload" /><div className="ml-auto flex gap-1"><button onClick={flag} aria-label={flagged ? "Remove flag from question" : "Flag question for review"} aria-pressed={flagged} className={`min-h-11 min-w-11 rounded-xl p-2.5 ${flagged ? "bg-amber-500/10 text-amber-500" : "hover:bg-[var(--muted)]"}`}>{flagged ? <Flag size={16} fill="currentColor" aria-hidden="true" /> : <FlagOff size={16} aria-hidden="true" />}</button><button onClick={() => setMore((v) => !v)} aria-label={more ? "Close more exam tools" : "Open more exam tools"} aria-expanded={more} className="min-h-11 min-w-11 rounded-xl p-2.5 hover:bg-[var(--muted)]"><MoreHorizontal size={18} aria-hidden="true" /></button></div></div>{more && <div className="mb-3 flex flex-wrap gap-2 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-3"><button onClick={() => setCanvasOpen((v) => !v)} className="rounded-xl px-3 py-2 text-xs font-bold hover:bg-[var(--muted)]">Toggle Canvas</button><button onClick={() => document.documentElement.requestFullscreen?.()} className="rounded-xl px-3 py-2 text-xs font-bold hover:bg-[var(--muted)]">Fullscreen</button><button onClick={() => setConfirmSubmit(true)} className="rounded-xl px-3 py-2 text-xs font-bold text-red-500">End exam</button></div>}
-  <div className={`grid gap-3 ${canvasOpen ? "xl:grid-cols-2" : "grid-cols-1"}`}><section aria-labelledby={`question-heading-${q.id}`} className="min-h-[570px] overflow-hidden rounded-2xl border border-slate-200 bg-[#f8fafc] text-slate-900"><div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3"><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{subject}</p><p id={`question-heading-${q.id}`} className="text-sm font-black">Question {qNo} <span className="font-normal text-slate-500">of {questions.length}</span></p></div><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold">{q.marks} mark{q.marks === 1 ? "" : "s"}</span></div><div className="max-h-[calc(100vh-300px)] overflow-auto p-5 sm:p-7"><div className="mb-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">{q.type.replace("_", " ")} · {q.topic}</div><div className="text-sm leading-7" dangerouslySetInnerHTML={{ __html: math(q.question) }} /><ExamQuestionContent content={q.content} />{q.options && <div className="mt-7 space-y-2">{q.options.map((option, i) => <button key={option} onClick={() => setAnswer(option)} aria-pressed={answer === option} className={`flex min-h-12 w-full items-center gap-3 rounded-xl border p-3.5 text-left text-sm ${answer === option ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-slate-200 bg-white"}`}><span className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-black ${answer === option ? "border-[var(--primary)] bg-[var(--primary)] text-white" : "border-slate-300"}`}>{String.fromCharCode(65 + i)}</span><span dangerouslySetInnerHTML={{ __html: math(option) }} /></button>)}</div>}</div></section>{canvasOpen && <section className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--card)]"><div className="flex items-center justify-between border-b border-[var(--card-border)] px-4 py-3"><div><p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Your workspace</p><p className="text-sm font-black">Working & answer</p></div><span className="rounded-lg bg-[var(--primary-glow)] px-2 py-1 text-[10px] font-bold text-[var(--primary)]">{savedAt ? "Autosaved" : "Saving…"}</span></div><div className="p-3"><StudyCanvas storageKey={`${KEY}:${userId}:${workId.current ?? "new"}:${q.id}`} height={470} onChange={(data) => { canvasRef.current = data; void persist(); }} /><label className="mt-4 block text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Final answer<textarea aria-label={`Answer for question ${qNo}`} value={answer} onChange={(e) => setAnswer(e.target.value)} rows={4} placeholder="Enter the answer you want Cortex to mark…" className="mt-2 w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--muted)] p-3 text-sm leading-6" /></label>{attachment && <div className="mt-3 flex items-center gap-3 rounded-xl border border-[var(--card-border)] p-3"><img src={attachment} alt="Attached working" className="h-14 w-14 rounded-lg object-cover" /><span className="text-xs font-bold">Working image attached</span><button type="button" onClick={() => setAttachment(null)} aria-label="Remove attachment" title="Remove attachment" className="ml-auto"><X size={16} aria-hidden="true" /></button></div>}</div></section>}</div>
-  {panel === "calculator" && <Panel title="Calculator" onClose={() => setPanel("canvas")}><div className="flex gap-2"><input value={calculator} onChange={(e) => setCalculator(e.target.value)} onKeyDown={(e) => e.key === "Enter" && calc()} placeholder="e.g. (3.5*8)/2" className="min-w-0 flex-1 rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3 py-3 text-sm" /><button onClick={calc} className="rounded-xl bg-[var(--primary)] px-4 font-black text-[var(--primary-foreground)]">=</button></div>{calcResult !== null && <p className="mt-3 rounded-xl bg-[var(--muted)] p-3 font-mono text-sm">{calcResult}</p>}</Panel>}
-  {panel === "formulae" && <Panel title={`${subject} formulae`} onClose={() => setPanel("canvas")}><div className="grid gap-2 sm:grid-cols-2">{formulasForSubject.map((f) => <div key={f} className="rounded-xl border border-[var(--card-border)] bg-[var(--muted)] p-3 text-sm font-semibold">{f}</div>)}</div></Panel>}
-  {panel === "hint" && <Panel title="Cortex Hint" onClose={() => setPanel("canvas")}>{hintLoading ? <div className="flex gap-2 text-sm"><Loader2 size={16} className="animate-spin text-[var(--primary)]" /> Cortex is thinking…</div> : <div className="rounded-xl border border-[color-mix(in_srgb,var(--brand-blue)_24%,transparent)] bg-[var(--primary)]/5 p-4 text-sm leading-6">{hint || "Ask Cortex for the next useful step without revealing the full answer."}</div>}</Panel>}
-  {panel === "upload" && <Panel title="Attach working" onClose={() => setPanel("canvas")}><div className="text-center"><Paperclip className="mx-auto text-[var(--primary)]" size={22} /><p className="mt-2 text-sm font-bold">Add a photo of your working</p><button onClick={() => fileRef.current?.click()} className="mt-3 rounded-xl bg-[var(--muted)] px-4 py-2.5 text-xs font-black">Choose image</button></div></Panel>}<input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => attach(e.target.files?.[0])} />
-  {error && <div className="mt-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm">{error}</div>}<div className="mt-3 flex items-center justify-between rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-2.5"><button disabled={current === 0} onClick={() => go(current - 1)} className="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black disabled:opacity-30"><ArrowLeft size={16} /> Previous</button><span className="hidden text-[11px] text-[var(--muted-foreground)] sm:block">Q{qNo}/{questions.length} · {answered.has(q.id) ? "Answered" : "Not answered"}</span><button onClick={() => current === questions.length - 1 ? setConfirmSubmit(true) : go(current + 1)} className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-xs font-black text-[var(--primary-foreground)]">{current === questions.length - 1 ? "Review & submit" : "Next"}<ArrowRight size={16} /></button></div><div className="mt-2 flex justify-between px-1 text-[11px] text-[var(--muted-foreground)]"><span>{online ? "Online · changes saved locally" : "Offline · working safely saved"}</span><span>{savedAt ? `Saved ${new Date(savedAt).toLocaleTimeString()}` : "Autosaving…"}</span></div></div>
-  <aside className="hidden space-y-3 lg:block"><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><div className="flex justify-between text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]"><span>Time remaining</span><Clock3 size={16} className={danger ? "text-red-500" : "text-[var(--primary)]"} /></div><div className={`mt-3 text-center font-mono text-4xl font-black ${danger ? "text-red-500" : ""}`}>{time(seconds)}</div><div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--muted)]"><div className={`h-full rounded-full ${danger ? "bg-red-500" : "bg-[var(--primary)]"}`} style={{ width: `${timerPercent}%` }} /></div><p className="mt-2 text-center text-[11px] text-[var(--muted-foreground)]">of {time(totalSeconds)}</p></div><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><div className="flex justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Question navigator</p><p className="mt-1 text-sm font-black">{answered.size}/{questions.length} answered</p></div><Grid2X2 size={16} className="text-[var(--primary)]" /></div><div className="mt-4 grid grid-cols-5 gap-2">{questions.map((question, i) => <button key={question.id} onClick={() => go(i)} aria-current={i === current ? "step" : undefined} aria-label={`Go to question ${i + 1}${answered.has(question.id) ? ", answered" : ", not answered"}${flags.includes(question.id) ? ", flagged for review" : ""}`} className={`relative min-h-11 min-w-11 rounded-lg text-xs font-black ${i === current ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : answered.has(question.id) ? "bg-emerald-500/15 text-emerald-500" : "bg-[var(--muted)]"}`}>{i + 1}{flags.includes(question.id) && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-500" />}</button>)}</div><button onClick={() => setConfirmSubmit(true)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--brand-blue)_34%,transparent)] bg-[var(--primary)]/5 px-3 py-2.5 text-xs font-black text-[var(--primary)]"><Check size={16} /> Review & submit</button></div><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><div className="flex justify-between text-xs font-bold"><span>Progress</span><span className="text-[var(--primary)]">{progress}%</span></div><div className="mt-3 h-2 rounded-full bg-[var(--muted)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${progress}%` }} /></div><div className="mt-3 grid grid-cols-2 gap-2 text-center"><Stat label="Answered" value={String(answered.size)} /><Stat label="Flagged" value={String(flaggedCount)} /></div></div></aside></div>
-  {confirmSubmit && <Modal title="Submit exam?" onClose={() => setConfirmSubmit(false)}><div className="space-y-4"><div className="grid grid-cols-3 gap-2"><Stat label="Answered" value={`${answered.size}/${questions.length}`} /><Stat label="Flagged" value={String(flags.length)} /><Stat label="Time" value={time(totalSeconds - seconds)} /></div>{!online && <p className="rounded-xl bg-amber-500/5 p-3 text-xs">You're offline. Your answers will be marked locally with deterministic scoring and synced when reconnected.</p>}<div className="flex gap-2"><button onClick={() => setConfirmSubmit(false)} className="flex-1 rounded-xl border border-[var(--card-border)] px-4 py-3 text-sm font-bold">Keep working</button><button onClick={() => void submit()} className="flex-1 rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-black text-[var(--primary-foreground)]">{online ? "Submit for marking" : "Mark offline"}</button></div></div></Modal>}
-  {mobileNav && <div className="fixed inset-0 z-50 lg:hidden"><button type="button" onClick={() => setMobileNav(false)} aria-label="Close question navigator" tabIndex={-1} className="absolute inset-0 bg-black/50" /><div className="absolute inset-y-0 left-0 w-[88%] max-w-sm overflow-auto bg-[var(--card)] p-4"><div className="flex justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Question paper</p><p className="mt-1 text-lg font-black">{subject}</p></div><button type="button" onClick={() => setMobileNav(false)} aria-label="Close question navigator" title="Close"><X size={18} aria-hidden="true" /></button></div><div className="mt-4 space-y-1">{questions.map((question, i) => <button key={question.id} onClick={() => { go(i); setMobileNav(false); }} aria-current={i === current ? "step" : undefined} aria-label={`Question ${i + 1}: ${question.topic}${answered.has(question.id) ? ", answered" : ", not answered"}${flags.includes(question.id) ? ", flagged" : ""}`} className={`flex min-h-11 w-full items-center gap-3 rounded-xl p-3 text-left ${i === current ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--muted)]"}`}><span className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black">{i + 1}</span><span className="flex-1 text-sm font-semibold">{question.topic}</span>{flags.includes(question.id) && <Flag size={14} fill="currentColor" />}</button>)}</div></div></div>}
-  </div>;
+  }
+  return out;
 }
 
-function ToolButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: string }) { return <button onClick={onClick} className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-3 py-2 text-xs font-black ${active ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--muted)]"}`}>{icon}{label}</button>; }
-function Panel({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) { return <div className="mt-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><div className="mb-3 flex justify-between"><p className="text-sm font-black">{title}</p><button type="button" onClick={onClose} aria-label="Close" title="Close"><X size={16} aria-hidden="true" /></button></div>{children}</div>; }
-function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) { return <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-3 sm:items-center"><div className="w-full max-w-md rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 shadow-2xl"><div className="flex justify-between gap-3"><h2 className="text-lg font-black">{title}</h2><button aria-label={`Close ${title}`} className="min-h-11 min-w-11 rounded-lg" onClick={onClose}><X size={18} /></button></div><div className="mt-4">{children}</div></div></div>; }
-function Stat({ label, value }: { label: string; value: string }) { return <div className="rounded-xl bg-[var(--muted)] p-3 text-center"><p className="text-lg font-black">{value}</p><p className="text-[10px] text-[var(--muted-foreground)]">{label}</p></div>; }
-function Results({ results, subject, topic, onNew, onExit }: { results: ExamResults; subject: string; topic: string; onNew: () => void; onExit?: () => void }) { const [tab, setTab] = useState<"overview" | "review">("overview"), [open, setOpen] = useState<number | null>(null); const pct = Math.round(results.percentage), g = results.grade || grade(pct); return <div className="min-h-[calc(100dvh-4rem)] px-4 py-6 sm:px-6 lg:px-8"><div className="mx-auto max-w-5xl"><div className="flex justify-between"><div><div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--primary)]"><ShadecodeFeatureIcon feature="exam-sim" size="sm" /> <span>Exam complete</span></div><h1 className="mt-1 text-3xl font-black">Your paper has been marked.</h1><p className="mt-2 text-sm text-[var(--muted-foreground)]">{subject}{topic ? ` · ${topic}` : ""}</p></div><button onClick={onExit} aria-label="Exit exam results" className="hidden rounded-xl border border-[var(--border-subtle)] px-4 py-2.5 text-sm font-bold sm:block">Exit</button></div><div className="mt-6 grid gap-4 lg:grid-cols-2"><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-7 text-center"><div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full border-8 border-[var(--primary)]/15"><div><p className="text-4xl font-black text-[var(--primary)]">{pct}%</p><p className="text-xs font-bold text-[var(--muted-foreground)]">Grade {g}</p></div></div><div className="mt-6 grid grid-cols-3 divide-x divide-[var(--card-border)]"><div><p className="text-xl font-black">{results.totalScore}/{results.maxScore}</p><p className="text-xs text-[var(--muted-foreground)]">Score</p></div><div><p className="text-xl font-black">{Math.round(results.timeTaken / 60)}m</p><p className="text-xs text-[var(--muted-foreground)]">Time</p></div><div><p className="text-xl font-black">{results.results.length}</p><p className="text-xs text-[var(--muted-foreground)]">Questions</p></div></div></div><div className="space-y-3"><Insight title="Strong areas" items={results.strongAreas} good /><Insight title="Needs work" items={results.weakAreas} /><div className="rounded-2xl border border-[color-mix(in_srgb,var(--brand-blue)_24%,transparent)] bg-[var(--primary)]/5 p-4"><div className="flex items-center gap-2 text-sm font-black"><ShadecodeFeatureIcon feature="insights" size="sm" /> Cortex insight</div><p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{results.cortexInsight || "Your result is now part of the learning loop."}</p></div></div></div><div className="mt-5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-2" role="tablist" aria-label="Exam results"><div className="grid grid-cols-2 gap-2"><button role="tab" aria-selected={tab === "overview"} onClick={() => setTab("overview")} className={`rounded-xl px-4 py-3 text-sm font-black ${tab === "overview" ? "bg-[var(--muted)]" : "text-[var(--muted-foreground)]"}`}>Topic overview</button><button role="tab" aria-selected={tab === "review"} onClick={() => setTab("review")} className={`rounded-xl px-4 py-3 text-sm font-black ${tab === "review" ? "bg-[var(--muted)]" : "text-[var(--muted-foreground)]"}`}>Review questions</button></div></div>{tab === "overview" ? <div role="tabpanel" aria-label="Topic overview" className="mt-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4">{Object.entries(results.results.reduce<Record<string, { score: number; max: number }>>((acc, item) => { const key = item.topic || "General"; acc[key] ??= { score: 0, max: 0 }; acc[key].score += item.score; acc[key].max += item.maxScore; return acc; }, {})).map(([key, v]) => { const p = v.max ? Math.round(v.score / v.max * 100) : 0; return <div key={key} className="border-b border-[var(--card-border)] py-3 last:border-0"><div className="flex justify-between text-sm"><span className="font-bold">{key}</span><span className="font-black text-[var(--primary)]">{p}%</span></div><div className="mt-2 h-2 rounded-full bg-[var(--muted)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${p}%` }} /></div></div>; })}</div> : <div role="tabpanel" aria-label="Review questions" className="mt-3 space-y-2">{results.results.map((item, i) => <div key={`${item.questionId}-${i}`} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)]"><button aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)} className="flex min-h-14 w-full items-center gap-3 p-4 text-left"><span className={item.correct ? "text-emerald-500" : "text-red-500"}>{item.correct ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}</span><span className="flex-1"><span className="block text-sm font-black">Question {i + 1} · {item.topic}</span><span className="text-xs text-[var(--muted-foreground)]">{item.score}/{item.maxScore} marks</span></span><ChevronDown size={16} /></button>{open === i && <div className="border-t border-[var(--card-border)] p-4 text-sm leading-6"><p className="font-bold">Feedback</p><p className="mt-1 text-[var(--muted-foreground)]">{item.feedback}</p>{item.modelAnswer && <><p className="mt-4 font-bold">Model answer</p><p className="mt-1 text-[var(--muted-foreground)]">{item.modelAnswer}</p></>}</div>}</div>)}</div>}<div className="mt-6 flex gap-2"><button onClick={onNew} className="flex-1 rounded-2xl border border-[var(--border-subtle)] px-4 py-3.5 text-sm font-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"><RotateCcw size={16} className="mr-2 inline" />New exam</button><button onClick={onNew} className="flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3.5 text-sm font-black text-[var(--primary-foreground)]"><Zap size={16} className="mr-2 inline" />Retake & improve</button></div></div></div>; }
-function Insight({ title, items, good = false }: { title: string; items: string[]; good?: boolean }) { return <div className={`rounded-2xl border p-4 ${good ? "border-emerald-500/20 bg-emerald-500/5" : "border-amber-500/20 bg-amber-500/5"}`}><p className={`text-xs font-black uppercase tracking-wider ${good ? "text-emerald-500" : "text-amber-500"}`}>{title}</p><div className="mt-2 flex flex-wrap gap-2">{items?.length ? items.map((x) => <span key={x} className="rounded-full bg-[var(--card)] px-3 py-1.5 text-xs font-semibold">{x}</span>) : <span className="text-xs text-[var(--muted-foreground)]">None flagged.</span>}</div></div>; }
+function Graph({block}:{block:Extract<ExamContentBlock,{type:"graph"}>}) {
+  const xs=block.points.map(p=>p.x), ys=block.points.map(p=>p.y);
+  const xmin=Math.min(...xs), xmax=Math.max(...xs), ymin=Math.min(0,...ys), ymax=Math.max(...ys);
+  const sx=xmax-xmin||1, sy=ymax-ymin||1;
+  const px=(x:number)=>58+(x-xmin)/sx*500, py=(y:number)=>300-(y-ymin)/sy*250;
+  return <figure className="my-5 rounded-xl border border-slate-200 bg-white p-3 text-slate-800">
+    {block.caption&&<figcaption className="mb-2 text-xs font-semibold">{block.caption}</figcaption>}
+    <svg viewBox="0 0 600 360" role="img" aria-label={`${block.yLabel} against ${block.xLabel}`} className="h-auto w-full">
+      <line x1="58" y1="300" x2="570" y2="300" stroke="currentColor" strokeWidth="1.5"/><line x1="58" y1="25" x2="58" y2="300" stroke="currentColor" strokeWidth="1.5"/>
+      {[0,1,2,3,4].map(i=><line key={i} x1="58" x2="570" y1={300-i*62.5} y2={300-i*62.5} stroke="#cbd5e1" strokeDasharray="4 5"/>)}
+      <polyline points={block.points.map(p=>`${px(p.x)},${py(p.y)}`).join(" ")} fill="none" stroke="#0891b2" strokeWidth="3" strokeLinejoin="round"/>
+      {block.points.map((p,i)=><circle key={i} cx={px(p.x)} cy={py(p.y)} r="5" fill="#0891b2"/>)}
+      <text x="310" y="345" textAnchor="middle" fontSize="14" fill="currentColor">{block.xLabel}</text>
+      <text x="16" y="165" textAnchor="middle" fontSize="14" fill="currentColor" transform="rotate(-90 16 165)">{block.yLabel}</text>
+    </svg>
+  </figure>;
+}
+function Diagram({block}:{block:Extract<ExamContentBlock,{type:"diagram"}>}) {
+  return <figure className="my-5 rounded-xl border border-slate-200 bg-white p-3 text-slate-800">
+    {block.caption&&<figcaption className="mb-2 text-xs font-semibold">{block.caption}</figcaption>}
+    <svg viewBox="0 0 600 360" role="img" aria-label={block.caption||"Question diagram"} className="h-auto w-full">
+      {block.shapes.map((s,i)=>{
+        if(s.type==="line") return <g key={i}><line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke="#334155" strokeWidth="2.5"/>{s.label&&<text x={(s.x1+s.x2)/2} y={(s.y1+s.y2)/2-7} fontSize="13" fill="#0f172a">{s.label}</text>}</g>;
+        if(s.type==="rect") return <g key={i}><rect x={s.x} y={s.y} width={s.width} height={s.height} fill="#ecfeff" stroke="#0e7490" strokeWidth="2.5"/>{s.label&&<text x={s.x+s.width/2} y={s.y+s.height/2} textAnchor="middle" dominantBaseline="middle" fontSize="14" fill="#0f172a">{s.label}</text>}</g>;
+        if(s.type==="circle") return <g key={i}><circle cx={s.cx} cy={s.cy} r={s.r} fill="#ecfeff" stroke="#0e7490" strokeWidth="2.5"/>{s.label&&<text x={s.cx} y={s.cy} textAnchor="middle" dominantBaseline="middle" fontSize="14" fill="#0f172a">{s.label}</text>}</g>;
+        return <text key={i} x={s.x} y={s.y} fontSize="14" fill="#0f172a">{s.text}</text>;
+      })}
+    </svg>
+  </figure>;
+}
+export default function ExamQuestionContent({content}:{content?:unknown}) {
+  const blocks=normalizeExamContent(content);
+  if(!blocks.length) return null;
+  return <div className="mt-4 space-y-3">{blocks.map((b,i)=>{
+    if(b.type==="text") return <div key={i} className="text-sm leading-7" dangerouslySetInnerHTML={{__html:renderMath(b.text)}}/>;
+    if(b.type==="table") return <div key={i} className="my-5 overflow-x-auto rounded-xl border border-slate-200 bg-white p-3 text-slate-800">
+      {b.caption&&<p className="mb-2 text-xs font-semibold">{b.caption}</p>}
+      <table className="w-full border-collapse text-left text-sm"><thead><tr>{b.headers.map((h,j)=><th key={j} className="border-b border-slate-300 px-3 py-2 font-bold" dangerouslySetInnerHTML={{__html:renderMath(h)}}/>)}</tr></thead><tbody>{b.rows.map((row,j)=><tr key={j} className="odd:bg-slate-50">{row.map((cell,k)=><td key={k} className="border-b border-slate-100 px-3 py-2" dangerouslySetInnerHTML={{__html:renderMath(cell)}}/>)}</tr>)}</tbody></table>
+    </div>;
+    if(b.type==="graph") return <Graph key={i} block={b}/>;
+    return <Diagram key={i} block={b}/>;
+  })}</div>;
+}
