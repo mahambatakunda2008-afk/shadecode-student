@@ -387,9 +387,11 @@ function extractCambridgePracticalSkillExpectations(
   provenance: CurriculumKnowledgeProvenance,
   paperItems: CurriculumKnowledgeItem[],
 ): CurriculumKnowledgeItem[] {
-  const paperByCode = new Map(paperItems
-    .filter((item) => item.metadata?.extraction === "cambridge-practical-assessment")
-    .map((item) => [String(item.code), item]));
+  const paperByCode = new Map(
+    paperItems
+      .filter((item) => item.metadata?.extraction === "cambridge-practical-assessment")
+      .map((item) => [String(item.code), item]),
+  );
   const allowedGroups: Record<string, Set<string>> = {
     P3: new Set([
       "decisions relating to measurements and observations",
@@ -403,16 +405,17 @@ function extractCambridgePracticalSkillExpectations(
     ]),
     P5: new Set(["defining the problem", "methods", "dealing with data", "conclusions", "evaluation"]),
   };
-  const lines = text.split(/\\r?\\n/);
+  const lines = text.split(/\r?\n/);
   const items: CurriculumKnowledgeItem[] = [];
   let paper: "P3" | "P5" | undefined;
   let inExpectations = false;
   let group: string | undefined;
   let current: CurriculumKnowledgeItem | undefined;
+
   const flush = () => {
     if (!current) return;
-    current.content = current.content.replace(/\\s+/g, " ").trim();
-    current.title = current.content.length > 110 ? `${current.content.slice(0, 107)}…` : current.content;
+    current.content = current.content.replace(/\s+/g, " ").trim();
+    current.title = current.content.length > 110 ? current.content.slice(0, 107) + "…" : current.content;
     items.push(current);
     current = undefined;
   };
@@ -420,7 +423,10 @@ function extractCambridgePracticalSkillExpectations(
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
-    const expectationHeader = line.replace(/^#+\\s*/, "").match(/^Expectations for each skill \\(Paper\\s*(3|5)\\)$/i);
+
+    const expectationHeader = line
+      .replace(/^#+\s*/, "")
+      .match(/^Expectations for each skill \(Paper\s*(3|5)\)$/i);
     if (expectationHeader) {
       flush();
       paper = expectationHeader[1] === "3" ? "P3" : "P5";
@@ -428,34 +434,40 @@ function extractCambridgePracticalSkillExpectations(
       group = undefined;
       continue;
     }
-    if (/^#\\s/.test(line) && inExpectations && !/^#\\s*Expectations for each skill/i.test(line)) {
+
+    if (/^#\s/.test(line) && inExpectations) {
       flush();
       inExpectations = false;
       group = undefined;
+      paper = undefined;
       continue;
     }
     if (!inExpectations || !paper) continue;
-    const heading = line.replace(/^#+\\s*/, "").toLowerCase();
+
+    const heading = line.replace(/^#+\s*/, "").toLowerCase();
     if (allowedGroups[paper].has(heading)) {
       flush();
       group = heading;
       continue;
     }
     if (!group) continue;
-    const bullet = line.match(/^(?:[-•●▪]\\s+)(.+)$/);
+
+    const bullet = line.match(/^(?:[-•●▪]\s+)(.+)$/);
     if (bullet) {
       flush();
       const parent = paperByCode.get(paper);
       if (!parent) continue;
       const groupCode = group.toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "");
-      const ordinal = items.filter((item) => item.parentId === parent.id && item.metadata?.skillGroup === group).length + 1;
-      const code = `${paper}-EXPECT-${groupCode}-${String(ordinal).padStart(2, "0")}`;
+      const ordinal = items.filter(
+        (item) => item.parentId === parent.id && item.metadata?.skillGroup === group,
+      ).length + 1;
+      const code = paper + "-EXPECT-" + groupCode + "-" + String(ordinal).padStart(2, "0");
       current = makeItem(
         "skill",
         bullet[1],
         bullet[1],
         identity,
-        { ...provenance, sectionOrPage: `Paper ${paper.slice(1)}: ${group}` },
+        { ...provenance, sectionOrPage: "Paper " + paper.slice(1) + ": " + group },
         items.length,
         {
           code,
@@ -468,10 +480,14 @@ function extractCambridgePracticalSkillExpectations(
           },
         },
       );
-    } else if (current && !/^Back to contents page$/i.test(line) && !/^www\\./i.test(line) && !/^When using\\b/i.test(line) && !/:\\s*$/.test(line)) {
-      current.content = `${current.content} ${line.replace(/^[-•●▪]\\s*/, "")}`;
+      continue;
+    }
+
+    if (current && !/^Back to contents page$/i.test(line) && !/^www\./i.test(line) && !/^When using\b/i.test(line) && !/:\s*$/.test(line)) {
+      current.content = current.content + " " + line.replace(/^[-•●▪]\s*/, "");
     }
   }
+
   flush();
   return items;
 }
