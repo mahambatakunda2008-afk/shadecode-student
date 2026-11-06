@@ -389,7 +389,7 @@ function extractCambridgeNumberedLearningOutcomes(
     const topicHeadingMatch = line.match(/^(\d{1,2})\s+(.+)$/);
     if (
       topicHeadingMatch &&
-      topicByCode.has(topicHeadingMatch[1]) &&
+      topicByCode.get(topicHeadingMatch[1])?.title.trim().toLowerCase() === line.toLowerCase() &&
       currentSubtopic?.code.split(".")[0] !== topicHeadingMatch[1]
     ) {
       flushSubtopic();
