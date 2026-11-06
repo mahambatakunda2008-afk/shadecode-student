@@ -6,6 +6,7 @@ import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { resolveVerifiedCurriculumPromptContext } from '@/lib/curriculum/ai-grounding'
 import { buildSyllabusGuide, type GuideKnowledgeItem } from '@/lib/cortex/syllabusGuide'
 import { buildEnginePracticeBlocks, wrapPracticeLesson } from '@/lib/cortex/enginePractice'
+import { fetchLearnerDifficulty } from '@/lib/exam/learnerLevel'
 import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
 
 export const dynamic = 'force-dynamic'
@@ -76,7 +77,8 @@ export async function GET(request: NextRequest) {
     const allowedSubject = subjectAccess.subject
 
     // Worked examples and practice from the question engine: independent of any syllabus data or AI provider.
-    const practice = buildEnginePracticeBlocks(allowedSubject, topic)
+    const difficulty = (await fetchLearnerDifficulty(supabase, user.id)) ?? undefined
+    const practice = buildEnginePracticeBlocks(allowedSubject, topic, undefined, difficulty)
 
     // Syllabus guide from the learner's verified syllabus, when one exists for this topic.
     const guide = await tryBuildSyllabusGuide({ userId: user.id, subject: allowedSubject, topic, extraBlocks: practice?.blocks })

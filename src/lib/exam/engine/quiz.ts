@@ -62,10 +62,10 @@ export function optionsFor(spec: NumericSpec, rng: Rng, allowNegative: boolean):
   return { options: all.map((text, index) => `${LETTERS[index]}) ${text}`), correctIndex: all.indexOf(correct) };
 }
 
-export function buildEngineQuiz(options: { subject: string; topic: string; count?: number; seed?: number }): EngineQuizQuestion[] | null {
+export function buildEngineQuiz(options: { subject: string; topic: string; count?: number; seed?: number; difficulty?: string }): EngineQuizQuestion[] | null {
   const seed = options.seed ?? freshSeed();
   const count = Math.max(1, Math.min(options.count ?? 5, 10));
-  const exam = buildEngineExam({ subject: options.subject, topic: options.topic, difficulty: "medium", count, seed });
+  const exam = buildEngineExam({ subject: options.subject, topic: options.topic, difficulty: options.difficulty ?? "medium", count, seed });
   if (!exam) return null;
 
   const allowNegative = /math/i.test(options.subject);

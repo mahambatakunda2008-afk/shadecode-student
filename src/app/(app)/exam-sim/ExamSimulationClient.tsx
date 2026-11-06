@@ -155,7 +155,7 @@ export default function ExamSimulationClient() {
   }
 
   return <>
-    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}><AcademicExamContext /><ExamWorkspace initialDifficulty={defaultExamLevelIndex(profile?.study_level)} initialSubject={subject} initialTopic={topic} initialQuestionCount={safeCount} frozenQuestions={frozenQuestions ?? undefined} serverMarkChallengeId={challengeId && marking === "server" && frozenQuestions ? challengeId : undefined} onExit={() => router.push("/dashboard")} onFinished={handleFinished} /></ExamAttemptLocalBridge>;
+    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}><AcademicExamContext /><ExamWorkspace initialDifficulty={defaultExamLevelIndex({ educationStage: profile?.education_stage, studyLevel: profile?.study_level })} initialSubject={subject} initialTopic={topic} initialQuestionCount={safeCount} frozenQuestions={frozenQuestions ?? undefined} serverMarkChallengeId={challengeId && marking === "server" && frozenQuestions ? challengeId : undefined} onExit={() => router.push("/dashboard")} onFinished={handleFinished} /></ExamAttemptLocalBridge>;
     {battle && challengeId && (
       <aside role="status" aria-live="polite" className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl border border-white/10 bg-[var(--card)] p-5 shadow-lg backdrop-blur">
         <p className="text-sm font-semibold text-[var(--foreground)]">{battle.won ? `You beat ${challengerName}!` : `${challengerName} takes this one.`}</p>

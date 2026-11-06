@@ -30,14 +30,14 @@ const answerOf = (q: EngineQuestion) => tidyAnswer(formatAnswer(q.numeric!));
 const plainQuestion = (q: EngineQuestion) => latexToPlain(q.question).replace(/\s+/g, " ").trim();
 const plainWorking = (q: EngineQuestion) => (q.modelAnswer ?? "").split("\n").slice(1).map((line) => latexToPlain(line).trim()).filter(Boolean);
 
-export function hasEnginePractice(subject: string, topic: string): boolean {
-  return matchGenerators(subject, topic).length > 0;
+export function hasEnginePractice(subject: string, topic: string, difficulty?: string): boolean {
+  return matchGenerators(subject, topic, difficulty).length > 0;
 }
 
 /** Worked examples, practice sets with answers, common mistakes and one exam-style question. Null if the engine has no match. */
-export function buildEnginePracticeBlocks(subject: string, topic: string, seed?: number): { blocks: PracticeBlock[]; questions: number } | null {
-  if (!hasEnginePractice(subject, topic)) return null;
-  const exam = buildEngineExam({ subject, topic, difficulty: "medium", count: TOTAL_QUESTIONS, seed });
+export function buildEnginePracticeBlocks(subject: string, topic: string, seed?: number, difficulty?: string): { blocks: PracticeBlock[]; questions: number } | null {
+  if (!hasEnginePractice(subject, topic, difficulty)) return null;
+  const exam = buildEngineExam({ subject, topic, difficulty: difficulty ?? "medium", count: TOTAL_QUESTIONS, seed });
   if (!exam || exam.questions.length < TOTAL_QUESTIONS) return null;
   const qs = exam.questions;
   // Only maths text uses "1x"-style coefficients; leave chemistry and computing wording untouched.

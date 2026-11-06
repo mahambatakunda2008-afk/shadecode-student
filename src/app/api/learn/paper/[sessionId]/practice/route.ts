@@ -9,6 +9,7 @@ import { matchGenerators } from '@/lib/exam/engine'
 import { generatorWeights } from '@/lib/learning/adaptive'
 import { recordSignalsServer } from '@/lib/learning/server'
 import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
+import { fetchLearnerDifficulty } from '@/lib/exam/learnerLevel'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,9 +57,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ se
 
     if (action === 'new') {
       // Learn from this learner's own history: more of the question types they tend to get wrong.
+      const difficulty = (await fetchLearnerDifficulty(supabase, user.id)) ?? undefined
       let weights: Record<string, number> | undefined
       try {
-        const ids = matchGenerators(subject, curriculum.title).map((generator) => generator.id)
+        const ids = matchGenerators(subject, curriculum.title, difficulty).map((generator) => generator.id)
         const { data: history } = await supabase
           .from('learning_signals')
           .select('item_key, correct')
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ se
       } catch {
         weights = undefined
       }
-      const question = newPracticeQuestion(subject, curriculum.title, freshSeed(), weights)
+      const question = newPracticeQuestion(subject, curriculum.title, freshSeed(), weights, difficulty)
       if (!question) return NextResponse.json({ error: 'No practice question is available for this topic yet', code: 'NO_PRACTICE' }, { status: 404 })
       return NextResponse.json(question)
     }

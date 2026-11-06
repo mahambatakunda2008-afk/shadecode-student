@@ -31,9 +31,10 @@ export interface PracticeCheck {
 
 const validSeed = (seed: unknown): seed is number => typeof seed === "number" && Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff;
 
-export function newPracticeQuestion(subject: string, topicTitle: string, seed: number, weights?: Record<string, number>): PracticeQuestion | null {
+/** `difficulty` is the learner's level (easy = O-Level, medium = A-Level) so a Form 2 student is not given A-Level questions. Marking never depends on it. */
+export function newPracticeQuestion(subject: string, topicTitle: string, seed: number, weights?: Record<string, number>, difficulty?: string): PracticeQuestion | null {
   if (!validSeed(seed)) return null;
-  const matched = matchGenerators(subject, topicTitle);
+  const matched = matchGenerators(subject, topicTitle, difficulty);
   if (!matched.length) return null;
   const order = weights ? weightedOrder(matched, weights, createRng(seed)) : createRng(seed).shuffle(matched);
   const generator = order[0];
