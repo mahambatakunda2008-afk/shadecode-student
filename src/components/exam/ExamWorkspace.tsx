@@ -191,10 +191,10 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         numeric: q.numeric,
       }));
       if (fallbackQuestions && isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("fallback", fallbackQuestions, count))) {
-        setPaperSource("fallback");
+        setPaperSource("offline");
         const total = fallbackQuestions.length * 120;
-        workId.current = `exam:fallback:${id()}`;
-        void trackEvent("exam_paper_ready", { ...telemetry, source: "fallback", serverFailed: true, ms: Date.now() - requestedAt });
+        workId.current = `exam:offline:${id()}`;
+        void trackEvent("exam_paper_ready", { ...telemetry, source: "offline", serverFailed: true, ms: Date.now() - requestedAt });
         setQuestions(fallbackQuestions);
         setAnswers([]);
         setFlags([]);
