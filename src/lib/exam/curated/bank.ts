@@ -60,6 +60,10 @@ function keywordMatches(text: string, keyword: string): boolean {
 export function matchTopics(topics: CuratedTopic[], topic: string, genericWords: RegExp): CuratedTopic[] {
   const text = topic.toLowerCase().trim();
   const hits = topics.filter((entry) => entry.keywords.some((keyword) => keywordMatches(text, keyword)));
+  // A multi-word keyword ("first chimurenga", "protein synthesis") is more specific than a shared single word,
+  // so when one matches, only the topics it names are used.
+  const specific = hits.filter((entry) => entry.keywords.some((keyword) => /\s/.test(keyword.trim()) && keywordMatches(text, keyword)));
+  if (specific.length) return specific;
   if (hits.length) return hits;
   return !text || genericWords.test(text) ? topics : [];
 }

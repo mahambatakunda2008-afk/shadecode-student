@@ -79,6 +79,6 @@ describe("Biology fallback papers", () => {
   it("is reported as covered, while other subjects stay honest", () => {
     expect(hasCuratedBank("Biology", "cell division")).toBe(true);
     expect(hasCuratedBank("Biology", "Zoology of rare reptiles")).toBe(false);
-    expect(hasCuratedBank("History", "the liberation struggle")).toBe(false);
+    expect(hasCuratedBank("Accounting", "double entry")).toBe(false);
   });
 });

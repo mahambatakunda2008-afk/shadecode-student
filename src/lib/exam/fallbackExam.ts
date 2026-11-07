@@ -1,6 +1,7 @@
 import type { ExamQuestion, GeneratedExam } from "@/lib/cortex/examGenerator";
 import { biologyBank } from "./curated/biology";
 import { geographyBank } from "./curated/geography";
+import { historyBank } from "./curated/history";
 
 type Seed = Omit<ExamQuestion, "id" | "topic" | "difficulty"> & { topic?: string };
 type Difficulty = ExamQuestion["difficulty"];
@@ -31,6 +32,7 @@ function getCuratedBank(subject: string, topic: string, difficulty?: string): Se
 
   if (s.includes("biolog")) return biologyBank(t);
   if (s.includes("geograph")) return geographyBank(t, difficulty);
+  if (s.includes("history")) return historyBank(t, difficulty);
 
   if (s.includes("physics") && (t.includes("deformation") || t.includes("elastic"))) return [
     mcq("Which quantity is force divided by cross-sectional area?", ["Strain", "Stress", "Extension", "Young modulus"], "Stress"),

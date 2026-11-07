@@ -7,7 +7,7 @@ vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () =
 vi.mock("@/lib/supabase/auth-helpers", () => ({ getVerifiedUser: async () => ({ user: { id: "11111111-1111-4111-8111-111111111111" } }) }));
 vi.mock("@/lib/cortex/examGenerator", () => ({ generateExam: (...args: unknown[]) => generateExam(...args) }));
 vi.mock("@/lib/subjects/resolveLearnerSubjects", () => ({
-  resolveLearnerSubjects: async () => ({ subjects: ["Biology", "Physics", "Geography", "Mathematics"].map((name) => ({ name })) }),
+  resolveLearnerSubjects: async () => ({ subjects: ["Biology", "Physics", "Geography", "Mathematics", "History"].map((name) => ({ name })) }),
   assertRequestedLearnerSubject: (subjects: { name: string }[], requested: string) => subjects.find((s) => s.name.toLowerCase() === requested.toLowerCase()) ?? null,
 }));
 
@@ -86,6 +86,24 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
       for (const q of json.questions) expect(q.options).toContain(q.modelAnswer);
     }
     expect(generateExam).not.toHaveBeenCalled();
+  });
+
+  it("serves O-Level History from the built-in bank with no AI, for both syllabus papers", async () => {
+    generateExam.mockImplementation(async () => { throw new Error("AI must not be used"); });
+    for (const topic of ["History (O-Level)", "History of Zimbabwe (O-Level)", "Second Chimurenga", "French Revolution"]) {
+      const { status, json } = await call({ subject: "History", topic, difficulty: "easy", questionCount: 10 });
+      expect(status, topic).toBe(200);
+      expect(json.questions.length, topic).toBeGreaterThanOrEqual(6);
+      for (const q of json.questions) expect(q.options).toContain(q.modelAnswer);
+    }
+    expect(generateExam).not.toHaveBeenCalled();
+  });
+
+  it("does not serve O-Level History to an A-Level learner", async () => {
+    generateExam.mockImplementation(async () => { throw new Error("providers down"); });
+    const { status } = await call({ subject: "History", topic: "History (A-Level)", difficulty: "medium", questionCount: 10 });
+    expect(generateExam).toHaveBeenCalledTimes(1);
+    expect(status).toBe(503);
   });
 
   it("does not serve O-Level Geography to an A-Level learner: AI is tried, and failure is honest", async () => {
