@@ -23,6 +23,7 @@ import ExamQuestionContent from "./ExamQuestionContent";
 import type { ExamContentBlock } from "@/lib/exam/types";
 import { expectedPaperLength, isValidGeneratedPaper } from "@/lib/exam/paperValidation";
 import { trackEvent } from "@/lib/traction/client";
+import { mapOfflineExamQuestions } from "@/lib/exam/offlineQuestions";
 
 export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string; content?: ExamContentBlock[] };
 export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
@@ -109,18 +110,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
         const generated = buildGuaranteedExam(subject, cleanTopic, difficulty, count);
         if (!generated) { void trackEvent("exam_generation_failed", { ...telemetry, reason: "offline_no_set" }); setError("You're offline and there's no saved practice set for this topic yet. Reconnect to generate a fresh paper."); return; }
-        const fallbackQuestions = generated.questions.map((q, idx) => ({
-          id: idx + 1,
-          type: q.type,
-          question: q.question,
-          options: q.options,
-          marks: q.marks,
-          topic: q.topic,
-          modelAnswer: q.modelAnswer,
-          markingCriteria: q.markingCriteria,
-          numeric: q.numeric,
-          content: q.content,
-        }));
+        const fallbackQuestions = mapOfflineExamQuestions(generated.questions);
         if (!isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("offline", fallbackQuestions, count))) {
           setError("The offline practice set failed question validation. Reconnect and try generating a fresh paper.");
           return;
@@ -182,18 +172,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       const difficulty = LEVELS[level].api;
       const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
       const generated = buildGuaranteedExam(subject, cleanTopic, difficulty, count);
-      const fallbackQuestions = generated?.questions?.map((q, idx) => ({
-        id: idx + 1,
-        type: q.type,
-        question: q.question,
-        options: q.options,
-        marks: q.marks,
-        topic: q.topic,
-        modelAnswer: q.modelAnswer,
-        markingCriteria: q.markingCriteria,
-        numeric: q.numeric,
-        content: q.content,
-      }));
+      const fallbackQuestions = generated ? mapOfflineExamQuestions(generated.questions) : undefined;
       if (fallbackQuestions && isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("fallback", fallbackQuestions, count))) {
         setPaperSource("offline");
         const total = fallbackQuestions.length * 120;
