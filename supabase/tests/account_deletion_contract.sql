@@ -46,7 +46,7 @@ begin
         and confdeltype = v_constraint.delete_action
         and convalidated
     ) then
-      raise exception 'Expected validated FK % with delete action %', v_constraint.column1, v_constraint.column2;
+      raise exception 'Expected validated FK % with delete action %', v_constraint.constraint_name, v_constraint.delete_action;
     end if;
   end loop;
 
