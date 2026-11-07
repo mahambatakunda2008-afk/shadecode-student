@@ -5,6 +5,8 @@
 do $$
 declare
   v_constraint record;
+  v_table_name text;
+  v_cleanup_definition text;
 begin
   if not exists (
     select 1 from pg_class c
@@ -47,6 +49,93 @@ begin
         and convalidated
     ) then
       raise exception 'Expected validated FK % with delete action %', v_constraint.constraint_name, v_constraint.delete_action;
+    end if;
+  end loop;
+
+  -- Guard the manually maintained cleanup inventory against accidental
+  -- omissions. Cascading profile/Auth-owned tables are verified by FK checks;
+  -- these tables require explicit cleanup in the transactional RPC.
+  select lower(pg_get_functiondef(
+    'public.execute_account_deletion_cleanup(uuid,uuid)'::regprocedure
+  )) into v_cleanup_definition;
+
+  for v_table_name in
+    select name from (values
+      ('ai_anomalies'),
+      ('ai_usage_logs'),
+      ('academic_contexts'),
+      ('challenge_attempts'),
+      ('challenges'),
+      ('community_uploads'),
+      ('cortex_events'),
+      ('cortex_generation_jobs'),
+      ('cortex_memory'),
+      ('daily_focus'),
+      ('exam_logs'),
+      ('exam_results'),
+      ('export_logs'),
+      ('experiment_assignments'),
+      ('feedback'),
+      ('focus_sessions'),
+      ('generated_course_drafts'),
+      ('insights'),
+      ('insights_archive'),
+      ('learner_brain_events'),
+      ('learner_curriculum_objective_progress'),
+      ('learning_events'),
+      ('learning_paths'),
+      ('learning_signals'),
+      ('lesson_library'),
+      ('lesson_votes'),
+      ('paper_learning_attempts'),
+      ('paper_learning_sessions'),
+      ('paper_learning_transfer_questions'),
+      ('platform_channel_identities'),
+      ('platform_channel_link_codes'),
+      ('platform_channel_message_receipts'),
+      ('platform_group_members'),
+      ('platform_institution_members'),
+      ('platform_user_relationships'),
+      ('primary_activity_progress'),
+      ('project_evidence'),
+      ('project_milestones'),
+      ('projects'),
+      ('revision_queue'),
+      ('revisions'),
+      ('study_plans'),
+      ('sync_revisions'),
+      ('topic_mastery'),
+      ('traction_events'),
+      ('user_achievements'),
+      ('user_careers'),
+      ('user_cortex'),
+      ('user_past_paper_state'),
+      ('user_profiles'),
+      ('user_question_attempts'),
+      ('user_saved_questions')
+    ) expected(name)
+  loop
+    if position('public.' || v_table_name in v_cleanup_definition) = 0 then
+      raise exception 'Cleanup RPC is missing expected account-linked table: %', v_table_name;
+    end if;
+  end loop;
+
+  -- These are attribution fields on records that may belong to other users.
+  -- They must be cleared, not used as a reason to delete another user's row.
+  for v_table_name in
+    select name from (values
+      ('exam_question_topic_proposals'),
+      ('user_roles'),
+      ('platform_user_relationships'),
+      ('community_uploads'),
+      ('generated_course_drafts'),
+      ('generated_course_approvals'),
+      ('published_learning_assets'),
+      ('curriculum_verification_events')
+    ) expected(name)
+  loop
+    if position('update public.' || v_table_name in v_cleanup_definition) = 0 then
+      raise exception 'Cleanup RPC is missing attribution-preservation update for: %', v_table_name;
     end if;
   end loop;
 
