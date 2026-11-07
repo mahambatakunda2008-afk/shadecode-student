@@ -54,7 +54,7 @@
           "marks": 4,
           "prompt": "Suggest a suitable set of at least five temperature values covering a useful range. Explain why the intervals should be appropriate.",
           "answer": [
-            "One suitable set is 10, 20, 30, 40, 50 and 60 °C.",
+            "Use at least five temperature values, for example 10, 20, 30, 40, 50 and 60 °C.",
             "Values span a range likely to show a trend and possible decline at high temperature.",
             "Equal 10 °C intervals make comparison straightforward.",
             "The range should avoid unsafe heating and should be refined if preliminary results show the optimum is outside it."
@@ -100,13 +100,66 @@
         {
           "id": "f",
           "marks": 4,
-          "prompt": "Describe the graph that should be drawn and how the data should be presented.",
+          "prompt": "The original practice results are shown below. Describe the graph that should be drawn and how the data should be presented.",
           "answer": [
             "Temperature / °C on the x-axis.",
             "Mean oxygen volume in 60 s / cm³ on the y-axis.",
             "Linear scales use most of the available grid and have labelled axes with units.",
             "Plot points accurately and draw a suitable best-fit line or smooth curve; do not join points dot-to-dot without justification."
-          ]
+          ],
+          "data": {
+            "columns": [
+              "Temperature / °C",
+              "Repeat 1 oxygen volume / cm³",
+              "Repeat 2 oxygen volume / cm³",
+              "Repeat 3 oxygen volume / cm³",
+              "Mean oxygen volume / cm³"
+            ],
+            "rows": [
+              [
+                10,
+                2,
+                2.2,
+                2.1,
+                2.1
+              ],
+              [
+                20,
+                4.6,
+                4.9,
+                4.9,
+                4.8
+              ],
+              [
+                30,
+                8.2,
+                8.6,
+                8.7,
+                8.5
+              ],
+              [
+                40,
+                10,
+                10.3,
+                10.3,
+                10.2
+              ],
+              [
+                50,
+                7,
+                7.2,
+                7.1,
+                7.1
+              ],
+              [
+                60,
+                3,
+                3.3,
+                3.3,
+                3.2
+              ]
+            ]
+          }
         },
         {
           "id": "g",
@@ -152,7 +205,7 @@
         {
           "id": "a",
           "marks": 4,
-          "prompt": "Calculate the magnification of the photomicrograph. Show the unit conversion and working.",
+          "prompt": "A photomicrograph has an image length of 36 mm. The corresponding actual specimen length is 120 µm. Calculate the magnification. Show the unit conversion and working.",
           "answer": [
             "Convert 36 mm to 36 000 µm.",
             "Magnification = image size ÷ actual size.",
@@ -163,15 +216,14 @@
         {
           "id": "b",
           "marks": 4,
-          "prompt": "Describe four features of a high-quality biological drawing of the observed tissue.",
+          "prompt": "A 50 µm scale bar is to be added to the photomicrograph shown in the scenario. Calculate the length of the scale bar on the image, then describe two features of a high-quality biological drawing of the observed tissue.",
           "answer": [
-            "Use clear, single, continuous lines.",
-            "Draw large, accurate outlines with correct proportions.",
-            "Do not use shading or sketching.",
-            "Use straight ruled label lines that touch the correct structure and do not cross.",
-            "Include a suitable title and scale information where required."
+            "The photomicrograph magnification is ×300, so scale-bar image length = 50 µm × 300 = 15 000 µm = 15 mm.",
+            "Use clear, single, continuous lines and draw large, accurate outlines with correct proportions.",
+            "Do not use shading or sketching; use straight ruled label lines that touch the correct structure and do not cross. Represent only structures actually observed.",
+            "A scale bar should be a straight measured line labelled with the actual specimen length, for example 50 µm."
           ],
-          "notes": "Any four distinct valid features."
+          "notes": "Award 2 marks for the correct scale-bar calculation and one mark each for any two distinct valid drawing conventions."
         },
         {
           "id": "c",
@@ -186,11 +238,11 @@
         {
           "id": "d",
           "marks": 3,
-          "prompt": "Give three precautions when using a light microscope to obtain a clear image.",
+          "prompt": "Give three precautions when using a light microscope to obtain a clear image and reliable measurements.",
           "answer": [
-            "Begin with low-power objective and focus before increasing magnification.",
-            "Use coarse focus only at low power; use fine focus at high power.",
-            "Adjust illumination/diaphragm and centre the specimen.",
+            "Begin with the low-power objective and focus before increasing magnification.",
+            "Use coarse focus only at low power and fine focus at high power; adjust illumination/diaphragm and centre the specimen.",
+            "Calibrate the eyepiece graticule against a stage micrometer for each objective magnification before measuring; do not assume one calibration applies to every objective.",
             "Handle slides carefully and avoid allowing the objective lens to strike the slide."
           ]
         }
@@ -320,7 +372,53 @@
             "Plot light intensity on the x-axis and mean oxygen production rate on the y-axis.",
             "Use labelled axes with units and a suitable scale.",
             "Show variation using range bars or another justified measure of spread; state what the bars represent."
-          ]
+          ],
+          "data": {
+            "columns": [
+              "Light intensity / arbitrary units",
+              "Repeat 1 oxygen production / cm³ min⁻¹",
+              "Repeat 2 oxygen production / cm³ min⁻¹",
+              "Repeat 3 oxygen production / cm³ min⁻¹",
+              "Mean oxygen production / cm³ min⁻¹"
+            ],
+            "rows": [
+              [
+                10,
+                1.1,
+                1.2,
+                1.3,
+                1.2
+              ],
+              [
+                20,
+                2.2,
+                2.4,
+                2.6,
+                2.4
+              ],
+              [
+                30,
+                2.9,
+                3.1,
+                3.3,
+                3.1
+              ],
+              [
+                40,
+                3.4,
+                3.6,
+                3.8,
+                3.6
+              ],
+              [
+                50,
+                3.5,
+                3.7,
+                3.9,
+                3.7
+              ]
+            ]
+          }
         },
         {
           "id": "h",
@@ -337,6 +435,768 @@
       "markingGuide": {
         "totalPracticeMarks": 29,
         "principle": "Practice mark allocation is original. A valid plan must be sufficiently detailed for another student to repeat and must distinguish the measured light intensity from lamp distance."
+      }
+    },
+    {
+      "id": "P3-03",
+      "paper": "Paper 3",
+      "title": "Osmosis in plant tissue",
+      "format": "Quantitative investigation, percentage change and interpretation",
+      "skills": [
+        "independent and dependent variables",
+        "range and intervals",
+        "repeats",
+        "control of variables",
+        "measurement",
+        "percentage change",
+        "table",
+        "graph",
+        "interpretation",
+        "evaluation"
+      ],
+      "scenario": "A student investigates how sucrose concentration affects the mass of potato cylinders. Equal-sized cylinders are blotted dry and weighed before being placed in sucrose solutions for the same period. They are then removed, blotted in a standardised way and reweighed.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Identify the independent and dependent variables. State how the dependent variable should be expressed so that cylinders with slightly different starting masses can be compared.",
+          "answer": [
+            "Independent variable: sucrose concentration / mol dm⁻³.",
+            "Dependent variable: change in mass of each potato cylinder.",
+            "Calculate percentage change in mass using ((final mass − initial mass) ÷ initial mass) × 100."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 4,
+          "prompt": "Suggest a suitable range of at least five sucrose concentrations and explain why the range should include values on both sides of the isotonic concentration.",
+          "answer": [
+            "Use at least five concentrations, for example 0.0, 0.2, 0.4, 0.6, 0.8 and 1.0 mol dm⁻³.",
+            "Use equal intervals where practical to make trends easier to compare.",
+            "Include concentrations expected to cause mass gain and mass loss.",
+            "A range on both sides helps estimate the concentration at which there is no net mass change."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 4,
+          "prompt": "Describe four variables that should be controlled and how each should be standardised.",
+          "answer": [
+            "Use cylinders from the same potato variety or tuber where possible.",
+            "Cut cylinders to the same length and diameter using the same cutter.",
+            "Keep immersion time the same for every cylinder.",
+            "Use the same volume of solution and ensure each cylinder is fully immersed.",
+            "Maintain the same temperature and blot each cylinder using the same method and duration."
+          ],
+          "notes": "Any four valid control-and-method pairs."
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Explain why at least three potato cylinders should be tested at each concentration.",
+          "answer": [
+            "Replicates reveal biological and measurement variation.",
+            "A mean percentage change can be calculated for each concentration.",
+            "Variation or anomalous results can be identified and investigated rather than silently discarded."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 4,
+          "prompt": "Construct a suitable results table. Include raw measurements and the calculated dependent variable.",
+          "answer": [
+            "Include sucrose concentration / mol dm⁻³ in the first column.",
+            "Record initial and final mass for each replicate, with units such as g.",
+            "Include percentage change in mass for each replicate.",
+            "Include mean percentage change for each concentration; distinguish raw and calculated data and use consistent precision."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 4,
+          "prompt": "A cylinder has an initial mass of 2.50 g and a final mass of 2.20 g. Calculate its percentage change in mass and show your working.",
+          "answer": [
+            "Change in mass = 2.20 − 2.50 = −0.30 g.",
+            "Percentage change = (−0.30 ÷ 2.50) × 100.",
+            "Percentage change = −12%.",
+            "The negative sign indicates a decrease in mass."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "The following original practice results were obtained. Describe the graph to plot and explain how the isotonic concentration can be estimated.",
+          "answer": [
+            "Plot sucrose concentration / mol dm⁻³ on the x-axis and mean percentage change in mass / % on the y-axis.",
+            "Use an appropriate scale, labelled axes and accurately plotted points.",
+            "Estimate the isotonic concentration where the best-fit line or curve crosses 0% change in mass."
+          ],
+          "data": {
+            "columns": [
+              "Sucrose concentration / mol dm⁻³",
+              "Mean percentage change in mass / %"
+            ],
+            "rows": [
+              [
+                0,
+                18.4
+              ],
+              [
+                0.2,
+                11.2
+              ],
+              [
+                0.4,
+                4.6
+              ],
+              [
+                0.6,
+                -3.1
+              ],
+              [
+                0.8,
+                -10.5
+              ],
+              [
+                1,
+                -17.8
+              ]
+            ]
+          }
+        },
+        {
+          "id": "h",
+          "marks": 3,
+          "prompt": "Explain the biological basis of the expected pattern and give one limitation with an improvement.",
+          "answer": [
+            "In a dilute solution, water enters potato cells by osmosis and mass tends to increase.",
+            "In a concentrated solution, water leaves cells and mass tends to decrease.",
+            "A limitation is inconsistent blotting or tissue size; standardise blotting and use a cork borer and cutting guide to produce comparable cylinders."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 28,
+        "principle": "Practice mark allocation and answer points are original, not an official Cambridge mark scheme. The isotonic concentration is estimated from zero percentage change, not assumed to be the concentration of a particular prepared solution."
+      }
+    },
+    {
+      "id": "P3-04",
+      "paper": "Paper 3",
+      "title": "Effect of pH on amylase activity",
+      "format": "Enzyme investigation, colorimetry-style endpoint and rate comparison",
+      "skills": [
+        "independent and dependent variables",
+        "range and intervals",
+        "repeats",
+        "control of variables",
+        "risk assessment",
+        "timing",
+        "data table",
+        "rate calculation",
+        "graph",
+        "evaluation"
+      ],
+      "scenario": "A student investigates the effect of pH on the activity of amylase breaking down starch. At set time intervals, a drop of reaction mixture is added to iodine solution. The student records the time at which the iodine no longer turns blue-black. Temperature, enzyme concentration and starch concentration can be controlled.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Identify the independent and dependent variables. Explain why the endpoint time can be used to compare enzyme activity.",
+          "answer": [
+            "Independent variable: pH of the reaction mixture / buffer.",
+            "Dependent variable: time taken for starch to no longer be detected by iodine.",
+            "For the same initial starch concentration and fixed conditions, a shorter endpoint time indicates a faster rate of starch breakdown."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 4,
+          "prompt": "Suggest at least five pH values for the investigation and explain how the range could be improved after preliminary work.",
+          "answer": [
+            "A suitable initial range could be pH 3, 4, 5, 6, 7, 8 and 9.",
+            "Use buffer solutions to establish and maintain each pH.",
+            "The range should cover acidic, near-neutral and alkaline conditions likely to reveal a maximum.",
+            "If preliminary results place the maximum near an endpoint, test additional pH values around that region using smaller intervals."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 5,
+          "prompt": "Describe a method that gives comparable endpoint measurements at each pH.",
+          "answer": [
+            "Prepare equal volumes of starch solution and amylase solution at the same concentrations.",
+            "Use a buffer of known pH and keep its volume consistent.",
+            "Allow solutions to reach the same controlled temperature before mixing.",
+            "Start the timer immediately after mixing and use the same sampling interval throughout.",
+            "Add each sample to a fresh, equal volume of iodine solution using the same drop volume.",
+            "Use the same criterion for deciding that the blue-black colour has disappeared."
+          ],
+          "notes": "Credit requires a clear, repeatable sequence and a defined endpoint."
+        },
+        {
+          "id": "d",
+          "marks": 4,
+          "prompt": "State four variables, other than pH, that should be controlled and how each should be kept constant.",
+          "answer": [
+            "Temperature: use a thermostatically controlled water bath and pre-equilibrate solutions.",
+            "Starch concentration and volume: use the same prepared stock and measured volume.",
+            "Amylase concentration and volume: use the same enzyme stock and measured volume.",
+            "Sampling interval and sample volume: use a timer and consistent pipette/dropper technique.",
+            "Iodine concentration and volume: use the same iodine solution and equal volumes."
+          ],
+          "notes": "Any four correctly paired controls."
+        },
+        {
+          "id": "e",
+          "marks": 3,
+          "prompt": "Explain why the student should repeat each pH measurement and how to deal with an anomalous endpoint time.",
+          "answer": [
+            "Repeat each pH condition at least three times to assess variation.",
+            "Calculate a mean from concordant results and compare spread between repeats.",
+            "Check an anomalous result for procedural error and repeat the measurement; do not remove it without justification."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 4,
+          "prompt": "The endpoint times at pH 5 are 42 s, 39 s and 45 s. Calculate the mean endpoint time and the relative rate using 1 ÷ mean time. Give the rate to three significant figures.",
+          "answer": [
+            "Mean time = (42 + 39 + 45) ÷ 3 = 42 s.",
+            "Relative rate = 1 ÷ 42.",
+            "Relative rate = 0.0238 s⁻¹ to three significant figures.",
+            "This is a relative rate based on endpoint time, not a direct measurement of product concentration per unit time."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "The following original practice results were obtained. Describe a suitable graph for comparing enzyme activity at different pH values.",
+          "answer": [
+            "Plot pH on the x-axis.",
+            "Plot relative rate (1 ÷ mean endpoint time) on the y-axis, with its unit or definition stated clearly.",
+            "Use a suitable scale, accurately plotted points and a smooth best-fit curve where justified; identify the pH with the highest measured activity."
+          ],
+          "data": {
+            "columns": [
+              "pH",
+              "Mean endpoint time / s",
+              "Relative rate / s⁻¹"
+            ],
+            "rows": [
+              [
+                3,
+                180,
+                0.00556
+              ],
+              [
+                4,
+                92,
+                0.0109
+              ],
+              [
+                5,
+                42,
+                0.0238
+              ],
+              [
+                6,
+                31,
+                0.0323
+              ],
+              [
+                7,
+                38,
+                0.0263
+              ],
+              [
+                8,
+                75,
+                0.0133
+              ],
+              [
+                9,
+                150,
+                0.00667
+              ]
+            ]
+          }
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "Evaluate two limitations of this method and suggest improvements.",
+          "answer": [
+            "The colour endpoint is judged by eye and may be subjective; use a colorimeter or standardised visual comparison if suitable equipment is available.",
+            "Sampling at intervals gives limited time resolution; use shorter, consistent intervals near the endpoint.",
+            "Temperature may drift; use a thermostatically controlled water bath and monitor it.",
+            "pH may change during reaction; use an adequate buffer and check pH before and after the reaction."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 30,
+        "principle": "These are original practice mark points, not an official Cambridge mark scheme. A shorter endpoint time indicates faster starch breakdown only when starting concentrations, sampling procedure and other conditions are comparable."
+      }
+    },
+    {
+      "id": "P3-05",
+      "paper": "Paper 3",
+      "title": "Investigating water uptake with a potometer",
+      "format": "Plant transport investigation, rate measurement and experimental evaluation",
+      "skills": [
+        "apparatus setup",
+        "independent and dependent variables",
+        "range and intervals",
+        "repeats",
+        "control of variables",
+        "measurement",
+        "rate calculation",
+        "table",
+        "graph",
+        "evaluation"
+      ],
+      "scenario": "A student uses a bubble potometer to investigate how air movement affects water uptake by a leafy shoot. The shoot is cut and assembled under water, the apparatus is sealed, and the distance moved by an air bubble is measured over a fixed time. The student understands that water uptake is an estimate of transpiration rate, not a direct measurement of water vapour loss.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Identify the independent and dependent variables for an investigation of air movement. State a suitable unit for the dependent variable.",
+          "answer": [
+            "Independent variable: air movement / wind speed around the leaves.",
+            "Dependent variable: rate of bubble movement or water uptake, for example mm min⁻¹ or mm³ min⁻¹ if capillary dimensions are known.",
+            "Measure bubble displacement over a fixed time, or calculate volume uptake from capillary cross-sectional area and displacement."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 4,
+          "prompt": "Describe how to set up the potometer so that measurements are valid and the apparatus does not leak.",
+          "answer": [
+            "Cut the shoot under water to reduce air entering the xylem.",
+            "Insert the shoot into the apparatus while submerged and assemble the apparatus under water where appropriate.",
+            "Ensure all joints are airtight and seal connections with suitable material.",
+            "Introduce a single air bubble into the capillary and check that it moves freely; allow the shoot to acclimatise before recording."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 4,
+          "prompt": "State four variables that should be controlled while investigating air movement and explain how to control them.",
+          "answer": [
+            "Light intensity: use the same lamp position and intensity throughout.",
+            "Temperature: monitor and maintain a constant room or chamber temperature.",
+            "Humidity: keep humidity constant and measure it if possible.",
+            "Leaf area: use the same shoot throughout or shoots with comparable total leaf area.",
+            "Measurement duration: use identical timing intervals at every air movement setting."
+          ],
+          "notes": "Any four valid control-and-method pairs."
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Suggest a suitable range of at least five air movement settings and explain why the order of testing may matter.",
+          "answer": [
+            "Use at least five measured wind speeds spanning still air to a stronger, safe airflow, for example 0, 0.5, 1.0, 1.5 and 2.0 m s⁻¹ if the apparatus permits.",
+            "Measure air speed at leaf level rather than relying only on fan settings.",
+            "Randomise or alternate the order where possible because the shoot may change condition over time."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 4,
+          "prompt": "A bubble moves 18 mm in 6 minutes. Calculate the mean rate of bubble movement. If the capillary has a cross-sectional area of 0.50 mm², calculate the volume of water uptake per minute.",
+          "answer": [
+            "Rate of movement = 18 ÷ 6 = 3.0 mm min⁻¹.",
+            "Volume moved in 6 minutes = distance × cross-sectional area.",
+            "Volume = 18 × 0.50 = 9.0 mm³.",
+            "Volume uptake rate = 9.0 ÷ 6 = 1.5 mm³ min⁻¹."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 3,
+          "prompt": "Explain why a potometer measures water uptake rather than directly measuring transpiration rate.",
+          "answer": [
+            "Some absorbed water is used in photosynthesis, growth and maintaining cell turgidity.",
+            "Not all water taken up is necessarily lost as water vapour during the measurement period.",
+            "Therefore water uptake is an estimate or proxy for transpiration, not a direct measurement of water loss."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "The original practice results are shown below. Describe the relationship between air speed and water uptake, and explain why the increase may become less pronounced at higher air speeds. State one limitation of using these results to infer transpiration rate.",
+          "answer": [
+            "Mean water uptake rate increases as air speed rises from 0 to 1.5 m s⁻¹, then changes only slightly between 1.5 and 2.0 m s⁻¹.",
+            "Moving air removes the humid boundary layer around leaves, maintaining a steep water vapour concentration gradient and increasing transpiration.",
+            "The smaller increase at higher air speeds may occur because another factor, such as stomatal opening or water supply, becomes limiting.",
+            "A potometer measures water uptake rather than water vapour loss directly, so some absorbed water may be used in photosynthesis, growth or maintaining turgidity."
+          ],
+          "data": {
+            "columns": [
+              "Air speed / m s⁻¹",
+              "Repeat 1 water uptake / mm³ min⁻¹",
+              "Repeat 2 water uptake / mm³ min⁻¹",
+              "Repeat 3 water uptake / mm³ min⁻¹",
+              "Mean water uptake / mm³ min⁻¹"
+            ],
+            "rows": [
+              [
+                0,
+                0.7,
+                0.8,
+                0.9,
+                0.8
+              ],
+              [
+                0.5,
+                1.1,
+                1.2,
+                1.3,
+                1.2
+              ],
+              [
+                1,
+                1.6,
+                1.7,
+                1.8,
+                1.7
+              ],
+              [
+                1.5,
+                1.9,
+                2,
+                2.1,
+                2
+              ],
+              [
+                2,
+                2,
+                2.1,
+                2.2,
+                2.1
+              ]
+            ]
+          }
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "Evaluate two limitations of a potometer investigation and suggest practical improvements.",
+          "answer": [
+            "Leaks or changes in bubble size affect readings; check airtight seals and reset the bubble consistently.",
+            "Leaf area differs between shoots; use the same shoot for all treatments or measure and standardise leaf area.",
+            "The shoot may change during a long experiment; randomise treatment order and allow consistent acclimatisation.",
+            "Air speed may vary across the leaves; measure it at several positions near the shoot and keep fan distance fixed."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 28,
+        "principle": "Practice marks and guidance are original, not an official Cambridge mark scheme. Potometer water uptake is an estimate of transpiration and must not be described as a direct measurement of transpiration."
+      }
+    },
+    {
+      "id": "P5-02",
+      "paper": "Paper 5",
+      "title": "Comparing treatment groups using descriptive statistics and a t-test",
+      "format": "A Level statistical analysis, uncertainty and interpretation",
+      "syllabusStage": "a_level_extension",
+      "skills": [
+        "identify data type",
+        "calculate standard error",
+        "confidence intervals",
+        "null hypothesis",
+        "choose statistical test",
+        "degrees of freedom",
+        "interpret probability",
+        "evaluate conclusion"
+      ],
+      "scenario": "An investigator tests whether a nutrient treatment changes the dry mass of seedlings. Two independent groups of seedlings are grown under identical conditions except for the nutrient treatment. Dry mass is measured in mg after 21 days. The data are approximately normally distributed and the sample standard deviations are similar. Summary data are provided: untreated group n = 10, mean = 4.8 mg, sample standard deviation = 0.6 mg; treated group n = 10, mean = 6.1 mg, sample standard deviation = 0.8 mg. For this question, use t = (difference between means) ÷ standard error of the difference, and use the supplied two-tailed critical value of 2.101 at p = 0.05 and 18 degrees of freedom.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "Identify the type of data collected and explain why a t-test may be appropriate for comparing the two groups.",
+          "answer": [
+            "Dry mass is continuous quantitative data.",
+            "The two groups are independent samples.",
+            "A t-test is appropriate when data are approximately normally distributed and the sample standard deviations are approximately equal."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 3,
+          "prompt": "Use the supplied summary data to calculate the standard error of the mean for each group using SE = sample standard deviation ÷ square root of sample size. Give answers to two significant figures.",
+          "answer": [
+            "Untreated: 0.6 ÷ √10 = 0.19 mg (2 s.f.).",
+            "Treated: 0.8 ÷ √10 = 0.25 mg (2 s.f.).",
+            "The standard error estimates the precision of each sample mean, not the spread of individual measurements."
+          ],
+          "data": {
+            "columns": [
+              "Group",
+              "Sample size (n)",
+              "Mean dry mass / mg",
+              "Sample standard deviation / mg"
+            ],
+            "rows": [
+              [
+                "Untreated",
+                10,
+                4.8,
+                0.6
+              ],
+              [
+                "Treated",
+                10,
+                6.1,
+                0.8
+              ]
+            ]
+          }
+        },
+        {
+          "id": "c",
+          "marks": 3,
+          "prompt": "Calculate an approximate 95% confidence interval for each mean using the t critical value 2.262 for 9 degrees of freedom: mean ± t × SE. Give the limits to two decimal places.",
+          "answer": [
+            "Each group has n = 10, so degrees of freedom for a one-sample mean interval are n − 1 = 9.",
+            "Use the two-tailed 95% t critical value 2.262, not the large-sample normal value 1.96.",
+            "Untreated: 4.8 ± (2.262 × 0.1897) = approximately 4.37 to 5.23 mg.",
+            "Treated: 6.1 ± (2.262 × 0.2530) = approximately 5.53 to 6.67 mg.",
+            "These are separate confidence intervals for each population mean; overlap alone is not the formal two-sample t-test decision."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "State the null hypothesis and calculate the degrees of freedom for the t-test.",
+          "answer": [
+            "Null hypothesis: there is no significant difference in mean seedling dry mass between the treated and untreated populations.",
+            "Degrees of freedom = n₁ + n₂ − 2.",
+            "Degrees of freedom = 10 + 10 − 2 = 18."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 4,
+          "prompt": "Calculate the standard error of the difference between means using √(s₁²/n₁ + s₂²/n₂), then calculate the t value. Use the values in the scenario.",
+          "answer": [
+            "SE difference = √((0.6² ÷ 10) + (0.8² ÷ 10)).",
+            "SE difference = √(0.036 + 0.064) = √0.100 = 0.316 mg.",
+            "Difference between means = 6.1 − 4.8 = 1.3 mg.",
+            "t = 1.3 ÷ 0.316 = 4.11 (3 s.f.)."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 3,
+          "prompt": "Use the supplied critical value to decide whether the difference is statistically significant at p = 0.05. Explain what the decision means.",
+          "answer": [
+            "Calculated t = 4.11, which is greater than the critical value 2.101.",
+            "Reject the null hypothesis at the 5% significance level; the difference is statistically significant under the test assumptions.",
+            "This does not mean there is a 95% probability that the treatment caused the difference."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Explain why statistical significance does not, by itself, prove that the nutrient treatment caused the increase in dry mass. Give one design feature that strengthens a causal conclusion.",
+          "answer": [
+            "Other uncontrolled variables or bias could contribute to the difference.",
+            "Statistical significance addresses compatibility with the null hypothesis under the test assumptions, not the cause of an effect.",
+            "Randomly allocate seedlings to groups and standardise other growth conditions; use adequate replication."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 3,
+          "prompt": "Explain why standard deviation and standard error are not interchangeable, and state what error bars showing standard error represent.",
+          "answer": [
+            "Standard deviation describes spread of individual measurements around the mean.",
+            "Standard error describes the estimated precision/variation of the sample mean between repeated samples.",
+            "Standard-error bars show uncertainty around the estimated mean; they are not a range containing most individual observations."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 25,
+        "principle": "This is an original A Level statistical practice task. The t-test assumptions and supplied critical value are stated in the scenario. The practice calculations are not an official Cambridge mark scheme."
+      }
+    },
+    {
+      "id": "P5-03",
+      "paper": "Paper 5",
+      "title": "Choosing statistical tests for biological investigations",
+      "format": "A Level statistical test selection, hypotheses and interpretation",
+      "syllabusStage": "a_level_extension",
+      "skills": [
+        "classify variables and data",
+        "choose statistical test",
+        "state null hypothesis",
+        "interpret correlation",
+        "chi-squared",
+        "t-test assumptions",
+        "evaluate sampling",
+        "interpret probability",
+        "calculate correlation coefficient"
+      ],
+      "scenario": "Three short investigations produce different kinds of biological data. Investigation A compares the number of individuals in two phenotypic categories with expected frequencies from a genetic cross. Investigation B compares mean leaf area in two independent groups; leaf-area data are continuous, approximately normally distributed and have similar standard deviations. Investigation C records paired measurements of an environmental gradient and species abundance at eight randomly selected independent sites; a scatter graph shows a monotonic relationship, but the data are not normally distributed.",
+      "questions": [
+        {
+          "id": "a",
+          "marks": 3,
+          "prompt": "For each investigation, identify the type of data and choose the most appropriate statistical test from chi-squared, t-test, Pearson's linear correlation and Spearman's rank correlation.",
+          "answer": [
+            "A: nominal frequency data compared with expected frequencies; use chi-squared.",
+            "B: continuous measurements from two independent, approximately normal groups with similar standard deviations; use a t-test.",
+            "C: paired data with a monotonic relationship and non-normal distribution; use Spearman's rank correlation."
+          ]
+        },
+        {
+          "id": "b",
+          "marks": 3,
+          "prompt": "Write a suitable null hypothesis for Investigation A and explain why a chi-squared test is appropriate.",
+          "answer": [
+            "Null hypothesis: there is no significant difference between the observed and expected frequencies in the phenotypic categories.",
+            "The data are counts/frequencies in nominal categories.",
+            "Chi-squared tests whether deviations between observed and expected frequencies are greater than expected by chance."
+          ]
+        },
+        {
+          "id": "c",
+          "marks": 3,
+          "prompt": "Write a suitable null hypothesis for Investigation B and state two conditions that should be checked before using the t-test.",
+          "answer": [
+            "Null hypothesis: there is no significant difference between the population mean leaf areas of the two groups.",
+            "The data should be continuous and approximately normally distributed.",
+            "The samples should be independent and the population standard deviations approximately equal."
+          ]
+        },
+        {
+          "id": "d",
+          "marks": 3,
+          "prompt": "Explain why Spearman's rank correlation is preferred to Pearson's linear correlation in Investigation C.",
+          "answer": [
+            "Spearman's rank correlation is suitable because the investigation describes a monotonic relationship, which may be curved rather than linear.",
+            "The measurements are not normally distributed, and Spearman's method uses the ranks of paired observations rather than requiring the raw measurements to meet Pearson's parametric assumptions.",
+            "Pearson's correlation measures the strength of a linear relationship; Spearman's measures the strength and direction of a monotonic rank association."
+          ]
+        },
+        {
+          "id": "e",
+          "marks": 3,
+          "prompt": "A Spearman's rank coefficient is calculated as +0.86. Interpret its direction and strength, and explain why it does not establish causation.",
+          "answer": [
+            "The positive value indicates that larger values of one variable tend to be associated with larger values of the other.",
+            "A value of +0.86 indicates a strong positive rank correlation.",
+            "Correlation alone does not show that one variable causes the other; other variables may influence both."
+          ]
+        },
+        {
+          "id": "f",
+          "marks": 3,
+          "prompt": "State two sampling requirements that strengthen the validity of Investigation C and explain why site selection matters.",
+          "answer": [
+            "Select sites randomly from the target population so each site has an appropriate chance of selection.",
+            "Measurements at sites should be independent; avoid treating repeated measurements from the same site as independent sites.",
+            "Biased site selection can make the sample unrepresentative and distort the apparent relationship."
+          ]
+        },
+        {
+          "id": "g",
+          "marks": 3,
+          "prompt": "Explain what a probability value below 0.05 would mean in a correctly selected test, and state one thing it would not mean.",
+          "answer": [
+            "A result with p < 0.05 is statistically significant at the 5% level under the test assumptions.",
+            "It indicates that the observed result, or a more extreme result, would have a probability below 0.05 if the null hypothesis were true.",
+            "It does not mean there is a 95% probability that the alternative hypothesis is true or that the result is biologically important."
+          ]
+        },
+        {
+          "id": "h",
+          "marks": 4,
+          "prompt": "The rank data for Investigation C are shown below. There are no tied ranks. Calculate Spearman's rank correlation coefficient using ρ = 1 − [6Σd² ÷ n(n² − 1)]. Show the sum of squared rank differences and interpret your result.",
+          "data": {
+            "columns": [
+              "Site",
+              "Environmental gradient rank",
+              "Species abundance rank",
+              "Difference between ranks, d",
+              "d²"
+            ],
+            "rows": [
+              [
+                "A",
+                1,
+                1,
+                "",
+                ""
+              ],
+              [
+                "B",
+                2,
+                2,
+                "",
+                ""
+              ],
+              [
+                "C",
+                3,
+                3,
+                "",
+                ""
+              ],
+              [
+                "D",
+                4,
+                4,
+                "",
+                ""
+              ],
+              [
+                "E",
+                5,
+                6,
+                "",
+                ""
+              ],
+              [
+                "F",
+                6,
+                7,
+                "",
+                ""
+              ],
+              [
+                "G",
+                7,
+                8,
+                "",
+                ""
+              ],
+              [
+                "H",
+                8,
+                5,
+                "",
+                ""
+              ]
+            ]
+          },
+          "answer": [
+            "Calculate d as environmental gradient rank minus species abundance rank for each site, then square each difference.",
+            "The squared differences are 0, 0, 0, 0, 1, 1, 1 and 9, so Σd² = 12.",
+            "There are n = 8 paired sites. ρ = 1 − [6 × 12 ÷ (8 × (8² − 1))] = 1 − 72/504 = 0.857 (approximately +0.86).",
+            "This indicates a strong positive rank correlation: higher environmental-gradient ranks tend to occur with higher species-abundance ranks. Correlation does not establish causation."
+          ]
+        }
+      ],
+      "markingGuide": {
+        "totalPracticeMarks": 25,
+        "principle": "This original practice task uses A Level statistical tests named in the Cambridge 9700 syllabus. Candidates must select tests based on data type, distribution, sample structure and relationship form, not by memorising one test per topic."
       }
     }
   ],

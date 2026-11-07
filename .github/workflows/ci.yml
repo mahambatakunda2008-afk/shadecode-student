@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, fix/exam-hub-subject-access, fix/library-subject-access-followup]
   pull_request:
-    branches: [main, fix/exam-hub-subject-access]
+    branches: [main, fix/exam-hub-subject-access, feat/biology-9700-practical-practice-bank]
 
 jobs:
   verify:

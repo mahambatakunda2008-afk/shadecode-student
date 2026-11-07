@@ -74,6 +74,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   whatsapp: { href: "/whatsapp", label: "WhatsApp", icon: Smartphone, feature: "whatsapp" },
   profile: { href: "/settings", label: "Profile", icon: UserRound, feature: "profile" },
   virtualLab: { href: "/virtual-lab", label: "Virtual Lab", icon: FlaskConical, feature: "virtual-lab" },
+  biologyPractical: { href: "/practical-practice", label: "Biology Practical", icon: FlaskConical, feature: "virtual-lab" },
   settings: { href: "/settings", label: "Settings", icon: Settings, feature: "settings" },
 
   adminDashboard: { href: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -109,6 +110,9 @@ export function getExperienceNavGroups(
   _curriculumSubjects?: unknown,
   _profileSubjects?: unknown,
 ): NavGroup[] {
+  const hasBiologySubject = JSON.stringify([_curriculumSubjects, _profileSubjects])
+    .toLowerCase()
+    .includes("biology");
   const foundation: NavGroup[] = [
     { group: "Start here", items: [NAV_ITEMS.dashboard, NAV_ITEMS.learn] },
     {
@@ -142,6 +146,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.examSim,
         NAV_ITEMS.exams,
         NAV_ITEMS.mathChecker,
+        ...(hasBiologySubject ? [NAV_ITEMS.biologyPractical] : []),
         NAV_ITEMS.tasks,
         NAV_ITEMS.focus,
         NAV_ITEMS.timetable,
@@ -218,7 +223,9 @@ export function getExperienceNavGroups(
         (item) =>
           item.href === NAV_ITEMS.compLab.href
             ? hasComputingSubject
-            : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp",
+            : item.href === NAV_ITEMS.biologyPractical.href
+              ? hasBiologySubject
+              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp",
       ),
     }))
     .filter((group) => group.items.length > 0);
