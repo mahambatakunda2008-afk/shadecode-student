@@ -119,6 +119,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           modelAnswer: q.modelAnswer,
           markingCriteria: q.markingCriteria,
           numeric: q.numeric,
+          content: q.content,
         }));
         if (!isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("offline", fallbackQuestions, count))) {
           setError("The offline practice set failed question validation. Reconnect and try generating a fresh paper.");
@@ -191,6 +192,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         modelAnswer: q.modelAnswer,
         markingCriteria: q.markingCriteria,
         numeric: q.numeric,
+        content: q.content,
       }));
       if (fallbackQuestions && isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("fallback", fallbackQuestions, count))) {
         setPaperSource("offline");
