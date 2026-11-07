@@ -17,7 +17,7 @@ describe("mapOfflineExamQuestions", () => {
       difficulty: "medium",
       modelAnswer: "The distance increases uniformly with time.",
       markingCriteria: "Award marks for trend, evidence and explanation.",
-      numeric: { type: "exact", answer: 4, tolerance: 0 },
+      numeric: { exact: 4, tolerance: 0 },
       content,
     }]);
 
