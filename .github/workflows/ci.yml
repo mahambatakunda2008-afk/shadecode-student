@@ -64,11 +64,22 @@ jobs:
       - name: Initialize disposable local Supabase config
         run: supabase init --force
 
-      - name: Start disposable Supabase stack
-        run: supabase start
+      - name: Select isolated account-deletion migration test set
+        run: |
+          mkdir -p /tmp/account-deletion-migrations
+          cp supabase/migrations/20261104170000_account_deletion_request_queue.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105100000_account_deletion_preview_rpc.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105110000_add_missing_account_identity_foreign_keys.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105120000_account_deletion_worker_leases.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105130000_account_deletion_worker_lease_lifecycle.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105140000_account_deletion_storage_manifest.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105150000_account_deletion_database_cleanup_rpc.sql /tmp/account-deletion-migrations/
+          find supabase/migrations -maxdepth 1 -type f -name '*.sql' -delete
+          cp supabase/tests/fixtures/account_deletion_schema.sql supabase/migrations/20261101000000_account_deletion_test_baseline.sql
+          cp /tmp/account-deletion-migrations/*.sql supabase/migrations/
 
-      - name: Apply every repository migration to the disposable database
-        run: supabase db reset
+      - name: Start disposable Supabase stack and apply isolated migrations
+        run: supabase start
 
       - name: Run account-deletion SQL contract
         run: |
