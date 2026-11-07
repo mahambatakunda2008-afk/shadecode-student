@@ -90,13 +90,20 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
 
   it("serves O-Level History from the built-in bank with no AI, for both syllabus papers", async () => {
     generateExam.mockImplementation(async () => { throw new Error("AI must not be used"); });
-    for (const topic of ["History (O-Level)", "History of Zimbabwe (O-Level)", "Second Chimurenga", "French Revolution"]) {
-      const { status, json } = await call({ subject: "History", topic, difficulty: "easy", questionCount: 10 });
+    for (const [topic, count] of [["History (O-Level)", 10], ["History of Zimbabwe (O-Level)", 10], ["Second Chimurenga", 10], ["French Revolution", 5]] as const) {
+      const { status, json } = await call({ subject: "History", topic, difficulty: "easy", questionCount: count });
       expect(status, topic).toBe(200);
-      expect(json.questions.length, topic).toBeGreaterThanOrEqual(6);
+      expect(json.questions, topic).toHaveLength(count);
       for (const q of json.questions) expect(q.options).toContain(q.modelAnswer);
     }
     expect(generateExam).not.toHaveBeenCalled();
+  });
+
+  it("refuses to present a shorter-than-requested paper as complete (the exam screen only offers sizes a topic can fill)", async () => {
+    generateExam.mockImplementation(async () => { throw new Error("AI must not be used"); });
+    const { status, json } = await call({ subject: "History", topic: "French Revolution", difficulty: "easy", questionCount: 10 });
+    expect(status).toBe(503);
+    expect(json.code).toBe("INSUFFICIENT_QUESTION_COVERAGE");
   });
 
   it("does not serve O-Level History to an A-Level learner", async () => {

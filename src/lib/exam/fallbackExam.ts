@@ -110,6 +110,11 @@ function getBank(subject: string, topic: string, difficulty?: string): Seed[] {
   return getCuratedBank(subject, topic, difficulty) ?? getGenericBank(subject, topic);
 }
 
+/** How many hand-written questions exist for this subject, topic and level, or null when there is no curated bank. */
+export function curatedBankSize(subject: string, topic: string, difficulty?: string): number | null {
+  return getCuratedBank(subject, topic.trim() || "core concepts", difficulty)?.length ?? null;
+}
+
 /** True only when hand-written, correct questions exist for this exact subject and topic. */
 export function hasCuratedBank(subject: string, topic: string, difficulty?: string): boolean {
   return getCuratedBank(subject, topic.trim() || "core concepts", difficulty) !== null;

@@ -8,8 +8,27 @@
  */
 
 import type { GeneratedExam } from "@/lib/cortex/examGenerator";
-import { buildEngineExam } from "./engine";
-import { buildCuratedFallbackExam } from "./fallbackExam";
+import { buildEngineExam, matchGenerators } from "./engine";
+import { buildCuratedFallbackExam, curatedBankSize } from "./fallbackExam";
+
+/**
+ * The largest paper the built-in content can honestly fill for this subject and topic, or null when it does not
+ * cap the size (the engine generates any size, and a topic with no built-in content is left to AI). Comma-separated
+ * topics get equal shares, so the smallest topic sets the limit. The exam setup uses this to offer only sizes that
+ * can be built, so a student never meets an "incomplete paper" error for a choice the screen allowed.
+ */
+export function builtInCapacity(subject: string, topicText: string, difficulty?: string): number | null {
+  const parts = topicText.split(/[,;+]/).map((part) => part.trim()).filter(Boolean);
+  const topics = parts.length ? parts : [""];
+  let smallest = Infinity;
+  for (const topic of topics) {
+    if (matchGenerators(subject, topic, difficulty).length > 0) continue;
+    const size = curatedBankSize(subject, topic, difficulty);
+    if (size === null) return null;
+    smallest = Math.min(smallest, size);
+  }
+  return Number.isFinite(smallest) ? smallest * topics.length : null;
+}
 
 export function buildGuaranteedExam(subject: string, topic: string, difficulty: string, count: number, seed?: number): GeneratedExam | null {
   const engine = buildEngineExam({ subject, topic, difficulty, count, seed });
