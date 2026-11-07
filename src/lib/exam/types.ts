@@ -1,5 +1,17 @@
 import type { NumericSpec } from "./engine/numeric";
 
+export type ExamDiagramShape =
+  | { type: "line"; x1: number; y1: number; x2: number; y2: number; label?: string }
+  | { type: "rect"; x: number; y: number; width: number; height: number; label?: string }
+  | { type: "circle"; cx: number; cy: number; r: number; label?: string }
+  | { type: "text"; x: number; y: number; text: string };
+
+export type ExamContentBlock =
+  | { type: "text"; text: string }
+  | { type: "table"; caption?: string; headers: string[]; rows: string[][] }
+  | { type: "graph"; caption?: string; xLabel: string; yLabel: string; points: Array<{ x: number; y: number }> }
+  | { type: "diagram"; caption?: string; shapes: ExamDiagramShape[] };
+
 export type ExamQuestion = {
   id: number;
   type: "multiple_choice" | "short_answer" | "structured" | "essay";
@@ -10,6 +22,8 @@ export type ExamQuestion = {
   modelAnswer?: string;
   markingCriteria?: string;
   numeric?: NumericSpec;
+  /** Optional typed visual/content blocks. Treat provider-supplied data as untrusted. */
+  content?: ExamContentBlock[];
 };
 
 export type ExamAnswer = { questionId: number; answer: string; timeSpent: number };
