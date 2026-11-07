@@ -101,6 +101,25 @@ class OfflineStorage {
   async getUnsyncedSubjects(): Promise<OfflineSubject[]> { await this.init(); return this.unsynced("subjects"); }
   async markSubjectSynced(subjectId: string, userId: string): Promise<void> { const subject = await this.getSubjectForUser(subjectId, userId); if (subject) { subject.synced = true; subject.lastSyncedAt = new Date().toISOString(); await this.saveSubject(subject); } }
   async deleteSubject(subjectId: string, userId: string): Promise<void> { const subject = await this.getSubjectForUser(subjectId, userId); if (!subject) return; await this.init(); return this.delete("subjects", subjectId); }
+  /** Clear only account-owned task and subject records. Shared lesson content, notes and quizzes are deliberately preserved. */
+  async clearUserRecords(userId: string): Promise<void> {
+    if (!userId) throw new Error("A user ID is required to clear offline account records");
+    await this.init();
+    for (const storeName of ["tasks", "subjects"] as const) {
+      await new Promise<void>((resolve, reject) => {
+        const tx = this.db!.transaction([storeName], "readwrite");
+        const store = tx.objectStore(storeName);
+        const index = store.index("userId");
+        const request = index.openCursor(IDBKeyRange.only(userId));
+        request.onsuccess = () => { const cursor = request.result; if (!cursor) return; cursor.delete(); cursor.continue(); };
+        request.onerror = () => reject(request.error ?? new Error(`Failed to clear ${storeName}`));
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error ?? new Error(`Failed to clear ${storeName}`));
+        tx.onabort = () => reject(tx.error ?? new Error(`Clearing ${storeName} aborted`));
+      });
+    }
+  }
+
   async getStorageSize(): Promise<number> { const lessons = await this.getAllLessons(); return lessons.reduce((sum, lesson) => sum + lesson.size, 0); }
   private async unsynced(store: string): Promise<any[]> { return new Promise((resolve, reject) => { const request = this.db!.transaction([store], "readonly").objectStore(store).getAll(); request.onerror = () => reject(request.error); request.onsuccess = () => resolve((request.result || []).filter((row: { synced?: boolean }) => row.synced === false)); }); }
   private async put(storeName: string, value: unknown): Promise<void> { return new Promise((resolve, reject) => { const request = this.db!.transaction([storeName], "readwrite").objectStore(storeName).put(value); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(); }); }
