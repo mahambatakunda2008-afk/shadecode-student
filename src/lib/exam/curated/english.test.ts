@@ -55,7 +55,7 @@ describe("English curated bank integrity", () => {
     expect(answerTo("Which closing goes with a letter that begins 'Dear Mrs Dube'")).toBe("Yours sincerely");
     expect(answerTo("What is the past participle of 'write'")).toBe("written");
     expect(answerTo("'Time is a thief.'")).toBe("metaphor");
-    expect(answerTo("Which sentence is correct?")).toBe("The news is good.");
+    expect(answerTo("Which sentence has the correct verb after the noun 'news'")).toBe("The news is good.");
   });
 });
 
