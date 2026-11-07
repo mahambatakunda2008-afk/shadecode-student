@@ -26,7 +26,7 @@ describe("mapOfflineExamQuestions", () => {
       id: 1,
       type: "structured",
       modelAnswer: "The distance increases uniformly with time.",
-      numeric: { type: "exact", answer: 4, tolerance: 0 },
+      numeric: { exact: 4, tolerance: 0 },
       content,
     });
   });
