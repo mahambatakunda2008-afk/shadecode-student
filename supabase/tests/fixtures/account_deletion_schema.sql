@@ -20,3 +20,11 @@ create table public.curriculum_verification_events (reviewer_id uuid);
 create table public.generated_course_approvals (
   approved_by uuid not null
 );
+
+-- Shared upload records: ownership and moderator attribution are separate.
+create table public.community_uploads (
+  contributor_id uuid,
+  moderator_id uuid,
+  moderator_notes text,
+  file_path text
+);
