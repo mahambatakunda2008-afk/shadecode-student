@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BookOpenCheck, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Download, Upload, Eye, EyeOff, FlaskConical, RotateCcw, Save, Target } from "lucide-react";
 import practiceData from "@/lib/curriculum/practice/biology-9700-practical-practice-2028-2030.json";
 import { getPracticalQuestionFeedback, getPracticalQuestionSkills } from "@/lib/curriculum/practice/biology-practical-attempt";
+import { getPracticalStorageKeys } from "@/lib/curriculum/practice/biology-practical-storage";
 import {
   canAttemptPracticalSet,
   ratePracticalSkill,
@@ -25,12 +26,10 @@ type Task = { id: string; paper: "Paper 3" | "Paper 5"; title: string; format: s
 type PracticeSet = PracticalPracticeSet & { title: string; assessmentNotice: string; tasks: Task[] };
 
 const set = practiceData as PracticeSet;
-const STORAGE_KEY = `shadecode:practical-attempt:${set.id}`;
-
-function readAttempt(): PracticalAttempt {
+function readAttempt(storageKey: string): PracticalAttempt {
   if (typeof window !== "undefined") {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = window.localStorage.getItem(storageKey);
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
         return restorePracticalAttempt(set, parsed);
@@ -300,6 +299,10 @@ function PracticalGraphPlotter({ data, storageKey }: { data: PracticalGraphData;
 }
 
 export default function PracticalPracticeClient() {
+  const [supabase] = useState(() => createClient());
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const storageKeys = useMemo(() => userId ? getPracticalStorageKeys(userId, set.id) : null, [userId]);
   const [attempt, setAttempt] = useState<PracticalAttempt>(() => startPracticalAttempt(set));
   const [ready, setReady] = useState(false);
   const [activeTask, setActiveTask] = useState(set.tasks[0]?.id ?? "");
@@ -310,14 +313,36 @@ export default function PracticalPracticeClient() {
   const [workspaceRevision, setWorkspaceRevision] = useState(0);
 
   useEffect(() => {
-    setAttempt(readAttempt());
-    setReady(true);
-  }, []);
+    let active = true;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setReady(false);
+      setAttempt(startPracticalAttempt(set));
+      setOtherTabAttempt(null);
+      setUserId(session?.user?.id ?? null);
+    });
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active) return;
+      setUserId(session?.user?.id ?? null);
+      setAuthReady(true);
+    }).catch(() => {
+      if (active) setAuthReady(true);
+    });
+    return () => { active = false; subscription.unsubscribe(); };
+  }, [supabase]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!authReady) return;
+    if (!storageKeys) { setReady(true); return; }
+    setReady(false);
+    setAttempt(readAttempt(storageKeys.attempt));
+    setOtherTabAttempt(null);
+    setReady(true);
+  }, [authReady, storageKeys]);
+
+  useEffect(() => {
+    if (!ready || !storageKeys) return;
     const handleStorage = (event: StorageEvent) => {
-      if (event.key !== STORAGE_KEY || event.newValue === null) return;
+      if (event.key !== storageKeys.attempt || event.newValue === null) return;
       try {
         const incoming = restorePracticalAttempt(set, JSON.parse(event.newValue));
         if (JSON.stringify(incoming) === JSON.stringify(attempt)) return;
@@ -326,18 +351,18 @@ export default function PracticalPracticeClient() {
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, [attempt, ready]);
+  }, [attempt, ready, storageKeys]);
 
   useEffect(() => {
-    if (!ready || otherTabAttempt) return;
+    if (!ready || !storageKeys || otherTabAttempt) return;
     setStorageStatus("saving");
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(attempt));
+      window.localStorage.setItem(storageKeys.attempt, JSON.stringify(attempt));
       setStorageStatus("saved");
     } catch {
       setStorageStatus("unavailable");
     }
-  }, [attempt, otherTabAttempt, ready]);
+  }, [attempt, otherTabAttempt, ready, storageKeys]);
 
   const summary = useMemo(() => summarizePracticalAttempt(set, attempt), [attempt]);
   const task = set.tasks.find((item) => item.id === activeTask) ?? set.tasks[0];
@@ -359,13 +384,14 @@ export default function PracticalPracticeClient() {
   };
 
   const downloadBackup = () => {
+    if (!storageKeys) return;
     // Flush debounced drawing and graph state before collecting device-local drafts.
     window.dispatchEvent(new Event("shadecode:flush-practical-workspaces"));
     const workspaces: Record<string, string> = {};
     try {
       for (let index = 0; index < window.localStorage.length; index += 1) {
         const key = window.localStorage.key(index);
-        if (key && (key.startsWith(`shadecode:practical-drawing:${set.id}:`) || key.startsWith(`shadecode:practical-graph:${set.id}:`))) {
+        if (key && (key.startsWith(storageKeys.drawingPrefix) || key.startsWith(storageKeys.graphPrefix))) {
           const value = window.localStorage.getItem(key);
           if (value !== null) workspaces[key] = value;
         }
@@ -391,6 +417,7 @@ export default function PracticalPracticeClient() {
   };
 
   const restoreBackup = async (event: import("react").ChangeEvent<HTMLInputElement>) => {
+    if (!storageKeys) return;
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
     if (!file) return;
@@ -421,8 +448,8 @@ export default function PracticalPracticeClient() {
           throw new Error("The backup workspace data is invalid.");
         }
         for (const [key, value] of Object.entries(backup.workspaces as Record<string, unknown>)) {
-          const drawingPrefix = `shadecode:practical-drawing:${set.id}:`;
-          const graphPrefix = `shadecode:practical-graph:${set.id}:`;
+          const drawingPrefix = storageKeys.drawingPrefix;
+          const graphPrefix = storageKeys.graphPrefix;
           if ((!key.startsWith(drawingPrefix) && !key.startsWith(graphPrefix)) || typeof value !== "string" || value.length > 2 * 1024 * 1024) {
             throw new Error("The backup contains unsupported workspace data.");
           }
@@ -431,10 +458,10 @@ export default function PracticalPracticeClient() {
         }
       }
 
-      const keys = [STORAGE_KEY, ...workspaces.map(([key]) => key)];
+      const keys = [storageKeys.attempt, ...workspaces.map(([key]) => key)];
       const previous = new Map(keys.map((key) => [key, window.localStorage.getItem(key)]));
       try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
+        window.localStorage.setItem(storageKeys.attempt, JSON.stringify(restored));
         for (const [key, value] of workspaces) window.localStorage.setItem(key, value);
       } catch (error) {
         let rollbackComplete = true;
@@ -464,6 +491,7 @@ export default function PracticalPracticeClient() {
   };
 
   const reset = () => {
+    if (!storageKeys) return;
     if (!window.confirm("Clear this practical practice attempt and its drawings and graphs from this device?")) return;
     setAttempt(startPracticalAttempt(set));
     setShowReview(false);
@@ -472,8 +500,8 @@ export default function PracticalPracticeClient() {
     // specimen sketches or plotted points attached to a fresh attempt.
     try {
       const prefixes = [
-        `shadecode:practical-drawing:${set.id}:`,
-        `shadecode:practical-graph:${set.id}:`,
+        storageKeys.drawingPrefix,
+        storageKeys.graphPrefix,
       ];
       const workspaceKeys: string[] = [];
       for (let index = 0; index < window.localStorage.length; index += 1) {
@@ -488,6 +516,10 @@ export default function PracticalPracticeClient() {
       setWorkspaceRevision((revision) => revision + 1);
     }
   };
+
+  if (!authReady || !userId || !storageKeys || !ready) {
+    return <div className="min-h-[70vh] bg-[var(--background)] p-6 text-[var(--foreground)]"><div className="mx-auto max-w-2xl rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-6"><h1 className="text-xl font-bold">Preparing your practical workspace</h1><p className="mt-2 text-sm text-[var(--muted-foreground)]">{authReady ? "Your learner session is unavailable. Sign in again to access your saved work." : "Loading your learner session and device-saved attempt…"}</p></div></div>;
+  }
 
   if (!canAttemptPracticalSet(set)) {
     return <div className="min-h-[70vh] bg-[var(--background)] p-6 text-[var(--foreground)]"><div className="mx-auto max-w-2xl rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-6"><h1 className="text-xl font-bold">Practice set unavailable</h1><p className="mt-2 text-sm text-[var(--muted-foreground)]">This material has not been cleared for learner access.</p></div></div>;
@@ -513,7 +545,7 @@ export default function PracticalPracticeClient() {
           <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">Saving is paused so this tab does not overwrite the other tab’s work. Choose which version to keep. Download a backup first if you need both.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" onClick={() => { setAttempt(otherTabAttempt); setOtherTabAttempt(null); setBackupMessage("Loaded the version saved by the other tab."); }} className="min-h-9 rounded-lg bg-[var(--primary)] px-3 text-xs font-semibold text-white">Load other tab’s version</button>
-            <button type="button" onClick={() => { try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(attempt)); setStorageStatus("saved"); setBackupMessage("Kept this tab’s version. It is now saved on this device."); } catch { setStorageStatus("unavailable"); setBackupMessage("Could not save this tab’s version. Download a backup before leaving."); } setOtherTabAttempt(null); }} className="min-h-9 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold">Keep this tab’s version</button>
+            <button type="button" onClick={() => { try { window.localStorage.setItem(storageKeys.attempt, JSON.stringify(attempt)); setStorageStatus("saved"); setBackupMessage("Kept this tab’s version. It is now saved on this device."); } catch { setStorageStatus("unavailable"); setBackupMessage("Could not save this tab’s version. Download a backup before leaving."); } setOtherTabAttempt(null); }} className="min-h-9 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold">Keep this tab’s version</button>
           </div>
         </section>}
         <header className="space-y-3">
@@ -681,7 +713,7 @@ export default function PracticalPracticeClient() {
                 </svg>
                 <p className="mt-2 text-[11px] leading-5 text-[var(--muted-foreground)]">Use the schematic to practise tracing cell boundaries and choosing labels. Use the stated measurements, not the drawing dimensions, for magnification calculations.</p>
               </figure>}
-              {task.id === "P3-02" && <PracticalDrawingPad key={`drawing-${workspaceRevision}`} storageKey={`shadecode:practical-drawing:${set.id}:P3-02`} />}
+              {task.id === "P3-02" && <PracticalDrawingPad key={`drawing-${workspaceRevision}`} storageKey={`${storageKeys.drawingPrefix}P3-02`} />}
               {task.id === "P3-05" && <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 sm:p-4">
                 <figcaption className="mb-3 text-xs font-semibold">Bubble potometer · apparatus schematic</figcaption>
                 <svg viewBox="0 0 620 310" role="img" aria-label="Schematic of a bubble potometer with leafy shoot in a sealed tube, a capillary containing a visible air bubble, and a water reservoir" className="mx-auto block w-full max-w-2xl">
@@ -728,7 +760,7 @@ export default function PracticalPracticeClient() {
                     <tbody>{question.data.rows.map((row, rowIndex) => <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[var(--background)]" : "bg-[var(--surface)]"}>{row.map((value, columnIndex) => columnIndex === 0 ? <th key={columnIndex} scope="row" className="border-b border-[var(--card-border)] px-3 py-2 text-left font-medium tabular-nums">{value}</th> : <td key={columnIndex} className="border-b border-[var(--card-border)] px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
                   </table></div>
                 </div>}
-                {question.data && getPracticalQuestionSkills(task, question).some((skill) => /graph/i.test(skill)) && <PracticalGraphPlotter key={`graph-${workspaceRevision}-${key}`} data={question.data} storageKey={`shadecode:practical-graph:${set.id}:${key}`} />}
+                {question.data && getPracticalQuestionSkills(task, question).some((skill) => /graph/i.test(skill)) && <PracticalGraphPlotter key={`graph-${workspaceRevision}-${key}`} data={question.data} storageKey={`${storageKeys.graphPrefix}${key}`} />}
                 {task.id === "P3-02" && question.id === "a" && <MagnificationCalculator />}
                 {(() => {
                   const assessedSkills = getPracticalQuestionSkills(task, question);
