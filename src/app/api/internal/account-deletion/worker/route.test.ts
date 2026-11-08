@@ -111,6 +111,7 @@ describe("POST /api/internal/account-deletion/worker", () => {
     expect(storageFromMock).toHaveBeenCalledWith("shadecode-backups");
     expect(storageFromMock).toHaveBeenCalledWith("community-uploads-pending");
     expect(storageFromMock).not.toHaveBeenCalledWith("past-papers");
+    expect(removeMock.mock.calls.flatMap(([keys]) => keys as string[])).toContain("contributor-files/upload-77.pdf");
 
     const cleanupIndex = rpcMock.mock.calls.findIndex(([name]) => name === "execute_account_deletion_cleanup");
     const completeIndex = rpcMock.mock.calls.findIndex(([name]) => name === "complete_account_deletion_request");
