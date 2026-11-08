@@ -58,7 +58,9 @@ create table public.learn_lessons (
   subject_id uuid,
   difficulty text,
   blocks jsonb,
-  progress integer
+  progress integer,
+  constraint learn_lessons_user_id_auth_users_fkey
+    foreign key (user_id) references auth.users(id) on delete cascade
 );
 create table public.lesson_library (
   id uuid primary key default gen_random_uuid(),
