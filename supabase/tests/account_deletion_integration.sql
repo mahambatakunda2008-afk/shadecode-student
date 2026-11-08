@@ -37,6 +37,8 @@ begin
   insert into public.user_profiles(user_id) values (v_a), (v_b);
   insert into public.feedback(user_id) values (v_a), (v_b);
   insert into public.exam_results(user_id) values (v_a), (v_b);
+  insert into public.challenges(challenger_id, challenger_name)
+  values (v_a, 'Account A'), (v_b, 'Account B');
 
   -- Exercise every UUID user_id table represented in the cleanup inventory,
   -- not just the hand-picked examples above.
@@ -119,6 +121,11 @@ begin
      or exists (select 1 from public.feedback where user_id = v_a)
      or exists (select 1 from public.exam_results where user_id = v_a) then
     raise exception 'A-owned data survived transactional cleanup';
+  end if;
+
+  if exists (select 1 from public.challenges where challenger_id = v_a)
+     or not exists (select 1 from public.challenges where challenger_id = v_b) then
+    raise exception 'Challenge ownership cleanup crossed account boundaries';
   end if;
 
   if not exists (select 1 from public.daily_focus where user_id = v_b)
