@@ -146,14 +146,21 @@ export async function POST(request: Request) {
     }
 
     const objectsByBucket = new Map<string, Set<string>>();
-    for (const item of manifest.data as Array<{ bucket_id?: string; object_name?: string }>) {
+    for (const item of manifest.data as Array<{ bucket_id?: string; object_name?: string; source?: string }>) {
       const bucket = item.bucket_id;
       const objectName = item.object_name;
+      const isUserPrefixObject = item.source === "user_uid_prefix"
+        && Boolean(objectName?.startsWith(`${job.user_id}/`));
+      // community_uploads.file_path is an exact object key obtained by joining
+      // the row to contributor_id = this claimed user. It need not use the
+      // UID-prefix convention, so authorize only this one source/bucket pair.
+      const isOwnedCommunityUpload = item.source === "community_uploads.file_path"
+        && bucket === "community-uploads-pending";
       if (
         !bucket
         || !objectName
         || !ALLOWED_PRIVATE_BUCKETS.has(bucket)
-        || !objectName.startsWith(`${job.user_id}/`)
+        || (!isUserPrefixObject && !isOwnedCommunityUpload)
         || objectName.split("/").some((segment) => segment === ".." || segment === ".")
       ) {
         throw Object.assign(new Error("unsafe_storage_manifest"), { code: "unsafe_storage_manifest" });
