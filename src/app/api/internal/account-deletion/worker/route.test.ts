@@ -47,8 +47,9 @@ function configureSuccessfulJob() {
       case "account_deletion_storage_manifest":
         return {
           data: [
-            { bucket_id: "shadecode-backups", object_name: "user-1/latest.scsync" },
-            { bucket_id: "community-uploads-pending", object_name: "user-1/upload.pdf" },
+            { bucket_id: "shadecode-backups", object_name: "user-1/latest.scsync", source: "user_uid_prefix" },
+            { bucket_id: "community-uploads-pending", object_name: "user-1/upload.pdf", source: "user_uid_prefix" },
+            { bucket_id: "community-uploads-pending", object_name: "contributor-files/upload-77.pdf", source: "community_uploads.file_path" },
           ],
           error: null,
         };
@@ -136,7 +137,7 @@ describe("POST /api/internal/account-deletion/worker", () => {
       if (name === "renew_account_deletion_request") return { data: true, error: null };
       if (name === "preview_account_deletion") return { data: [{ resource: "profiles" }], error: null };
       if (name === "account_deletion_storage_manifest") {
-        return { data: [{ bucket_id: "past-papers", object_name: "shared/paper.pdf" }], error: null };
+        return { data: [{ bucket_id: "past-papers", object_name: "shared/paper.pdf", source: "user_uid_prefix" }], error: null };
       }
       if (name === "release_account_deletion_request") return { data: true, error: null };
       throw new Error(`Unexpected RPC: ${name}`);
@@ -159,7 +160,7 @@ describe("POST /api/internal/account-deletion/worker", () => {
       if (name === "renew_account_deletion_request") return { data: true, error: null };
       if (name === "preview_account_deletion") return { data: [{ resource: "profiles" }], error: null };
       if (name === "account_deletion_storage_manifest") {
-        return { data: [{ bucket_id: "shadecode-backups", object_name: "another-user/latest.scsync" }], error: null };
+        return { data: [{ bucket_id: "shadecode-backups", object_name: "another-user/latest.scsync", source: "user_uid_prefix" }], error: null };
       }
       if (name === "release_account_deletion_request") return { data: true, error: null };
       throw new Error(`Unexpected RPC: ${name}`);
