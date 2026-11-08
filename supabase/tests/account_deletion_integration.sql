@@ -4,6 +4,8 @@ do $$
 declare
   v_a uuid := 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
   v_b uuid := 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  v_c uuid := 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+  v_retry_request uuid := 'abababab-abab-4bab-8bab-abababababab';
   v_request uuid := 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
   v_lease uuid := 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
   v_shared_lesson uuid := 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
@@ -13,6 +15,8 @@ declare
   v_table_name text;
   v_a_count bigint;
   v_b_count bigint;
+  v_retry_claim record;
+  v_recovered integer;
 begin
   insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
   values
@@ -164,6 +168,23 @@ begin
     raise exception 'One or more cross-account attribution fields were not cleared';
   end if;
 
+  -- A partially completed cleanup must not mark the account deleted while
+  -- the Auth identity still exists. Crash recovery must leave it processing.
+  select public.complete_account_deletion_request(v_request, v_lease) into v_completed;
+  if v_completed then
+    raise exception 'Request completed before Auth user deletion';
+  end if;
+  select public.recover_completed_account_deletion_requests() into v_recovered;
+  if v_recovered <> 0 then
+    raise exception 'Crash recovery falsely completed a request with a live Auth user';
+  end if;
+  if not exists (
+    select 1 from public.account_deletion_requests
+    where id = v_request and status = 'processing' and user_id = v_a and completed_at is null
+  ) then
+    raise exception 'Partial cleanup changed the request to a completed state';
+  end if;
+
   -- Simulate the worker's final Auth Admin deletion and completion step.
   delete from auth.users where id = v_a;
 
@@ -208,6 +229,53 @@ begin
 
   if not exists (select 1 from auth.users where id = v_b) then
     raise exception 'Account B was deleted unexpectedly';
+  end if;
+
+  -- Retry lifecycle: a live account cannot be completed; a released lease is
+  -- requeued, reclaimed with a fresh token, and remains incomplete.
+  insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
+  values (v_c, 'authenticated', 'authenticated', 'account-c@example.test', '', now(), now());
+  insert into public.account_deletion_requests (id, user_id, status, requested_auth_time)
+  values (v_retry_request, v_c, 'pending', now());
+
+  select * into v_retry_claim from public.claim_account_deletion_request(300);
+  if v_retry_claim.request_id <> v_retry_request or v_retry_claim.user_id <> v_c
+     or v_retry_claim.attempt_count <> 1 then
+    raise exception 'Initial retry-test lease was not claimed as expected';
+  end if;
+
+  select public.complete_account_deletion_request(v_retry_request, v_retry_claim.lease_token)
+    into v_completed;
+  if v_completed then
+    raise exception 'Retry request completed while its Auth user still exists';
+  end if;
+
+  if public.release_account_deletion_request(v_retry_request, gen_random_uuid(), 'wrong_lease', true) then
+    raise exception 'A mismatched lease token released the retry request';
+  end if;
+  if not public.release_account_deletion_request(v_retry_request, v_retry_claim.lease_token, 'simulated_storage_failure', true) then
+    raise exception 'A valid retry lease could not be released';
+  end if;
+  if not exists (
+    select 1 from public.account_deletion_requests
+    where id = v_retry_request and status = 'pending' and user_id = v_c
+      and lease_token is null and completed_at is null
+  ) then
+    raise exception 'Retry release did not safely requeue the request';
+  end if;
+
+  select * into v_retry_claim from public.claim_account_deletion_request(300);
+  if v_retry_claim.request_id <> v_retry_request or v_retry_claim.user_id <> v_c
+     or v_retry_claim.attempt_count <> 2 then
+    raise exception 'Retry request was not reclaimed with an incremented attempt count';
+  end if;
+  select public.complete_account_deletion_request(v_retry_request, v_retry_claim.lease_token)
+    into v_completed;
+  if v_completed or not exists (
+    select 1 from public.account_deletion_requests
+    where id = v_retry_request and status = 'processing' and user_id = v_c and completed_at is null
+  ) then
+    raise exception 'Reclaimed retry request was incorrectly marked complete';
   end if;
 end;
 $$;
