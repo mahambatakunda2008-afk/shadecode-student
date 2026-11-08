@@ -10,6 +10,9 @@ declare
   v_private_lesson uuid := 'ffffffff-ffff-4fff-8fff-ffffffffffff';
   v_manifest_count integer;
   v_completed boolean;
+  v_table_name text;
+  v_a_count bigint;
+  v_b_count bigint;
 begin
   insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
   values
@@ -31,11 +34,34 @@ begin
   insert into public.feedback(user_id) values (v_a), (v_b);
   insert into public.exam_results(user_id) values (v_a), (v_b);
 
+  -- Exercise every UUID user_id table represented in the cleanup inventory,
+  -- not just the hand-picked examples above.
+  for v_table_name in
+    select c.table_name
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.column_name = 'user_id'
+      and c.data_type = 'uuid'
+      and c.table_name <> 'account_deletion_requests'
+  loop
+    execute format('insert into public.%I (user_id) values ($1), ($2)', v_table_name)
+      using v_a, v_b;
+  end loop;
+
   insert into public.community_uploads(contributor_id, moderator_id, moderator_notes, file_path)
   values
     (v_a, null, null, 'shared/contribution.pdf'),
     (v_b, v_a, 'reviewed by A', 'shared/contribution.pdf'),
     (v_a, null, null, 'a-private/contribution.pdf');
+
+  insert into public.learn_lessons(id, user_id, title, topic, difficulty, blocks, progress)
+  values
+    (v_private_lesson, v_a, 'A private lesson', 'Vectors', 'AS', '[]'::jsonb, 10),
+    (v_shared_lesson, v_b, 'B private lesson', 'Mechanics', 'AS', '[]'::jsonb, 10);
+  insert into public.lesson_library(source_lesson_id, title, blocks, search_text)
+  values
+    (v_private_lesson, 'A published lesson', '[]'::jsonb, 'A lesson'),
+    (v_shared_lesson, 'B published lesson', '[]'::jsonb, 'B lesson');
 
   insert into public.platform_user_relationships(subject_user_id, related_user_id, created_by, approved_by)
   values
@@ -103,6 +129,32 @@ begin
   end if;
 
   -- B's shared upload and records survive; A's moderator attribution is cleared.
+  -- Every UUID user_id table must lose A's row and retain B's row.
+  for v_table_name in
+    select c.table_name
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.column_name = 'user_id'
+      and c.data_type = 'uuid'
+      and c.table_name <> 'account_deletion_requests'
+  loop
+    execute format('select count(*) from public.%I where user_id = $1', v_table_name)
+      into v_a_count using v_a;
+    execute format('select count(*) from public.%I where user_id = $1', v_table_name)
+      into v_b_count using v_b;
+    if v_a_count <> 0 then
+      raise exception 'A-owned rows survived in public.%: %', v_table_name, v_a_count;
+    end if;
+    if v_b_count = 0 then
+      raise exception 'B-owned rows were removed from public.%', v_table_name;
+    end if;
+  end loop;
+
+  if exists (select 1 from public.lesson_library where source_lesson_id = v_private_lesson)
+     or not exists (select 1 from public.lesson_library where source_lesson_id = v_shared_lesson) then
+    raise exception 'Lesson library source cleanup crossed account boundaries';
+  end if;
+
   if not exists (
     select 1 from public.community_uploads
     where contributor_id = v_b and file_path = 'shared/contribution.pdf'
