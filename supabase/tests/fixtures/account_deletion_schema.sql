@@ -13,7 +13,7 @@ begin
     'user_cortex',
     'feedback','exam_results','user_roles','ai_anomalies',
     'ai_usage_logs','export_logs','survey_responses','traction_events',
-    'challenge_attempts','challenges','academic_contexts','cortex_events',
+    'challenge_attempts','academic_contexts','cortex_events',
     'cortex_generation_jobs','cortex_memory','experiment_assignments','focus_sessions',
     'insights','learner_brain_events','learner_curriculum_objective_progress',
     'learning_paths','learning_signals','lesson_votes','paper_learning_attempts',
@@ -52,6 +52,11 @@ alter table public.user_roles
   add constraint user_roles_user_id_auth_users_fkey
   foreign key (user_id) references auth.users(id) on delete cascade;
 
+create table public.challenges (
+  id uuid primary key default gen_random_uuid(),
+  challenger_id uuid,
+  challenger_name text
+);
 create table public.exam_logs (id uuid primary key default gen_random_uuid(), user_id text);
 create table public.learn_lessons (
   id uuid primary key default gen_random_uuid(),
