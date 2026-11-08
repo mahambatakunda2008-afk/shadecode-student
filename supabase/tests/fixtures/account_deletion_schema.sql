@@ -1,30 +1,87 @@
--- Minimal, data-free schema prerequisites for account-deletion migration tests.
--- This is NOT a production migration and must only be loaded into the disposable
--- GitHub Actions Supabase database. The feature migrations are tested against
--- the real Supabase auth/storage schemas plus these FK target tables.
-create table public.daily_focus (user_id uuid);
-create table public.generated_course_drafts (
-  user_id uuid,
-  approved_by uuid
-);
-create table public.insights_archive (user_id uuid);
-create table public.learning_events (user_id uuid);
-create table public.platform_channel_identities (user_id uuid);
-create table public.platform_channel_link_codes (user_id uuid);
-create table public.platform_channel_message_receipts (user_id uuid);
-create table public.revisions (user_id uuid);
-create table public.topic_mastery (user_id uuid);
-create table public.user_careers (user_id uuid);
-create table public.user_cortex (user_id uuid);
-create table public.curriculum_verification_events (reviewer_id uuid);
-create table public.generated_course_approvals (
-  approved_by uuid not null
-);
+-- Disposable, data-free schema for account-deletion migration and execution tests.
+-- Never apply this fixture to a hosted or production database.
+create extension if not exists pgcrypto;
 
--- Shared upload records: ownership and moderator attribution are separate.
+do $$
+declare
+  t text;
+begin
+  foreach t in array array[
+    'daily_focus','generated_course_drafts','insights_archive','learning_events',
+    'platform_channel_identities','platform_channel_link_codes',
+    'platform_channel_message_receipts','revisions','topic_mastery','user_careers',
+    'user_cortex','curriculum_verification_events','generated_course_approvals',
+    'feedback','exam_results','exam_question_topic_proposals','user_roles',
+    'platform_user_relationships','published_learning_assets','ai_anomalies',
+    'ai_usage_logs','export_logs','survey_responses','traction_events',
+    'challenge_attempts','challenges','academic_contexts','cortex_events',
+    'cortex_generation_jobs','cortex_memory','experiment_assignments','focus_sessions',
+    'insights','learner_brain_events','learner_curriculum_objective_progress',
+    'learning_paths','learning_signals','lesson_votes','paper_learning_attempts',
+    'paper_learning_transfer_questions','paper_learning_sessions','platform_group_members',
+    'platform_institution_members','primary_activity_progress','project_evidence',
+    'project_milestones','projects','revision_queue','study_plans','sync_revisions',
+    'user_achievements','user_past_paper_state','user_profiles','user_question_attempts',
+    'user_saved_questions'
+  ]
+  loop
+    execute format(
+      'create table public.%I (
+        id uuid primary key default gen_random_uuid(),
+        user_id uuid,
+        reviewer_id uuid,
+        assigned_by uuid,
+        created_by uuid,
+        approved_by uuid,
+        moderator_id uuid,
+        moderator_notes text,
+        notes text,
+        challenger_id uuid,
+        subject_user_id uuid,
+        related_user_id uuid,
+        reviewed_by uuid,
+        channel text,
+        external_user_id text,
+        source_lesson_id uuid,
+        file_path text
+      )', t
+    );
+  end loop;
+end $$;
+
+create table public.exam_logs (id uuid primary key default gen_random_uuid(), user_id text);
+create table public.learn_lessons (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid,
+  title text,
+  topic text,
+  subject_id uuid,
+  difficulty text,
+  blocks jsonb,
+  progress integer
+);
+create table public.lesson_library (
+  id uuid primary key default gen_random_uuid(),
+  source_lesson_id uuid unique,
+  title text,
+  topic text,
+  subject text,
+  difficulty text,
+  blocks jsonb,
+  search_text text,
+  helpful_up integer not null default 0,
+  helpful_down integer not null default 0
+);
 create table public.community_uploads (
+  id uuid primary key default gen_random_uuid(),
   contributor_id uuid,
   moderator_id uuid,
   moderator_notes text,
   file_path text
 );
+
+insert into storage.buckets (id, name, public)
+values
+  ('shadecode-backups','shadecode-backups',false),
+  ('community-uploads-pending','community-uploads-pending',false)
+on conflict (id) do nothing;
