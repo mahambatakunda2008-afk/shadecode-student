@@ -129,27 +129,6 @@ begin
   end if;
 
   -- B's shared upload and records survive; A's moderator attribution is cleared.
-  -- Every UUID user_id table must lose A's row and retain B's row.
-  for v_table_name in
-    select c.table_name
-    from information_schema.columns c
-    where c.table_schema = 'public'
-      and c.column_name = 'user_id'
-      and c.data_type = 'uuid'
-      and c.table_name <> 'account_deletion_requests'
-  loop
-    execute format('select count(*) from public.%I where user_id = $1', v_table_name)
-      into v_a_count using v_a;
-    execute format('select count(*) from public.%I where user_id = $1', v_table_name)
-      into v_b_count using v_b;
-    if v_a_count <> 0 then
-      raise exception 'A-owned rows survived in public.%: %', v_table_name, v_a_count;
-    end if;
-    if v_b_count = 0 then
-      raise exception 'B-owned rows were removed from public.%', v_table_name;
-    end if;
-  end loop;
-
   if exists (select 1 from public.lesson_library where source_lesson_id = v_private_lesson)
      or not exists (select 1 from public.lesson_library where source_lesson_id = v_shared_lesson) then
     raise exception 'Lesson library source cleanup crossed account boundaries';
@@ -187,6 +166,34 @@ begin
 
   -- Simulate the worker's final Auth Admin deletion and completion step.
   delete from auth.users where id = v_a;
+
+  -- Every UUID user_id table must lose A's row and retain B's row.
+  for v_table_name in
+    select c.table_name
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.column_name = 'user_id'
+      and c.data_type = 'uuid'
+      and c.table_name <> 'account_deletion_requests'
+  loop
+    execute format('select count(*) from public.%I where user_id = $1', v_table_name)
+      into v_a_count using v_a;
+    execute format('select count(*) from public.%I where user_id = $1', v_table_name)
+      into v_b_count using v_b;
+    if v_a_count <> 0 then
+      raise exception 'A-owned rows survived in public.%: %', v_table_name, v_a_count;
+    end if;
+    if v_b_count = 0 then
+      raise exception 'B-owned rows were removed from public.%', v_table_name;
+    end if;
+  end loop;
+
+  if not exists (
+    select 1 from public.lesson_library where source_lesson_id = v_shared_lesson
+  ) then
+    raise exception 'B published lesson did not survive Auth deletion';
+  end if;
+
   select public.complete_account_deletion_request(v_request, v_lease) into v_completed;
   if not v_completed then
     raise exception 'Request did not complete after Auth deletion nulled user_id';
