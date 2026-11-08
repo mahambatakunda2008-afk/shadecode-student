@@ -7,6 +7,7 @@ declare
   v_constraint record;
   v_table_name text;
   v_cleanup_definition text;
+  v_storage_definition text;
 begin
   if not exists (
     select 1 from pg_class c
@@ -138,6 +139,14 @@ begin
       raise exception 'Cleanup RPC is missing attribution-preservation update for: %', v_table_name;
     end if;
   end loop;
+
+  select lower(pg_get_functiondef(
+    'public.account_deletion_storage_manifest(uuid)'::regprocedure
+  )) into v_storage_definition;
+
+  if position('other_upload.contributor_id is distinct from p_user_id' in v_storage_definition) = 0 then
+    raise exception 'Storage manifest must preserve objects referenced by another contributor';
+  end if;
 
   if not has_function_privilege('service_role', 'public.preview_account_deletion(uuid)', 'EXECUTE')
      or has_function_privilege('authenticated', 'public.preview_account_deletion(uuid)', 'EXECUTE')
