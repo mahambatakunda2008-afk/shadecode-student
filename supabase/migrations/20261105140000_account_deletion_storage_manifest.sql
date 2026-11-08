@@ -29,6 +29,14 @@ as $$
       'community_uploads.file_path'::text as source
     from public.community_uploads cu
     where cu.contributor_id = p_user_id
+      -- A path shared by another contributor's row is not exclusively owned
+      -- by this account. Keep it rather than deleting another user's object.
+      and not exists (
+        select 1
+        from public.community_uploads other_upload
+        where other_upload.file_path = cu.file_path
+          and other_upload.contributor_id is distinct from p_user_id
+      )
   ) manifest
   where p_user_id is not null
     and manifest.object_name is not null
