@@ -69,10 +69,10 @@ begin
     (v_a, v_b, v_b, v_b);
 
   insert into public.user_roles(user_id, assigned_by) values (v_b, v_a);
-  insert into public.exam_question_topic_proposals(user_id, reviewer_id) values (v_b, v_a);
+  insert into public.exam_question_topic_proposals(reviewer_id) values (v_a);
   insert into public.generated_course_drafts(user_id, approved_by) values (v_b, v_a);
-  insert into public.generated_course_approvals(approved_by, notes) values (v_a, 'approval by A');
-  insert into public.published_learning_assets(user_id, reviewed_by) values (v_b, v_a);
+  insert into public.generated_course_approvals(approved_by, notes) values (v_a, '"approval by A"'::jsonb);
+  insert into public.published_learning_assets(reviewed_by) values (v_a);
   insert into public.curriculum_verification_events(reviewer_id, notes) values (v_a, 'review note');
 
   -- Storage manifest must include A's exclusive file, exclude the shared path,
