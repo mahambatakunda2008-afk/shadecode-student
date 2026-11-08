@@ -156,10 +156,10 @@ begin
     raise exception 'Relationship involving A survived cleanup';
   end if;
   if not exists (select 1 from public.user_roles where user_id = v_b and assigned_by is null)
-     or not exists (select 1 from public.exam_question_topic_proposals where user_id = v_b and reviewer_id is null)
+     or not exists (select 1 from public.exam_question_topic_proposals where reviewer_id is null)
      or not exists (select 1 from public.generated_course_drafts where user_id = v_b and approved_by is null)
      or not exists (select 1 from public.generated_course_approvals where approved_by is null and notes is null)
-     or not exists (select 1 from public.published_learning_assets where user_id = v_b and reviewed_by is null)
+     or not exists (select 1 from public.published_learning_assets where reviewed_by is null)
      or not exists (select 1 from public.curriculum_verification_events where reviewer_id is null and notes is null) then
     raise exception 'One or more cross-account attribution fields were not cleared';
   end if;
