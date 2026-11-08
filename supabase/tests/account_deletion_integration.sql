@@ -152,8 +152,8 @@ begin
   ) then
     raise exception 'B relationship was not preserved/anonymized';
   end if;
-  if not exists (select 1 from public.platform_user_relationships where subject_user_id = v_a) then
-    raise exception 'Expected relationship involving A to be deleted';
+  if exists (select 1 from public.platform_user_relationships where subject_user_id = v_a) then
+    raise exception 'Relationship involving A survived cleanup';
   end if;
   if not exists (select 1 from public.user_roles where user_id = v_b and assigned_by is null)
      or not exists (select 1 from public.exam_question_topic_proposals where user_id = v_b and reviewer_id is null)
