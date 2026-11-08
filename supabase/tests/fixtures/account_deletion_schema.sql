@@ -48,6 +48,10 @@ begin
   end loop;
 end $$;
 
+alter table public.user_roles
+  add constraint user_roles_user_id_auth_users_fkey
+  foreign key (user_id) references auth.users(id) on delete cascade;
+
 create table public.exam_logs (id uuid primary key default gen_random_uuid(), user_id text);
 create table public.learn_lessons (
   id uuid primary key default gen_random_uuid(),
