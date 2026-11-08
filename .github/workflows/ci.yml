@@ -87,6 +87,12 @@ jobs:
             --set ON_ERROR_STOP=1 \
             --file supabase/tests/account_deletion_contract.sql
 
+      - name: Run two-account account-deletion integration contract
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \\
+            --set ON_ERROR_STOP=1 \\
+            --file supabase/tests/account_deletion_integration.sql
+
       - name: Stop disposable Supabase stack
         if: always()
         run: |
