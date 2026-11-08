@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildCuratedFallbackExam } from "../fallbackExam";
 import { isValidGeneratedPaper } from "../paperValidation";
 import { BIOLOGY_TOPICS } from "./biology";
+import { BUSINESS_TOPICS } from "./business";
 import { ENGLISH_TOPICS } from "./english";
 import { GEOGRAPHY_TOPICS } from "./geography";
 import { HISTORY_TOPICS } from "./history";
@@ -11,6 +12,8 @@ const BANKS = [
   { subject: "Geography", topics: GEOGRAPHY_TOPICS, level: "easy" },
   { subject: "History", topics: HISTORY_TOPICS, level: "easy" },
   { subject: "English", topics: ENGLISH_TOPICS, level: "easy" },
+  { subject: "Business Studies", topics: BUSINESS_TOPICS, level: "easy" },
+  { subject: "Commerce", topics: BUSINESS_TOPICS, level: "easy" },
 ] as const;
 
 // The paper validator rejects a paper in which two questions share the same text once punctuation and case are ignored.

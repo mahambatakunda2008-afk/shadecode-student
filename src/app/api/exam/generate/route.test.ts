@@ -7,7 +7,7 @@ vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () =
 vi.mock("@/lib/supabase/auth-helpers", () => ({ getVerifiedUser: async () => ({ user: { id: "11111111-1111-4111-8111-111111111111" } }) }));
 vi.mock("@/lib/cortex/examGenerator", () => ({ generateExam: (...args: unknown[]) => generateExam(...args) }));
 vi.mock("@/lib/subjects/resolveLearnerSubjects", () => ({
-  resolveLearnerSubjects: async () => ({ subjects: ["Biology", "Physics", "Geography", "Mathematics", "History", "English"].map((name) => ({ name })) }),
+  resolveLearnerSubjects: async () => ({ subjects: ["Biology", "Physics", "Geography", "Mathematics", "History", "English", "Business Studies", "Commerce"].map((name) => ({ name })) }),
   assertRequestedLearnerSubject: (subjects: { name: string }[], requested: string) => subjects.find((s) => s.name.toLowerCase() === requested.toLowerCase()) ?? null,
 }));
 
@@ -127,6 +127,24 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
   it("does not serve O-Level English to an A-Level learner", async () => {
     generateExam.mockImplementation(async () => { throw new Error("providers down"); });
     const { status } = await call({ subject: "English", topic: "English (A-Level)", difficulty: "medium", questionCount: 10 });
+    expect(generateExam).toHaveBeenCalledTimes(1);
+    expect(status).toBe(503);
+  });
+
+  it("serves O-Level Business Studies and Commerce from the built-in bank with no AI", async () => {
+    generateExam.mockImplementation(async () => { throw new Error("AI must not be used"); });
+    for (const [subject, topic] of [["Business Studies", "Business Studies (O-Level)"], ["Commerce", "Marketing"], ["Commerce", "International trade"], ["Business Studies", "Business finance and costs"]] as const) {
+      const { status, json } = await call({ subject, topic, difficulty: "easy", questionCount: 10 });
+      expect(status, `${subject}/${topic}`).toBe(200);
+      expect(json.questions, `${subject}/${topic}`).toHaveLength(10);
+      for (const q of json.questions) expect(q.options).toContain(q.modelAnswer);
+    }
+    expect(generateExam).not.toHaveBeenCalled();
+  });
+
+  it("does not serve O-Level Business Studies to an A-Level learner", async () => {
+    generateExam.mockImplementation(async () => { throw new Error("providers down"); });
+    const { status } = await call({ subject: "Business Studies", topic: "Business Studies (A-Level)", difficulty: "medium", questionCount: 10 });
     expect(generateExam).toHaveBeenCalledTimes(1);
     expect(status).toBe(503);
   });

@@ -1,5 +1,6 @@
 import type { ExamQuestion, GeneratedExam } from "@/lib/cortex/examGenerator";
 import { biologyBank } from "./curated/biology";
+import { businessBank } from "./curated/business";
 import { englishBank } from "./curated/english";
 import { geographyBank } from "./curated/geography";
 import { historyBank } from "./curated/history";
@@ -34,6 +35,8 @@ function getCuratedBank(subject: string, topic: string, difficulty?: string): Se
   if (s.includes("biolog")) return biologyBank(t);
   if (s.includes("geograph")) return geographyBank(t, difficulty);
   if (s.includes("history")) return historyBank(t, difficulty);
+  // Form 1-4 business subjects (Commerce, Business Studies, Business Enterprise Skills). Business Management is higher level.
+  if (s.includes("commerce") || (s.includes("business") && !s.includes("management"))) return businessBank(t, difficulty);
   // English Language only: Literature needs set texts and is not covered by these language checks.
   if (s.includes("english") && !s.includes("literat")) return englishBank(t, difficulty);
 
