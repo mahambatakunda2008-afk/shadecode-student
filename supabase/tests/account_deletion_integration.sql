@@ -39,6 +39,23 @@ begin
     when insufficient_privilege then null;
   end;
 
+
+  begin
+    insert into public.challenges(challenger_id, challenger_name)
+    values (v_a, 'Pending account A');
+    raise exception 'Direct insert into challenger-owned table was not blocked';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  begin
+    insert into storage.objects(bucket_id, name)
+    values ('community-uploads-pending', v_a::text || '/blocked-upload.pdf');
+    raise exception 'Direct Storage object insert was not blocked';
+  exception
+    when insufficient_privilege then null;
+  end;
+
   -- The barrier is scoped to the caller: B can still write their own row.
   perform set_config('request.jwt.claim.sub', v_b::text, true);
   insert into public.daily_focus(user_id) values (v_b);
