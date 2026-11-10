@@ -171,6 +171,25 @@ begin
     raise exception 'Direct-write deletion barrier is missing from Storage objects';
   end if;
 
+
+  if exists (
+    select 1
+      from pg_constraint fk
+      join pg_class c on c.oid = fk.conrelid
+      join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public'
+       and fk.contype = 'f'
+       and fk.confrelid = 'auth.users'::regclass
+       and not exists (
+         select 1 from pg_trigger t
+          where t.tgrelid = c.oid
+            and t.tgname = 'account_deletion_write_barrier'
+            and not t.tgisinternal
+       )
+  ) then
+    raise exception 'One or more Auth-linked public tables lack the direct-write deletion barrier';
+  end if;
+
   if not has_function_privilege('authenticated', 'public.account_deletion_is_pending()', 'EXECUTE') then
     raise exception 'Authenticated users must be able to evaluate their own deletion state';
   end if;
