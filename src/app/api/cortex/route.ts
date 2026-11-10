@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { log } from "@/lib/observability";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { checkAccountDeletionWriteGate } from '@/lib/supabase/admin';
 import { getUserIdFromRequest, requirePermission } from '@/lib/auth/rbac';
 import { cortexApproveDraftSchema, cortexRequestSchema, validateRequestBody } from '@/lib/validation/schemas';
 
@@ -25,6 +26,16 @@ function getSupabaseAdmin() {
   return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
+async function pendingDeletionResponse(userId: string) {
+  try {
+    const gate = await checkAccountDeletionWriteGate(getSupabaseAdmin(), userId);
+    if (gate.allowed) return null;
+    return Response.json({ error: gate.message, code: gate.code }, { status: gate.status });
+  } catch {
+    return Response.json({ error: 'Account state could not be verified. Please retry later.', code: 'ACCOUNT_STATE_UNAVAILABLE' }, { status: 503 });
+  }
+}
+
 function requestedCurriculumSubjectId(payload: unknown): string | undefined {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return undefined;
   const value = (payload as Record<string, unknown>).subjectId ?? (payload as Record<string, unknown>).curriculumSubjectId;
@@ -37,6 +48,10 @@ export async function GET(req: Request) {
     if (action !== 'get_drafts') return Response.json({ error: 'unsupported_action' }, { status: 400 });
     const permissionCheck = await requirePermission(req, 'approve_drafts');
     if (permissionCheck) return permissionCheck;
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const deletionBlocked = await pendingDeletionResponse(userId);
+    if (deletionBlocked) return deletionBlocked;
     try {
       const supabase = getSupabaseAdmin();
       const { data, error } = await supabase.from('generated_course_drafts').select('*').order('created_at', { ascending: false }).limit(200);
@@ -60,6 +75,10 @@ export async function POST(req: Request) {
     if (action === 'approve_draft') {
       const permissionCheck = await requirePermission(req, 'approve_drafts');
       if (permissionCheck) return permissionCheck;
+      const userId = await getUserIdFromRequest(req);
+      if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      const deletionBlocked = await pendingDeletionResponse(userId);
+      if (deletionBlocked) return deletionBlocked;
       body = await req.json().catch(() => ({}));
       const validation = validateRequestBody(body, cortexApproveDraftSchema);
       if (!validation.success) return Response.json({ error: 'Validation failed', details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });
@@ -129,6 +148,8 @@ export async function POST(req: Request) {
     body = await req.json().catch(() => ({}));
     const authenticatedUserId = await getUserIdFromRequest(req);
     if (!authenticatedUserId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const deletionBlocked = await pendingDeletionResponse(authenticatedUserId);
+    if (deletionBlocked) return deletionBlocked;
 
     if (body?.requestType) {
       const requestedUserId = body?.payload?.userId;
