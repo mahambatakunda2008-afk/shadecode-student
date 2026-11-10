@@ -11,6 +11,12 @@ export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return bad("Authentication required", 401);
+  const { data: deletionPending, error: deletionCheckError } = await supabase.rpc("account_deletion_is_pending");
+  if (deletionCheckError) {
+    console.error("[api/sync] Could not verify account deletion state", { code: deletionCheckError.code ?? "unknown" });
+    return bad("Sync is temporarily unavailable", 503);
+  }
+  if (deletionPending === true) return bad("Account deletion is pending. Sync is paused.", 423);
   let body: Body;
   try { body = await request.json(); } catch { return bad("Invalid JSON"); }
   const { operation, store, payload, clientVersion, baseVersion, deviceId } = body;
