@@ -254,29 +254,30 @@ class NativeStore(private val context: Context) {
     /** Called only after the server confirms deletion has completed. */
     suspend fun clearDeletedAccountData(accountId: String) {
         require(accountId.isNotBlank())
+
+        // Keep the deletion lock and credentials until every local database
+        // cleanup succeeds. A process crash must not reopen sync or sign-in
+        // while learner-owned Room data is only partially cleared.
+        val database = NativeDatabase.get(context)
+        database.subjects().clear()
+        database.progress().clearAll()
+        database.sync().clearAll()
+        database.lessons().resetCachedLessonProgress()
+
         context.nativeStore.edit { prefs ->
             prefs.remove(accessToken)
             prefs.remove(refreshToken)
             prefs.remove(userId)
             prefs.remove(email)
             prefs.remove(cachedProfile)
-            prefs.remove(deletionPending)
-            prefs.remove(deletionRequestId)
             prefs.remove(stringPreferencesKey("cached_tasks_$accountId"))
             prefs.remove(stringPreferencesKey("cached_timetable_$accountId"))
             prefs.remove(stringPreferencesKey("pending_native_sync_$accountId"))
+            // Release the hard sync barrier only after local data is cleared.
+            prefs.remove(deletionRequestId)
+            prefs.remove(deletionPending)
         }
-
-        // Room is a single-account cache on this device. Remove learner-owned
-        // subject/progress/queued-write rows, but retain downloaded lesson
-        // content so it remains available offline to the next signed-in learner.
-        val database = NativeDatabase.get(context)
-        database.subjects().clear()
-        database.progress().clearAll()
-        database.sync().clearAll()
-        database.lessons().resetCachedLessonProgress()
     }
-
     suspend fun clearSession() {
         context.nativeStore.edit { it.clear() }
     }
