@@ -6,7 +6,25 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const authorization = request.headers.get("authorization");
+  const bearerMatch = authorization?.match(/^Bearer\\s+([^\\s]+)$/i);
+  if (authorization && (!bearerMatch || bearerMatch[1].length > 4096)) {
+    return NextResponse.json(
+      { error: "Authentication required." },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   const origin = request.headers.get("origin");
+  // Cookie-authenticated browser requests must carry a same-origin Origin
+  // header. Native clients use a verified bearer token and do not rely on
+  // browser cookies, so they may omit Origin.
+  if (!origin && !bearerMatch) {
+    return NextResponse.json(
+      { error: "A same-origin request is required." },
+      { status: 403, headers: { "Cache-Control": "no-store" } },
+    );
+  }
   if (origin) {
     try {
       if (new URL(origin).origin !== new URL(request.url).origin) {
@@ -21,15 +39,6 @@ export async function POST(request: Request) {
         { status: 403, headers: { "Cache-Control": "no-store" } },
       );
     }
-  }
-
-  const authorization = request.headers.get("authorization");
-  const bearerMatch = authorization?.match(/^Bearer\s+([^\s]+)$/i);
-  if (authorization && (!bearerMatch || bearerMatch[1].length > 4096)) {
-    return NextResponse.json(
-      { error: "Authentication required." },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
   }
 
   let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>> | ReturnType<typeof createClient>;
