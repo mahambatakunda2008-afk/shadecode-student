@@ -1,5 +1,6 @@
 package com.shadecode.student
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -26,4 +27,25 @@ class NativeSubjectMatcherTest {
         assertFalse(NativeSubjectMatcher.matchesAny("", listOf("Mathematics")))
         assertFalse(NativeSubjectMatcher.matchesAny("Mathematics", emptyList()))
     }
+    @Test fun nativeCatalogueHasUniqueStableIdsAndBroadSubjectCoverage() {
+        val ids = NativeSubjectCatalog.all.map { it.code }
+        assertEquals(ids.size, ids.toSet().size)
+        assertTrue(ids.size >= 80)
+        assertTrue(ids.containsAll(listOf(
+            "mathematics", "biology", "chemistry", "physics",
+            "computer-science", "geography", "history", "business-studies",
+            "early-literacy", "quantitative-methods", "nursing", "engineering",
+            "art-design", "fashion-textiles", "research-methods", "custom",
+        )))
+    }
+
+    @Test fun nativeCatalogueResolvesWebAliasesAndCanonicalLabels() {
+        assertEquals("mathematics", NativeSubjectCatalog.codeFor("Maths"))
+        assertEquals("ict", NativeSubjectCatalog.codeFor("Information and Communication Technology"))
+        assertEquals("english-language", NativeSubjectCatalog.codeFor("English"))
+        assertEquals("art-design", NativeSubjectCatalog.codeFor("Art and Design"))
+        assertEquals("Mathematics", NativeSubjectCatalog.labelFor("maths"))
+        assertEquals("Public Health", NativeSubjectCatalog.labelFor("public-health"))
+    }
+
 }
