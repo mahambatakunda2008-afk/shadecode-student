@@ -59,6 +59,26 @@ describe("POST /api/sync", () => {
     });
   });
 
+  describe("account deletion barrier", () => {
+    it("rejects queued sync while the caller has an active deletion request", async () => {
+      rpc.mockImplementation((fn: string) => fn === "account_deletion_is_pending"
+        ? Promise.resolve({ data: true, error: null })
+        : Promise.resolve({ data: { status: "accepted" }, error: null }));
+      const res = await post(validBody());
+      expect(res.status).toBe(423);
+      expect(await res.json()).toEqual({ ok: false, error: "Account deletion is pending. Sync is paused." });
+      expect(rpc).toHaveBeenCalledTimes(1);
+      expect(rpc.mock.calls[0][0]).toBe("account_deletion_is_pending");
+    });
+
+    it("fails closed when deletion state cannot be checked", async () => {
+      rpc.mockResolvedValue({ data: null, error: { code: "PGRST202", message: "function unavailable" } });
+      const res = await post(validBody());
+      expect(res.status).toBe(503);
+      expect(rpc).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("input validation", () => {
     it("rejects malformed JSON", async () => {
       const res = await post("{not json", true);
