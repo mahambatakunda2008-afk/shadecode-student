@@ -42,6 +42,12 @@ begin
   get diagnostics v_count = row_count;
   v_counts := v_counts || jsonb_build_object('lesson_library', v_count);
 
+  -- learn_lessons has no Auth FK in the audited schema, so it must be
+  -- explicitly removed after its derived shared-library rows are handled.
+  delete from public.learn_lessons where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('learn_lessons', v_count);
+
   -- Resolve all user-linked channel receipts before deleting the identity map.
   delete from public.platform_channel_message_receipts r
    where r.user_id = v_user_id
