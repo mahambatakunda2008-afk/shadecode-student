@@ -142,7 +142,7 @@ export async function POST(req: Request) {
         } catch { /* database remains authoritative */ }
         return Response.json({ ok: true, result });
       } catch (e: any) {
-        log.cortexFailure({ stage: "approve_draft", error: e.message || String(e), draftOwnerId });
+        log.cortexFailure({ stage: "approve_draft", error: e.message || String(e), userId: draftOwnerId });
         return Response.json({ error: e.message || String(e) }, { status: 500 });
       }
     }
