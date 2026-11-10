@@ -149,6 +149,37 @@ begin
     raise exception 'Storage manifest must preserve objects referenced by another contributor';
   end if;
 
+
+  if not has_function_privilege('authenticated', 'public.account_deletion_is_pending()', 'EXECUTE') then
+    raise exception 'Authenticated users must be able to evaluate their own deletion state';
+  end if;
+
+  if not exists (
+    select 1
+      from pg_trigger t
+      join pg_class c on c.oid = t.tgrelid
+      join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public'
+       and c.relname = 'daily_focus'
+       and t.tgname = 'account_deletion_write_barrier'
+       and not t.tgisinternal
+  ) then
+    raise exception 'Direct-write deletion barrier is missing from daily_focus';
+  end if;
+
+  if not exists (
+    select 1
+      from pg_trigger t
+      join pg_class c on c.oid = t.tgrelid
+      join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public'
+       and c.relname = 'user_profiles'
+       and t.tgname = 'account_deletion_write_barrier'
+       and not t.tgisinternal
+  ) then
+    raise exception 'Direct-write deletion barrier is missing from user_profiles';
+  end if;
+
   if not has_function_privilege('authenticated', 'public.account_deletion_is_pending()', 'EXECUTE')
      or has_function_privilege('anon', 'public.account_deletion_is_pending()', 'EXECUTE') then
     raise exception 'account_deletion_is_pending grants are too broad or missing';
