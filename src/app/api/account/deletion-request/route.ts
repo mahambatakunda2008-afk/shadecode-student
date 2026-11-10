@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const authorization = request.headers.get("authorization");
-  const bearerMatch = authorization?.match(/^Bearer\\s+([^\\s]+)$/i);
+  const bearerMatch = authorization?.match(/^Bearer\s+([^\s]+)$/i);
   if (authorization && (!bearerMatch || bearerMatch[1].length > 4096)) {
     return NextResponse.json(
       { error: "Authentication required." },
