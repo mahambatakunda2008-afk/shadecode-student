@@ -1131,7 +1131,7 @@ private fun ProfileNativeScreen(
     var deletionStateLoaded by remember(session.userId) { mutableStateOf(false) }
     val appContext = LocalContext.current.applicationContext
 
-    LaunchedEffect(session.userId) {
+    LaunchedEffect(session.userId, deletionPending) {
         val pending = withContext(Dispatchers.IO) { sessionStore.isDeletionPending() }
         deletionPending = pending
         deletionStateLoaded = true
@@ -1237,6 +1237,8 @@ private fun ProfileNativeScreen(
                                 val requestId = accepted.optString("requestId")
                                 if (requestId.isBlank()) error("The server accepted the request without a tracking ID. Please contact support before signing out.")
                                 sessionStore.markDeletionPending(requestId)
+                                deletionStatus = "pending"
+                                deletionPending = true
                                 message = "Request received. Sync is paused on this device while Shadecode verifies and processes your request. Your account has not been deleted yet."
                             } catch (e: Exception) {
                                 failure = e.message ?: "Could not submit your request. Check your connection and try again."
