@@ -75,9 +75,9 @@ export async function POST(req: Request) {
     if (action === 'approve_draft') {
       const permissionCheck = await requirePermission(req, 'approve_drafts');
       if (permissionCheck) return permissionCheck;
-      const userId = await getUserIdFromRequest(req);
-      if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-      const deletionBlocked = await pendingDeletionResponse(userId);
+      const approverUserId = await getUserIdFromRequest(req);
+      if (!approverUserId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      const deletionBlocked = await pendingDeletionResponse(approverUserId);
       if (deletionBlocked) return deletionBlocked;
       body = await req.json().catch(() => ({}));
       const validation = validateRequestBody(body, cortexApproveDraftSchema);
