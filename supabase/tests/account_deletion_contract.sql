@@ -150,6 +150,27 @@ begin
   end if;
 
 
+
+  if not exists (
+    select 1 from pg_trigger t
+    join pg_class c on c.oid = t.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relname = 'challenges'
+      and t.tgname = 'account_deletion_write_barrier' and not t.tgisinternal
+  ) then
+    raise exception 'Direct-write deletion barrier is missing from challenger-owned challenges';
+  end if;
+
+  if not exists (
+    select 1 from pg_trigger t
+    join pg_class c on c.oid = t.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'storage' and c.relname = 'objects'
+      and t.tgname = 'account_deletion_write_barrier' and not t.tgisinternal
+  ) then
+    raise exception 'Direct-write deletion barrier is missing from Storage objects';
+  end if;
+
   if not has_function_privilege('authenticated', 'public.account_deletion_is_pending()', 'EXECUTE') then
     raise exception 'Authenticated users must be able to evaluate their own deletion state';
   end if;
