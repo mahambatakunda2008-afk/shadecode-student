@@ -334,6 +334,8 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     val api = remember { NativeApi() }; val database = remember { NativeDatabase.get(sessionStore.context()) }
     var profile by remember { mutableStateOf<NativeProfile?>(null) }; var subjects by remember { mutableStateOf<List<NativeSubjectEntity>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }; var error by remember { mutableStateOf<String?>(null) }; var selected by remember { mutableStateOf(0) }
+    var accountDeletionPending by remember(session.userId) { mutableStateOf(false) }
+    var deletionStateLoaded by remember(session.userId) { mutableStateOf(false) }
     var showExamHub by remember { mutableStateOf(false) }
     var showExamSimulation by remember { mutableStateOf(false) }
     var focusDuration by remember { mutableStateOf(25 * 60) }
@@ -342,6 +344,18 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     var focusCompletionHandled by remember { mutableStateOf(false) }
     var focusStatus by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(session.userId) {
+        val pending = withContext(Dispatchers.IO) { sessionStore.isDeletionPending() }
+        accountDeletionPending = pending
+        if (pending) selected = 4
+        deletionStateLoaded = true
+    }
+
+    if (!deletionStateLoaded) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        return
+    }
 
     // Keep the countdown above tab navigation so learners can move into Learn without losing the sprint.
     LaunchedEffect(focusRunning) {
@@ -419,7 +433,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     }
 
         Scaffold(containerColor = ShadeBackground, bottomBar = {
-        if (!showExamHub && !showExamSimulation) NavigationBar(containerColor = ShadeSurface) {
+        if (!showExamHub && !showExamSimulation && !accountDeletionPending) NavigationBar(containerColor = ShadeSurface) {
             NavigationBarItem(selected == 0, { selected = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
             NavigationBarItem(selected == 1, { selected = 1 }, icon = { Icon(Icons.Default.Book, null) }, label = { Text("Learn") })
             NavigationBarItem(selected == 2, { selected = 2 }, icon = { Icon(Icons.Default.PlayArrow, null) }, label = { Text("Practice") })
@@ -491,6 +505,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                 onSignOut = {
                     scope.launch { withContext(Dispatchers.IO) { sessionStore.clearSession() }; onSignOut() }
                 },
+                onDeletionPendingChanged = { accountDeletionPending = it },
             )
         }
     }
@@ -1112,6 +1127,7 @@ private fun ProfileNativeScreen(
     sessionStore: NativeStore,
     onProfileSaved: (NativeProfile) -> Unit,
     onSignOut: () -> Unit,
+    onDeletionPendingChanged: (Boolean) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var displayName by remember(profile?.id, profile?.displayName) { mutableStateOf(profile?.displayName.orEmpty()) }
@@ -1134,6 +1150,7 @@ private fun ProfileNativeScreen(
     LaunchedEffect(session.userId, deletionPending) {
         val pending = withContext(Dispatchers.IO) { sessionStore.isDeletionPending() }
         deletionPending = pending
+        onDeletionPendingChanged(pending)
         deletionStateLoaded = true
         if (pending) {
             val requestId = withContext(Dispatchers.IO) { sessionStore.deletionRequestId() }
@@ -1239,6 +1256,7 @@ private fun ProfileNativeScreen(
                                 sessionStore.markDeletionPending(requestId)
                                 deletionStatus = "pending"
                                 deletionPending = true
+                                onDeletionPendingChanged(true)
                                 message = "Request received. Sync is paused on this device while Shadecode verifies and processes your request. Your account has not been deleted yet."
                             } catch (e: Exception) {
                                 failure = e.message ?: "Could not submit your request. Check your connection and try again."
