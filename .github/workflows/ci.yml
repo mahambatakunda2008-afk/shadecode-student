@@ -78,6 +78,7 @@ jobs:
           cp supabase/migrations/20261105140000_account_deletion_storage_manifest.sql /tmp/account-deletion-migrations/
           cp supabase/migrations/20261105150000_account_deletion_database_cleanup_rpc.sql /tmp/account-deletion-migrations/
           cp supabase/migrations/20261110100000_account_deletion_sync_barrier.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261110110000_account_deletion_direct_write_barrier.sql /tmp/account-deletion-migrations/
           find supabase/migrations -maxdepth 1 -type f -name '*.sql' -delete
           cp supabase/tests/fixtures/account_deletion_schema.sql supabase/migrations/20261101000000_account_deletion_test_baseline.sql
           cp /tmp/account-deletion-migrations/*.sql supabase/migrations/
