@@ -71,6 +71,12 @@ begin
   get diagnostics v_count = row_count;
   v_counts := v_counts || jsonb_build_object('exam_question_topic_proposals_reviewer_cleared', v_count);
 
+  -- Remove roles owned by the deleted account, then preserve other users' roles
+  -- while clearing this account's assignment attribution.
+  delete from public.user_roles where user_id = v_user_id;
+  get diagnostics v_count = row_count;
+  v_counts := v_counts || jsonb_build_object('user_roles_deleted', v_count);
+
   update public.user_roles
      set assigned_by = null
    where assigned_by = v_user_id;
