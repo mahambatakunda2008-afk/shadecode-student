@@ -27,6 +27,29 @@ begin
     (id, user_id, status, requested_auth_time, lease_token, lease_expires_at)
   values (v_request, v_a, 'processing', now(), v_lease, now() + interval '10 minutes');
 
+
+  -- Direct PostgREST/Supabase table writes are blocked for A while its
+  -- deletion is processing, even when they bypass the /api/sync route.
+  perform set_config('request.jwt.claim.sub', v_a::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  begin
+    insert into public.daily_focus(user_id) values (v_a);
+    raise exception 'Direct insert for pending account A was not blocked';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  -- The barrier is scoped to the caller: B can still write their own row.
+  perform set_config('request.jwt.claim.sub', v_b::text, true);
+  insert into public.daily_focus(user_id) values (v_b);
+
+  -- Privileged worker operations are not blocked by the authenticated-user
+  -- barrier, even if the JWT subject claim is present in this test session.
+  perform set_config('request.jwt.claim.role', 'service_role', true);
+  insert into public.daily_focus(user_id) values (v_a);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claim.sub', '', true);
+
   -- A and B own independent records. A also moderates B's upload and authored
   -- a shared upload path referenced by both contributors.
   insert into public.daily_focus(user_id) values (v_a), (v_b);
