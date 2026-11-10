@@ -58,7 +58,9 @@ begin
   values
     (v_a, null, null, 'shared/contribution.pdf'),
     (v_b, v_a, 'reviewed by A', 'shared/contribution.pdf'),
-    (v_a, null, null, 'a-private/contribution.pdf');
+    (v_a, null, null, 'a-private/contribution.pdf'),
+    -- A's UID-prefixed path is referenced by B, so it is not exclusively A's.
+    (v_b, null, null, v_a::text || '/shared-by-b.pdf');
 
   insert into public.learn_lessons(id, user_id, title, topic, difficulty, blocks, progress)
   values
@@ -86,7 +88,8 @@ begin
   insert into storage.objects (bucket_id, name)
   values
     ('community-uploads-pending', v_a::text || '/uid-owned.pdf'),
-    ('community-uploads-pending', v_b::text || '/b-owned.pdf');
+    ('community-uploads-pending', v_b::text || '/b-owned.pdf'),
+    ('community-uploads-pending', v_a::text || '/shared-by-b.pdf');
 
   select count(*) into v_manifest_count
   from public.account_deletion_storage_manifest(v_a);
@@ -107,6 +110,13 @@ begin
     where object_name = v_b::text || '/b-owned.pdf'
   ) then
     raise exception 'Manifest included B UID-prefixed object';
+  end if;
+
+  if exists (
+    select 1 from public.account_deletion_storage_manifest(v_a)
+    where object_name = v_a::text || '/shared-by-b.pdf'
+  ) then
+    raise exception 'Manifest included A-prefixed object referenced by B';
   end if;
 
   perform public.execute_account_deletion_cleanup(v_request, v_lease);
