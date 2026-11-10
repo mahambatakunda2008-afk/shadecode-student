@@ -155,6 +155,11 @@ begin
     raise exception 'Lesson library source cleanup crossed account boundaries';
   end if;
 
+  if exists (select 1 from public.learn_lessons where id = v_private_lesson)
+     or not exists (select 1 from public.learn_lessons where id = v_shared_lesson and user_id = v_b) then
+    raise exception 'Account-owned lesson cleanup crossed account boundaries';
+  end if;
+
   if not exists (
     select 1 from public.community_uploads
     where contributor_id = v_b and file_path = 'shared/contribution.pdf'
