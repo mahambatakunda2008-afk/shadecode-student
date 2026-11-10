@@ -87,6 +87,7 @@ begin
       ('learning_paths'),
       ('learning_signals'),
       ('lesson_library'),
+      ('learn_lessons'),
       ('lesson_votes'),
       ('paper_learning_attempts'),
       ('paper_learning_sessions'),
