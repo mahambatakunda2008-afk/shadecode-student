@@ -348,7 +348,10 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     LaunchedEffect(session.userId) {
         val pending = withContext(Dispatchers.IO) { sessionStore.isDeletionPending() }
         accountDeletionPending = pending
-        if (pending) selected = 4
+        if (pending) {
+            selected = 4
+            focusRunning = false
+        }
         deletionStateLoaded = true
     }
 
@@ -366,7 +369,8 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         if (focusRemaining == 0) focusRunning = false
     }
 
-    LaunchedEffect(focusRemaining) {
+    LaunchedEffect(focusRemaining, accountDeletionPending) {
+        if (accountDeletionPending) return@LaunchedEffect
         if (focusRemaining == 0 && !focusCompletionHandled) {
             focusCompletionHandled = true
             focusRunning = false
@@ -385,7 +389,11 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
             }
         }
     }
-    LaunchedEffect(session.accessToken) {
+    LaunchedEffect(session.accessToken, accountDeletionPending) {
+        if (accountDeletionPending) {
+            loading = false
+            return@LaunchedEffect
+        }
         subjects = withContext(Dispatchers.IO) { database.subjects().all() }
         profile = withContext(Dispatchers.IO) { sessionStore.readProfile() }
         try {
@@ -505,7 +513,10 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                 onSignOut = {
                     scope.launch { withContext(Dispatchers.IO) { sessionStore.clearSession() }; onSignOut() }
                 },
-                onDeletionPendingChanged = { accountDeletionPending = it },
+                onDeletionPendingChanged = {
+                    accountDeletionPending = it
+                    if (it) focusRunning = false
+                },
             )
         }
     }
