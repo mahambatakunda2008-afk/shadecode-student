@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createAuthenticatedRequestClient } from "@/lib/supabase/authenticated-request";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { checkAccountDeletionWriteGate, createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +51,8 @@ async function editorContext(request: NextRequest) {
   }
   const admin = createSupabaseAdminClient();
   if (!admin) return { error: responseError("Content management is temporarily unavailable.", 503) } as const;
+  const deletionGate = await checkAccountDeletionWriteGate(admin, auth.user.id);
+  if (!deletionGate.allowed) return { error: responseError(deletionGate.message, deletionGate.status) } as const;
   return { auth, admin } as const;
 }
 
