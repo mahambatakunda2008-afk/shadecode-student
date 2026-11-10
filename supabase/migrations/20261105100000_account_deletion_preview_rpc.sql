@@ -158,9 +158,15 @@ begin
   return next;
 
   select count(*)::bigint into v_count
-  from storage.objects
-  where bucket_id = 'community-uploads-pending'
-    and name like p_user_id::text || '/%';
+  from storage.objects o
+  where o.bucket_id = 'community-uploads-pending'
+    and o.name like p_user_id::text || '/%'
+    and not exists (
+      select 1
+      from public.community_uploads other_upload
+      where other_upload.file_path = o.name
+        and other_upload.contributor_id is distinct from p_user_id
+    );
   resource := 'storage.objects';
   identity_column := 'community-uploads-pending/' || p_user_id::text || '/';
   matching_rows := coalesce(v_count, 0);
