@@ -78,7 +78,7 @@ export default function Settings() {
 
         const currentUsername = profileRow?.username ?? "";
         setUserId(user.id);
-        setDeletionRequestId(window.localStorage.getItem(deletionStorageKey(user.id)) ?? "");
+        try { setDeletionRequestId(window.localStorage.getItem(deletionStorageKey(user.id)) ?? ""); } catch { setDeletionRequestId(""); }
         setEmail(user.email ?? "");
         setUsername(currentUsername);
         setSavedUsername(currentUsername);
@@ -186,8 +186,10 @@ export default function Settings() {
       const payload = await response.json().catch(() => ({})) as { error?: string; requestId?: string };
       if (!response.ok) throw new Error(payload.error || "Your request could not be submitted.");
       if (!payload.requestId) throw new Error("The request was accepted without a tracking ID. Please contact support.");
-      window.localStorage.setItem(deletionStorageKey(userId), payload.requestId);
       setDeletionRequestId(payload.requestId);
+      try { window.localStorage.setItem(deletionStorageKey(userId), payload.requestId); } catch {
+        setAccountError("Your request was accepted, but this browser cannot save its tracking ID. Keep this tab open and contact support if you need an update.");
+      }
       showToast("Deletion request recorded. Sync is paused while Shadecode verifies and processes it.");
     } catch (error) {
       setAccountError(error instanceof Error ? error.message : "Your deletion request could not be submitted.");
@@ -339,7 +341,7 @@ export default function Settings() {
       <section aria-label="More settings" className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
         <ActionCard icon={<MessageSquare size={22} aria-hidden="true" />} title="Send feedback" description="Report a bug or suggest an improvement." onClick={() => router.push("/feedback")} />
         <ActionCard icon={<Heart size={22} aria-hidden="true" />} title="Support Shadecode" description="Contribute voluntarily to help keep learning accessible." onClick={() => router.push("/support")} />
-        <ActionCard icon={<Shield size={22} aria-hidden="true" />} title="Delete account" description={requestingDeletion ? "Submitting your request…" : "Request deletion of your account and associated personal data."} onClick={() => void requestAccountDeletion()} disabled={requestingDeletion || Boolean(deletionRequestId)} />
+        <ActionCard icon={<Shield size={22} aria-hidden="true" />} title="Delete account" description={requestingDeletion ? "Submitting your request…" : deletionRequestId ? "Deletion request pending. Browser offline sync is paused until completion." : "Request deletion of your account and associated personal data."} onClick={() => void requestAccountDeletion()} disabled={requestingDeletion || Boolean(deletionRequestId)} />
         <InfoCard
           icon={<Shield size={22} aria-hidden="true" />}
           title={isBeyond ? "Workspace details" : isFoundation ? "Learning space details" : "Study space details"}
