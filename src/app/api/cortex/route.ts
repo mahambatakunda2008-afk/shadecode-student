@@ -95,7 +95,7 @@ export async function POST(req: Request) {
           entry = drafts[idx];
         }
         if (!entry?.draft) return Response.json({ error: 'invalid_entry' }, { status: 400 });
-        draftOwnerId = entry.user_id || entry.userId;
+        draftOwnerId = entry.user_id || entry.userId || undefined;
         if (!draftOwnerId) throw new Error('Missing user id on draft');
         const ownerDeletionBlocked = await pendingDeletionResponse(draftOwnerId);
         if (ownerDeletionBlocked) return ownerDeletionBlocked;
