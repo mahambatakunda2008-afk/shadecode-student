@@ -6,6 +6,7 @@ const {
   rpcMock,
   sendMock,
   resendConstructor,
+  deletionLookupMock,
   currentUser,
   adminAvailable,
 } = vi.hoisted(() => ({
@@ -14,6 +15,7 @@ const {
   rpcMock: vi.fn(),
   sendMock: vi.fn(),
   resendConstructor: vi.fn(),
+  deletionLookupMock: vi.fn(),
   currentUser: { value: null as { id: string } | null },
   adminAvailable: { value: true },
 }));
@@ -25,7 +27,12 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 vi.mock("@/lib/supabase/admin", () => ({
-  createSupabaseAdminClient: () => adminAvailable.value ? { rpc: rpcMock, from: () => ({ insert: insertMock }) } : null,
+  createSupabaseAdminClient: () => adminAvailable.value ? {
+    rpc: rpcMock,
+    from: (table: string) => table === "account_deletion_requests"
+      ? { select: () => ({ eq: () => ({ in: () => ({ limit: () => ({ maybeSingle: deletionLookupMock }) }) }) }) }
+      : { insert: insertMock },
+  } : null,
 }));
 vi.mock("resend", () => ({ Resend: resendConstructor }));
 
@@ -42,6 +49,7 @@ beforeEach(() => {
   insertMock.mockReset().mockResolvedValue({ error: null });
   serverInsertMock.mockReset().mockResolvedValue({ error: null });
   rpcMock.mockReset().mockResolvedValue({ data: true, error: null });
+  deletionLookupMock.mockReset().mockResolvedValue({ data: null, error: null });
   sendMock.mockReset().mockResolvedValue({ data: { id: "email-1" }, error: null });
   resendConstructor.mockReset().mockImplementation(function (this: { emails: { send: typeof sendMock } }) {
     this.emails = { send: sendMock };
@@ -107,6 +115,24 @@ describe("POST /api/feedback", () => {
     expect(rpcMock.mock.calls[0][1]).toMatchObject({ p_bucket_key: "user:trusted-user-id", p_window_seconds: 900, p_max_requests: 5 });
     expect(rpcMock.mock.calls[1][1].p_max_requests).toBe(20);
     expect(String(rpcMock.mock.calls[1][1].p_bucket_key)).toMatch(/^ip:[a-f0-9]{64}$/);
+  });
+
+  it("blocks signed-in feedback while account deletion is pending", async () => {
+    currentUser.value = { id: "trusted-user-id" };
+    deletionLookupMock.mockResolvedValueOnce({ data: { id: "request-1" }, error: null });
+    const response = await post({ type: "bug", message: "Do not accept while deletion is pending" });
+    expect(response.status).toBe(423);
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the account-deletion state cannot be checked", async () => {
+    currentUser.value = { id: "trusted-user-id" };
+    deletionLookupMock.mockResolvedValueOnce({ data: null, error: { message: "database unavailable" } });
+    const response = await post({ type: "bug", message: "Could not verify account state" });
+    expect(response.status).toBe(503);
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(rpcMock).not.toHaveBeenCalled();
   });
 
   it("rejects anonymous submissions when no trustworthy IP header is available", async () => {
