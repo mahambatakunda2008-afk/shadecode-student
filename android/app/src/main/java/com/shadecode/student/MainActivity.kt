@@ -1163,14 +1163,6 @@ private fun ProfileNativeScreen(
                         deletionStatus = status.optString("status", "pending")
                         if (status.optBoolean("completed", false)) {
                             withContext(Dispatchers.IO) {
-                                val database = NativeDatabase.get(appContext)
-                                database.withTransaction {
-                                    database.sync().clearAll()
-                                    database.progress().clearAll()
-                                    database.subjects().clear()
-                                    // Keep shared offline lesson content, but remove its learner progress.
-                                    database.lessons().resetCachedLessonProgress()
-                                }
                                 // Remove only Snap & Extract files written under this account's private directory.
                                 // Legacy unassigned extracts are preserved for explicit device-owner review.
                                 check(NativeExtractStore(appContext, session.userId).clearAccount()) {
