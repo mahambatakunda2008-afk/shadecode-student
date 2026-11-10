@@ -148,6 +148,11 @@ begin
     raise exception 'Storage manifest must preserve objects referenced by another contributor';
   end if;
 
+  if not has_function_privilege('authenticated', 'public.account_deletion_is_pending()', 'EXECUTE')
+     or has_function_privilege('anon', 'public.account_deletion_is_pending()', 'EXECUTE') then
+    raise exception 'account_deletion_is_pending grants are too broad or missing';
+  end if;
+
   if not has_function_privilege('service_role', 'public.preview_account_deletion(uuid)', 'EXECUTE')
      or has_function_privilege('authenticated', 'public.preview_account_deletion(uuid)', 'EXECUTE')
      or has_function_privilege('anon', 'public.preview_account_deletion(uuid)', 'EXECUTE') then
