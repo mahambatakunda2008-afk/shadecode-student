@@ -33,6 +33,22 @@ vi.mock("@/lib/supabase/admin", () => ({
       ? { select: () => ({ eq: () => ({ in: () => ({ limit: () => ({ maybeSingle: deletionLookupMock }) }) }) }) }
       : { insert: insertMock },
   } : null,
+  checkAccountDeletionWriteGate: async () => {
+    const { data, error } = await deletionLookupMock();
+    if (error) return {
+      allowed: false,
+      status: 503,
+      code: "ACCOUNT_STATE_UNAVAILABLE",
+      message: "Account state could not be verified. Please retry later.",
+    };
+    if (data) return {
+      allowed: false,
+      status: 423,
+      code: "ACCOUNT_DELETION_PENDING",
+      message: "Account changes are disabled while deletion is pending.",
+    };
+    return { allowed: true };
+  },
 }));
 vi.mock("resend", () => ({ Resend: resendConstructor }));
 
