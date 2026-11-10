@@ -74,7 +74,7 @@ begin
     (v_b, v_b, v_a, v_a),
     (v_a, v_b, v_b, v_b);
 
-  insert into public.user_roles(user_id, assigned_by) values (v_b, v_a);
+  insert into public.user_roles(user_id, assigned_by) values (v_a, v_b), (v_b, v_a);
   insert into public.exam_question_topic_proposals(reviewer_id) values (v_a);
   insert into public.generated_course_drafts(user_id, approved_by) values (v_b, v_a);
   insert into public.generated_course_approvals(approved_by, notes) values (v_a, '"approval by A"'::jsonb);
@@ -166,7 +166,8 @@ begin
   if exists (select 1 from public.platform_user_relationships where subject_user_id = v_a) then
     raise exception 'Relationship involving A survived cleanup';
   end if;
-  if not exists (select 1 from public.user_roles where user_id = v_b and assigned_by is null)
+  if exists (select 1 from public.user_roles where user_id = v_a)
+     or not exists (select 1 from public.user_roles where user_id = v_b and assigned_by is null)
      or not exists (select 1 from public.exam_question_topic_proposals where reviewer_id is null)
      or not exists (select 1 from public.generated_course_drafts where user_id = v_b and approved_by is null)
      or not exists (select 1 from public.generated_course_approvals where approved_by is null and notes is null)
