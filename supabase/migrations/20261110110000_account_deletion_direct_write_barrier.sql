@@ -50,6 +50,14 @@ begin
        and (
          a.attname ~* '(user|owner|student|learner|account|contributor|challenger|reviewer|moderator)'
          or a.attname in ('created_by', 'assigned_by', 'approved_by', 'reviewed_by')
+         or exists (
+           select 1
+             from pg_constraint fk
+            where fk.conrelid = c.oid
+              and fk.contype = 'f'
+              and fk.confrelid = 'auth.users'::regclass
+              and a.attnum = any(fk.conkey)
+         )
        )
   loop
     execute format(
