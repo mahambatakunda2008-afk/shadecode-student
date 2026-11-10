@@ -20,6 +20,17 @@ as $$
     from storage.objects o
     where o.bucket_id in ('shadecode-backups', 'community-uploads-pending')
       and o.name like p_user_id::text || '/%'
+      -- A UID-prefixed pending-upload object can still be shared by another
+      -- contributor. Preserve it whenever another account references its key.
+      and (
+        o.bucket_id <> 'community-uploads-pending'
+        or not exists (
+          select 1
+          from public.community_uploads other_upload
+          where other_upload.file_path = o.name
+            and other_upload.contributor_id is distinct from p_user_id
+        )
+      )
 
     union all
 
