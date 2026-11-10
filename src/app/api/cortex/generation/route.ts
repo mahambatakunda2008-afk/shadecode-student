@@ -150,6 +150,9 @@ export async function PATCH(req: Request) {
   try {
     const auth = await authenticate(req);
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.deletionGate.allowed) {
+      return NextResponse.json({ error: auth.deletionGate.message, code: auth.deletionGate.code }, { status: auth.deletionGate.status });
+    }
 
     const body = await req.json();
     if (!validId(body.id)) return NextResponse.json({ error: "Invalid generation id." }, { status: 400 });
