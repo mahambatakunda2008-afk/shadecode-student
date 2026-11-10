@@ -10,8 +10,6 @@ set search_path = ''
 as $$
 declare
   v_user_id uuid := auth.uid();
-  v_old_owner text;
-  v_new_owner text;
 begin
   -- Worker/service-role requests must be able to finish deletion. Anonymous
   -- requests have no authenticated owner and remain governed by existing RLS.
@@ -20,15 +18,10 @@ begin
     return new;
   end if;
 
-  if tg_op <> 'INSERT' then
-    v_old_owner := to_jsonb(old) ->> 'user_id';
-  end if;
-  if tg_op <> 'DELETE' then
-    v_new_owner := to_jsonb(new) ->> 'user_id';
-  end if;
-
-  if (v_old_owner = v_user_id::text or v_new_owner = v_user_id::text)
-     and public.account_deletion_is_pending() then
+  -- A pending account must not mutate any account-aware table, even through
+  -- rows whose ownership is represented by contributor_id/challenger_id or
+  -- attribution columns rather than user_id.
+  if public.account_deletion_is_pending() then
     raise exception using
       errcode = '42501',
       message = 'Account changes are disabled while account deletion is pending';
@@ -52,9 +45,12 @@ begin
       join pg_attribute a on a.attrelid = c.oid
      where n.nspname = 'public'
        and c.relkind in ('r', 'p')
-       and a.attname = 'user_id'
        and a.attnum > 0
        and not a.attisdropped
+       and (
+         a.attname ~* '(user|owner|student|learner|account|contributor|challenger|reviewer|moderator)'
+         or a.attname in ('created_by', 'assigned_by', 'approved_by', 'reviewed_by')
+       )
   loop
     execute format(
       'drop trigger if exists account_deletion_write_barrier on public.%I',
@@ -70,5 +66,13 @@ begin
 end;
 $$;
 
+-- Storage object writes are also account mutations. Keep shared buckets and
+-- existing RLS policy semantics, but reject direct authenticated object changes
+-- from a pending account. Supabase Storage service-role operations remain exempt.
+drop trigger if exists account_deletion_write_barrier on storage.objects;
+create trigger account_deletion_write_barrier
+  before insert or update or delete on storage.objects
+  for each row execute function public.block_pending_account_owned_writes();
+
 comment on function public.block_pending_account_owned_writes() is
-  'Blocks authenticated owners from mutating rows with their user_id while their account deletion is pending; service-role deletion work is exempt.';
+  'Blocks authenticated users from mutating account-aware public tables or Storage objects while their own account deletion is pending; service-role deletion work is exempt.';
