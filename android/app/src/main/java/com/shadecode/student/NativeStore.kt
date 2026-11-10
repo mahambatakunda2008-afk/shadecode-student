@@ -266,6 +266,15 @@ class NativeStore(private val context: Context) {
             prefs.remove(stringPreferencesKey("cached_timetable_$accountId"))
             prefs.remove(stringPreferencesKey("pending_native_sync_$accountId"))
         }
+
+        // Room is a single-account cache on this device. Remove learner-owned
+        // subject/progress/queued-write rows, but retain downloaded lesson
+        // content so it remains available offline to the next signed-in learner.
+        val database = NativeDatabase.get(context)
+        database.subjects().clear()
+        database.progress().clearAll()
+        database.sync().clearAll()
+        database.lessons().resetCachedLessonProgress()
     }
 
     suspend fun clearSession() {
