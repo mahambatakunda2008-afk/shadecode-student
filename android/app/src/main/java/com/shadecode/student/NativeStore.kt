@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.room.withTransaction
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlinx.coroutines.flow.first
@@ -259,10 +260,12 @@ class NativeStore(private val context: Context) {
         // cleanup succeeds. A process crash must not reopen sync or sign-in
         // while learner-owned Room data is only partially cleared.
         val database = NativeDatabase.get(context)
-        database.subjects().clear()
-        database.progress().clearAll()
-        database.sync().clearAll()
-        database.lessons().resetCachedLessonProgress()
+        database.withTransaction {
+            database.subjects().clear()
+            database.progress().clearAll()
+            database.sync().clearAll()
+            database.lessons().resetCachedLessonProgress()
+        }
 
         context.nativeStore.edit { prefs ->
             prefs.remove(accessToken)
