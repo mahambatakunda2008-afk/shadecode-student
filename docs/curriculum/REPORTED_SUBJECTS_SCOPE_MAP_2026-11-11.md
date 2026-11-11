@@ -10,9 +10,9 @@ Before a syllabus can move to verified/production-ready, Shadecode must retrieve
 
 ## Cambridge International AS & A Level Business 9609
 
-- Source edition: 2026, 2027 and 2028; Version 1, published September 2023.
+- Source edition: 2026, 2027 and 2028; Current document: Version 2, published December 2025. The 2026–2028 syllabus update is a separate one-page PDF; the syllabus states there are no significant changes affecting teaching.
 - Official syllabus PDF: https://www.cambridgeinternational.org/Images/697371-2026-2028-syllabus.pdf
-- Official subject page and separate syllabus update: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-business-9609/
+- Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-business-9609/\n- Official 2026–2028 update PDF: https://www.cambridgeinternational.org/Images/748947-2026-2028-syllabus-update.pdf
 - AS scope: topics 1.1–5.5.
 - A Level scope: topics 1.1–10.4. AS content is assumed knowledge for Papers 3 and 4.
 - AS topic families: Business and its environment; Human resource management; Marketing; Operations management; Finance and accounting.
@@ -25,7 +25,7 @@ Before a syllabus can move to verified/production-ready, Shadecode must retrieve
 
 - Source edition: 2026, 2027 and 2028; Version 1, published September 2023.
 - Official syllabus PDF: https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf
-- Official subject page and separate syllabus update: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-economics-9708/
+- Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-economics-9708/\n- Official 2026–2028 update PDF: https://www.cambridgeinternational.org/Images/748950-2026-2028-syllabus-update.pdf
 - AS scope: topics 1.1–6.5.
 - A Level scope: topics 1.1–11.6. AS content is assumed knowledge for Papers 3 and 4.
 - AS topic families: Basic economic ideas and resource allocation; The price system and the microeconomy; Government microeconomic intervention; The macroeconomy; Government macroeconomic intervention; International economic issues.
