@@ -186,7 +186,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       const blob = await new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(value => value ? resolve(value) : reject(new Error("Could not capture the canvas.")), "image/png"),
       );
-      if (blob.size > 4 * 1024 * 1024) throw new Error("This canvas is too large to analyse. Clear unused space or split the writing into sections.");
+      if (blob.size > 3 * 1024 * 1024) throw new Error("This canvas is too large to analyse. Clear unused space or split the writing into sections.");
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
@@ -240,8 +240,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 4 * 1024 * 1024) {
-      setStatus("Choose a PNG, JPEG or WebP handwriting image under 4 MiB.");
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 3 * 1024 * 1024) {
+      setStatus("Choose a PNG, JPEG or WebP handwriting image under 3 MiB.");
       return;
     }
     try {
