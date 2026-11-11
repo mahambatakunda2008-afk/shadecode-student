@@ -151,6 +151,7 @@ export function TutorialsClient() {
   const [error, setError] = useState("");
   const [mediaKind, setMediaKind] = useState<"image" | "diagram" | "sketch" | "audio">("image");
   const [showSketch, setShowSketch] = useState(false);
+  const [improvingTextId, setImprovingTextId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function loadItems() {
@@ -210,6 +211,26 @@ export function TutorialsClient() {
       setMessage(submit ? "Submitted for review. Your version is now locked while reviewers assess it." : "Draft saved.");
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save tutorial."); }
     finally { setBusy(false); }
+  }
+
+  async function improveEditorText(value: string, target: string) {
+    if (!value.trim() || improvingTextId) return;
+    setImprovingTextId(target); setError(""); setMessage("");
+    try {
+      const res = await fetch("/api/teacher/tutorials/improve-text", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: value, mode: "lesson" }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || typeof json.improvedText !== "string") throw new Error(json.error ?? "Could not improve this text.");
+      if (target === "summary") setSummary(json.improvedText);
+      else setBlocks(old => old.map(block => block.id === target ? { ...block, content: json.improvedText } : block));
+      setMessage(json.changed ? "Text improved. Review the edited version before saving." : "Text checked. No changes were needed.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Text improvement failed. Your original text is unchanged.");
+    } finally {
+      setImprovingTextId(null);
+    }
   }
 
   function updateBlock(index: number, patch: Partial<Block>) {
@@ -302,7 +323,7 @@ export function TutorialsClient() {
             <label className="space-y-1 text-sm"><span>Title</span><input disabled={!editable} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={180} className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 disabled:opacity-60" /></label>
             <label className="space-y-1 text-sm"><span>Subject</span><input disabled={!editable} value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={120} className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 disabled:opacity-60" /></label>
             <label className="space-y-1 text-sm"><span>Topic</span><input disabled={!editable} value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={180} className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 disabled:opacity-60" /></label>
-            <label className="space-y-1 text-sm sm:col-span-2"><span>Short description</span><textarea disabled={!editable} value={summary} onChange={(e) => setSummary(e.target.value)} rows={2} maxLength={1200} className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 disabled:opacity-60" /></label>
+            <div className="space-y-1 text-sm sm:col-span-2"><div className="flex items-center justify-between gap-2"><label htmlFor="tutorial-summary">Short description</label><button type="button" disabled={!editable || !summary.trim() || improvingTextId !== null} onClick={() => void improveEditorText(summary, "summary")} className="rounded-lg border border-[var(--primary)] px-2 py-1 text-xs disabled:opacity-40">{improvingTextId === "summary" ? "Improving…" : "✦ Improve wording"}</button></div><textarea id="tutorial-summary" disabled={!editable} value={summary} onChange={(e) => setSummary(e.target.value)} rows={2} maxLength={1200} className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 disabled:opacity-60" /></div>
           </div>
 
           <div className="space-y-3">
@@ -314,7 +335,11 @@ export function TutorialsClient() {
                   <button disabled={!editable || index === blocks.length - 1} onClick={() => moveBlock(index, 1)} className="rounded-lg border border-[var(--card-border)] px-2 py-1 text-xs disabled:opacity-30" aria-label="Move block down">↓</button>
                   <button disabled={!editable} onClick={() => setBlocks((old) => old.filter((_, i) => i !== index))} className="rounded-lg border border-[var(--card-border)] px-2 py-1 text-xs disabled:opacity-30">Remove</button>
                 </div></div>
-                {block.type === "text" ? <textarea disabled={!editable} value={block.content ?? ""} onChange={(e) => updateBlock(index, { content: e.target.value })} rows={5} maxLength={20000} placeholder="Explain the concept clearly. Include worked steps and examples." className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm leading-relaxed disabled:opacity-60" /> : null}
+                {block.type === "text" ? <div className="space-y-2">
+                  <textarea disabled={!editable} value={block.content ?? ""} onChange={(e) => updateBlock(index, { content: e.target.value })} rows={5} maxLength={20000} placeholder="Explain the concept clearly. Include worked steps and examples." className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm leading-relaxed disabled:opacity-60" />
+                  <div className="flex justify-end"><button type="button" disabled={!editable || !block.content?.trim() || improvingTextId !== null || (block.content?.length ?? 0) > 6000} onClick={() => void improveEditorText(block.content ?? "", block.id)} className="rounded-lg border border-[var(--primary)] px-3 py-2 text-xs disabled:opacity-40">{improvingTextId === block.id ? "Improving…" : "✦ Improve spelling, grammar & clarity"}</button></div>
+                  {(block.content?.length ?? 0) > 6000 && <p className="text-xs text-[var(--muted-foreground)]">Text improvement currently supports up to 6,000 characters per pass.</p>}
+                </div> : null}
                 {["image","diagram","sketch"].includes(block.type) ? <div className="space-y-2">
                   <input disabled={!editable} value={block.alt ?? ""} onChange={(e) => updateBlock(index, { alt: e.target.value })} placeholder="Describe what the image shows (required for accessibility)" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" />
                   <input disabled={!editable} value={block.caption ?? ""} onChange={(e) => updateBlock(index, { caption: e.target.value })} placeholder="Caption / labels / source" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" />
