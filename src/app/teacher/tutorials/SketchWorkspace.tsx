@@ -214,6 +214,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [handwritingRawText, setHandwritingRawText] = useState("");
   const [handwritingUncertainty, setHandwritingUncertainty] = useState<UncertainHandwritingCharacter[]>([]);
   const [handwritingConfidence, setHandwritingConfidence] = useState<number | null>(null);
+  const [handwritingMathExpressions, setHandwritingMathExpressions] = useState<Array<{ sourceText: string; latex: string; confidence: number | null; uncertainTokens: string[] }>>([]);
   const [status, setStatus] = useState("Auto-fix is on. Strokes smooth as you draw; shapes snap when you lift the pointer.");
 
   const pushHistory = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -311,6 +312,11 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         reason: item.reason || "",
       })));
       setHandwritingConfidence(typeof result.confidence === "number" ? result.confidence : null);
+      setHandwritingMathExpressions(Array.isArray(result.mathExpressions) ? result.mathExpressions.filter((item: unknown): item is { sourceText: string; latex: string; confidence: number | null; uncertainTokens: string[] } => {
+        if (!item || typeof item !== "object") return false;
+        const expression = item as Record<string, unknown>;
+        return typeof expression.sourceText === "string" && typeof expression.latex === "string";
+      }).slice(0, 40) : []);
       const confidence = typeof result.confidence === "number" ? result.confidence : null;
       const needsReview = result.requiresReview === true || uncertainties.length > 0 || confidence === null || confidence < 0.9;
       setStatus(needsReview
@@ -562,6 +568,15 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       </div>
       <textarea value={handwritingText} onChange={event => setHandwritingText(event.target.value)} maxLength={12000} rows={6} spellCheck autoCorrect="on" className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" aria-label="Review and edit recognised handwriting" />
       {handwritingRawText && handwritingRawText !== handwritingText && <details className="rounded-lg bg-[var(--surface)] p-2 text-xs"><summary className="cursor-pointer font-medium">Compare original character reading</summary><p className="mt-2 whitespace-pre-wrap">{handwritingRawText}</p></details>}
+      {handwritingMathExpressions.length > 0 && <section className="space-y-2 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] p-3">
+        <strong className="text-xs">Extracted mathematical notation</strong>
+        <p className="text-xs text-[var(--muted-foreground)]">LaTeX is provided as an editable mathematical representation. Check every sign, digit and exponent against the handwriting.</p>
+        {handwritingMathExpressions.map((expression, index) => <div key={index} className="space-y-1 border-t border-[var(--card-border)] pt-2">
+          <p className="text-xs">Original: <span className="font-mono">{expression.sourceText}</span></p>
+          <code className="block overflow-x-auto rounded bg-[var(--card)] p-2 text-sm">{expression.latex}</code>
+          <p className="text-xs text-[var(--muted-foreground)]">{expression.confidence === null ? "No expression confidence supplied" : `${Math.round(expression.confidence * 100)}% expression confidence`}{expression.uncertainTokens?.length ? ` · Check: ${expression.uncertainTokens.join(", ")}` : ""}</p>
+        </div>)}
+      </section>}
       {handwritingUncertainty.length > 0 && <div className="space-y-3 rounded-lg bg-amber-500/10 p-3 text-xs"><strong>Characters needing a human check</strong>{handwritingUncertainty.map((item, index) => <div key={index} className="space-y-1 border-t border-amber-500/20 pt-2"><p><strong>{item.seen}</strong> was read as <strong>{item.chosen}</strong>{item.context ? <> in “{item.context}”</> : null}</p>{item.reason && <p className="text-[var(--muted-foreground)]">{item.reason}</p>}{item.alternatives.length > 0 && <div className="flex flex-wrap items-center gap-2"><span>Choose:</span>{item.alternatives.map((alternative, optionIndex) => <button key={optionIndex} type="button" onClick={() => { const updated = applyHandwritingAlternative(handwritingText, item, alternative); if (updated === null) { setStatus("Could not safely locate that character. Edit the transcription directly so no other character is changed."); return; } setHandwritingText(updated); setStatus(`Changed the uncertain reading to “${alternative}”. Review the surrounding text.`); }} className="min-h-8 rounded-md border border-amber-600/40 bg-[var(--surface)] px-2 py-1 font-semibold">{alternative}</button>)}</div>}</div>)}</div>}
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={typesetCorrectedHandwriting} className="min-h-10 rounded-lg bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-white">Typeset corrected text on canvas</button>
