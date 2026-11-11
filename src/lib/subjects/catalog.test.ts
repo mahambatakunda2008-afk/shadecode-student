@@ -92,7 +92,16 @@ describe("central subject catalogue", () => {
       expect(item.status).toBe(status);
       expect(item.requiredChecks.length).toBeGreaterThan(0);
     }
-    expect(queue.items.find((entry: { id: string }) => entry.id === "zimsec-4047-frs-o-level")?.sourceDocumentUrl).toBeNull();
+    const frs = queue.items.find((entry: { id: string }) => entry.id === "zimsec-4047-frs-o-level");
+    expect(frs?.sourceDocumentUrl).toBeNull();
+    expect(frs?.status).toBe("source_discovery_required");
+    expect(frs?.discoveryLeads).toContainEqual(expect.objectContaining({
+      kind: "third_party_hosted_candidate_copy",
+      claimedEdition: "2024-2030",
+      evidenceStatus: "unverified_not_an_official_ZIMSEC_or_Ministry_host",
+    }));
+    expect(frs?.notes).toContain("Keep sourceDocumentUrl null");
+    expect(frs?.notes).toContain("independently authenticated");
   });
 
   it("keeps the first official scope map explicit about version and FRS evidence limits", () => {
