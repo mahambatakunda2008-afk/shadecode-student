@@ -103,16 +103,18 @@ export function CurriculumProfileEditor({ subjects, studyLevel }: { subjects: Su
   const defaultCurriculumLevel: CurriculumLevel = studyLevel === "primary" || studyLevel === "early-childhood" ? "primary" : studyLevel === "lower-secondary" ? "lower_secondary" : studyLevel === "upper-secondary" ? "o_level" : studyLevel === "a-level" ? "a_level" : studyLevel === "university" ? "university" : studyLevel === "tvet" ? "technical" : studyLevel === "professional" ? "vocational" : "o_level";
 
   const beginEdit = (subject: SubjectOption) => {
+    const subjectId = subjectIdentity(subject);
     const existing = identityBySubject.get(key(subject.name)) ??
-      identities.find(item => key(item.subjectId) === key(subjectIdentity(subject)));
+      identities.find(item => key(item.subjectId) === key(subjectId));
+    const offering = SUBJECT_CATALOG.find(item => item.id === subjectId)?.offerings?.[0];
     setDrafts(current => ({
       ...current,
       [subject.id]: {
-        boardId: existing?.boardId ?? "",
-        qualificationId: existing?.qualificationId ?? "",
-        level: existing?.level ?? defaultCurriculumLevel,
-        syllabusId: existing?.syllabusId ?? "",
-        syllabusVersion: existing?.syllabusVersion ?? "",
+        boardId: existing?.boardId ?? offering?.boardId ?? "",
+        qualificationId: existing?.qualificationId ?? (offering?.qualificationId === "o_level" ? "O Level" : offering?.qualificationId === "a_level" ? "A Level" : ""),
+        level: existing?.level ?? offering?.qualificationId ?? defaultCurriculumLevel,
+        syllabusId: existing?.syllabusId ?? offering?.syllabusCode ?? "",
+        syllabusVersion: existing?.syllabusVersion ?? offering?.syllabusVersion ?? "",
       },
     }));
     setEditing(subject.id);
