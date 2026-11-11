@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-21",
+  "updatedAt": "2026-11-11",
   "purpose": "Authoritative-source intake queue. Queue status is not product support or verification.",
   "statusVocabulary": {
     "source_confirmed_content_not_ingested": "Official source identified; normalized whole-syllabus pack is not yet proven complete.",
@@ -1022,6 +1022,139 @@
         "source_hash_and_page_count"
       ],
       "notes": "Official subject page lists a distinct 2028-2029 9-1 Double Award edition. Availability is zone/series restricted. Preserve it separately from 0654 and from the single sciences."
+    },
+    {
+      "id": "cambridge-9609-2026-2028",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Business",
+      "syllabusId": "9609",
+      "syllabusVersion": "2026-2028",
+      "examYears": [
+        2026,
+        2027,
+        2028
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-business-9609/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/697371-2026-2028-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 9,
+      "requiredChecks": [
+        "source_pdf_retrieval_and_hash",
+        "syllabus_update_retrieval",
+        "all_topic_and_subtopic_extraction",
+        "AS_A_Level_scope_boundary",
+        "assessment_objectives_and_weightings",
+        "paper_components_and_durations",
+        "command_words_and_formulae",
+        "all_25_syllabus_coverage_dimensions",
+        "independent_review"
+      ],
+      "notes": "Official Cambridge subject page lists the 2026-2028 syllabus and a separate syllabus update. The 2029 syllabus is a separate edition and must not be inferred from this document. Keep strategy integrated within the five A Level topics and verify the paper 3/4 assessment structure against the actual PDF and update."
+    },
+    {
+      "id": "cambridge-9708-2026-2028",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Economics",
+      "syllabusId": "9708",
+      "syllabusVersion": "2026-2028",
+      "examYears": [
+        2026,
+        2027,
+        2028
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-economics-9708/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 10,
+      "requiredChecks": [
+        "source_pdf_retrieval_and_hash",
+        "syllabus_update_retrieval",
+        "all_topic_and_subtopic_extraction",
+        "AS_A_Level_scope_boundary",
+        "assessment_objectives_and_weightings",
+        "paper_components_and_durations",
+        "data_response_and_essay_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "independent_review"
+      ],
+      "notes": "Official Cambridge subject page lists the 2026-2028 syllabus and a separate syllabus update. The 2029 syllabus is a separate edition. The syllabus page describes six AS topics and five A Level topics, but the exact topic tree and paper structure must be extracted from the PDF and update rather than reconstructed from this summary."
+    },
+    {
+      "id": "cambridge-9696-2027-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Geography",
+      "syllabusId": "9696",
+      "syllabusVersion": "2027-2029",
+      "examYears": [
+        2027,
+        2028,
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-geography-9696/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/718332-2027-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 11,
+      "requiredChecks": [
+        "source_pdf_retrieval_and_hash",
+        "syllabus_update_retrieval",
+        "all_topic_and_subtopic_extraction",
+        "AS_A_Level_scope_boundary",
+        "optional_A_Level_topic_choices",
+        "assessment_objectives_and_weightings",
+        "paper_components_and_durations",
+        "geographical_skills_and_resource_interpretation",
+        "case_study_and_fieldwork_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "independent_review"
+      ],
+      "notes": "The official page identifies a separate 2025-2026 edition and 2027-2029 edition. The 2027-2029 syllabus changes all topics, introduces compulsory AS Human Geography and adds optional A Level Global Themes topics on climate change impacts/governance and disease/geography. Do not reuse old topic mappings; extract the exact revised topic tree and specimen assessment requirements."
+    },
+    {
+      "id": "zimsec-4047-frs-o-level",
+      "boardId": "zimsec",
+      "authority": "Zimbabwe School Examinations Council",
+      "qualification": "Ordinary Level",
+      "level": [
+        "O Level"
+      ],
+      "subject": "Family and Religious Studies",
+      "syllabusId": "4047",
+      "syllabusVersion": "current-edition-to-be-confirmed",
+      "examYears": [],
+      "officialAuthorityPage": "https://www5.zimsec.co.zw/syllabi/",
+      "sourceDocumentUrl": null,
+      "status": "source_discovery_required",
+      "priority": 12,
+      "requiredChecks": [
+        "exact_official_4047_syllabus_pdf",
+        "edition_and_effective_exam_years",
+        "paper_1_and_paper_2_scope",
+        "all_objectives_and_content_areas",
+        "assessment_structure_and_durations",
+        "religious_and_family_studies_scope",
+        "all_applicable_coverage_dimensions",
+        "source_hash_and_page_count",
+        "independent_review"
+      ],
+      "notes": "ZIMSEC examiner-training material confirms paper codes 4047/1 and 4047/2, and an official 2025 timetable lists 4047/02. These establish subject identity and paper evidence only, not syllabus topics, edition or full content. Exact official syllabus PDF and effective years remain undiscovered. Do not generate a purportedly complete FRS topic tree until retrieved."
     }
   ]
 }
