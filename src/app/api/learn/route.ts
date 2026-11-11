@@ -18,6 +18,7 @@ import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
+import { economics9708AS11Pack } from "@/lib/learn/curatedLessonPack";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -191,9 +192,38 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   let auth: AuthContext | null = null;
   try {
-    const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter); if (rateLimitCheck) return rateLimitCheck;
     auth = await authenticateRequest(req); if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { supabase, user } = auth; const body = sanitizeLessonText(await req.json()); const { type, subject, topic, difficulty, goal, level, generationJobId } = body;
+    if (type !== "curated_lesson") {
+      const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
+      if (rateLimitCheck) return rateLimitCheck;
+    }
+    if (type === "curated_lesson") {
+      if (body.packId !== "economics-9708-as-1.1") return NextResponse.json({ error: "Unknown curated lesson pack." }, { status: 404 });
+      const subjectAccess = await resolveLearnerSubject(supabase, user.id, economics9708AS11Pack.subject);
+      if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
+      const packTopic = economics9708AS11Pack.topic;
+      const { data: existing, error: existingError } = await supabase
+        .from("learn_lessons").select("id, title")
+        .eq("user_id", user.id).eq("subject_id", subjectAccess.subjectId).eq("topic", packTopic).maybeSingle();
+      if (existingError) return NextResponse.json({ error: "Unable to check existing lesson." }, { status: 500 });
+      if (existing?.id) return NextResponse.json({ success: true, alreadyAdded: true, lessonId: existing.id, title: existing.title });
+      const { data: inserted, error: insertError } = await supabase.from("learn_lessons").insert({
+        user_id: user.id,
+        subject_id: subjectAccess.subjectId,
+        topic: packTopic,
+        title: economics9708AS11Pack.title,
+        description: economics9708AS11Pack.description,
+        difficulty: economics9708AS11Pack.difficulty,
+        blocks: economics9708AS11Pack.blocks,
+        progress: 0,
+      }).select("id, title").single();
+      if (insertError || !inserted) {
+        log.apiFailure({ route: "/api/learn", method: "POST", error: insertError?.message ?? "Curated lesson insert returned no row", userId: user.id });
+        return NextResponse.json({ error: "Unable to add this lesson to Learn." }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, alreadyAdded: false, lessonId: inserted.id, title: inserted.title, offlineReady: true, sourceStatus: economics9708AS11Pack.status });
+    }
     if (type === "course_preview") {
       if (body.learningMode === "classic") return NextResponse.json({ error: "Classic mode does not use generative AI. Switch to Cortex AI to generate a new course preview.", code: "CLASSIC_MODE_AI_DISABLED" }, { status: 403 });
       const validation = validateRequestBody({ topic, goal, level }, learnCoursePreviewSchema); if (!validation.success) return NextResponse.json({ error: "Validation failed", details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });
