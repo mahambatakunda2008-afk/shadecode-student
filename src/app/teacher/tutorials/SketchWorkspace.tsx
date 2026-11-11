@@ -171,7 +171,7 @@ export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: 
     // strokes untouched rather than "correcting" them into the wrong shape.
   }
   const circularity = (4 * Math.PI * (w * h)) / Math.max(pathLength * pathLength, 1);
-  if (circularity > 0.48 && Math.min(w, h) / Math.max(w, h) > 0.45) return { tool: "ellipse", from: { x: left, y: top }, to: { x: right, y: bottom } };
+  if (cornerCount < 3 && circularity > 0.48 && Math.min(w, h) / Math.max(w, h) > 0.45) return { tool: "ellipse", from: { x: left, y: top }, to: { x: right, y: bottom } };
   return null;
 }
 
