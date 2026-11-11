@@ -18,6 +18,14 @@ describe("curated Economics lesson integration", () => {
     expect(source.learningObjectives.length).toBe(4);
   });
 
+  it("covers all Economic Methodology outcomes without collapsing the time periods", () => {
+    const text = JSON.stringify(methodologySource).toLowerCase();
+    for (const phrase of ["social science", "positive statements", "normative statements", "ceteris paribus", "short run", "long run", "very long run"]) {
+      expect(text).toContain(phrase);
+    }
+    expect(methodologySource.learningObjectives).toHaveLength(4);
+  });
+
   it("does not expose assessment answer keys or marking guidance in learner-visible blocks", () => {
     const visible = JSON.stringify([
       ...buildCuratedLearnBlocks(scarcitySource),
