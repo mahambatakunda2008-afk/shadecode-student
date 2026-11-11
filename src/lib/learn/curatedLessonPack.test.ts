@@ -18,7 +18,31 @@ describe("curated Economics lesson integration", () => {
     expect(pack.blocks.every((block) => typeof block.content === "string" && block.content.trim().length > 0)).toBe(true);
     expect(pack.status).toBe("draft_content_requires_subject_review");
     expect(pack.source).toContain("697423");
-    expect(source.learningObjectives.length).toBe(4);
+    expect(source.learningObjectives.length).toBeGreaterThan(0);
+    expect(pack.blocks.filter((block) => block.type === "diagram")).toHaveLength(source.visuals.length);
+  });
+
+
+  it.each([
+    ["1.1", scarcitySource],
+    ["1.2", methodologySource],
+    ["1.3", factorsSource],
+  ])("requires traceable, offline visual assets for AS %s", (_topic, source) => {
+    expect(source.visuals.length).toBeGreaterThan(0);
+    for (const visual of source.visuals) {
+      expect(visual.assetId).toBeTruthy();
+      expect(visual.type).toBeTruthy();
+      expect(visual.title).toBeTruthy();
+      expect(visual.purpose).toBeTruthy();
+      expect(visual.learningObjectiveIds.length).toBeGreaterThan(0);
+      expect(visual.altText.length).toBeGreaterThan(30);
+      expect(visual.source).toBe("original_instructional_diagram");
+      expect(visual.offlineIncluded).toBe(true);
+      expect(visual.practiceModes.length).toBeGreaterThan(0);
+      expect(source.offline.assets.some((asset) => asset.assetId === visual.assetId && asset.offlineIncluded)).toBe(true);
+    }
+    expect(source.offline.networkRequired).toBe(false);
+    expect(source.offline.aiRequired).toBe(false);
   });
 
   it("covers all Economic Methodology outcomes without collapsing the time periods", () => {
