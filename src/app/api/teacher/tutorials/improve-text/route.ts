@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
+import { validateTeacherTextImprovement } from "@/lib/teacher/text-improvement";
 
 export const dynamic = "force-dynamic";
 
@@ -40,5 +41,9 @@ ${text}`;
   }
 
   const cleaned = improved.trim().replace(/^\`\`\`(?:text|markdown)?\s*/i, "").replace(/\s*\`\`\`$/, "");
-  return NextResponse.json({ improvedText: cleaned, changed: cleaned !== text });
+  const validation = validateTeacherTextImprovement(text, cleaned);
+  if (!validation.valid) {
+    return NextResponse.json({ improvedText: text, changed: false, preservedOriginal: true, reason: validation.reason });
+  }
+  return NextResponse.json({ improvedText: validation.text, changed: validation.text !== text });
 }
