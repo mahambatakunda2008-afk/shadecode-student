@@ -7,8 +7,7 @@ const row = { id: ID, title: "Photosynthesis", topic: "Plants", subject: "Biolog
 describe("teacher review items", () => {
   it("covers every question bank plus lessons", () => {
     expect(REVIEW_GROUPS.map((g) => g.id)).toContain("lesson");
-    expect(new Set(questionItems().map((q) => q.group)).size).toBe(REVIEW_GROUPS.length - 2);
-    expect(REVIEW_GROUPS.map((g) => g.id)).toContain("tutorial");
+    expect(new Set(questionItems().map((q) => q.group)).size).toBe(REVIEW_GROUPS.length - 1);
   });
 
   it("round-trips lesson ids and rejects other ids", () => {
@@ -34,22 +33,5 @@ describe("teacher review items", () => {
   it("builds a lesson item with safe fallbacks", () => {
     expect(lessonItem({ ...row, title: null, topic: null, subject: null }).title).toBe("Untitled lesson");
     expect(lessonItem(row).topic).toBe("Biology · Plants");
-  });
-});
-
-describe("media in blocks", () => {
-  it("lists images and videos for reviewers and mentions them in the readable text", async () => {
-    const { blockMedia, lessonBody } = await import("./reviewItems");
-    const blocks = [
-      { type: "text", content: "Intro" },
-      { type: "image", url: "https://x/a.webp", alt: "Sketch of a cell" },
-      { type: "video", embedUrl: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ", title: "Worked example" },
-    ];
-    expect(blockMedia(blocks)).toEqual([
-      { kind: "image", url: "https://x/a.webp", label: "Sketch of a cell" },
-      { kind: "video", url: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ", label: "Worked example" },
-    ]);
-    expect(lessonBody(blocks)).toContain("[video: Worked example]");
-    expect(lessonBody(blocks)).toContain("[image: Sketch of a cell]");
   });
 });

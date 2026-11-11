@@ -1,5 +1,5 @@
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
-import { loadLessonItems, loadTutorialItems } from "@/lib/teacher/loadItems";
+import { loadLessonItems } from "@/lib/teacher/loadItems";
 import { questionItems, REVIEW_GROUPS } from "@/lib/teacher/reviewItems";
 import { ReviewClient, type StoredReview } from "./ReviewClient";
 
@@ -10,12 +10,11 @@ export default async function TeacherReviewPage({ searchParams }: { searchParams
   const reviewer = (await getReviewer())!;
   const { group } = await searchParams;
 
-  const [lessons, tutorials, { data }] = await Promise.all([
+  const [lessons, { data }] = await Promise.all([
     loadLessonItems(reviewer.supabase),
-    loadTutorialItems(reviewer.supabase, reviewer.user.id),
     reviewer.supabase.from("content_reviews").select("question_id,verdict,note,reviewer_id,reviewed_at").limit(10000),
   ]);
-  const items = [...questionItems(), ...lessons, ...tutorials];
+  const items = [...questionItems(), ...lessons];
   const groups = REVIEW_GROUPS.filter((g) => items.some((i) => i.group === g.id));
 
   return (

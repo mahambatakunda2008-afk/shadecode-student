@@ -1,72 +1,65 @@
 import { NextResponse } from "next/server";
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
-import { teacherMediaPrefix } from "@/lib/teacher/media";
-import { sanitizeBlocks } from "@/lib/teacher/tutorial";
+import { validateTutorialBlocks } from "@/lib/teacher/tutorials";
 
 export const dynamic = "force-dynamic";
-type Ctx = { params: Promise<{ id: string }> };
 
-const clean = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+type Context = { params: Promise<{ id: string }> };
 
-/** Save edits. Row-level security restricts this to the author while the tutorial is a draft or in review. */
-export async function PUT(request: Request, { params }: Ctx) {
+export async function GET(_request: Request, { params }: Context) {
   const reviewer = await getReviewer();
   if (!reviewer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await params;
+  const { data, error } = await reviewer.supabase
+    .from("teacher_tutorials")
+    .select("id,author_id,title,subject,topic,summary,blocks,status,version,created_at,updated_at,submitted_at,verified_at,published_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) return NextResponse.json({ error: "Could not load tutorial." }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "Tutorial not found." }, { status: 404 });
+  return NextResponse.json({ tutorial: data });
+}
 
+export async function PATCH(request: Request, { params }: Context) {
+  const reviewer = await getReviewer();
+  if (!reviewer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { id } = await params;
   const body = await request.json().catch(() => null);
-  const title = typeof body?.title === "string" ? body.title.trim().slice(0, 160) : "";
-  if (!title) return NextResponse.json({ error: "Give the tutorial a title." }, { status: 400 });
-  const blocks = sanitizeBlocks(body?.blocks, teacherMediaPrefix());
-  if (!blocks.ok) return NextResponse.json({ error: blocks.error }, { status: 400 });
+  if (!body || !["draft", "in_review"].includes(body.status)) {
+    return NextResponse.json({ error: "Only draft saving and review submission are supported here." }, { status: 400 });
+  }
+
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const subject = typeof body.subject === "string" ? body.subject.trim() : "";
+  const topic = typeof body.topic === "string" ? body.topic.trim() : null;
+  const summary = typeof body.summary === "string" ? body.summary.trim() : "";
+  if (title.length < 3 || title.length > 180 || !subject || subject.length > 120 || (topic?.length ?? 0) > 180 || summary.length > 1200) {
+    return NextResponse.json({ error: "Check the title, subject, topic and summary lengths." }, { status: 400 });
+  }
+
+  const parsed = validateTutorialBlocks(body.blocks, reviewer.user.id);
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  if (body.status === "in_review" && parsed.blocks.length === 0) {
+    return NextResponse.json({ error: "Add content before submitting for review." }, { status: 400 });
+  }
 
   const { data, error } = await reviewer.supabase
     .from("teacher_tutorials")
-    .update({ title, subject: clean(body?.subject, 80), topic: clean(body?.topic, 120), blocks: blocks.blocks, updated_at: new Date().toISOString() })
+    .update({
+      title,
+      subject,
+      topic: topic || null,
+      summary,
+      blocks: parsed.blocks,
+      status: body.status,
+    })
     .eq("id", id)
     .eq("author_id", reviewer.user.id)
-    .select("id");
-  if (error) return NextResponse.json({ error: "Could not save." }, { status: 500 });
-  if (!data?.length) return NextResponse.json({ error: "This tutorial can no longer be edited." }, { status: 409 });
-  return NextResponse.json({ ok: true });
-}
+    .in("status", ["draft", "changes_requested"])
+    .select("id,title,subject,topic,summary,blocks,status,version,updated_at,submitted_at")
+    .maybeSingle();
 
-/** Status changes. Authors submit or withdraw; only admins verify or send back. */
-export async function POST(request: Request, { params }: Ctx) {
-  const reviewer = await getReviewer();
-  if (!reviewer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const { id } = await params;
-  const action = (await request.json().catch(() => null))?.action;
-
-  let status: "draft" | "in_review" | "verified";
-  let ownOnly = false;
-  if (action === "submit") { status = "in_review"; ownOnly = true; }
-  else if (action === "withdraw") { status = "draft"; ownOnly = true; }
-  else if (action === "verify" && reviewer.isAdmin) status = "verified";
-  else if (action === "send_back" && reviewer.isAdmin) status = "draft";
-  else return NextResponse.json({ error: "Not allowed." }, { status: 403 });
-
-  if (action === "submit") {
-    const { data } = await reviewer.supabase.from("teacher_tutorials").select("blocks").eq("id", id).eq("author_id", reviewer.user.id).maybeSingle();
-    if (!data || !Array.isArray(data.blocks) || data.blocks.length === 0) {
-      return NextResponse.json({ error: "Add some content before submitting for review." }, { status: 400 });
-    }
-  }
-
-  let query = reviewer.supabase.from("teacher_tutorials").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
-  if (ownOnly) query = query.eq("author_id", reviewer.user.id);
-  if (action === "verify") query = query.eq("status", "in_review");
-  const { data, error } = await query.select("id");
-  if (error) return NextResponse.json({ error: "Could not update." }, { status: 500 });
-  if (!data?.length) return NextResponse.json({ error: "Nothing to update." }, { status: 409 });
-  return NextResponse.json({ ok: true, status });
-}
-
-export async function DELETE(_request: Request, { params }: Ctx) {
-  const reviewer = await getReviewer();
-  if (!reviewer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const { id } = await params;
-  const { data, error } = await reviewer.supabase.from("teacher_tutorials").delete().eq("id", id).select("id");
-  if (error || !data?.length) return NextResponse.json({ error: "Only drafts can be deleted." }, { status: 409 });
-  return NextResponse.json({ ok: true });
+  if (error) return NextResponse.json({ error: "Could not save this tutorial. It may no longer be editable." }, { status: 409 });
+  if (!data) return NextResponse.json({ error: "Tutorial not found or no longer editable." }, { status: 404 });
+  return NextResponse.json({ tutorial: data });
 }

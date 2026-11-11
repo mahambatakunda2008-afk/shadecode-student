@@ -23,8 +23,8 @@ interface Props {
 type Filter = "todo" | "flagged" | "all";
 
 function verdictLabel(verdict: ReviewVerdict, group: string): string {
-  if (verdict === "wrong_answer") return group === "lesson" || group === "tutorial" ? "Factual error" : "Wrong answer";
-  return { correct: "Correct", ambiguous: group === "lesson" || group === "tutorial" ? "Unclear" : "Ambiguous", out_of_syllabus: "Out of syllabus" }[verdict];
+  if (verdict === "wrong_answer") return group === "lesson" ? "Factual error" : "Wrong answer";
+  return { correct: "Correct", ambiguous: group === "lesson" ? "Unclear" : "Ambiguous", out_of_syllabus: "Out of syllabus" }[verdict];
 }
 
 export function ReviewClient({ items, groups, reviews, reviewerId, initialGroup }: Props) {
@@ -101,7 +101,7 @@ export function ReviewClient({ items, groups, reviews, reviewerId, initialGroup 
   }
 
   const pct = inGroup.length ? Math.round((reviewedCount / inGroup.length) * 100) : 0;
-  const isLesson = group === "lesson" || group === "tutorial";
+  const isLesson = group === "lesson";
 
   return (
     <div className="flex flex-col gap-4">
@@ -184,21 +184,6 @@ export function ReviewClient({ items, groups, reviews, reviewerId, initialGroup 
                 <p className="whitespace-pre-wrap text-sm leading-relaxed">{current.body}</p>
               ) : (
                 <p className="text-sm text-[var(--muted-foreground)]">This lesson has no readable text.</p>
-              )}
-            </div>
-          )}
-
-          {current.media && current.media.length > 0 && (
-            <div className="space-y-3">
-              {current.media.map((m, i) =>
-                m.kind === "image" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={`${m.url}-${i}`} src={m.url} alt={m.label || "Tutorial image"} loading="lazy" className="max-h-80 w-full rounded-xl border border-[var(--card-border)] object-contain" />
-                ) : (
-                  <div key={`${m.url}-${i}`} className="aspect-video overflow-hidden rounded-xl border border-[var(--card-border)]">
-                    <iframe src={m.url} title={m.label || "Tutorial video"} loading="lazy" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" className="h-full w-full" />
-                  </div>
-                ),
               )}
             </div>
           )}
