@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SUBJECT_CATALOG, SUBJECT_CATEGORIES, canonicalSubjectId, canonicalSubjectName, resolveSubjectCatalogEntry } from "./catalog";
+import { SUBJECT_CATALOG, SUBJECT_CATEGORIES, canonicalSubjectId, canonicalSubjectName, getSubjectReadiness, resolveSubjectCatalogEntry } from "./catalog";
 
 describe("central subject catalogue", () => {
   it("has unique stable IDs and unique canonical names", () => {
@@ -26,6 +26,18 @@ describe("central subject catalogue", () => {
     expect(SUBJECT_CATALOG.find(subject => subject.name === "Mathematics")?.aliases).toContain("Maths");
     expect(SUBJECT_CATALOG.find(subject => subject.name === "English Language")?.aliases).toContain("English");
     expect(SUBJECT_CATALOG.find(subject => subject.name === "Integrated Science")?.aliases).toContain("Science");
+  });
+
+  it("reports only evidence-backed subject readiness and leaves unknown layers unverified", () => {
+    const frs = SUBJECT_CATALOG.find(subject => subject.id === "zimsec-family-religious-studies-o-level")!;
+    const readiness = getSubjectReadiness(frs, 2);
+    expect(readiness.find(item => item.id === "catalogue")?.state).toBe("ready");
+    expect(readiness.find(item => item.id === "curriculum")?.detail).toContain("4047");
+    expect(readiness.find(item => item.id === "content")?.detail).toBe("2 saved lessons in your library");
+    expect(readiness.filter(item => ["assessment", "tools", "offline"].includes(item.id)).every(item => item.state === "not_verified")).toBe(true);
+    const unmapped = getSubjectReadiness(null, 0);
+    expect(unmapped.find(item => item.id === "curriculum")?.state).toBe("needs_setup");
+    expect(unmapped.find(item => item.id === "content")?.state).toBe("needs_setup");
   });
 
   it("keeps selectable status separate from claims about verified curriculum or content", () => {
