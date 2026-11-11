@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, ChevronDown, ChevronUp, ExternalLink, FileText, Image as ImageIcon, Loader2, Play, Table2, Video } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, ExternalLink, Image as ImageIcon, Loader2, Play, Video } from "lucide-react";
+import { offlineStorage } from "@/lib/offline/storage";
 
 type TutorialSummary = { id: string; title: string; subject: string; topic: string | null; summary: string | null; published_at: string | null };
-type TutorialBlock = { id: string; type: string; title?: string; content?: string; caption?: string; alt?: string; transcript?: string; provider?: "youtube" | "drive"; providerId?: string; data?: Record<string, unknown>; mediaUrl?: string | null };
+type TutorialBlock = { id: string; type: string; title?: string; content?: string; caption?: string; alt?: string; transcript?: string; provider?: "youtube" | "drive"; providerId?: string; data?: Record<string, unknown>; mediaUrl?: string | null; mediaBlob?: Blob };
 type Tutorial = TutorialSummary & { blocks: TutorialBlock[]; version: number };
 
 function VideoBlock({ block }: { block: TutorialBlock }) {
@@ -41,13 +42,13 @@ function TableBlock({ block }: { block: TutorialBlock }) {
   return <div className="overflow-x-auto rounded-xl border border-[var(--card-border)]"><table className="w-full border-collapse text-left text-sm"><thead className="bg-[var(--surface-2)]"><tr>{headers.map((h,i)=><th key={i} className="p-3 font-semibold">{String(h)}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i} className="border-t border-[var(--card-border)]">{headers.map((_,j)=><td key={j} className="p-3">{String(row?.[j] ?? "")}</td>)}</tr>)}</tbody></table></div>;
 }
 
-function Block({ block }: { block: TutorialBlock }) {
+function Block({ block }: { block: TutorialBlock }) {\n  const [localMediaUrl, setLocalMediaUrl] = useState<string | null>(null);\n  useEffect(() => { if (!block.mediaBlob) return; const url = URL.createObjectURL(block.mediaBlob); setLocalMediaUrl(url); return () => URL.revokeObjectURL(url); }, [block.mediaBlob]);\n  const mediaUrl = localMediaUrl || block.mediaUrl;
   if (block.type === "video") return <VideoBlock block={block} />;
   if (["image", "diagram", "sketch"].includes(block.type)) return <figure className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-3">
-    {block.mediaUrl ? <img src={block.mediaUrl} alt={block.alt || block.title || "Teacher-provided visual"} loading="lazy" className="mx-auto max-h-[620px] w-full rounded-xl object-contain" /> : <div className="flex min-h-28 items-center justify-center gap-2 text-sm text-[var(--muted-foreground)]"><ImageIcon size={18} />Visual unavailable while offline</div>}
+    {mediaUrl ? <img src={mediaUrl} alt={block.alt || block.title || "Teacher-provided visual"} loading="lazy" className="mx-auto max-h-[620px] w-full rounded-xl object-contain" /> : <div className="flex min-h-28 items-center justify-center gap-2 text-sm text-[var(--muted-foreground)]"><ImageIcon size={18} />Visual unavailable while offline</div>}
     {block.caption && <figcaption className="pt-2 text-center text-sm text-[var(--muted-foreground)]">{block.caption}</figcaption>}
   </figure>;
-  if (block.type === "audio") return <div className="rounded-2xl border border-[var(--card-border)] p-4"><p className="mb-2 text-sm font-semibold">{block.title || "Audio explanation"}</p>{block.mediaUrl ? <audio controls preload="none" className="w-full" src={block.mediaUrl} /> : <p className="text-sm text-[var(--muted-foreground)]">Audio unavailable offline.</p>}</div>;
+  if (block.type === "audio") return <div className="rounded-2xl border border-[var(--card-border)] p-4"><p className="mb-2 text-sm font-semibold">{block.title || "Audio explanation"}</p>{mediaUrl ? <audio controls preload="none" className="w-full" src={mediaUrl} /> : <p className="text-sm text-[var(--muted-foreground)]">Audio unavailable offline.</p>}</div>;
   if (block.type === "graph") return <section className="rounded-2xl border border-[var(--card-border)] p-4"><h3 className="mb-3 font-semibold">{block.title || "Graph"}</h3><GraphBlock block={block} />{block.caption && <p className="mt-2 text-sm text-[var(--muted-foreground)]">{block.caption}</p>}</section>;
   if (block.type === "table") return <section className="rounded-2xl border border-[var(--card-border)] p-4"><h3 className="mb-3 font-semibold">{block.title || "Data table"}</h3><TableBlock block={block} /></section>;
   return <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4"><h3 className="mb-2 font-semibold">{block.title || "Teacher explanation"}</h3><div className="whitespace-pre-wrap text-sm leading-7 text-[var(--muted-foreground)]">{block.content}</div></section>;
@@ -77,8 +78,26 @@ export default function TeacherTutorials({ subject }: { subject: string }) {
       const response = await fetch(`/api/learn/tutorials/${encodeURIComponent(id)}`, { cache: "no-store" });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "Tutorial could not be opened.");
-      setSelected(body.tutorial as Tutorial);
-    } catch (e) { setError(e instanceof Error ? e.message : "Tutorial could not be opened."); }
+      const tutorial = body.tutorial as Tutorial;
+      const cachedBlocks = await Promise.all(tutorial.blocks.map(async block => {
+        if (!block.mediaUrl || !["image", "diagram", "sketch", "audio"].includes(block.type)) return block;
+        try {
+          const response = await fetch(block.mediaUrl);
+          if (!response.ok) return block;
+          return { ...block, mediaBlob: await response.blob() };
+        } catch { return block; }
+      }));
+      const cachedTutorial = { ...tutorial, blocks: cachedBlocks };
+      setSelected(cachedTutorial);
+      const size = JSON.stringify({ ...tutorial, blocks: tutorial.blocks.map(({ mediaUrl, ...block }) => block) }).length + cachedBlocks.reduce((total, block) => total + (block.mediaBlob?.size ?? 0), 0);
+      void offlineStorage.saveLesson({ id: `teacher-tutorial:${tutorial.id}`, title: tutorial.title, subject: tutorial.subject, description: tutorial.summary ?? "", blocks: cachedBlocks as unknown as Array<Record<string, unknown>>, difficulty: "medium", downloadedAt: new Date().toISOString(), size }).catch(() => undefined);
+    } catch (e) {
+      try {
+        const cached = await offlineStorage.getLesson(`teacher-tutorial:${id}`);
+        if (cached) setSelected({ id, title: cached.title, subject: cached.subject, topic: null, summary: cached.description ?? null, published_at: cached.downloadedAt, version: 0, blocks: (cached.blocks ?? []) as unknown as TutorialBlock[] });
+        else setError(e instanceof Error ? e.message : "Tutorial could not be opened.");
+      } catch { setError(e instanceof Error ? e.message : "Tutorial could not be opened."); }
+    }
     finally { setBusy(false); }
   }
 
