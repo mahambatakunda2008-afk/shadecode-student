@@ -79,8 +79,8 @@ describe("central subject catalogue", () => {
   it("registers the four reported qualifications against exact official-source intake records", () => {
     const queue = JSON.parse(readFileSync(join(process.cwd(), "docs/curriculum/official-source-intake-queue.json"), "utf8"));
     const expected = [
-      ["cambridge-9609-2026-2028", "9609", "2026-2028", "source_confirmed_content_not_ingested"],
-      ["cambridge-9708-2026-2028", "9708", "2026-2028", "source_confirmed_content_not_ingested"],
+      ["cambridge-9609-2026-2028", "9609", "2026-2028", "latest_version_update_verified_main_pdf_refresh_required"],
+      ["cambridge-9708-2026-2028", "9708", "2026-2028", "latest_version_update_verified_main_pdf_refresh_required"],
       ["cambridge-9696-2027-2029", "9696", "2027-2029", "source_confirmed_content_not_ingested"],
       ["zimsec-4047-frs-o-level", "4047", "current-edition-to-be-confirmed", "source_discovery_required"],
     ] as const;
