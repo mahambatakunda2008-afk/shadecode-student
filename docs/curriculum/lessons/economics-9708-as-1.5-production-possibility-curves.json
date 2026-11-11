@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_content_requires_subject_review",
+  "identity": {
+    "board": "cambridge",
+    "qualification": "cambridge-as-a-level",
+    "level": "as_level",
+    "subject": "economics",
+    "syllabusCode": "9708",
+    "syllabusVersion": "2026-2028",
+    "topic": "1",
+    "subtopic": "1.5",
+    "title": "Production Possibility Curves",
+    "sourcePrintedPages": "15-16",
+    "sourcePdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf"
+  },
+  "trustBoundary": "Original instructional content aligned to the four extracted Cambridge 9708 AS 1.5 outcomes. It is not official Cambridge material or an independently verified complete syllabus lesson. Teacher review required before publication.",
+  "learningObjectives": [
+    "Explain and draw a production possibility curve.",
+    "Explain constant and increasing opportunity cost using PPC shape.",
+    "Explain causes and consequences of PPC shifts.",
+    "Interpret points on, inside and outside a PPC."
+  ],
+  "lesson": [
+    {
+      "type": "diagnostic",
+      "prompt": "An economy can use its resources to produce food and machinery. If it produces more machinery while using the same resources and technology, what might it have to give up?"
+    },
+    {
+      "type": "explanation",
+      "heading": "1. What a PPC represents",
+      "body": "A production possibility curve (PPC), also called a production possibility frontier, shows the maximum combinations of two goods or categories of output an economy can produce in a given period when its resources and technology are fixed and resources are used efficiently. Put one good on each axis. Label both axes, draw a smooth frontier, and state the assumptions. A PPC is a model, not a forecast or a record of actual output."
+    },
+    {
+      "type": "explanation",
+      "heading": "2. Points on, inside and outside the frontier",
+      "body": "A point on the PPC represents a productively efficient combination: with current resources and technology, producing more of one good requires giving up some of the other. A point inside the PPC is attainable but productively inefficient, or indicates unemployed/underused resources. A point outside the PPC is unattainable with current resources and technology. It may become attainable after productive capacity increases. Do not call every point inside allocatively inefficient: the PPC alone shows productive efficiency, not whether the mix matches society's preferences."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Reading a PPC",
+      "scenario": "An economy's frontier allows either 100 units of food and 0 machines, 80 food and 30 machines, or 50 food and 60 machines.",
+      "reasoning": [
+        "The combinations on the frontier are maximum feasible combinations under the stated assumptions.",
+        "A combination such as 50 food and 30 machines may be inside the frontier and attainable, but it leaves some productive capacity unused.",
+        "A combination such as 100 food and 60 machines lies outside this frontier and cannot currently be produced.",
+        "If technology improves or resources increase, the frontier may move outwards."
+      ],
+      "caution": "A point outside is not permanently impossible. It is unattainable only with the current resources and technology represented by that PPC."
+    },
+    {
+      "type": "explanation",
+      "heading": "3. Opportunity cost and the shape of the PPC",
+      "body": "Opportunity cost is shown by the amount of the other good sacrificed when moving along the frontier. With constant opportunity cost, equal additional units of one good require giving up equal amounts of the other; the PPC is a straight line. With increasing opportunity cost, progressively larger amounts of the other good must be sacrificed; the PPC is bowed out from the origin. This commonly occurs because resources are not equally suited to producing both goods. As resources are transferred, increasingly unsuitable resources are moved away from the alternative use."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Comparing constant and increasing cost",
+      "scenario": "Moving along a straight-line PPC, each extra 10 machines costs 5 units of food. On a bowed-out PPC, successive extra 10-machine increases cost 2, then 5, then 9 units of food.",
+      "reasoning": [
+        "The straight-line example has constant opportunity cost: 5 food each time.",
+        "The bowed-out example has increasing opportunity cost: the food sacrificed rises from 2 to 5 to 9.",
+        "The shape reflects how readily resources can be transferred between the two activities."
+      ],
+      "caution": "Do not confuse the slope at one point with the total opportunity cost of every possible movement."
+    },
+    {
+      "type": "explanation",
+      "heading": "4. Why a PPC shifts",
+      "body": "An outward shift represents an increase in productive potential. It may result from a larger or more productive labour force, more or better capital, improved technology, better education and skills, discovery or development of resources, or improved productivity and institutions. An inward shift represents a fall in productive potential, for example through destruction of capital, loss of skilled workers, depletion of productive resources, or prolonged disruption. A general increase in resources or technology can shift the whole frontier; a development that benefits only one sector may pivot or shift one end more than the other."
+    },
+    {
+      "type": "explanation",
+      "heading": "5. A movement along the PPC is not a shift",
+      "body": "A movement from one point to another on an unchanged PPC is a reallocation of existing resources between the two goods. It changes the output mix but not the economy's productive capacity. A shift changes the set of maximum feasible combinations. A change in demand or consumer preference alone does not shift a production possibility frontier; it may change the chosen point or output mix, not the economy's productive capacity."
+    },
+    {
+      "type": "application",
+      "heading": "6. Apply the model carefully",
+      "scenario": "A drought destroys part of the harvest, while a new manufacturing process raises the productivity of machinery production.",
+      "prompts": [
+        "Explain why the drought may shift the food-producing end of the PPC inward.",
+        "Explain why the manufacturing innovation may shift the machinery-producing end outward.",
+        "Explain why the combined change need not move every part of the frontier in the same direction."
+      ],
+      "feedback": "Separate changes in productive capacity from movements between existing combinations. Identify which resources or technology changed and which output sectors they affect."
+    },
+    {
+      "type": "synthesis",
+      "heading": "7. Drawing and explaining a PPC",
+      "body": "For a clear exam diagram, label both axes with the two goods, draw the frontier with the shape specified by the question, and label points or arrows accurately. To explain a movement, identify the output gained and the alternative output sacrificed. To explain a shift, name the cause, identify whether productive potential rises or falls, and state whether the change affects the whole frontier or one sector more strongly."
+    }
+  ],
+  "retrievalCheck": [
+    {
+      "prompt": "What does a point on a PPC represent?",
+      "answer": "A productively efficient maximum combination with current resources and technology."
+    },
+    {
+      "prompt": "What does a point inside the PPC indicate?",
+      "answer": "An attainable combination with underused resources or productive inefficiency."
+    },
+    {
+      "prompt": "What does a point outside the PPC indicate?",
+      "answer": "A combination currently unattainable with the resources and technology represented."
+    },
+    {
+      "prompt": "What shape represents constant opportunity cost?",
+      "answer": "A straight-line PPC."
+    },
+    {
+      "prompt": "Why is a bowed-out PPC associated with increasing opportunity cost?",
+      "answer": "Resources differ in suitability, so progressively more of the other good must be sacrificed."
+    },
+    {
+      "prompt": "Does a change in consumer preference by itself shift the PPC?",
+      "answer": "No. It may change the chosen output mix, but not productive capacity."
+    }
+  ],
+  "practice": [
+    {
+      "id": "q1",
+      "type": "diagram_interpretation",
+      "marks": 4,
+      "prompt": "A PPC shows combinations of 100 food and 0 machines, 80 food and 30 machines, and 50 food and 60 machines. Explain what a point on the curve, a point inside it and a point outside it represent.",
+      "answer": [
+        "on: productively efficient",
+        "inside: attainable but inefficient/underused resources",
+        "outside: unattainable with current resources and technology"
+      ],
+      "marking": [
+        "1 mark for productive efficiency",
+        "1 mark for attainable but underused resources",
+        "1 mark for currently unattainable",
+        "1 mark for clear reference to current resources and technology"
+      ],
+      "misconception": "Do not describe a point inside as necessarily unattainable."
+    },
+    {
+      "id": "q2",
+      "type": "structured_response",
+      "marks": 4,
+      "prompt": "Explain the difference between a straight-line PPC and a bowed-out PPC.",
+      "answer": [
+        "straight line: constant opportunity cost",
+        "bowed out: increasing opportunity cost",
+        "explain progressively larger sacrifice",
+        "resources differ in suitability"
+      ],
+      "marking": [
+        "1 mark for constant cost",
+        "1 mark for increasing cost",
+        "up to 2 marks for explaining the resource-specialisation reason"
+      ],
+      "misconception": "The curve's shape is not arbitrary; link it to opportunity cost."
+    },
+    {
+      "id": "q3",
+      "type": "application",
+      "marks": 5,
+      "prompt": "A country trains more skilled workers and introduces technology that raises output in both sectors. Explain the likely effect on its PPC.",
+      "answer": [
+        "outward shift",
+        "higher productive potential",
+        "skills raise labour productivity",
+        "technology raises output from resources"
+      ],
+      "marking": [
+        "1 mark outward shift",
+        "1 mark increased productive capacity",
+        "up to 3 marks for applying the two causes"
+      ],
+      "misconception": "This is a shift, not simply a movement along the original frontier."
+    },
+    {
+      "id": "q4",
+      "type": "structured_response",
+      "marks": 6,
+      "prompt": "A government moves resources from consumer-goods production to capital-goods production without changing the total quantity or quality of resources or technology. Distinguish the immediate PPC effect from the possible longer-term effect.",
+      "answer": [
+        "immediate movement along PPC",
+        "more capital goods and fewer consumer goods",
+        "no immediate shift in productive capacity",
+        "capital accumulation may later shift PPC outward"
+      ],
+      "marking": [
+        "1 mark movement along existing PPC",
+        "1 mark output mix change",
+        "1 mark no immediate capacity change",
+        "up to 3 marks explain possible future outward shift through increased capital"
+      ],
+      "misconception": "The reallocation itself is a movement along the frontier; a later capacity effect depends on capital accumulation."
+    }
+  ],
+  "mastery": {
+    "completionIsNotMastery": true,
+    "requiredEvidence": [
+      "draw and label a PPC accurately",
+      "interpret on, inside and outside points",
+      "explain constant and increasing opportunity cost from curve shape",
+      "distinguish a movement along a PPC from a shift",
+      "apply causes of outward and inward shifts"
+    ],
+    "suggestedThreshold": 0.8,
+    "requireIndependentAttempt": true
+  },
+  "offline": {
+    "selfContained": true,
+    "assets": [
+      {
+        "assetId": "econ-9708-1-5-ppc-frontier",
+        "type": "graph",
+        "offlineIncluded": true,
+        "source": "original_instructional_graph_illustrative_not_measured_data"
+      },
+      {
+        "assetId": "econ-9708-1-5-ppc-shifts",
+        "type": "comparison_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      }
+    ],
+    "networkRequired": false,
+    "aiRequired": false
+  },
+  "visuals": [
+    {
+      "assetId": "econ-9708-1-5-ppc-frontier",
+      "type": "graph",
+      "kind": "production-possibility-curve",
+      "title": "PPC: attainable combinations and opportunity cost",
+      "purpose": "Interpret the frontier and compare efficient, inefficient and currently unattainable combinations; connect slope and curvature to opportunity cost.",
+      "learningObjectiveIds": [
+        "9708-AS-1.5-LO1",
+        "9708-AS-1.5-LO2",
+        "9708-AS-1.5-LO4"
+      ],
+      "altText": "Illustrative bowed-out production possibility frontier between capital goods and consumer goods. Points on the frontier are productively efficient, points inside are attainable but underuse resources, and points outside are currently unattainable. Moving along the frontier involves opportunity cost.",
+      "source": "original_instructional_graph_illustrative_not_measured_data",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "draw",
+        "label",
+        "interpret",
+        "explain"
+      ]
+    },
+    {
+      "assetId": "econ-9708-1-5-ppc-shifts",
+      "type": "comparison_diagram",
+      "kind": "ppc-shifts",
+      "title": "Movement along a PPC versus a shift",
+      "purpose": "Distinguish reallocation on a fixed frontier from changes in productive capacity and identify causes of outward and inward shifts.",
+      "learningObjectiveIds": [
+        "9708-AS-1.5-LO1",
+        "9708-AS-1.5-LO3",
+        "9708-AS-1.5-LO4"
+      ],
+      "altText": "A movement between points on one unchanged production possibility frontier changes the output mix only. An outward shift indicates increased productive capacity; an inward shift indicates reduced productive capacity. Sector-specific changes can pivot one end of the frontier.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "compare",
+        "classify",
+        "explain"
+      ]
+    }
+  ],
+  "visualReview": {
+    "status": "reviewed_for_representation_coverage",
+    "objectiveIdConvention": "9708-AS-1.5-LO<n>",
+    "coverage": "All four stated learning objectives map to at least one offline instructional graph or comparison diagram.",
+    "reviewNote": "Authoring coverage check only. Teacher review and independent verification against the current official syllabus remain required."
+  },
+  "teacherReview": {
+    "required": true,
+    "checks": [
+      "verify alignment against current official syllabus Version 2",
+      "check PPC assumptions, efficiency terminology and opportunity-cost explanation",
+      "review movement-versus-shift distinctions and sector-specific changes",
+      "validate diagram labels, examples, mark allocations and answer guidance"
+    ]
+  }
+}
