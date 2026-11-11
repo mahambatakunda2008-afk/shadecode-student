@@ -220,7 +220,20 @@
   },
   "offline": {
     "selfContained": true,
-    "assets": [],
+    "assets": [
+      {
+        "assetId": "econ-9708-1-3-four-factors",
+        "type": "svg_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-1-3-specialisation-flow",
+        "type": "svg_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      }
+    ],
     "networkRequired": false,
     "aiRequired": false
   },
@@ -232,5 +245,46 @@
       "review Zimbabwe-relevant production examples",
       "validate mark allocations and answer guidance"
     ]
-  }
+  },
+  "visuals": [
+    {
+      "assetId": "econ-9708-1-3-four-factors",
+      "type": "svg_diagram",
+      "kind": "factors-of-production-model",
+      "title": "The four factors of production and their rewards",
+      "purpose": "Connect each factor's meaning to its usual economic reward.",
+      "learningObjectiveIds": [
+        "1.3.1",
+        "1.3.2",
+        "1.3.3",
+        "1.3.5"
+      ],
+      "altText": "Land is natural resources and earns rent; labour is human effort and earns wages; capital is man-made productive assets and earns interest; enterprise organises resources and bears risk, earning profit.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "label",
+        "classify",
+        "explain"
+      ]
+    },
+    {
+      "assetId": "econ-9708-1-3-specialisation-flow",
+      "type": "svg_diagram",
+      "kind": "flowchart",
+      "title": "Division of labour and specialisation",
+      "purpose": "Visualise a production process divided into specialised stages.",
+      "learningObjectiveIds": [
+        "1.3.4"
+      ],
+      "altText": "A production process is split into separate tasks, workers specialise in individual stages, repetition builds skill and speed, and coordinated output may increase.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "interpret",
+        "annotate",
+        "explain"
+      ]
+    }
+  ]
 }
