@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent } from "react";
 
 type Tool = "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "curve" | "label";
 type Point = { x: number; y: number };
@@ -121,6 +121,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [recognizingHandwriting, setRecognizingHandwriting] = useState(false);
   const [liveCorrection, setLiveCorrection] = useState(true);
   const [handwritingText, setHandwritingText] = useState("");
+  const [handwritingRawText, setHandwritingRawText] = useState("");
   const [handwritingUncertainty, setHandwritingUncertainty] = useState<string[]>([]);
   const [handwritingConfidence, setHandwritingConfidence] = useState<number | null>(null);
   const [status, setStatus] = useState("Auto-fix is on. Strokes smooth as you draw; shapes snap when you lift the pointer.");
@@ -202,6 +203,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       if (!response.ok) throw new Error(result.error ?? "Handwriting recognition is unavailable.");
       const corrected = typeof result.correctedText === "string" ? result.correctedText.trim() : "";
       if (!corrected) throw new Error("No readable handwriting was found. Try darker, larger writing with more spacing.");
+      setHandwritingRawText(typeof result.transcript === "string" ? result.transcript : corrected);
       setHandwritingText(corrected);
       const uncertainties = Array.isArray(result.uncertainCharacters) ? result.uncertainCharacters : [];
       setHandwritingUncertainty(uncertainties.map((item: { seen?: string; chosen?: string; alternatives?: string[]; context?: string }) =>
@@ -230,7 +232,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     setStatus("Writing paused. Live character recognition and correction will run shortly…");
   }
 
-  async function importHandwritingImage(event: React.ChangeEvent<HTMLInputElement>) {
+  async function importHandwritingImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
@@ -442,6 +444,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         <span className="text-xs text-[var(--muted-foreground)]">{handwritingConfidence === null ? "Confidence not supplied" : `${Math.round(handwritingConfidence * 100)}% confidence`}</span>
       </div>
       <textarea value={handwritingText} onChange={event => setHandwritingText(event.target.value)} maxLength={12000} rows={6} spellCheck autoCorrect="on" className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" aria-label="Review and edit recognised handwriting" />
+      {handwritingRawText && handwritingRawText !== handwritingText && <details className="rounded-lg bg-[var(--surface)] p-2 text-xs"><summary className="cursor-pointer font-medium">Compare original character reading</summary><p className="mt-2 whitespace-pre-wrap">{handwritingRawText}</p></details>}
       {handwritingUncertainty.length > 0 && <div className="rounded-lg bg-amber-500/10 p-3 text-xs"><strong>Characters needing a human check</strong><ul className="mt-1 list-disc space-y-1 pl-5">{handwritingUncertainty.map((item, index) => <li key={index}>{item}</li>)}</ul></div>}
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={typesetCorrectedHandwriting} className="min-h-10 rounded-lg bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-white">Typeset corrected text on canvas</button>
