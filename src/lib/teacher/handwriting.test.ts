@@ -69,3 +69,24 @@ describe("handwriting character alternatives", () => {
     }, "O")).toBeNull();
   });
 });
+
+
+describe("handwriting image payload validation", () => {
+  it("accepts a PNG with a matching file signature", async () => {
+    const { validateHandwritingImageData } = await import("./handwriting");
+    expect(validateHandwritingImageData("iVBORw0KGgo=", "image/png")).toEqual({ valid: true });
+  });
+
+  it("accepts a JPEG with a matching file signature", async () => {
+    const { validateHandwritingImageData } = await import("./handwriting");
+    expect(validateHandwritingImageData("/9j/AAECAwQ=", "image/jpeg")).toEqual({ valid: true });
+  });
+
+  it("rejects invalid base64, oversized data and mismatched MIME signatures", async () => {
+    const { validateHandwritingImageData } = await import("./handwriting");
+    expect(validateHandwritingImageData("not-base64!", "image/png").valid).toBe(false);
+    expect(validateHandwritingImageData("iVBORw0KGgo=", "image/jpeg").valid).toBe(false);
+    expect(validateHandwritingImageData("A".repeat(4_194_304), "image/png").valid).toBe(false);
+    expect(validateHandwritingImageData("AAAA", "image/png").valid).toBe(false);
+  });
+});
