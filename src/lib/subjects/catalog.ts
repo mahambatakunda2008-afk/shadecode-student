@@ -66,7 +66,7 @@ export const SUBJECT_CATALOG: readonly SubjectCatalogEntry[] = [
   { id: "history", name: "History", category: "Humanities & social sciences", pathways: [...SCHOOL_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "geography", name: "Geography", category: "Humanities & social sciences", pathways: [...SCHOOL_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "religious-studies", name: "Religious Studies", category: "Humanities & social sciences", pathways: SCHOOL_PATHWAYS },
-  { id: "family-religious-studies", name: "Family and Religious Studies", category: "Humanities & social sciences", pathways: SCHOOL_PATHWAYS, aliases: ["FRS", "Family & Religious Studies"] },
+  { id: "zimsec-family-religious-studies-o-level", name: "Family and Religious Studies (ZIMSEC O Level)", category: "Humanities & social sciences", pathways: ["upper-secondary"], aliases: ["FRS", "Family and Religious Studies", "Family & Religious Studies", "ZIMSEC FRS"] },
   { id: "cambridge-geography-9696", name: "Geography (Cambridge 9696)", category: "Humanities & social sciences", pathways: ["a-level"], aliases: ["Geography 9696", "Cambridge Geography 9696"] },
   { id: "sociology", name: "Sociology", category: "Humanities & social sciences", pathways: [...SECONDARY_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "psychology", name: "Psychology", category: "Humanities & social sciences", pathways: [...SECONDARY_PATHWAYS, ...HIGHER_PATHWAYS] },
