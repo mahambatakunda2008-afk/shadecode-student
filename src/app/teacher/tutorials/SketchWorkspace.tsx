@@ -218,9 +218,9 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, WIDTH, HEIGHT);
     ctx.fillStyle = INK; ctx.font = `500 ${font}px Arial, sans-serif`; ctx.textBaseline = "top";
     const lines: string[] = [];
-    for (const paragraph of handwritingText.split("\\n")) {
+    for (const paragraph of handwritingText.split(/\r?\n/)) {
       let line = "";
-      for (const word of paragraph.split(/\\s+/)) {
+      for (const word of paragraph.split(/\s+/)) {
         const candidate = line ? `${line} ${word}` : word;
         if (ctx.measureText(candidate).width > maxWidth && line) { lines.push(line); line = word; }
         else line = candidate;
