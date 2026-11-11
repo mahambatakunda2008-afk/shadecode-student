@@ -7,7 +7,7 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { learnCoursePreviewSchema, learnGenerateLessonSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { awardXPBySource } from "@/lib/xp/manager";
-import { normalizeSubjectKey, normalizeSubjectNames } from "@/lib/academic/subjectContract";
+import { normalizeSubjectNames } from "@/lib/academic/subjectContract";
 import { canonicalSubjectId, canonicalSubjectName } from "@/lib/subjects/catalog";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
