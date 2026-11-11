@@ -35,6 +35,32 @@ describe("teacher sketch auto-correction", () => {
     expect(recognizeShape(points)?.tool).toBe("ellipse");
   });
 
+  it("recognizes a hand-drawn rectangular outline", () => {
+    const corners = [{ x: 20, y: 20 }, { x: 220, y: 20 }, { x: 220, y: 140 }, { x: 20, y: 140 }, { x: 20, y: 20 }];
+    const points: Point[] = corners.slice(0, -1).flatMap((from, index) => {
+      const to = corners[index + 1];
+      return Array.from({ length: 11 }, (_, step) => {
+        const t = step / 11;
+        return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
+      });
+    });
+    points.push(corners[4]);
+    expect(recognizeShape(points)?.tool).toBe("rectangle");
+  });
+
+  it("recognizes a hand-drawn triangular outline", () => {
+    const corners = [{ x: 120, y: 10 }, { x: 230, y: 180 }, { x: 10, y: 180 }, { x: 120, y: 10 }];
+    const points: Point[] = corners.slice(0, -1).flatMap((from, index) => {
+      const to = corners[index + 1];
+      return Array.from({ length: 16 }, (_, step) => {
+        const t = step / 16;
+        return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
+      });
+    });
+    points.push(corners[3]);
+    expect(recognizeShape(points)?.tool).toBe("triangle");
+  });
+
   it("does not turn a short accidental mark into a diagram shape", () => {
     const points: Point[] = Array.from({ length: 5 }, (_, index) => ({
       x: 10 + index,
