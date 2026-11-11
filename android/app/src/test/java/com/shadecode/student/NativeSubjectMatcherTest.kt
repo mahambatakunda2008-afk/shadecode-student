@@ -58,6 +58,15 @@ class NativeSubjectMatcherTest {
         assertTrue(ordered.any { it.code == "nursing" })
     }
 
+    @Test fun reportedBoardSpecificSubjectsResolveToDistinctStableIds() {
+        assertEquals("zimsec-family-religious-studies-o-level", NativeSubjectCatalog.codeFor("FRS"))
+        assertEquals("zimsec-family-religious-studies-o-level", NativeSubjectCatalog.codeFor("Family and Religious Studies"))
+        assertEquals("cambridge-business-9609", NativeSubjectCatalog.codeFor("Business 9609"))
+        assertEquals("cambridge-economics-9708", NativeSubjectCatalog.codeFor("Economics 9708"))
+        assertEquals("cambridge-geography-9696", NativeSubjectCatalog.codeFor("Geography 9696"))
+        assertEquals("upper-secondary", NativeSubjectCatalog.all.first { it.code == "zimsec-family-religious-studies-o-level" }.pathways.single())
+    }
+
     @Test fun nativeCatalogueSearchIncludesAliasesAndCustomSubjects() {
         val all = NativeSubjectCatalog.all
         assertTrue(NativeSubjectCatalog.searchMatches(all.first { it.code == "mathematics" }, "Numeracy"))
