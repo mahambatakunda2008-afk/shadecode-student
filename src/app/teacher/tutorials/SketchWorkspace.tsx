@@ -116,6 +116,9 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [autoImproveText, setAutoImproveText] = useState(true);
   const [improvingText, setImprovingText] = useState(false);
   const [recognizingHandwriting, setRecognizingHandwriting] = useState(false);
+  const [handwritingText, setHandwritingText] = useState("");
+  const [handwritingUncertainty, setHandwritingUncertainty] = useState<string[]>([]);
+  const [handwritingConfidence, setHandwritingConfidence] = useState<number | null>(null);
   const [status, setStatus] = useState("Auto-fix is on. Strokes smooth as you draw; shapes snap when you lift the pointer.");
 
   const pushHistory = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -191,17 +194,46 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       if (!response.ok) throw new Error(result.error ?? "Handwriting recognition is unavailable.");
       const corrected = typeof result.correctedText === "string" ? result.correctedText.trim() : "";
       if (!corrected) throw new Error("No readable handwriting was found. Try darker, larger writing with more spacing.");
-      setLabel(corrected.slice(0, 240));
-      setTool("label");
-      const uncertain = Array.isArray(result.uncertainCharacters) ? result.uncertainCharacters.length : 0;
+      setHandwritingText(corrected);
+      const uncertainties = Array.isArray(result.uncertainCharacters) ? result.uncertainCharacters : [];
+      setHandwritingUncertainty(uncertainties.map((item: { seen?: string; chosen?: string; alternatives?: string[]; context?: string }) =>
+        `${item.seen || "Character"} → ${item.chosen || "[unclear]"}${item.alternatives?.length ? ` (could be ${item.alternatives.join(" / ")})` : ""}${item.context ? ` in “${item.context}”` : ""}`
+      ));
+      setHandwritingConfidence(typeof result.confidence === "number" ? result.confidence : null);
+      const uncertain = uncertainties.length;
       setStatus(uncertain
-        ? `Handwriting read. ${uncertain} uncertain character(s) were marked for your review. Check the text before placing it.`
-        : "Handwriting read and unclear characters corrected where context was reliable. Review before placing.");
+        ? `Handwriting transcribed. ${uncertain} ambiguous character(s) need your review. The full transcription is preserved below.`
+        : "Handwriting transcribed and contextually corrected. Review the full text below.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not read handwriting. Your drawing is unchanged.");
     } finally {
       setRecognizingHandwriting(false);
     }
+  }
+
+  function typesetCorrectedHandwriting() {
+    const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx || !handwritingText.trim()) return;
+    const font = 30, lineHeight = 42, padding = 54, maxWidth = WIDTH - padding * 2;
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillStyle = INK; ctx.font = `500 ${font}px Arial, sans-serif`; ctx.textBaseline = "top";
+    const lines: string[] = [];
+    for (const paragraph of handwritingText.split("\\n")) {
+      let line = "";
+      for (const word of paragraph.split(/\\s+/)) {
+        const candidate = line ? `${line} ${word}` : word;
+        if (ctx.measureText(candidate).width > maxWidth && line) { lines.push(line); line = word; }
+        else line = candidate;
+      }
+      lines.push(line);
+    }
+    if (lines.length * lineHeight > HEIGHT - padding * 2) {
+      setStatus("The corrected text is longer than one canvas. Split it into shorter sections before typesetting.");
+      return;
+    }
+    lines.forEach((line, index) => ctx.fillText(line, padding, padding + index * lineHeight));
+    pushHistory(ctx);
+    setStatus("Corrected handwriting converted into clean, editable-looking typeset text on the canvas.");
   }
 
   function pointFromEvent(event: PointerEvent<HTMLCanvasElement>): Point {
@@ -355,6 +387,18 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       </button>
       <span className="text-xs text-[var(--muted-foreground)]">Reads the writing on the canvas, resolves likely character confusions using context, and flags uncertain text.</span>
     </div>
+    {handwritingText && <div className="space-y-2 rounded-xl border border-[var(--card-border)] p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-sm font-semibold">Recognised and corrected handwriting</h4>
+        <span className="text-xs text-[var(--muted-foreground)]">{handwritingConfidence === null ? "Confidence not supplied" : `${Math.round(handwritingConfidence * 100)}% confidence`}</span>
+      </div>
+      <textarea value={handwritingText} onChange={event => setHandwritingText(event.target.value)} maxLength={12000} rows={6} spellCheck autoCorrect="on" className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" aria-label="Review and edit recognised handwriting" />
+      {handwritingUncertainty.length > 0 && <div className="rounded-lg bg-amber-500/10 p-3 text-xs"><strong>Characters needing a human check</strong><ul className="mt-1 list-disc space-y-1 pl-5">{handwritingUncertainty.map((item, index) => <li key={index}>{item}</li>)}</ul></div>}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={typesetCorrectedHandwriting} className="min-h-10 rounded-lg bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-white">Typeset corrected text on canvas</button>
+        <button type="button" onClick={() => { setLabel(handwritingText.slice(0, 240)); setTool("label"); setStatus(handwritingText.length > 240 ? "Only the first 240 characters fit in a single diagram label. The complete transcription remains above." : "Corrected text loaded into the label editor."); }} className="min-h-10 rounded-lg border border-[var(--card-border)] px-3 py-2 text-sm">Use as diagram label</button>
+      </div>
+    </div>}
     {tool === "label" && <div className="space-y-2">
       <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
         <label className="block text-sm">Text / label<textarea value={label} onChange={event => setLabel(event.target.value)} maxLength={240} rows={2} spellCheck autoCorrect="on" autoCapitalize="sentences" placeholder="Type a label. Shadecode can improve its wording before placing." className="mt-1 w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2" /></label>
