@@ -135,9 +135,9 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
 
   useEffect(() => () => { if (frameRef.current !== null) cancelAnimationFrame(frameRef.current); }, []);
 
-  async function improveLabelText(): Promise<string> {
+  async function improveLabelText(): Promise<{ text: string; improved: boolean; checked: boolean }> {
     const original = label.trim();
-    if (!original) return "";
+    if (!original) return { text: "", improved: false, checked: false };
     setImprovingText(true);
     try {
       const response = await fetch("/api/teacher/tutorials/improve-text", {
@@ -151,10 +151,10 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       }
       setLabel(result.improvedText);
       setStatus(result.changed ? "Text improved: spelling, grammar and clarity corrected. Review it before placing." : "Text checked. No changes were needed.");
-      return result.improvedText.trim();
+      return { text: result.improvedText.trim(), improved: result.changed === true, checked: true };
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not improve text. Original wording is preserved.");
-      return original;
+      return { text: original, improved: false, checked: false };
     } finally {
       setImprovingText(false);
     }
@@ -204,7 +204,9 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         else line = test;
       }
       if (line) ctx.fillText(line, point.x, y);
-      pushHistory(ctx); setStatus(autoImproveText ? "Improved text placed with clean typography." : "Text placed with clean typography."); return;
+      pushHistory(ctx);
+      setStatus(improvement.improved ? "Improved text placed with clean typography." : improvement.checked ? "Text checked and placed with clean typography." : autoImproveText ? "Original text placed. AI improvement was unavailable." : "Text placed with clean typography.");
+      return;
     }
     event.currentTarget.setPointerCapture(event.pointerId);
     drawingRef.current = true; startRef.current = point; pointsRef.current = [point];
