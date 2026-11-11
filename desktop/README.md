@@ -43,7 +43,8 @@ For distributable installers, install the Tauri CLI v2 and run:
 
 ```bash
 cargo install tauri-cli --version "^2.0.0" --locked
-cargo tauri build --manifest-path desktop/Cargo.toml
+cd desktop
+cargo tauri build
 ```
 
 ## Product acceptance gates
