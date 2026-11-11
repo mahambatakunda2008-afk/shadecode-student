@@ -1,0 +1,707 @@
+{
+  "schemaVersion": 1,
+  "status": "blueprint_not_lesson_content",
+  "source": {
+    "syllabus": "9708",
+    "version": "2026-2028",
+    "level": "AS",
+    "pdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf",
+    "documentVersion": 2
+  },
+  "trustBoundary": "Maps extracted outcomes to teaching modalities. Not lesson content, assessment bank, or proof of mastery. Independent source review remains required.",
+  "qualificationBoundary": {
+    "asOnly": true,
+    "subtopics": "1.1-6.5",
+    "aLevelExcluded": true
+  },
+  "lessonSequence": [
+    "diagnostic_retrieval",
+    "conceptual_model",
+    "worked_reasoning",
+    "guided_application",
+    "independent_practice",
+    "misconception_check",
+    "transfer_and_synthesis"
+  ],
+  "masteryRule": "Completion is not mastery. Require independent application and exam-style transfer evidence.",
+  "offlineRule": "Published packs include lesson, worked examples, practice, answer rationales and required diagrams/formula references. No runtime AI or network dependency.",
+  "subtopics": [
+    {
+      "id": "1.1",
+      "title": "Scarcity, choice and opportunity cost",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "1.2",
+      "title": "Economic methodology",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "1.3",
+      "title": "Factors of production",
+      "outcomeCount": 5,
+      "requiredPractice": [
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "1.4",
+      "title": "Resource allocation in different economic systems",
+      "outcomeCount": 2,
+      "requiredPractice": [
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "1.5",
+      "title": "Production possibility curves",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams"
+      ]
+    },
+    {
+      "id": "1.6",
+      "title": "Classification of goods and services",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "2.1",
+      "title": "Demand and supply curves",
+      "outcomeCount": 5,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams"
+      ]
+    },
+    {
+      "id": "2.2",
+      "title": "Price elasticity, income elasticity and cross elasticity of demand",
+      "outcomeCount": 8,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "worked_calculation",
+        "independent_calculation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams",
+        "formula_reference"
+      ]
+    },
+    {
+      "id": "2.3",
+      "title": "Price elasticity of supply",
+      "outcomeCount": 5,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "worked_calculation",
+        "independent_calculation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams",
+        "formula_reference"
+      ]
+    },
+    {
+      "id": "2.4",
+      "title": "The interaction of demand and supply",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams"
+      ]
+    },
+    {
+      "id": "2.5",
+      "title": "Consumer and producer surplus",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "worked_calculation",
+        "independent_calculation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams",
+        "formula_reference"
+      ]
+    },
+    {
+      "id": "3.1",
+      "title": "Reasons for government intervention in markets",
+      "outcomeCount": 3,
+      "requiredPractice": [
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "3.2",
+      "title": "Methods and effects of government intervention in markets",
+      "outcomeCount": 6,
+      "requiredPractice": [
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "3.3",
+      "title": "Addressing income and wealth inequality",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "data_interpretation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "4.1",
+      "title": "National income statistics",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "worked_calculation",
+        "independent_calculation",
+        "data_interpretation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "formula_reference"
+      ]
+    },
+    {
+      "id": "4.2",
+      "title": "Introduction to the circular flow of income",
+      "outcomeCount": 3,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams"
+      ]
+    },
+    {
+      "id": "4.3",
+      "title": "Aggregate Demand and Aggregate Supply analysis",
+      "outcomeCount": 10,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams"
+      ]
+    },
+    {
+      "id": "4.4",
+      "title": "Economic growth",
+      "outcomeCount": 5,
+      "requiredPractice": [
+        "worked_calculation",
+        "independent_calculation",
+        "data_interpretation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "formula_reference"
+      ]
+    },
+    {
+      "id": "4.5",
+      "title": "Unemployment",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "data_interpretation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "4.6",
+      "title": "Price stability",
+      "outcomeCount": 5,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "data_interpretation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams"
+      ]
+    },
+    {
+      "id": "5.1",
+      "title": "Government macroeconomic policy objectives",
+      "outcomeCount": 1,
+      "requiredPractice": [
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "5.2",
+      "title": "Fiscal policy",
+      "outcomeCount": 9,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "worked_calculation",
+        "independent_calculation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams",
+        "formula_reference"
+      ]
+    },
+    {
+      "id": "5.3",
+      "title": "Monetary policy",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "worked_calculation",
+        "independent_calculation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams",
+        "formula_reference"
+      ]
+    },
+    {
+      "id": "5.4",
+      "title": "Supply-side policy",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams"
+      ]
+    },
+    {
+      "id": "6.1",
+      "title": "The reasons for international trade",
+      "outcomeCount": 4,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "worked_calculation",
+        "independent_calculation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams",
+        "formula_reference"
+      ]
+    },
+    {
+      "id": "6.2",
+      "title": "Protectionism",
+      "outcomeCount": 3,
+      "requiredPractice": [
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales"
+      ]
+    },
+    {
+      "id": "6.3",
+      "title": "Current account of the balance of payments",
+      "outcomeCount": 5,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "worked_calculation",
+        "independent_calculation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams",
+        "formula_reference"
+      ]
+    },
+    {
+      "id": "6.4",
+      "title": "Exchange rates",
+      "outcomeCount": 5,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "worked_calculation",
+        "independent_calculation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams",
+        "formula_reference"
+      ]
+    },
+    {
+      "id": "6.5",
+      "title": "Policies to correct imbalances in the current account of the balance of payments",
+      "outcomeCount": 2,
+      "requiredPractice": [
+        "diagram_interpretation",
+        "diagram_construction",
+        "worked_calculation",
+        "independent_calculation",
+        "structured_analysis",
+        "evaluation",
+        "retrieval_and_explanation"
+      ],
+      "masteryEvidence": [
+        "accurate_explanation",
+        "independent_application",
+        "exam_style_transfer"
+      ],
+      "offlineAssets": [
+        "lesson",
+        "worked_examples",
+        "practice",
+        "answer_rationales",
+        "diagrams",
+        "formula_reference"
+      ]
+    }
+  ]
+}
