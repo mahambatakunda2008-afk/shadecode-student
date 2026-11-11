@@ -29,6 +29,7 @@
     "targets": "all",
     "category": "Education",
     "shortDescription": "Your personal academic operating system",
-    "longDescription": "Shadecode Student brings lessons, practice, exams, study planning and Cortex learning intelligence into a dedicated desktop application."
+    "longDescription": "Shadecode Student brings lessons, practice, exams, study planning and Cortex learning intelligence into a dedicated desktop application.",
+    "icon": []
   }
 }
