@@ -67,6 +67,14 @@ class NativeSubjectMatcherTest {
         assertEquals("upper-secondary", NativeSubjectCatalog.all.first { it.code == "zimsec-family-religious-studies-o-level" }.pathways.single())
     }
 
+    @Test fun nativeCatalogueCarriesReportedBoardAndSyllabusCodes() {
+        assertEquals("4047", NativeSubjectCatalog.curriculumOfferings["zimsec-family-religious-studies-o-level"]?.single()?.syllabusCode)
+        assertEquals("zimsec", NativeSubjectCatalog.curriculumOfferings["zimsec-family-religious-studies-o-level"]?.single()?.boardId)
+        assertEquals("9609", NativeSubjectCatalog.curriculumOfferings["cambridge-business-9609"]?.single()?.syllabusCode)
+        assertEquals("9708", NativeSubjectCatalog.curriculumOfferings["cambridge-economics-9708"]?.single()?.syllabusCode)
+        assertEquals("9696", NativeSubjectCatalog.curriculumOfferings["cambridge-geography-9696"]?.single()?.syllabusCode)
+    }
+
     @Test fun nativeCatalogueSearchIncludesAliasesAndCustomSubjects() {
         val all = NativeSubjectCatalog.all
         assertTrue(NativeSubjectCatalog.searchMatches(all.first { it.code == "mathematics" }, "Numeracy"))
