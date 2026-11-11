@@ -197,7 +197,20 @@
   },
   "offline": {
     "selfContained": true,
-    "assets": [],
+    "assets": [
+      {
+        "assetId": "econ-9708-1-2-ceteris-paribus",
+        "type": "svg_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-1-2-time-horizons",
+        "type": "timeline",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      }
+    ],
     "networkRequired": false,
     "aiRequired": false
   },
@@ -209,5 +222,43 @@
       "review positive/normative examples and economic accuracy",
       "validate mark allocations and answer guidance"
     ]
-  }
+  },
+  "visuals": [
+    {
+      "assetId": "econ-9708-1-2-ceteris-paribus",
+      "type": "svg_diagram",
+      "kind": "ceteris-paribus-model",
+      "title": "Ceteris paribus: isolate one relationship",
+      "purpose": "Show how economists hold other relevant influences constant to isolate the relationship under study.",
+      "learningObjectiveIds": [
+        "1.2.3"
+      ],
+      "altText": "Change one variable, hold other relevant influences constant, then isolate the predicted relationship. Example: price rises, other demand determinants held constant, quantity demanded falls.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "interpret",
+        "annotate",
+        "apply"
+      ]
+    },
+    {
+      "assetId": "econ-9708-1-2-time-horizons",
+      "type": "timeline",
+      "kind": "economic-time-horizons",
+      "title": "Short run, long run and very long run",
+      "purpose": "Compare time periods by the scope of factor and technological adjustment, not fixed calendar duration.",
+      "learningObjectiveIds": [
+        "1.2.4"
+      ],
+      "altText": "Short run has at least one fixed factor; long run allows all factors to vary; very long run also allows technology and wider productive conditions to change. No fixed calendar durations are implied.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "compare",
+        "explain",
+        "classify"
+      ]
+    }
+  ]
 }
