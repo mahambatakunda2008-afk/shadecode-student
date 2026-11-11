@@ -6,11 +6,19 @@ export type UncertainHandwritingCharacter = {
   reason: string;
 };
 
+export type HandwritingMathExpression = {
+  sourceText: string;
+  latex: string;
+  confidence: number | null;
+  uncertainTokens: string[];
+};
+
 export type HandwritingRecognition = {
   transcript: string;
   correctedText: string;
   confidence: number | null;
   uncertainCharacters: UncertainHandwritingCharacter[];
+  mathExpressions: HandwritingMathExpression[];
   requiresReview: boolean;
 };
 
@@ -19,6 +27,7 @@ type RecognitionPayload = {
   correctedText?: unknown;
   confidence?: unknown;
   uncertainCharacters?: unknown;
+  mathExpressions?: unknown;
 };
 
 export function parseHandwritingRecognition(text: string): RecognitionPayload | null {
@@ -57,12 +66,27 @@ export function normalizeHandwritingRecognition(payload: RecognitionPayload): Ha
   const confidence = typeof payload.confidence === "number" && Number.isFinite(payload.confidence)
     ? Math.max(0, Math.min(1, payload.confidence))
     : null;
+  const mathExpressions = Array.isArray(payload.mathExpressions)
+    ? payload.mathExpressions.slice(0, 40).flatMap((entry): HandwritingMathExpression[] => {
+        if (!entry || typeof entry !== "object") return [];
+        const item = entry as Record<string, unknown>;
+        const sourceText = typeof item.sourceText === "string" ? item.sourceText.trim().slice(0, 500) : "";
+        const latex = typeof item.latex === "string" ? item.latex.trim().slice(0, 1000) : "";
+        if (!sourceText || !latex || /[<>]/.test(latex)) return [];
+        const score = typeof item.confidence === "number" && Number.isFinite(item.confidence)
+          ? Math.max(0, Math.min(1, item.confidence)) : null;
+        const uncertainTokens = Array.isArray(item.uncertainTokens)
+          ? item.uncertainTokens.filter((value): value is string => typeof value === "string").slice(0, 20).map(value => value.slice(0, 40)) : [];
+        return [{ sourceText, latex, confidence: score, uncertainTokens }];
+      })
+    : [];
   return {
     transcript,
     correctedText: correctedText || transcript,
     confidence,
     uncertainCharacters,
-    requiresReview: uncertainCharacters.length > 0 || confidence === null || confidence < 0.9,
+    mathExpressions,
+    requiresReview: uncertainCharacters.length > 0 || mathExpressions.some(item => item.uncertainTokens.length > 0 || item.confidence === null || item.confidence < 0.9) || confidence === null || confidence < 0.9,
   };
 }
 
