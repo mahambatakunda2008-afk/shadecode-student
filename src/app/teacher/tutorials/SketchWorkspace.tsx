@@ -291,7 +291,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         throw new Error(result.error ?? "Text improvement is unavailable.");
       }
       setLabel(result.improvedText);
-      setStatus(result.changed ? "Text improved: spelling, grammar and clarity corrected. Review it before placing." : "Text checked. No changes were needed.");
+      setStatus(result.preservedOriginal === true ? (typeof result.reason === "string" ? result.reason : "The suggested edit was unsafe. Original text preserved.") : result.changed ? "Text improved: spelling, grammar and clarity corrected. Review it before placing." : "Text checked. No changes were needed.");
       return { text: result.improvedText.trim(), improved: result.changed === true, checked: true };
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not improve text. Original wording is preserved.");
