@@ -3,6 +3,7 @@ import standard from "../../../docs/curriculum/VISUAL_AND_MULTIMODAL_CONTENT_STA
 import scarcity from "../../../docs/curriculum/lessons/economics-9708-as-1.1-scarcity-choice-opportunity-cost.json";
 import methodology from "../../../docs/curriculum/lessons/economics-9708-as-1.2-economic-methodology.json";
 import factors from "../../../docs/curriculum/lessons/economics-9708-as-1.3-factors-of-production.json";
+import systems from "../../../docs/curriculum/lessons/economics-9708-as-1.4-economic-systems.json";
 
 describe("curriculum visual and multimodal standard", () => {
   it("covers science, humanities, economics, technical and creative arts", () => {
@@ -19,7 +20,7 @@ describe("curriculum visual and multimodal standard", () => {
     expect(standard.qualityGate.rejectIf.some((item) => item.includes("art/music/performance"))).toBe(true);
   });
 
-  it.each([scarcity, methodology, factors])("keeps every required lesson visual outcome-linked and available offline", (lesson) => {
+  it.each([scarcity, methodology, factors, systems])("keeps every required lesson visual outcome-linked and available offline", (lesson) => {
     expect(lesson.visuals.length).toBeGreaterThan(0);
     for (const visual of lesson.visuals) {
       expect(visual.learningObjectiveIds.length).toBeGreaterThan(0);
