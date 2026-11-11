@@ -7,8 +7,8 @@
     {
       "code": "9609",
       "edition": "2026-2028",
-      "documentVersion": 3,
-      "published": "2023-09",
+      "documentVersion": 2,
+      "published": "2025-12",
       "pdf": "https://www.cambridgeinternational.org/Images/697371-2026-2028-syllabus.pdf",
       "updatePdf": "https://www.cambridgeinternational.org/Images/748947-2026-2028-syllabus-update.pdf",
       "pageCount": 46,
@@ -23,13 +23,14 @@
         38,
         39,
         45
-      ]
+      ],
+      "versionEvidence": "Official one-page syllabus update confirms Version 2, published December 2025. The linked main PDF URL currently returns a cached Version 1 copy in web extraction; content is stated by Cambridge to have no significant teaching changes, but latest PDF retrieval/hash remains outstanding."
     },
     {
       "code": "9708",
       "edition": "2026-2028",
-      "documentVersion": 1,
-      "published": "2023-09",
+      "documentVersion": 2,
+      "published": "2025-12",
       "pdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf",
       "updatePdf": "https://www.cambridgeinternational.org/Images/748950-2026-2028-syllabus-update.pdf",
       "pageCount": 44,
@@ -44,7 +45,8 @@
         36,
         37,
         43
-      ]
+      ],
+      "versionEvidence": "Official one-page syllabus update confirms Version 2, published December 2025. The linked main PDF URL currently returns a cached Version 1 copy in web extraction; content is stated by Cambridge to have no significant teaching changes, but latest PDF retrieval/hash remains outstanding."
     },
     {
       "code": "9696",
