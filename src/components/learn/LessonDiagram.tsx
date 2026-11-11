@@ -232,6 +232,25 @@ function EconomicsInquiryCycle() {
   </svg>;
 }
 
+function PpcCostShapes() {
+  return <svg viewBox="0 0 560 260" role="img" aria-label="Comparison of production possibility curves: a straight-line frontier shows constant opportunity cost, while a bowed-out frontier shows increasing opportunity cost as progressively more of the other good is sacrificed." className="lesson-diagram-svg">
+    <g transform="translate(12 8)">
+      <path d="M20 205 H250 M20 205 V25" stroke={colors.axis} strokeWidth="1.5" fill="none"/>
+      <path d="M35 190 L225 45" stroke={colors.line} strokeWidth="4" fill="none"/>
+      <text x="73" y="25" fontSize="14" fill="currentColor" fontWeight="700">CONSTANT COST</text>
+      <text x="82" y="230" fontSize="12" fill={colors.muted}>Straight line</text>
+      <text x="27" y="248" fontSize="11" fill={colors.muted}>Equal sacrifice per equal gain</text>
+    </g>
+    <g transform="translate(282 8)">
+      <path d="M20 205 H250 M20 205 V25" stroke={colors.axis} strokeWidth="1.5" fill="none"/>
+      <path d="M35 190 Q105 45 225 45" stroke={colors.point} strokeWidth="4" fill="none"/>
+      <text x="55" y="25" fontSize="14" fill="currentColor" fontWeight="700">INCREASING COST</text>
+      <text x="82" y="230" fontSize="12" fill={colors.muted}>Bowed out</text>
+      <text x="22" y="248" fontSize="11" fill={colors.muted}>Progressively greater sacrifice</text>
+    </g>
+  </svg>;
+}
+
 function PpcShifts() {
   return <svg viewBox="0 0 560 270" role="img" aria-label="Two production possibility frontiers. Moving from point A to B along the original frontier changes the output mix without changing productive capacity. An outward frontier shows increased productive capacity; an inward frontier shows reduced capacity." className="lesson-diagram-svg">
     <path d="M55 220 H510 M55 220 V22" stroke={colors.axis} strokeWidth="1.5" fill="none"/>
@@ -286,6 +305,7 @@ export default function LessonDiagram({ kind, title }: Props) {
     case "economics-inquiry-cycle": graphic = <EconomicsInquiryCycle />; break;
     case "economic-systems-comparison": graphic = <EconomicSystemsComparison />; break;
     case "ppc-shifts": graphic = <PpcShifts />; break;
+    case "ppc-cost-shapes": graphic = <PpcCostShapes />; break;
     case "unit-circle": graphic = <UnitCircle />; break;
     case "binary-place-values": graphic = <BinaryPlaceValues />; break;
     case "particle-model": graphic = <ParticleModel />; break;
