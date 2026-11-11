@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_content_requires_subject_review",
+  "identity": {
+    "board": "cambridge",
+    "qualification": "cambridge-as-a-level",
+    "level": "as_level",
+    "subject": "economics",
+    "syllabusCode": "9708",
+    "syllabusVersion": "2026-2028",
+    "topic": "1",
+    "subtopic": "1.4",
+    "title": "Resource Allocation in Different Economic Systems",
+    "sourcePrintedPages": "15-16",
+    "sourcePdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf"
+  },
+  "trustBoundary": "Original instructional content aligned to the two extracted Cambridge 9708 AS 1.4 outcomes. It is not official Cambridge material or an independently verified complete syllabus lesson. Teacher review required before publication.",
+  "learningObjectives": [
+    "Explain decision-making in market, planned and mixed economies.",
+    "Explain how resources are allocated in each economic system."
+  ],
+  "lesson": [
+    {
+      "type": "diagnostic",
+      "prompt": "A country must decide which medicines to produce, which factories should make them, and who should receive them. Who might make each decision in a market economy, a planned economy and a mixed economy?"
+    },
+    {
+      "type": "explanation",
+      "heading": "1. The economic system",
+      "body": "An economic system is the set of institutions and arrangements through which a society makes decisions about allocating scarce resources. Every system must answer three questions: what to produce, how to produce it and for whom to produce it. The central difference is how decisions are made and coordinated, and how much reliance is placed on markets, government direction and individual choice."
+    },
+    {
+      "type": "explanation",
+      "heading": "2. Market economy",
+      "body": "In a market economy, decisions are mainly decentralised. Consumers influence what is produced through their spending and demand. Firms decide how to produce, seeking to control costs and earn profit. Prices change as demand and supply change, helping coordinate decisions and signal scarcity. Income and ability to pay influence who obtains goods and services. A market system does not guarantee equal incomes or access, and market failure can mean that prices do not reflect all social costs and benefits."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Market allocation example",
+      "scenario": "Demand for solar lanterns rises. Several firms notice the opportunity.",
+      "reasoning": [
+        "A higher market price or prospect of higher revenue signals an opportunity to producers.",
+        "Firms may redirect labour and capital towards making more lanterns.",
+        "Consumers who are willing and able to pay obtain the available output.",
+        "The outcome depends on purchasing power as well as need; people unable to pay may go without."
+      ],
+      "caution": "Do not say that firms produce only what society needs. In a market system, effective demand and expected returns influence production."
+    },
+    {
+      "type": "explanation",
+      "heading": "3. Planned economy",
+      "body": "In a planned economy, a central planning authority makes major decisions about production and resource use. It may set output targets, direct labour and capital, determine production methods and organise distribution through administrative rules. The aim may include meeting social priorities and directing resources towards goods that planners consider important. Planning can coordinate large-scale priorities, but the authority needs reliable information about needs, costs, available resources and changing conditions. Weak incentives, information delays and shortages or surpluses can make allocation difficult."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Planned allocation example",
+      "scenario": "A planning authority decides that more resources should be used to produce essential medicines.",
+      "reasoning": [
+        "The authority sets a production target based on its priorities and information.",
+        "It directs factories, workers and materials towards the target.",
+        "Distribution may follow eligibility rules or administrative priorities rather than market price alone.",
+        "If the target or resource information is inaccurate, shortages or unwanted surpluses may result."
+      ],
+      "caution": "A planned economy is not defined by the absence of every market transaction. The key feature is central direction of major resource-allocation decisions."
+    },
+    {
+      "type": "explanation",
+      "heading": "4. Mixed economy",
+      "body": "A mixed economy combines market decisions with government intervention and public-sector activity. Consumers and private firms make many decisions through markets, while government may provide public goods, regulate markets, redistribute income, subsidise selected activities, tax harmful consumption or directly provide essential services. The balance differs between countries and can change over time. A mixed economy is not a precise midpoint on a single scale; it is a combination of mechanisms."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Mixed allocation example",
+      "scenario": "Private firms sell electricity, while government regulates safety, supports rural connections and funds some public infrastructure.",
+      "reasoning": [
+        "Market prices and consumer demand influence firms' output and investment decisions.",
+        "Regulation sets rules intended to protect consumers and manage external costs.",
+        "Public spending can extend access where commercial returns alone may not provide it.",
+        "The final allocation reflects both market signals and public decisions."
+      ],
+      "caution": "Government intervention does not automatically improve an outcome. Its effects depend on information, incentives, implementation and the policy objective."
+    },
+    {
+      "type": "comparison",
+      "heading": "5. Compare the systems",
+      "body": "Market: decentralised choices by consumers and firms, coordinated mainly through prices; income and ability to pay strongly affect distribution. Planned: major decisions directed by a central authority, coordinated through plans and administrative allocation. Mixed: markets make many decisions while government also regulates, taxes, subsidises, redistributes and provides selected goods and services. In all three, scarcity means choices and opportunity costs remain."
+    },
+    {
+      "type": "explanation",
+      "heading": "6. How to analyse an economic system",
+      "body": "For an exam response, identify who decides what is produced, who chooses production methods, and how output is distributed. Then explain the mechanism: prices and profit incentives, central plans and administrative priorities, or a combination. Apply the mechanism to the context in the question. Finally, consider limitations such as unequal purchasing power, imperfect information, weak incentives, external effects or policy implementation."
+    },
+    {
+      "type": "synthesis",
+      "heading": "7. The key distinction",
+      "body": "The systems differ primarily in the institutions and mechanisms used to make and coordinate allocation decisions, not in whether scarcity exists. Avoid describing a market economy as having no government, or a planned economy as having no individual choice at all. Real economies can combine mechanisms, and the degree of market and state involvement can vary."
+    }
+  ],
+  "retrievalCheck": [
+    {
+      "prompt": "Who makes the main resource-allocation decisions in a market economy?"
+    },
+    {
+      "prompt": "How does a central planning authority allocate resources?"
+    },
+    {
+      "prompt": "Why is a mixed economy not simply an exact halfway point between two extremes?"
+    },
+    {
+      "prompt": "How can purchasing power affect who receives goods in a market economy?"
+    }
+  ],
+  "practice": [
+    {
+      "id": "q1",
+      "type": "explanation",
+      "marks": 4,
+      "prompt": "Explain how prices can influence the allocation of resources in a market economy."
+    },
+    {
+      "id": "q2",
+      "type": "comparison",
+      "marks": 6,
+      "prompt": "Compare how a planned economy and a market economy decide what and how to produce."
+    },
+    {
+      "id": "q3",
+      "type": "application",
+      "marks": 6,
+      "prompt": "A government funds rural clinics while private businesses provide many other health services. Explain why this is evidence of a mixed economy."
+    },
+    {
+      "id": "q4",
+      "type": "evaluation",
+      "marks": 8,
+      "prompt": "Assess whether a planned economy is always better than a market economy at allocating scarce resources. Use developed reasoning and recognise that outcomes depend on context."
+    }
+  ],
+  "mastery": {
+    "completionIsNotMastery": true,
+    "requiredEvidence": [
+      "explain decision-making in market, planned and mixed economies",
+      "trace how resources are allocated in each system",
+      "apply the mechanisms to an unfamiliar example",
+      "compare strengths and limitations without treating ideal types as exact descriptions of every country"
+    ],
+    "suggestedThreshold": 0.8,
+    "requireIndependentAttempt": true
+  },
+  "offline": {
+    "selfContained": true,
+    "assets": [
+      {
+        "assetId": "econ-9708-1-4-economic-systems",
+        "type": "comparison_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-1-4-allocation-questions",
+        "type": "process_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      }
+    ],
+    "networkRequired": false,
+    "aiRequired": false
+  },
+  "visuals": [
+    {
+      "assetId": "econ-9708-1-4-economic-systems",
+      "type": "comparison_diagram",
+      "kind": "economic-systems-comparison",
+      "title": "How the three economic systems allocate resources",
+      "purpose": "Compare the decision-makers, coordination mechanisms and distribution mechanisms in market, planned and mixed economies.",
+      "learningObjectiveIds": [
+        "9708-AS-1.4-LO1",
+        "9708-AS-1.4-LO2"
+      ],
+      "altText": "Market economies rely mainly on consumers, firms and prices; planned economies rely on central planning and administrative decisions; mixed economies combine market decisions with government regulation, taxation, subsidies, redistribution and public provision.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "compare",
+        "interpret",
+        "explain",
+        "evaluate"
+      ]
+    },
+    {
+      "assetId": "econ-9708-1-4-allocation-questions",
+      "type": "process_diagram",
+      "kind": "resource-allocation-questions",
+      "title": "The three allocation questions",
+      "purpose": "Show that every economic system must decide what to produce, how to produce it and for whom output is produced.",
+      "learningObjectiveIds": [
+        "9708-AS-1.4-LO1",
+        "9708-AS-1.4-LO2"
+      ],
+      "altText": "Three linked questions face every economic system: what goods and services should be produced, how should resources and production methods be used, and for whom should output be distributed?",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "label",
+        "interpret",
+        "apply"
+      ]
+    }
+  ],
+  "visualReview": {
+    "status": "reviewed_for_representation_coverage",
+    "objectiveIdConvention": "9708-AS-1.4-LO<n>",
+    "coverage": "Both stated learning objectives are mapped to original comparison and resource-allocation diagrams.",
+    "reviewNote": "Authoring coverage check only. Teacher review and independent verification against the current official syllabus remain required."
+  },
+  "teacherReview": {
+    "required": true,
+    "checks": [
+      "verify alignment against current official syllabus Version 2",
+      "review the distinction between ideal-type systems and actual economies",
+      "check examples and evaluation balance",
+      "validate mark allocations and answer guidance"
+    ]
+  }
+}
