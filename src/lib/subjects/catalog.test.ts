@@ -95,6 +95,15 @@ describe("central subject catalogue", () => {
     expect(queue.items.find((entry: { id: string }) => entry.id === "zimsec-4047-frs-o-level")?.sourceDocumentUrl).toBeNull();
   });
 
+  it("keeps the first official scope map explicit about version and FRS evidence limits", () => {
+    const scopeMap = readFileSync(join(process.cwd(), "docs/curriculum/REPORTED_SUBJECTS_SCOPE_MAP_2026-11-11.md"), "utf8");
+    expect(scopeMap).toContain("AS scope: topics 1.1–5.5");
+    expect(scopeMap).toContain("AS scope: topics 1.1–6.5");
+    expect(scopeMap).toContain("2027, 2028 and 2029");
+    expect(scopeMap).toContain("exact official syllabus PDF not yet discovered");
+    expect(scopeMap).toContain("not a complete normalized syllabus pack");
+  });
+
   it("keeps the native Android catalogue in exact parity with web metadata", () => {
     const kotlin = readFileSync(
       join(process.cwd(), "android/app/src/main/java/com/shadecode/student/NativeSubjectCatalog.kt"),
