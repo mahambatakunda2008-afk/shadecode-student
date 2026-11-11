@@ -1264,9 +1264,6 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession) {
     var artifactSearch by remember { mutableStateOf("") }
     var activeArtifactId by remember { mutableStateOf<String?>(null) }
     var artifactTitle by remember { mutableStateOf("") }
-    LaunchedEffect(session.userId) {
-        savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
-    }
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
     var rawOcr by remember { mutableStateOf("") }
@@ -1276,6 +1273,22 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession) {
     var message by remember { mutableStateOf("Choose an image. OCR runs on this device and does not upload it.") }
     val screenActive = remember { AtomicBoolean(true) }
     val activeRecognizer = remember { AtomicReference<com.google.mlkit.vision.text.TextRecognizer?>(null) }
+    LaunchedEffect(session.userId) {
+        // Clear old learner content immediately, before loading the new private store.
+        activeRecognizer.getAndSet(null)?.close()
+        savedArtifacts = emptyList()
+        artifactSearch = ""
+        activeArtifactId = null
+        artifactTitle = ""
+        selectedImage = null
+        imagePreview = null
+        rawOcr = ""
+        editableText = ""
+        redactionTerms = ""
+        processing = false
+        message = "Choose an image. OCR runs on this device and does not upload it."
+        savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
+    }
     DisposableEffect(Unit) {
         screenActive.set(true)
         onDispose {
