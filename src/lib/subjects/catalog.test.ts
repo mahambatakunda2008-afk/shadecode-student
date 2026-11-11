@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SUBJECT_CATALOG, SUBJECT_CATEGORIES } from "./catalog";
+import { SUBJECT_CATALOG, SUBJECT_CATEGORIES, canonicalSubjectId, canonicalSubjectName, resolveSubjectCatalogEntry } from "./catalog";
 
 describe("central subject catalogue", () => {
   it("has unique stable IDs and unique canonical names", () => {
@@ -29,4 +29,19 @@ describe("central subject catalogue", () => {
   it("keeps selectable status separate from claims about verified curriculum or content", () => {
     expect(SUBJECT_CATALOG.every(subject => !("verified" in subject) && !("lessonCount" in subject))).toBe(true);
   });
+  it("resolves stable IDs, display names and aliases to one subject identity", () => {
+    expect(canonicalSubjectId("Maths")).toBe("mathematics");
+    expect(canonicalSubjectId("mathematics")).toBe("mathematics");
+    expect(canonicalSubjectId("English")).toBe("english-language");
+    expect(canonicalSubjectId("english-language")).toBe("english-language");
+    expect(canonicalSubjectName("art-design")).toBe("Art and Design");
+    expect(resolveSubjectCatalogEntry("Information and Communication Technology")?.id).toBe("ict");
+  });
+
+  it("preserves custom subject identities without treating them as catalogue entries", () => {
+    expect(canonicalSubjectId("Marine Engineering")).toBe("marine-engineering");
+    expect(resolveSubjectCatalogEntry("Marine Engineering")).toBeNull();
+    expect(canonicalSubjectName("Marine Engineering")).toBe("Marine Engineering");
+  });
+
 });
