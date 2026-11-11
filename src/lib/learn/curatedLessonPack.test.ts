@@ -26,7 +26,7 @@ describe("curated Economics lesson integration", () => {
     expect(visible).not.toContain("marking guidance");
     expect(visible).not.toContain('"answer":');
     expect(visible).not.toContain("expectedEvidence".toLowerCase());
-    expect(visible).not.toContain("groundnuts expected to earn");
+    expect(visible).not.toContain("us$900 value/return forgone");
   });
 
   it("resolves only the supported pack identifiers", () => {
