@@ -10,6 +10,9 @@ describe("curriculum visual assets", () => {
     ["economic-time-horizons", "short run"],
     ["factors-of-production-model", "factors of production"],
     ["flowchart", "flowchart"],
+    ["resource-allocation-questions", "what"],
+    ["positive-normative-claims", "positive"],
+    ["economics-inquiry-cycle", "observe"],
   ])("renders %s as an accessible offline SVG", (kind, expectedLabel) => {
     const html = renderToStaticMarkup(<LessonDiagram kind={kind} title={kind} />);
     expect(html).toContain("<svg");
