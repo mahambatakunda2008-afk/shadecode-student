@@ -124,6 +124,51 @@ export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: 
   return null;
 }
 
+/** Crop blank canvas margins, upscale small writing and improve ink contrast for vision OCR. */
+export async function prepareHandwritingImage(source: HTMLCanvasElement): Promise<Blob> {
+  const sourceContext = source.getContext("2d", { willReadFrequently: true });
+  if (!sourceContext) throw new Error("Could not read the handwriting canvas.");
+  const { data, width, height } = sourceContext.getImageData(0, 0, source.width, source.height);
+  let left = width, top = height, right = -1, bottom = -1;
+  for (let y = 0; y < height; y += 2) {
+    for (let x = 0; x < width; x += 2) {
+      const index = (y * width + x) * 4;
+      const luminance = data[index] * 0.299 + data[index + 1] * 0.587 + data[index + 2] * 0.114;
+      if (luminance < 244 && data[index + 3] > 20) {
+        left = Math.min(left, x); top = Math.min(top, y);
+        right = Math.max(right, x); bottom = Math.max(bottom, y);
+      }
+    }
+  }
+  const output = document.createElement("canvas");
+  const outputContext = output.getContext("2d", { willReadFrequently: true });
+  if (!outputContext) throw new Error("Could not prepare the handwriting image.");
+  if (right < left || bottom < top) {
+    output.width = width; output.height = height;
+    outputContext.fillStyle = "#fff"; outputContext.fillRect(0, 0, width, height);
+  } else {
+    const padding = 36;
+    const cropLeft = Math.max(0, left - padding), cropTop = Math.max(0, top - padding);
+    const cropRight = Math.min(width, right + padding + 1), cropBottom = Math.min(height, bottom + padding + 1);
+    const cropWidth = cropRight - cropLeft, cropHeight = cropBottom - cropTop;
+    const scale = Math.min(2, 2200 / cropWidth, 1400 / cropHeight);
+    output.width = Math.max(1, Math.round(cropWidth * scale));
+    output.height = Math.max(1, Math.round(cropHeight * scale));
+    outputContext.fillStyle = "#fff"; outputContext.fillRect(0, 0, output.width, output.height);
+    outputContext.imageSmoothingEnabled = true;
+    outputContext.imageSmoothingQuality = "high";
+    outputContext.drawImage(source, cropLeft, cropTop, cropWidth, cropHeight, 0, 0, output.width, output.height);
+    const pixels = outputContext.getImageData(0, 0, output.width, output.height);
+    for (let i = 0; i < pixels.data.length; i += 4) {
+      const gray = pixels.data[i] * 0.299 + pixels.data[i + 1] * 0.587 + pixels.data[i + 2] * 0.114;
+      const enhanced = Math.max(0, Math.min(255, (gray - 180) * 1.22 + 180));
+      pixels.data[i] = enhanced; pixels.data[i + 1] = enhanced; pixels.data[i + 2] = enhanced;
+    }
+    outputContext.putImageData(pixels, 0, 0);
+  }
+  return new Promise((resolve, reject) => output.toBlob(blob => blob ? resolve(blob) : reject(new Error("Could not encode the prepared handwriting image.")), "image/png"));
+}
+
 export function SketchWorkspace({ onSave, onCancel, saving }: {
   onSave: (file: File) => void;
   onCancel: () => void;
@@ -213,11 +258,13 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     }
     setRecognizingHandwriting(true);
     lastRecognitionAtRef.current = Date.now();
-    setStatus("Reading handwriting and checking uncertain characters…");
+    setStatus("Preparing the writing, improving contrast and checking individual characters…");
     try {
-      const blob = await new Promise<Blob>((resolve, reject) =>
+      const originalBlob = await new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(value => value ? resolve(value) : reject(new Error("Could not capture the canvas.")), "image/png"),
       );
+      let blob = await prepareHandwritingImage(canvas);
+      if (blob.size > 3 * 1024 * 1024) blob = originalBlob;
       if (blob.size > 3 * 1024 * 1024) throw new Error("This canvas is too large to analyse. Clear unused space or split the writing into sections.");
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
