@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
-import { normalizeHandwritingRecognition, parseHandwritingRecognition } from "@/lib/teacher/handwriting";
+import { normalizeHandwritingRecognition, parseHandwritingRecognition, validateHandwritingImageData } from "@/lib/teacher/handwriting";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 45;
@@ -18,8 +18,9 @@ export async function POST(request: Request) {
   const image = typeof body?.image === "string" ? body.image : "";
   const mimeType = body?.mimeType === "image/jpeg" ? "image/jpeg" : "image/png";
   const mode = body?.mode === "mathematics" || body?.mode === "science" ? body.mode : "general";
-  if (!image || image.length > 4_200_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(image)) {
-    return NextResponse.json({ error: "Provide a valid canvas image under 3 MiB." }, { status: 400 });
+  const imageValidation = validateHandwritingImageData(image, mimeType);
+  if (!imageValidation.valid) {
+    return NextResponse.json({ error: imageValidation.error }, { status: 400 });
   }
 
   const modeInstructions = mode === "mathematics"
