@@ -376,7 +376,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
                 ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
               ],
             }],
-            generationConfig: { maxOutputTokens: maxTokens, temperature: 0.35 },
+            generationConfig: { maxOutputTokens: maxTokens, temperature: media.length ? 0.1 : 0.35, ...(media.length ? { responseMimeType: "application/json" } : {}) },
           }),
         }, timeout);
       } catch (error) {
