@@ -156,3 +156,44 @@ export function canonicalSubjectName(value: unknown): string {
   if (typeof value !== "string") return "";
   return resolveSubjectCatalogEntry(value)?.name ?? value.trim().replace(/\s+/g, " ");
 }
+
+
+export type SubjectReadinessState = "ready" | "needs_setup" | "not_verified";
+export interface SubjectReadinessItem {
+  id: "catalogue" | "curriculum" | "content" | "assessment" | "tools" | "offline";
+  label: string;
+  state: SubjectReadinessState;
+  detail: string;
+}
+
+/**
+ * Learner-facing readiness summary. Only report evidence we actually have:
+ * catalogue selection, explicitly mapped board/syllabus metadata, and saved
+ * lesson count. Assessment, tool and offline coverage remain unverified until
+ * each has a reliable source of truth.
+ */
+export function getSubjectReadiness(
+  subject: SubjectCatalogEntry | null,
+  savedLessonCount: number,
+): SubjectReadinessItem[] {
+  const offering = subject?.offerings?.[0];
+  const count = Number.isFinite(savedLessonCount) ? Math.max(0, Math.floor(savedLessonCount)) : 0;
+  return [
+    { id: "catalogue", label: "Catalogue", state: subject ? "ready" : "needs_setup", detail: subject ? "Available in your subject list" : "Custom subject" },
+    {
+      id: "curriculum",
+      label: "Curriculum",
+      state: offering ? "ready" : "needs_setup",
+      detail: offering ? `${offering.boardId.toUpperCase()} · ${offering.qualificationId.replace("_", " ")} · ${offering.syllabusCode}` : "Board and syllabus mapping needed",
+    },
+    {
+      id: "content",
+      label: "Lessons",
+      state: count > 0 ? "ready" : "needs_setup",
+      detail: count > 0 ? `${count} saved lesson${count === 1 ? "" : "s"} in your library` : "No saved lessons in your library yet",
+    },
+    { id: "assessment", label: "Assessments", state: "not_verified", detail: "Coverage not yet verified" },
+    { id: "tools", label: "Subject tools", state: "not_verified", detail: "Coverage not yet verified" },
+    { id: "offline", label: "Offline pack", state: "not_verified", detail: "Installed content not yet verified" },
+  ];
+}
