@@ -7,6 +7,7 @@ import systems from "../../../docs/curriculum/lessons/economics-9708-as-1.4-econ
 import ppc from "../../../docs/curriculum/lessons/economics-9708-as-1.5-production-possibility-curves.json";
 import goods from "../../../docs/curriculum/lessons/economics-9708-as-1.6-classification-goods-services.json";
 import demandSupply from "../../../docs/curriculum/lessons/economics-9708-as-2.1-demand-and-supply-curves.json";
+import elasticity from "../../../docs/curriculum/lessons/economics-9708-as-2.2-price-income-cross-elasticity.json";
 
 describe("curriculum visual and multimodal standard", () => {
   it("covers science, humanities, economics, technical and creative arts", () => {
@@ -23,7 +24,7 @@ describe("curriculum visual and multimodal standard", () => {
     expect(standard.qualityGate.rejectIf.some((item) => item.includes("art/music/performance"))).toBe(true);
   });
 
-  it.each([scarcity, methodology, factors, systems, ppc, goods, demandSupply])("keeps every required lesson visual outcome-linked and available offline", (lesson) => {
+  it.each([scarcity, methodology, factors, systems, ppc, goods, demandSupply, elasticity])("keeps every required lesson visual outcome-linked and available offline", (lesson) => {
     expect(lesson.visuals.length).toBeGreaterThan(0);
     for (const visual of lesson.visuals) {
       expect(visual.learningObjectiveIds.length).toBeGreaterThan(0);
