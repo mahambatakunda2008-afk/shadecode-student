@@ -190,6 +190,24 @@
         "up to 3 marks explain possible future outward shift through increased capital"
       ],
       "misconception": "The reallocation itself is a movement along the frontier; a later capacity effect depends on capital accumulation."
+    },
+    {
+      "id": "q5",
+      "type": "diagram_construction",
+      "marks": 4,
+      "prompt": "Draw two PPCs to illustrate (a) constant opportunity cost and (b) increasing opportunity cost. Label the axes and identify the difference in shape.",
+      "answer": [
+        "both axes labelled with two goods",
+        "straight-line PPC for constant opportunity cost",
+        "bowed-out PPC for increasing opportunity cost"
+      ],
+      "marking": [
+        "1 mark for correctly labelled axes",
+        "1 mark for a straight-line frontier",
+        "1 mark for a bowed-out frontier",
+        "1 mark for linking each shape to the correct opportunity-cost pattern"
+      ],
+      "misconception": "A bowed-out frontier is not the same as a straight-line frontier; explain the different sacrifice as output changes."
     }
   ],
   "mastery": {
@@ -215,6 +233,12 @@
       },
       {
         "assetId": "econ-9708-1-5-ppc-shifts",
+        "type": "comparison_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-1-5-ppc-cost-shapes",
         "type": "comparison_diagram",
         "offlineIncluded": true,
         "source": "original_instructional_diagram"
@@ -264,12 +288,31 @@
         "classify",
         "explain"
       ]
+    },
+    {
+      "assetId": "econ-9708-1-5-ppc-cost-shapes",
+      "type": "comparison_diagram",
+      "kind": "ppc-cost-shapes",
+      "title": "Constant versus increasing opportunity cost",
+      "purpose": "Compare a straight-line PPC with a bowed-out PPC and connect each shape to the sacrifice required when reallocating resources.",
+      "learningObjectiveIds": [
+        "9708-AS-1.5-LO1",
+        "9708-AS-1.5-LO2"
+      ],
+      "altText": "Side-by-side production possibility frontiers. A straight-line frontier shows constant opportunity cost because equal additional output sacrifices equal amounts of the other good. A bowed-out frontier shows increasing opportunity cost because progressively larger amounts of the other good are sacrificed.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "compare",
+        "draw",
+        "explain"
+      ]
     }
   ],
   "visualReview": {
     "status": "reviewed_for_representation_coverage",
     "objectiveIdConvention": "9708-AS-1.5-LO<n>",
-    "coverage": "All four stated learning objectives map to at least one offline instructional graph or comparison diagram.",
+    "coverage": "All four stated learning objectives map to offline instructional graphs and comparison diagrams, including a side-by-side straight-line and bowed-out PPC representation.",
     "reviewNote": "Authoring coverage check only. Teacher review and independent verification against the current official syllabus remain required."
   },
   "teacherReview": {
