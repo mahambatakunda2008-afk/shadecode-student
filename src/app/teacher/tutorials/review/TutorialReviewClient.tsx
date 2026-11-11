@@ -69,6 +69,16 @@ export function TutorialReviewClient({ isAdmin }: { isAdmin: boolean }) {
     finally { setBusy(false); }
   }
 
+  async function openTutorial(item: Tutorial) {
+    setError(""); setMessage(""); setMedia({});
+    try {
+      const res = await fetch(`/api/teacher/tutorials/${item.id}`, { cache: "no-store" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Could not open tutorial.");
+      setSelected(json.tutorial as Tutorial);
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not open tutorial."); }
+  }
+
   const queue = items.filter((item) => item.status === "in_review" || (isAdmin && item.status === "verified"));
 
   return (
@@ -79,7 +89,7 @@ export function TutorialReviewClient({ isAdmin }: { isAdmin: boolean }) {
       {!selected ? (
         <div className="space-y-2">
           {queue.length === 0 && <div className="rounded-2xl border border-dashed border-[var(--card-border)] p-8 text-center text-sm text-[var(--muted-foreground)]">No tutorials are waiting in your queue.</div>}
-          {queue.map((item) => <button key={item.id} onClick={() => { setSelected(item); setError(""); setMessage(""); setMedia({}); }} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 text-left hover:border-[var(--primary)]">
+          {queue.map((item) => <button key={item.id} onClick={() => { void openTutorial(item); }} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 text-left hover:border-[var(--primary)]">
             <span className="min-w-0"><span className="block truncate font-medium">{item.title}</span><span className="mt-1 block text-xs text-[var(--muted-foreground)]">{item.subject}{item.topic ? ` · ${item.topic}` : ""} · v{item.version}</span></span>
             <span className="shrink-0 rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs">{label[item.status]}</span>
           </button>)}
