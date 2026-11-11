@@ -10,11 +10,12 @@
       2027,
       2028
     ],
-    "documentVersion": 1,
-    "published": "September 2023",
+    "documentVersion": 2,
+    "published": "December 2025",
     "pdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf",
     "subjectContentPrintedPages": "15-23",
-    "sourceSections": "3 Subject content, AS Level content"
+    "sourceSections": "3 Subject content, AS Level content",
+    "versionEvidence": "Official Cambridge update confirms Version 2; the linked main PDF URL currently returns a cached Version 1 copy through web extraction. Cambridge says the only update is a weblink and specimen materials are unchanged; refresh the latest PDF before independent sign-off."
   },
   "trustBoundary": "A structured transcription of the numbered AS Level syllabus outcome identifiers and learning scope. It is not a lesson bank, assessment bank, complete teaching sequence, or proof that Shadecode currently teaches these outcomes. Independently review against the official PDF before marking content complete.",
   "qualificationBoundary": {
