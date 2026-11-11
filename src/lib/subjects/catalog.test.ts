@@ -54,8 +54,8 @@ describe("central subject catalogue", () => {
     expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-business-9609")?.offerings?.[0]).toEqual({
       boardId: "cambridge", qualificationId: "a_level", syllabusCode: "9609",
     });
-    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-economics-9708")?.offerings?.[0].syllabusCode).toBe("9708");
-    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-geography-9696")?.offerings?.[0].syllabusCode).toBe("9696");
+    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-economics-9708")?.offerings?.[0]?.syllabusCode).toBe("9708");
+    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-geography-9696")?.offerings?.[0]?.syllabusCode).toBe("9696");
   });
 
   it("preserves custom subject identities without treating them as catalogue entries", () => {
