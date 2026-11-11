@@ -143,6 +143,13 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     ctx.putImageData(snapshotRef.current, 0, 0);
     const points = pointsRef.current;
     if (points.length < 2) return;
+    if (tool === "pen" && autoFix) {
+      const recognized = recognizeShape(points);
+      if (recognized) {
+        drawShape(ctx, recognized.from, recognized.to, recognized.tool);
+        return;
+      }
+    }
     ctx.strokeStyle = tool === "eraser" ? "#ffffff" : INK;
     ctx.lineWidth = tool === "eraser" ? 30 : 4;
     ctx.lineCap = "round"; ctx.lineJoin = "round";
