@@ -49,7 +49,7 @@ class NativeSyncWorker(
         }
 
         // Keep the existing Room-backed lesson-progress queue working.
-        for (item in database.sync().pending()) {
+        for (item in database.sync().pending(session.userId)) {
             try {
                 if (item.operation != "lesson_progress") {
                     database.sync().delete(item)
