@@ -21,7 +21,9 @@ export async function GET(request: NextRequest) {
     const access = await resolveLearnerSubject(supabase, user.id, requested);
     if (!access.ok) return NextResponse.json({ error: access.error, tutorials: [] }, { status: access.status });
 
-    const { data, error } = await supabase
+    const admin = createSupabaseAdminClient();
+    if (!admin) return NextResponse.json({ error: "Published tutorials are temporarily unavailable.", tutorials: [], retryable: true }, { status: 503 });
+    const { data, error } = await admin
       .from("teacher_tutorials")
       .select("id,title,subject,topic,summary,version,published_at,updated_at")
       .eq("status", "published")
