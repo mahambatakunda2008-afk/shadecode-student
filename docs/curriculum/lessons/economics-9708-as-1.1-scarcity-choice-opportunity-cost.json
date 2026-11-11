@@ -221,9 +221,9 @@
       "title": "Scarcity, choice and opportunity cost",
       "purpose": "Make the causal relationship between scarce resources, choice and the next best alternative forgone visible.",
       "learningObjectiveIds": [
-        "1.1.1",
-        "1.1.2",
-        "1.1.3"
+        "9708-AS-1.1-LO1",
+        "9708-AS-1.1-LO2",
+        "9708-AS-1.1-LO3"
       ],
       "altText": "Limited resources relative to competing wants create scarcity; scarcity requires choice; choosing one option means giving up the next best alternative, which is the opportunity cost.",
       "source": "original_instructional_diagram",
@@ -241,9 +241,9 @@
       "title": "Production possibility curve: efficiency and scarcity",
       "purpose": "Use a labelled production possibility curve to discuss attainable combinations and opportunity cost.",
       "learningObjectiveIds": [
-        "1.1.1",
-        "1.1.3",
-        "1.1.4"
+        "9708-AS-1.1-LO1",
+        "9708-AS-1.1-LO2",
+        "9708-AS-1.1-LO3"
       ],
       "altText": "Illustrative bowed-out production possibility curve between capital goods and consumer goods. A point on the curve is productively efficient, a point inside is inefficient or underused resources, and a point outside is currently unattainable.",
       "source": "original_instructional_graph_illustrative_not_measured_data",
