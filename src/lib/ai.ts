@@ -219,7 +219,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   }
 
   // Optional local Ollama path. If Ollama is unavailable, fail fast and continue to cloud providers.
-  if ((options.preferLocal || OLLAMA_BASE_URL) && OLLAMA_BASE_URL && canTry()) {
+  if (!media.length && (options.preferLocal || OLLAMA_BASE_URL) && OLLAMA_BASE_URL && canTry()) {
     const text = await tryProvider("ollama", OLLAMA_MODEL, async timeout => {
       const res = await fetchWithTimeout(`${OLLAMA_BASE_URL}/api/chat`, {
         method: "POST",
