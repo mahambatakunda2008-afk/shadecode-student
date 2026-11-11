@@ -195,7 +195,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       if (!textToPlace) return;
       ctx.fillStyle = INK; ctx.font = `600 ${fontSize}px Arial, sans-serif`;
       ctx.textBaseline = "alphabetic";
-      const words = label.trim().split(/\s+/);
+      const words = textToPlace.split(/\s+/);
       let line = "", y = point.y;
       const maxWidth = Math.max(100, WIDTH - point.x - 24);
       for (const word of words) {
