@@ -243,7 +243,7 @@
       "title": "Ceteris paribus: isolate one relationship",
       "purpose": "Show how economists hold other relevant influences constant to isolate the relationship under study.",
       "learningObjectiveIds": [
-        "9708-AS-1.2-LO1"
+        "9708-AS-1.2-LO3"
       ],
       "altText": "Change one variable, hold other relevant influences constant, then isolate the predicted relationship. Example: price rises, other demand determinants held constant, quantity demanded falls.",
       "source": "original_instructional_diagram",
@@ -261,7 +261,7 @@
       "title": "Short run, long run and very long run",
       "purpose": "Compare time periods by the scope of factor and technological adjustment, not fixed calendar duration.",
       "learningObjectiveIds": [
-        "9708-AS-1.2-LO1"
+        "9708-AS-1.2-LO4"
       ],
       "altText": "Short run has at least one fixed factor; long run allows all factors to vary; very long run also allows technology and wider productive conditions to change. No fixed calendar durations are implied.",
       "source": "original_instructional_diagram",
@@ -308,5 +308,11 @@
         "critique"
       ]
     }
-  ]
+  ],
+  "visualReview": {
+    "status": "reviewed_for_representation_coverage",
+    "objectiveIdConvention": "9708-AS-1.2-LO<n>",
+    "coverage": "Every stated learning objective is mapped to at least one instructional visual or structured representation.",
+    "reviewNote": "This is an authoring coverage check, not independent Cambridge syllabus verification. Teacher review remains required."
+  }
 }
