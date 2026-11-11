@@ -72,6 +72,22 @@ describe("teacher sketch auto-correction", () => {
     expect(recognizeShape(points)?.tool).toBe("triangle");
   });
 
+  it("does not misclassify a hand-drawn pentagon as a rectangle", () => {
+    const corners = [
+      { x: 120, y: 10 }, { x: 230, y: 90 }, { x: 190, y: 210 },
+      { x: 50, y: 210 }, { x: 10, y: 90 }, { x: 120, y: 10 },
+    ];
+    const points: Point[] = corners.slice(0, -1).flatMap((from, index) => {
+      const to = corners[index + 1];
+      return Array.from({ length: 18 }, (_, step) => {
+        const t = step / 18;
+        return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
+      });
+    });
+    points.push(corners[corners.length - 1]);
+    expect(recognizeShape(points)).toBeNull();
+  });
+
   it("does not turn a short accidental mark into a diagram shape", () => {
     const points: Point[] = Array.from({ length: 5 }, (_, index) => ({
       x: 10 + index,
