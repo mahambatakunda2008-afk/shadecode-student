@@ -25,9 +25,9 @@ data class NativeSubjectOption(
 object NativeSubjectCatalog {
     val curriculumOfferings = mapOf(
         "zimsec-family-religious-studies-o-level" to listOf(NativeCurriculumOffering("zimsec", "o_level", "4047")),
-        "cambridge-business-9609" to listOf(NativeCurriculumOffering("cambridge", "a_level", "9609")),
-        "cambridge-economics-9708" to listOf(NativeCurriculumOffering("cambridge", "a_level", "9708")),
-        "cambridge-geography-9696" to listOf(NativeCurriculumOffering("cambridge", "a_level", "9696")),
+        "cambridge-business-9609" to listOf(NativeCurriculumOffering("cambridge", "a_level", "9609", "2026-2028")),
+        "cambridge-economics-9708" to listOf(NativeCurriculumOffering("cambridge", "a_level", "9708", "2026-2028")),
+        "cambridge-geography-9696" to listOf(NativeCurriculumOffering("cambridge", "a_level", "9696", "2027-2029")),
     )
 
     val all = listOf(
