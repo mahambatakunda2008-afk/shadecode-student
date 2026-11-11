@@ -70,11 +70,11 @@ function recognizeFreehandArrow(points: Point[]): { tool: "arrow"; from: Point; 
   }), { left: first.x, right: first.x, top: first.y, bottom: first.y });
   const diagonal = Math.hypot(bounds.right - bounds.left, bounds.bottom - bounds.top);
   const returnTolerance = Math.max(9, Math.min(22, diagonal * 0.045));
-  for (let tipIndex = 3; tipIndex < points.length - 7; tipIndex++) {
+  for (let tipIndex = 3; tipIndex < points.length - 3; tipIndex++) {
     const tip = points[tipIndex];
     const shaftLength = distance(first, tip);
     if (shaftLength < 40) continue;
-    for (let returnIndex = tipIndex + 3; returnIndex < points.length - 3; returnIndex++) {
+    for (let returnIndex = tipIndex + 2; returnIndex < points.length - 1; returnIndex++) {
       const returnedTip = points[returnIndex];
       if (distance(tip, returnedTip) > returnTolerance) continue;
       const wingA = points[tipIndex + 1], wingB = points[returnIndex + 1];
