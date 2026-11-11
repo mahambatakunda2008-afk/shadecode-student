@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildCuratedLearnBlocks, economics9708AS11Pack, economics9708AS12Pack, economics9708AS13Pack, economics9708AS14Pack, economics9708AS15Pack, economics9708AS16Pack, getCuratedEconomics9708Pack } from "./curatedLessonPack";
+import { buildCuratedLearnBlocks, economics9708AS11Pack, economics9708AS12Pack, economics9708AS13Pack, economics9708AS14Pack, economics9708AS15Pack, economics9708AS16Pack, economics9708AS21Pack, getCuratedEconomics9708Pack } from "./curatedLessonPack";
 import scarcitySource from "../../../docs/curriculum/lessons/economics-9708-as-1.1-scarcity-choice-opportunity-cost.json";
 import methodologySource from "../../../docs/curriculum/lessons/economics-9708-as-1.2-economic-methodology.json";
 import factorsSource from "../../../docs/curriculum/lessons/economics-9708-as-1.3-factors-of-production.json";
 import systemsSource from "../../../docs/curriculum/lessons/economics-9708-as-1.4-economic-systems.json";
 import ppcSource from "../../../docs/curriculum/lessons/economics-9708-as-1.5-production-possibility-curves.json";
 import goodsSource from "../../../docs/curriculum/lessons/economics-9708-as-1.6-classification-goods-services.json";
+import demandSupplySource from "../../../docs/curriculum/lessons/economics-9708-as-2.1-demand-and-supply-curves.json";
 
 describe("curated Economics lesson integration", () => {
   it.each([
@@ -15,6 +16,7 @@ describe("curated Economics lesson integration", () => {
     ["1.4", economics9708AS14Pack, systemsSource],
     ["1.5", economics9708AS15Pack, ppcSource],
     ["1.6", economics9708AS16Pack, goodsSource],
+    ["2.1", economics9708AS21Pack, demandSupplySource],
   ])("adapts authored AS %s content to Learn renderer blocks", (_topic, pack, source) => {
     expect(pack.blocks.length).toBeGreaterThanOrEqual(12);
     expect(pack.blocks.some((block) => block.type === "objective")).toBe(true);
@@ -36,6 +38,7 @@ describe("curated Economics lesson integration", () => {
     ["1.4", systemsSource],
     ["1.5", ppcSource],
     ["1.6", goodsSource],
+    ["2.1", demandSupplySource],
   ])("requires traceable, offline visual assets for AS %s", (_topic, source) => {
     expect(source.visuals.length).toBeGreaterThan(0);
     for (const visual of source.visuals) {
@@ -77,6 +80,7 @@ describe("curated Economics lesson integration", () => {
       ...buildCuratedLearnBlocks(methodologySource),
       ...buildCuratedLearnBlocks(factorsSource),
       ...buildCuratedLearnBlocks(goodsSource),
+      ...buildCuratedLearnBlocks(demandSupplySource),
     ]).toLowerCase();
     expect(visible).not.toContain("marking guidance");
     expect(visible).not.toContain('"answer":');
@@ -91,6 +95,7 @@ describe("curated Economics lesson integration", () => {
     expect(getCuratedEconomics9708Pack("economics-9708-as-1.4")).toBe(economics9708AS14Pack);
     expect(getCuratedEconomics9708Pack("economics-9708-as-1.5")).toBe(economics9708AS15Pack);
     expect(getCuratedEconomics9708Pack("economics-9708-as-1.6")).toBe(economics9708AS16Pack);
+    expect(getCuratedEconomics9708Pack("economics-9708-as-2.1")).toBe(economics9708AS21Pack);
     expect(getCuratedEconomics9708Pack("economics-9708-a-level")).toBeNull();
   });
 });
