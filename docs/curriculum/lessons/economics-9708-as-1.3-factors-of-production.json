@@ -257,7 +257,7 @@
         "9708-AS-1.3-LO1",
         "9708-AS-1.3-LO2",
         "9708-AS-1.3-LO3",
-        "9708-AS-1.3-LO4"
+        "9708-AS-1.3-LO5"
       ],
       "altText": "Land is natural resources and earns rent; labour is human effort and earns wages; capital is man-made productive assets and earns interest; enterprise organises resources and bears risk, earning profit.",
       "source": "original_instructional_diagram",
@@ -275,7 +275,7 @@
       "title": "Division of labour and specialisation",
       "purpose": "Visualise a production process divided into specialised stages.",
       "learningObjectiveIds": [
-        "9708-AS-1.3-LO1"
+        "9708-AS-1.3-LO4"
       ],
       "altText": "A production process is split into separate tasks, workers specialise in individual stages, repetition builds skill and speed, and coordinated output may increase.",
       "source": "original_instructional_diagram",
@@ -286,5 +286,11 @@
         "explain"
       ]
     }
-  ]
+  ],
+  "visualReview": {
+    "status": "reviewed_for_representation_coverage",
+    "objectiveIdConvention": "9708-AS-1.3-LO<n>",
+    "coverage": "Every stated learning objective is mapped to at least one instructional visual or structured representation.",
+    "reviewNote": "This is an authoring coverage check, not independent Cambridge syllabus verification. Teacher review remains required."
+  }
 }
