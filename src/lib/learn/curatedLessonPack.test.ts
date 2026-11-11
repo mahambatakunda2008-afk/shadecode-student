@@ -35,6 +35,7 @@ describe("curated Economics lesson integration", () => {
     ["1.3", factorsSource],
     ["1.4", systemsSource],
     ["1.5", ppcSource],
+    ["1.6", goodsSource],
   ])("requires traceable, offline visual assets for AS %s", (_topic, source) => {
     expect(source.visuals.length).toBeGreaterThan(0);
     for (const visual of source.visuals) {
@@ -75,6 +76,7 @@ describe("curated Economics lesson integration", () => {
       ...buildCuratedLearnBlocks(scarcitySource),
       ...buildCuratedLearnBlocks(methodologySource),
       ...buildCuratedLearnBlocks(factorsSource),
+      ...buildCuratedLearnBlocks(goodsSource),
     ]).toLowerCase();
     expect(visible).not.toContain("marking guidance");
     expect(visible).not.toContain('"answer":');
