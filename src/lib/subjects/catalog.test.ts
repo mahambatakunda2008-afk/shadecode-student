@@ -64,10 +64,10 @@ describe("central subject catalogue", () => {
       { boardId: "zimsec", qualificationId: "o_level", syllabusCode: "4047" },
     ]);
     expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-business-9609")?.offerings?.[0]).toEqual({
-      boardId: "cambridge", qualificationId: "a_level", syllabusCode: "9609",
+      boardId: "cambridge", qualificationId: "a_level", syllabusCode: "9609", syllabusVersion: "2026-2028",
     });
-    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-economics-9708")?.offerings?.[0]?.syllabusCode).toBe("9708");
-    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-geography-9696")?.offerings?.[0]?.syllabusCode).toBe("9696");
+    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-economics-9708")?.offerings?.[0]).toMatchObject({ syllabusCode: "9708", syllabusVersion: "2026-2028" });
+    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-geography-9696")?.offerings?.[0]).toMatchObject({ syllabusCode: "9696", syllabusVersion: "2027-2029" });
   });
 
   it("preserves custom subject identities without treating them as catalogue entries", () => {
@@ -93,8 +93,8 @@ describe("central subject catalogue", () => {
       });
     }
 
-    const offeringLines = [...kotlin.matchAll(/"([^"]+)" to listOf\(NativeCurriculumOffering\("([^"]+)", "([^"]+)", "([^"]+)"\)\)/g)];
-    const nativeOfferings = new Map(offeringLines.map(match => [match[1], [{ boardId: match[2], qualificationId: match[3], syllabusCode: match[4] }]]));
+    const offeringLines = [...kotlin.matchAll(/"([^"]+)" to listOf\(NativeCurriculumOffering\("([^"]+)", "([^"]+)", "([^"]+)"(?:, "([^"]+)")?\)\)/g)];
+    const nativeOfferings = new Map(offeringLines.map(match => [match[1], [{ boardId: match[2], qualificationId: match[3], syllabusCode: match[4], ...(match[5] ? { syllabusVersion: match[5] } : {}) }]]));
     expect(nativeOfferings.size).toBe(SUBJECT_CATALOG.filter(subject => subject.offerings?.length).length);
     expect(nativeEntries.size).toBe(SUBJECT_CATALOG.length);
     for (const subject of SUBJECT_CATALOG) {
