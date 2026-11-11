@@ -300,9 +300,16 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Drawing tools">
       {tools.map(item => <button key={item.id} type="button" aria-pressed={tool === item.id} onClick={() => setTool(item.id)} className={`min-h-10 rounded-lg border px-3 py-2 text-sm ${tool === item.id ? "border-[var(--primary)] bg-[var(--primary)]/10 font-semibold" : "border-[var(--card-border)]"}`}>{item.name}</button>)}
     </div>
-    {tool === "label" && <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-      <label className="block text-sm">Text / label<textarea value={label} onChange={event => setLabel(event.target.value)} maxLength={240} rows={2} spellCheck autoCorrect="on" autoCapitalize="sentences" placeholder="Type your label. Your browser can flag spelling as you type." className="mt-1 w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2" /></label>
-      <label className="block text-sm">Text size<select value={fontSize} onChange={event => setFontSize(Number(event.target.value))} className="mt-1 min-h-11 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3"><option value={20}>Small</option><option value={28}>Medium</option><option value={38}>Large</option><option value={48}>Heading</option></select></label>
+    {tool === "label" && <div className="space-y-2">
+      <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+        <label className="block text-sm">Text / label<textarea value={label} onChange={event => setLabel(event.target.value)} maxLength={240} rows={2} spellCheck autoCorrect="on" autoCapitalize="sentences" placeholder="Type a label. Shadecode can improve its wording before placing." className="mt-1 w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2" /></label>
+        <label className="block text-sm">Text size<select value={fontSize} onChange={event => setFontSize(Number(event.target.value))} className="mt-1 min-h-11 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3"><option value={20}>Small</option><option value={28}>Medium</option><option value={38}>Large</option><option value={48}>Heading</option></select></label>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={() => void improveLabelText()} disabled={!label.trim() || improvingText || saving} className="min-h-10 rounded-lg border border-[var(--primary)] px-3 py-2 text-sm font-medium disabled:opacity-40">{improvingText ? "Improving text…" : "✦ Improve text"}</button>
+        <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={autoImproveText} onChange={event => setAutoImproveText(event.target.checked)} />Auto-improve before placing</label>
+      </div>
+      <p className="text-xs text-[var(--muted-foreground)]">Checks spelling, grammar, punctuation and clarity while preserving scientific terms and meaning. AI improvement needs a connection; your original stays unchanged if unavailable.</p>
     </div>}
     <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={autoFix} onChange={event => setAutoFix(event.target.checked)} />Auto-fix freehand lines and shapes</label>
     <div className="overflow-hidden rounded-xl border border-[var(--card-border)] bg-white">
