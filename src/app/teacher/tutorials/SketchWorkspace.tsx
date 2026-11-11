@@ -89,6 +89,7 @@ function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: Point }
   const circularity = (4 * Math.PI * (w * h)) / Math.max(pathLength * pathLength, 1);
   if (circularity > 0.48 && Math.min(w, h) / Math.max(w, h) > 0.45) return { tool: "ellipse", from: { x: left, y: top }, to: { x: right, y: bottom } };
   if (corners.length >= 3 && corners.length <= 7) {
+    if (corners.length <= 3) return { tool: "triangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
     const nearRect = Math.abs(w - h) < Math.max(w, h) * 0.18 || (w > h * 0.45 && h > w * 0.45);
     if (nearRect) return { tool: "rectangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
   }
