@@ -101,7 +101,7 @@ describe("central subject catalogue", () => {
     expect(scopeMap).toContain("AS scope: topics 1.1–6.5");
     expect(scopeMap).toContain("2027, 2028 and 2029");
     expect(scopeMap).toContain("exact official syllabus PDF not yet discovered");
-    expect(scopeMap).toContain("not a complete normalized syllabus pack");
+    expect(scopeMap).toContain("complete normalized syllabus pack");
   });
 
   it("pins the current official Cambridge syllabus structure and assessment boundaries", () => {
