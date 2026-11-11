@@ -2,34 +2,10 @@ import { NextResponse } from "next/server";
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
+import { normalizeHandwritingRecognition, parseHandwritingRecognition } from "@/lib/teacher/handwriting";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 45;
-
-type RecognitionResult = {
-  transcript?: unknown;
-  correctedText?: unknown;
-  confidence?: unknown;
-  uncertainCharacters?: unknown;
-};
-
-function parseRecognition(text: string): RecognitionResult | null {
-  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-  try {
-    const value = JSON.parse(cleaned);
-    return value && typeof value === "object" && !Array.isArray(value) ? value as RecognitionResult : null;
-  } catch {
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
-    if (start < 0 || end <= start) return null;
-    try {
-      const value = JSON.parse(cleaned.slice(start, end + 1));
-      return value && typeof value === "object" && !Array.isArray(value) ? value as RecognitionResult : null;
-    } catch {
-      return null;
-    }
-  }
-}
 
 export async function POST(request: Request) {
   const limited = await applyRateLimit(request, generalApiLimiter);
@@ -76,32 +52,15 @@ Rules:
     return NextResponse.json({ error: "Handwriting recognition is temporarily unavailable. Your canvas has not been changed." }, { status: 503 });
   }
 
-  const parsed = parseRecognition(output);
+  const parsed = parseHandwritingRecognition(output);
   if (!parsed) {
     return NextResponse.json({ error: "The handwriting service returned an unreadable result. Please try again." }, { status: 502 });
   }
 
-  const transcript = typeof parsed.transcript === "string" ? parsed.transcript.trim().slice(0, 12000) : "";
-  const correctedText = typeof parsed.correctedText === "string" ? parsed.correctedText.trim().slice(0, 12000) : "";
-  if (!transcript && !correctedText) {
+  const normalized = normalizeHandwritingRecognition(parsed);
+  if (!normalized.transcript && !normalized.correctedText) {
     return NextResponse.json({ error: "No readable handwriting was found. Try darker, larger writing with more spacing." }, { status: 422 });
   }
 
-  const uncertainCharacters = Array.isArray(parsed.uncertainCharacters)
-    ? parsed.uncertainCharacters.slice(0, 100).map((entry: Record<string, unknown>) => ({
-        seen: typeof entry?.seen === "string" ? entry.seen.slice(0, 80) : "",
-        chosen: typeof entry?.chosen === "string" ? entry.chosen.slice(0, 80) : "",
-        alternatives: Array.isArray(entry?.alternatives) ? entry.alternatives.filter((item): item is string => typeof item === "string").slice(0, 5) : [],
-        context: typeof entry?.context === "string" ? entry.context.slice(0, 160) : "",
-        reason: typeof entry?.reason === "string" ? entry.reason.slice(0, 240) : "",
-      }))
-    : [];
-
-  return NextResponse.json({
-    transcript,
-    correctedText: correctedText || transcript,
-    confidence: typeof parsed.confidence === "number" ? Math.max(0, Math.min(1, parsed.confidence)) : null,
-    uncertainCharacters,
-    requiresReview: uncertainCharacters.length > 0 || typeof parsed.confidence !== "number" || parsed.confidence < 0.9,
-  }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(normalized, { headers: { "Cache-Control": "no-store" } });
 }
