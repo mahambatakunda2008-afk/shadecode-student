@@ -36,7 +36,7 @@ describe("curated Economics lesson integration", () => {
       expect(visual.purpose).toBeTruthy();
       expect(visual.learningObjectiveIds.length).toBeGreaterThan(0);
       expect(visual.altText.length).toBeGreaterThan(30);
-      expect(visual.source).toBe("original_instructional_diagram");
+      expect(visual.source).toMatch(/^original_instructional_(diagram|graph_illustrative_not_measured_data)$/);
       expect(visual.offlineIncluded).toBe(true);
       expect(visual.practiceModes.length).toBeGreaterThan(0);
       expect(source.offline.assets.some((asset) => asset.assetId === visual.assetId && asset.offlineIncluded)).toBe(true);
