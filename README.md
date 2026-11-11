@@ -141,7 +141,11 @@ Never commit secrets. Environment requirements belong in deployment configuratio
 | `cargo check --manifest-path desktop/Cargo.toml` | Check the native desktop client |
 | `npm run test:curriculum` | Run curriculum data tests |
 
-## Desktop client\n\nThe dedicated Tauri desktop client lives in `desktop/`. Its current foundation provides a native cross-platform window and a connectivity-aware launch into the shared Shadecode Student experience. It is not yet a complete offline desktop build; see `desktop/README.md` for architecture, limitations and release gates.\n\n## Documentation map
+## Desktop client
+
+The dedicated Tauri desktop client lives in `desktop/`. Its current foundation provides a native cross-platform window and a connectivity-aware launch into the shared Shadecode Student experience. It is not yet a complete offline desktop build; see `desktop/README.md` for architecture, limitations and release gates.
+
+## Documentation map
 
 - `docs/MASTER_SHADECODE_ROADMAP_2026-09-01.md` — **authoritative master scope, status matrix and execution priorities**
 - `docs/GROWTH_FEEDBACK_REPUTATION_PLAN_2026-10-18.md` — student pilot, feedback loop, retention metrics, honest reviews and repeatable growth experiments
