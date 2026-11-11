@@ -33,14 +33,15 @@ ${modeInstructions}
 Read ALL handwritten text in this image, including isolated letters, numbers, labels, subscripts, superscripts, punctuation, mathematical notation and scientific symbols.
 This is OCR plus contextual character correction, not a summary.
 Return ONLY valid JSON with this exact shape:
-{"transcript":"literal best-effort transcription","correctedText":"clean corrected transcription","confidence":0.0,"uncertainCharacters":[{"seen":"ambiguous mark","chosen":"best candidate or [unclear]","alternatives":["candidate 1","candidate 2"],"context":"short surrounding context","reason":"why ambiguous"}]}
+{"transcript":"literal best-effort transcription","correctedText":"clean corrected transcription","confidence":0.0,"uncertainCharacters":[{"seen":"ambiguous mark","chosen":"best candidate or [unclear]","alternatives":["candidate 1","candidate 2"],"context":"short surrounding context","reason":"why ambiguous"}],"mathExpressions":[{"sourceText":"visible equation as written","latex":"x^2 + 3x = 0","confidence":0.0,"uncertainTokens":["uncertain sign or symbol"]}]}
 Rules:
 - Distinguish visually similar characters using both their shapes and the surrounding word, sentence, equation or subject context. Pay special attention to 0/O, 1/l/I, 2/Z, 5/S, 6/G, 8/B, rn/m, cl/d, u/v, +/t, ×/x, −/dash, decimal points, commas, brackets and superscript/subscript positions.
 - Correct obvious misspellings and malformed words only when the intended characters are supported by the image and context. Do not invent missing content. In mathematics and science modes, never apply grammar or spelling correction to symbolic expressions, identifiers, formulae or numeric values.
 - Preserve line breaks, lists, equations, units, variable names, chemical formulae, mathematical operators and technical vocabulary.
 - Keep transcript as close to the visible writing as possible. correctedText may repair clear character confusions, spelling and punctuation, but must preserve meaning.
 - If a character or word cannot be determined reliably, put [unclear] in correctedText and explain the candidates in uncertainCharacters. Never silently guess a critical number, formula, sign, unit or variable.
-- If there is no legible writing, return empty transcript and correctedText, confidence 0, and an empty uncertainCharacters array.
+- In mathematics mode, extract every complete visible mathematical expression separately into mathExpressions with literal sourceText and faithful LaTeX. Never use algebraic validity to repair a symbol. Flag uncertain signs/tokens and lower confidence. In other modes return an empty mathExpressions array unless a clear equation is visible.
+- If there is no legible writing, return empty transcript and correctedText, confidence 0, and empty uncertainCharacters and mathExpressions arrays.
 - confidence is a number from 0 to 1 representing overall transcription confidence.
 - uncertainCharacters must contain only genuinely uncertain readings, not ordinary corrected spelling.
 - Return no markdown and no prose outside the JSON.`;
