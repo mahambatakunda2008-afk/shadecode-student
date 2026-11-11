@@ -175,6 +175,10 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   async function recognizeHandwriting() {
     const canvas = canvasRef.current;
     if (!canvas || recognizingHandwriting) return;
+    if (liveRecognitionTimerRef.current) {
+      clearTimeout(liveRecognitionTimerRef.current);
+      liveRecognitionTimerRef.current = null;
+    }
     setRecognizingHandwriting(true);
     lastRecognitionAtRef.current = Date.now();
     setStatus("Reading handwriting and checking uncertain characters…");
@@ -261,8 +265,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
     if (!canvas || !ctx || !handwritingText.trim()) return;
     const font = 30, lineHeight = 42, padding = 54, maxWidth = WIDTH - padding * 2;
-    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    ctx.fillStyle = INK; ctx.font = `500 ${font}px Arial, sans-serif`; ctx.textBaseline = "top";
+    ctx.font = `500 ${font}px Arial, sans-serif`; ctx.textBaseline = "top";
     const lines: string[] = [];
     for (const paragraph of handwritingText.split(/\r?\n/)) {
       let line = "";
@@ -277,6 +280,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       setStatus("The corrected text is longer than one canvas. Split it into shorter sections before typesetting.");
       return;
     }
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillStyle = INK;
     lines.forEach((line, index) => ctx.fillText(line, padding, padding + index * lineHeight));
     pushHistory(ctx);
     setStatus("Corrected handwriting converted into clean, editable-looking typeset text on the canvas.");
@@ -435,7 +440,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       </button>
       <button type="button" onClick={() => imageInputRef.current?.click()} disabled={saving || recognizingHandwriting} className="min-h-10 rounded-lg border border-[var(--card-border)] px-3 py-2 text-sm">Import handwriting photo</button>
       <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/webp" capture="environment" onChange={importHandwritingImage} className="hidden" />
-      <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={liveCorrection} onChange={event => setLiveCorrection(event.target.checked)} />Live handwriting correction</label>
+      <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={liveCorrection} onChange={event => { const enabled = event.target.checked; setLiveCorrection(enabled); if (!enabled && liveRecognitionTimerRef.current) { clearTimeout(liveRecognitionTimerRef.current); liveRecognitionTimerRef.current = null; } }} />Live handwriting correction</label>
       <span className="text-xs text-[var(--muted-foreground)]">Automatically reads after you pause, corrects likely character confusions using context, and flags uncertain text.</span>
     </div>
     {handwritingText && <div className="space-y-2 rounded-xl border border-[var(--card-border)] p-3">
