@@ -61,6 +61,39 @@ function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: 
   }
 }
 
+function recognizeFreehandArrow(points: Point[]): { tool: "arrow"; from: Point; to: Point } | null {
+  if (points.length < 12) return null;
+  const first = points[0];
+  const bounds = points.reduce((value, point) => ({
+    left: Math.min(value.left, point.x), right: Math.max(value.right, point.x),
+    top: Math.min(value.top, point.y), bottom: Math.max(value.bottom, point.y),
+  }), { left: first.x, right: first.x, top: first.y, bottom: first.y });
+  const diagonal = Math.hypot(bounds.right - bounds.left, bounds.bottom - bounds.top);
+  const returnTolerance = Math.max(9, Math.min(22, diagonal * 0.045));
+  for (let tipIndex = 3; tipIndex < points.length - 7; tipIndex++) {
+    const tip = points[tipIndex];
+    const shaftLength = distance(first, tip);
+    if (shaftLength < 40) continue;
+    for (let returnIndex = tipIndex + 3; returnIndex < points.length - 3; returnIndex++) {
+      const returnedTip = points[returnIndex];
+      if (distance(tip, returnedTip) > returnTolerance) continue;
+      const wingA = points[tipIndex + 1], wingB = points[returnIndex + 1];
+      const aLength = distance(tip, wingA), bLength = distance(returnedTip, wingB);
+      if (aLength < 7 || bLength < 7 || aLength > shaftLength * 0.38 || bLength > shaftLength * 0.38) continue;
+      const shaftAngle = Math.atan2(tip.y - first.y, tip.x - first.x);
+      const angleA = Math.atan2(wingA.y - tip.y, wingA.x - tip.x);
+      const angleB = Math.atan2(wingB.y - returnedTip.y, wingB.x - returnedTip.x);
+      const relativeA = Math.abs(Math.atan2(Math.sin(angleA - shaftAngle), Math.cos(angleA - shaftAngle)));
+      const relativeB = Math.abs(Math.atan2(Math.sin(angleB - shaftAngle), Math.cos(angleB - shaftAngle)));
+      if (relativeA < 1.75 || relativeA > 2.95 || relativeB < 1.75 || relativeB > 2.95) continue;
+      const wingSeparation = Math.abs(Math.atan2(Math.sin(angleA - angleB), Math.cos(angleA - angleB)));
+      if (wingSeparation < 0.45 || wingSeparation > 1.8) continue;
+      return { tool: "arrow", from: first, to: { x: (tip.x + returnedTip.x) / 2, y: (tip.y + returnedTip.y) / 2 } };
+    }
+  }
+  return null;
+}
+
 export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: Point; control?: Point } | null {
   if (points.length < 8) return null;
   const first = points[0], last = points[points.length - 1];
@@ -75,6 +108,8 @@ export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: 
 
   const closed = distance(first, last) < Math.max(30, Math.min(w, h) * 0.22);
   if (!closed) {
+    const arrow = recognizeFreehandArrow(points);
+    if (arrow) return arrow;
     // Fit a quadratic curve to the strongest perpendicular deviation from the chord.
     // This preserves the direction and bend the teacher actually drew.
     const dx = last.x - first.x, dy = last.y - first.y;
