@@ -1,5 +1,6 @@
 import scarcityPack from "../../../docs/curriculum/lessons/economics-9708-as-1.1-scarcity-choice-opportunity-cost.json";
 import methodologyPack from "../../../docs/curriculum/lessons/economics-9708-as-1.2-economic-methodology.json";
+import factorsPack from "../../../docs/curriculum/lessons/economics-9708-as-1.3-factors-of-production.json";
 
 export interface CuratedLessonBlock {
   type: string;
@@ -76,9 +77,11 @@ function createLearnPack(authored: AuthoredPack, subtopic: string) {
 
 export const economics9708AS11Pack = createLearnPack(scarcityPack as AuthoredPack, "1.1");
 export const economics9708AS12Pack = createLearnPack(methodologyPack as AuthoredPack, "1.2");
+export const economics9708AS13Pack = createLearnPack(factorsPack as AuthoredPack, "1.3");
 
 export function getCuratedEconomics9708Pack(packId: string) {
   if (packId === "economics-9708-as-1.1") return economics9708AS11Pack;
   if (packId === "economics-9708-as-1.2") return economics9708AS12Pack;
+  if (packId === "economics-9708-as-1.3") return economics9708AS13Pack;
   return null;
 }
