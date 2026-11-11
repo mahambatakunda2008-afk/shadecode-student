@@ -10,6 +10,17 @@ describe("teacher sketch auto-correction", () => {
     expect(recognizeShape(points)?.tool).toBe("line");
   });
 
+  it("recognizes a freehand arrow with a retraced tip and two arrowhead wings", () => {
+    const points: Point[] = [];
+    for (let index = 0; index <= 12; index++) points.push({ x: index * 10, y: 100 });
+    points.push({ x: 110, y: 90 }, { x: 100, y: 100 }, { x: 110, y: 110 });
+    expect(recognizeShape(points)).toMatchObject({
+      tool: "arrow",
+      from: { x: 0, y: 100 },
+      to: { x: 100, y: 100 },
+    });
+  });
+
   it("fits a curve in the direction and orientation actually drawn", () => {
     const points: Point[] = Array.from({ length: 31 }, (_, index) => {
       const t = index / 30;
