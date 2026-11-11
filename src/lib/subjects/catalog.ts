@@ -1,3 +1,5 @@
+import { normalizeSubjectKey } from "@/lib/academic/subjectContract";
+
 export type SubjectCategory =
   | "Mathematics & quantitative"
   | "Sciences & environment"
@@ -119,3 +121,26 @@ export const SUBJECT_CATEGORIES: readonly SubjectCategory[] = [
   "Business & commerce",
   "Creative & practical",
 ];
+
+
+/** Resolve a canonical catalogue entry from its stable ID, display name or alias. */
+export function resolveSubjectCatalogEntry(value: unknown): SubjectCatalogEntry | null {
+  const key = normalizeSubjectKey(value);
+  if (!key || key === "general") return null;
+  return SUBJECT_CATALOG.find((entry) =>
+    [entry.id, entry.name, ...(entry.aliases ?? [])]
+      .some((candidate) => normalizeSubjectKey(candidate) === key),
+  ) ?? null;
+}
+
+/** Stable cross-client identity. Unknown/custom subjects retain a normalized key. */
+export function canonicalSubjectId(value: unknown): string {
+  const entry = resolveSubjectCatalogEntry(value);
+  return entry?.id ?? normalizeSubjectKey(value).replace(/\\s+/g, "-");
+}
+
+/** Canonical display name for known subjects; preserve custom subject labels. */
+export function canonicalSubjectName(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return resolveSubjectCatalogEntry(value)?.name ?? value.trim().replace(/\\s+/g, " ");
+}
