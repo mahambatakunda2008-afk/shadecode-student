@@ -165,7 +165,10 @@ export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: 
   const cornerCount = cornerClusters.length + (seamCorner ? 1 : 0);
   if (closed && cornerCount >= 3 && cornerCount <= 5) {
     if (cornerCount === 3) return { tool: "triangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
-    if (cornerCount === 4 || cornerCount === 5) return { tool: "rectangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
+    if (cornerCount === 4) return { tool: "rectangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
+    // Do not flatten pentagons or irregular polygons into rectangles. Until
+    // polygon vertices can be preserved as editable geometry, leave these
+    // strokes untouched rather than "correcting" them into the wrong shape.
   }
   const circularity = (4 * Math.PI * (w * h)) / Math.max(pathLength * pathLength, 1);
   if (circularity > 0.48 && Math.min(w, h) / Math.max(w, h) > 0.45) return { tool: "ellipse", from: { x: left, y: top }, to: { x: right, y: bottom } };
