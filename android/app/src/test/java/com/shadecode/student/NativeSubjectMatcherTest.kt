@@ -48,4 +48,20 @@ class NativeSubjectMatcherTest {
         assertEquals("Public Health", NativeSubjectCatalog.labelFor("public-health"))
     }
 
+    @Test fun nativeCataloguePathwaysMatchWebRecommendationsWithoutHidingOtherSubjects() {
+        val all = NativeSubjectCatalog.all
+        assertTrue(NativeSubjectCatalog.isRecommended(all.first { it.code == "mathematics" }, "o-level"))
+        assertTrue(NativeSubjectCatalog.isRecommended(all.first { it.code == "chemistry" }, "a-level"))
+        assertFalse(NativeSubjectCatalog.isRecommended(all.first { it.code == "nursing" }, "o-level"))
+        val ordered = NativeSubjectCatalog.recommendedFirst(all, "o-level")
+        assertTrue(ordered.indexOfFirst { it.code == "mathematics" } < ordered.indexOfFirst { it.code == "nursing" })
+        assertTrue(ordered.any { it.code == "nursing" })
+    }
+
+    @Test fun nativeCatalogueSearchIncludesAliasesAndCustomSubjects() {
+        val all = NativeSubjectCatalog.all
+        assertTrue(NativeSubjectCatalog.searchMatches(all.first { it.code == "mathematics" }, "Numeracy"))
+        assertTrue(NativeSubjectCatalog.searchMatches(all.first { it.code == "ict" }, "Information and Communication Technology"))
+    }
+
 }
