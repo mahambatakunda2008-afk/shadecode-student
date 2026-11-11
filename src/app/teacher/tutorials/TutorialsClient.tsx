@@ -48,6 +48,93 @@ function parseVideo(value: string): { provider: "youtube" | "drive"; providerId:
   return null;
 }
 
+
+type GraphPoint = { x: number; y: number };
+type TableData = { headers: string[]; rows: string[][] };
+
+function readGraphPoints(data: Record<string, unknown> | undefined): GraphPoint[] {
+  const raw = data?.points;
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((point) => {
+    if (!point || typeof point !== "object") return [];
+    const candidate = point as Record<string, unknown>;
+    return typeof candidate.x === "number" && Number.isFinite(candidate.x)
+      && typeof candidate.y === "number" && Number.isFinite(candidate.y)
+      ? [{ x: candidate.x, y: candidate.y }] : [];
+  });
+}
+
+function GraphEditor({ data, disabled, onChange }: {
+  data: Record<string, unknown> | undefined; disabled: boolean;
+  onChange: (data: Record<string, unknown>) => void;
+}) {
+  const points = readGraphPoints(data);
+  const xLabel = typeof data?.xLabel === "string" ? data.xLabel : "";
+  const yLabel = typeof data?.yLabel === "string" ? data.yLabel : "";
+  const xMin = points.length ? Math.min(...points.map((p) => p.x)) : 0;
+  const xMax = points.length ? Math.max(...points.map((p) => p.x)) : 1;
+  const yMin = points.length ? Math.min(...points.map((p) => p.y)) : 0;
+  const yMax = points.length ? Math.max(...points.map((p) => p.y)) : 1;
+  const spanX = xMax - xMin || 1;
+  const spanY = yMax - yMin || 1;
+  const plotted = points.map((p) => `${40 + ((p.x - xMin) / spanX) * 320},${190 - ((p.y - yMin) / spanY) * 160}`).join(" ");
+  const updatePoint = (index: number, key: "x" | "y", value: number) => {
+    const next = [...points]; next[index] = { ...next[index], [key]: value };
+    onChange({ ...(data ?? {}), points: next });
+  };
+  return <div className="space-y-3">
+    <div className="grid gap-2 sm:grid-cols-2">
+      <label className="space-y-1 text-xs"><span>X-axis label</span><input disabled={disabled} value={xLabel} onChange={(e) => onChange({ ...(data ?? {}), xLabel: e.target.value, points })} className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2 py-2 text-sm" /></label>
+      <label className="space-y-1 text-xs"><span>Y-axis label</span><input disabled={disabled} value={yLabel} onChange={(e) => onChange({ ...(data ?? {}), yLabel: e.target.value, points })} className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2 py-2 text-sm" /></label>
+    </div>
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--surface)] p-2">
+      <svg viewBox="0 0 400 220" role="img" aria-label={`Graph preview: ${points.length} plotted points`} className="h-auto w-full">
+        {[30, 70, 110, 150, 190].map((y) => <line key={y} x1="40" y1={y} x2="360" y2={y} stroke="currentColor" opacity=".13" strokeDasharray="3 4" />)}
+        {[40, 120, 200, 280, 360].map((x) => <line key={x} x1={x} y1="30" x2={x} y2="190" stroke="currentColor" opacity=".13" strokeDasharray="3 4" />)}
+        <path d="M40 30 V190 H360" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        {points.length > 1 && <polyline points={plotted} fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+        {points.map((p, i) => <circle key={i} cx={40 + ((p.x - xMin) / spanX) * 320} cy={190 - ((p.y - yMin) / spanY) * 160} r="4" fill="var(--primary)" />)}
+        <text x="200" y="215" textAnchor="middle" fontSize="10" fill="currentColor">{xLabel || "X"}</text>
+        <text x="12" y="110" textAnchor="middle" fontSize="10" fill="currentColor" transform="rotate(-90 12 110)">{yLabel || "Y"}</text>
+      </svg>
+      <p className="text-center text-xs text-[var(--muted-foreground)]">Live preview · axes scale to the entered data</p>
+    </div>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between"><span className="text-sm font-medium">Data points</span><button type="button" disabled={disabled || points.length >= 100} onClick={() => onChange({ ...(data ?? {}), points: [...points, { x: points.length ? points[points.length - 1].x + 1 : 0, y: 0 }] })} className="rounded-lg border border-[var(--card-border)] px-2 py-1 text-xs disabled:opacity-40">＋ Add point</button></div>
+      {points.map((point, index) => <div key={index} className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-2">
+        <span className="text-xs text-[var(--muted-foreground)]">{index + 1}</span>
+        <label className="text-xs">X<input type="number" step="any" disabled={disabled} value={point.x} onChange={(e) => updatePoint(index, "x", Number(e.target.value))} className="mt-1 w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2 py-2 text-sm" /></label>
+        <label className="text-xs">Y<input type="number" step="any" disabled={disabled} value={point.y} onChange={(e) => updatePoint(index, "y", Number(e.target.value))} className="mt-1 w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2 py-2 text-sm" /></label>
+        <button type="button" disabled={disabled || points.length <= 1} onClick={() => onChange({ ...(data ?? {}), points: points.filter((_, i) => i !== index) })} aria-label={`Remove point ${index + 1}`} className="mt-4 rounded-lg border border-[var(--card-border)] px-2 py-2 text-xs disabled:opacity-30">×</button>
+      </div>)}
+      {points.length === 0 && <p className="text-xs text-[var(--muted-foreground)]">Add points to start plotting.</p>}
+    </div>
+  </div>;
+}
+
+function TableEditor({ data, disabled, onChange }: {
+  data: Record<string, unknown> | undefined; disabled: boolean;
+  onChange: (data: Record<string, unknown>) => void;
+}) {
+  const headers = Array.isArray(data?.headers) ? data.headers.map(String) : ["Column 1", "Column 2"];
+  const rows = Array.isArray(data?.rows) ? data.rows.map((row) => Array.isArray(row) ? row.map(String) : []) : [["", ""]];
+  const update = (nextHeaders: string[], nextRows: string[][]) => onChange({ ...(data ?? {}), headers: nextHeaders, rows: nextRows });
+  return <div className="space-y-2">
+    <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-medium">Table editor</span><div className="flex gap-2">
+      <button type="button" disabled={disabled || headers.length >= 12} onClick={() => update([...headers, `Column ${headers.length + 1}`], rows.map((row) => [...row, ""]))} className="rounded-lg border border-[var(--card-border)] px-2 py-1 text-xs disabled:opacity-40">＋ Column</button>
+      <button type="button" disabled={disabled || rows.length >= 100} onClick={() => update(headers, [...rows, headers.map(() => "")])} className="rounded-lg border border-[var(--card-border)] px-2 py-1 text-xs disabled:opacity-40">＋ Row</button>
+    </div></div>
+    <div className="overflow-x-auto rounded-xl border border-[var(--card-border)]">
+      <table className="w-full min-w-[360px] border-collapse text-sm"><thead><tr>{headers.map((header, col) => <th key={col} className="border-b border-[var(--card-border)] bg-[var(--surface-2)] p-2 text-left">
+        <input disabled={disabled} value={header} onChange={(e) => { const next = [...headers]; next[col] = e.target.value; update(next, rows); }} aria-label={`Column ${col + 1} heading`} className="w-full min-w-20 bg-transparent font-semibold outline-none" />
+      </th>)}</tr></thead><tbody>{rows.map((row, rowIndex) => <tr key={rowIndex}>{headers.map((_, col) => <td key={col} className="border-t border-[var(--card-border)] p-1">
+        <input disabled={disabled} value={row[col] ?? ""} onChange={(e) => { const next = rows.map((r) => [...r]); next[rowIndex] = [...(next[rowIndex] ?? [])]; next[rowIndex][col] = e.target.value; update(headers, next); }} aria-label={`Row ${rowIndex + 1}, column ${col + 1}`} className="w-full min-w-20 rounded-md bg-transparent px-2 py-2 outline-none focus:bg-[var(--surface-2)]" />
+      </td>)}</tr>)}</tbody></table>
+    </div>
+    <p className="text-xs text-[var(--muted-foreground)]">Edit cells directly. The table stays structured for accessible rendering in the student lesson.</p>
+  </div>;
+}
+
 export function TutorialsClient() {
   const [items, setItems] = useState<Tutorial[]>([]);
   const [current, setCurrent] = useState<Tutorial | null>(null);
@@ -229,10 +316,11 @@ export function TutorialsClient() {
                   <input disabled={!editable} value={block.caption ?? ""} onChange={(e) => updateBlock(index, { caption: e.target.value })} placeholder="Caption / labels / source" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" />
                   <p className="text-xs text-[var(--muted-foreground)]">Private media path: {block.storagePath}</p>
                 </div> : null}
-                {["graph", "table"].includes(block.type) ? <div className="space-y-2">
+                {["graph", "table"].includes(block.type) ? <div className="space-y-3">
                   <input disabled={!editable} value={block.title ?? ""} onChange={(e) => updateBlock(index, { title: e.target.value })} placeholder="Visual title" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" />
-                  <textarea disabled={!editable} defaultValue={JSON.stringify(block.data ?? {}, null, 2)} onBlur={(e) => { try { const data = JSON.parse(e.target.value); if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error(); updateBlock(index, { data }); setError(""); } catch { setError(`Enter valid JSON for this ${block.type}.`); } }} rows={5} className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 font-mono text-xs" aria-label={`${block.type} data as JSON`} />
-                  <p className="text-xs text-[var(--muted-foreground)]">{block.type === "graph" ? 'Use {"points":[{"x":0,"y":0},{"x":1,"y":1}]} to plot a graph.' : 'Use {"headers":["A","B"],"rows":[["1","2"]]} to build a table.'}</p>
+                  {block.type === "graph"
+                    ? <GraphEditor data={block.data} disabled={!editable} onChange={(data) => updateBlock(index, { data })} />
+                    : <TableEditor data={block.data} disabled={!editable} onChange={(data) => updateBlock(index, { data })} />}
                 </div> : null}
                 {block.type === "audio" ? <div className="space-y-2"><input disabled={!editable} value={block.title ?? ""} onChange={(e) => updateBlock(index, { title: e.target.value })} placeholder="Audio title" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" /><textarea disabled={!editable} value={block.transcript ?? ""} onChange={(e) => updateBlock(index, { transcript: e.target.value })} rows={3} maxLength={20000} placeholder="Audio transcript (recommended for accessibility and offline study)" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" /></div> : null}
                 {block.type === "video" ? <div className="space-y-1"><p className="font-medium text-sm">{block.title}</p><p className="break-all text-xs text-[var(--muted-foreground)]">{block.provider === "youtube" ? "YouTube" : "Google Drive"} · {block.providerId}</p><p className="text-xs text-[var(--muted-foreground)]">Student playback will be click-to-load with no autoplay.</p></div> : null}
