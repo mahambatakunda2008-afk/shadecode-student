@@ -42,7 +42,15 @@ function TableBlock({ block }: { block: TutorialBlock }) {
   return <div className="overflow-x-auto rounded-xl border border-[var(--card-border)]"><table className="w-full border-collapse text-left text-sm"><thead className="bg-[var(--surface-2)]"><tr>{headers.map((h,i)=><th key={i} className="p-3 font-semibold">{String(h)}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i} className="border-t border-[var(--card-border)]">{headers.map((_,j)=><td key={j} className="p-3">{String(row?.[j] ?? "")}</td>)}</tr>)}</tbody></table></div>;
 }
 
-function Block({ block }: { block: TutorialBlock }) {\n  const [localMediaUrl, setLocalMediaUrl] = useState<string | null>(null);\n  useEffect(() => { if (!block.mediaBlob) return; const url = URL.createObjectURL(block.mediaBlob); setLocalMediaUrl(url); return () => URL.revokeObjectURL(url); }, [block.mediaBlob]);\n  const mediaUrl = localMediaUrl || block.mediaUrl;
+function Block({ block }: { block: TutorialBlock }) {
+  const [localMediaUrl, setLocalMediaUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!block.mediaBlob) return;
+    const url = URL.createObjectURL(block.mediaBlob);
+    setLocalMediaUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [block.mediaBlob]);
+  const mediaUrl = localMediaUrl || block.mediaUrl;
   if (block.type === "video") return <VideoBlock block={block} />;
   if (["image", "diagram", "sketch"].includes(block.type)) return <figure className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-3">
     {mediaUrl ? <img src={mediaUrl} alt={block.alt || block.title || "Teacher-provided visual"} loading="lazy" className="mx-auto max-h-[620px] w-full rounded-xl object-contain" /> : <div className="flex min-h-28 items-center justify-center gap-2 text-sm text-[var(--muted-foreground)]"><ImageIcon size={18} />Visual unavailable while offline</div>}
