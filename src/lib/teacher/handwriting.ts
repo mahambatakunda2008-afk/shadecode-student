@@ -95,3 +95,32 @@ export function applyHandwritingAlternative(
   }
   return null;
 }
+
+
+export type HandwritingImageValidation = { valid: true } | { valid: false; error: string };
+
+/** Validate encoded image size and file signature before forwarding it to a vision provider. */
+export function validateHandwritingImageData(image: string, mimeType: string): HandwritingImageValidation {
+  if (mimeType !== "image/png" && mimeType !== "image/jpeg") {
+    return { valid: false, error: "Only PNG and JPEG handwriting images are supported." };
+  }
+  if (!image || image.length % 4 !== 0 || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(image)) {
+    return { valid: false, error: "The handwriting image is not valid base64 data." };
+  }
+  const estimatedBytes = Math.floor(image.length * 3 / 4) - (image.endsWith("==") ? 2 : image.endsWith("=") ? 1 : 0);
+  if (estimatedBytes < 8 || estimatedBytes > 3 * 1024 * 1024) {
+    return { valid: false, error: "Provide a handwriting image between 8 bytes and 3 MiB." };
+  }
+  let bytes: Uint8Array;
+  try {
+    const binary = atob(image);
+    bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+  } catch {
+    return { valid: false, error: "The handwriting image could not be decoded." };
+  }
+  const isPng = mimeType === "image/png" && [137, 80, 78, 71, 13, 10, 26, 10].every((value, index) => bytes[index] === value);
+  const isJpeg = mimeType === "image/jpeg" && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+  return isPng || isJpeg
+    ? { valid: true }
+    : { valid: false, error: "The image content does not match its declared PNG or JPEG type." };
+}
