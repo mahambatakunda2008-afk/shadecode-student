@@ -294,6 +294,7 @@ private fun NativeLessonDiagram(kind: String) {
         "ceteris-paribus-model" -> listOf("CHANGE ONE" to "Price of the good", "HOLD OTHERS" to "Income, tastes, etc.", "ISOLATE EFFECT" to "Quantity demanded")
         "economic-time-horizons" -> listOf("SHORT RUN" to "At least one factor fixed", "LONG RUN" to "All factors can vary", "VERY LONG RUN" to "Technology can change")
         "positive-normative-claims" -> listOf("POSITIVE" to "Testable with evidence", "NORMATIVE" to "Value judgement / ought")
+        "economic-systems-comparison" -> listOf("MARKET" to "Consumers, firms and prices", "PLANNED" to "Central authority and plans", "MIXED" to "Markets plus government policy")
         "economics-inquiry-cycle" -> listOf("OBSERVE" to "Behaviour and data", "MODEL" to "Hypothesis and assumptions", "TEST" to "Compare with evidence")
         "factors-of-production-model" -> listOf("LAND" to "Natural resources • Rent", "LABOUR" to "Human effort • Wages", "CAPITAL" to "Produced assets • Interest", "ENTERPRISE" to "Organises and bears risk • Profit")
         "flowchart" -> listOf("DIVIDE TASKS" to "Split production into stages", "SPECIALISE" to "Workers focus on a task", "BUILD SKILL" to "Practice and repetition", "COORDINATE" to "Combine completed stages")
