@@ -113,6 +113,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [fontSize, setFontSize] = useState(28);
   const [canUndo, setCanUndo] = useState(false);
   const [autoFix, setAutoFix] = useState(true);
+  const [autoImproveText, setAutoImproveText] = useState(true);
+  const [improvingText, setImprovingText] = useState(false);
   const [status, setStatus] = useState("Auto-fix is on. Strokes smooth as you draw; shapes snap when you lift the pointer.");
 
   const pushHistory = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -132,6 +134,31 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   }, []);
 
   useEffect(() => () => { if (frameRef.current !== null) cancelAnimationFrame(frameRef.current); }, []);
+
+  async function improveLabelText(): Promise<string> {
+    const original = label.trim();
+    if (!original) return "";
+    setImprovingText(true);
+    try {
+      const response = await fetch("/api/teacher/tutorials/improve-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: original, mode: "label" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || typeof result.improvedText !== "string" || !result.improvedText.trim()) {
+        throw new Error(result.error ?? "Text improvement is unavailable.");
+      }
+      setLabel(result.improvedText);
+      setStatus(result.changed ? "Text improved: spelling, grammar and clarity corrected. Review it before placing." : "Text checked. No changes were needed.");
+      return result.improvedText.trim();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not improve text. Original wording is preserved.");
+      return original;
+    } finally {
+      setImprovingText(false);
+    }
+  }
 
   function pointFromEvent(event: PointerEvent<HTMLCanvasElement>): Point {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -157,13 +184,15 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     smoothPath(ctx, points);
   }
 
-  function begin(event: PointerEvent<HTMLCanvasElement>) {
+  async function begin(event: PointerEvent<HTMLCanvasElement>) {
     if (saving) return;
     const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     const point = pointFromEvent(event);
     if (tool === "label") {
-      if (!label.trim()) { setStatus("Type a label first. Spellcheck and autocorrect are enabled in the text field."); return; }
+      if (!label.trim()) { setStatus("Type a label first."); return; }
+      const textToPlace = autoImproveText ? await improveLabelText() : label.trim();
+      if (!textToPlace) return;
       ctx.fillStyle = INK; ctx.font = `600 ${fontSize}px Arial, sans-serif`;
       ctx.textBaseline = "alphabetic";
       const words = label.trim().split(/\s+/);
@@ -175,7 +204,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         else line = test;
       }
       if (line) ctx.fillText(line, point.x, y);
-      pushHistory(ctx); setStatus("Text placed with clean typography."); return;
+      pushHistory(ctx); setStatus(autoImproveText ? "Improved text placed with clean typography." : "Text placed with clean typography."); return;
     }
     event.currentTarget.setPointerCapture(event.pointerId);
     drawingRef.current = true; startRef.current = point; pointsRef.current = [point];
