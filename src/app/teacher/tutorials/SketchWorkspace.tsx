@@ -115,6 +115,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [autoFix, setAutoFix] = useState(true);
   const [autoImproveText, setAutoImproveText] = useState(true);
   const [improvingText, setImprovingText] = useState(false);
+  const [recognizingHandwriting, setRecognizingHandwriting] = useState(false);
   const [status, setStatus] = useState("Auto-fix is on. Strokes smooth as you draw; shapes snap when you lift the pointer.");
 
   const pushHistory = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -160,6 +161,49 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     }
   }
 
+  async function recognizeHandwriting() {
+    const canvas = canvasRef.current;
+    if (!canvas || recognizingHandwriting) return;
+    setRecognizingHandwriting(true);
+    setStatus("Reading handwriting and checking uncertain characters…");
+    try {
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(value => value ? resolve(value) : reject(new Error("Could not capture the canvas.")), "image/png"),
+      );
+      if (blob.size > 4 * 1024 * 1024) throw new Error("This canvas is too large to analyse. Clear unused space or split the writing into sections.");
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = String(reader.result ?? "");
+          const comma = result.indexOf(",");
+          if (comma < 0) reject(new Error("Could not prepare the handwriting image."));
+          else resolve(result.slice(comma + 1));
+        };
+        reader.onerror = () => reject(new Error("Could not read the handwriting image."));
+        reader.readAsDataURL(blob);
+      });
+      const response = await fetch("/api/teacher/tutorials/recognize-handwriting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64, mimeType: "image/png" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "Handwriting recognition is unavailable.");
+      const corrected = typeof result.correctedText === "string" ? result.correctedText.trim() : "";
+      if (!corrected) throw new Error("No readable handwriting was found. Try darker, larger writing with more spacing.");
+      setLabel(corrected.slice(0, 240));
+      setTool("label");
+      const uncertain = Array.isArray(result.uncertainCharacters) ? result.uncertainCharacters.length : 0;
+      setStatus(uncertain
+        ? `Handwriting read. ${uncertain} uncertain character(s) were marked for your review. Check the text before placing it.`
+        : "Handwriting read and unclear characters corrected where context was reliable. Review before placing.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not read handwriting. Your drawing is unchanged.");
+    } finally {
+      setRecognizingHandwriting(false);
+    }
+  }
+
   function pointFromEvent(event: PointerEvent<HTMLCanvasElement>): Point {
     const rect = event.currentTarget.getBoundingClientRect();
     return { x: (event.clientX - rect.left) * WIDTH / rect.width, y: (event.clientY - rect.top) * HEIGHT / rect.height };
@@ -191,7 +235,10 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const point = pointFromEvent(event);
     if (tool === "label") {
       if (!label.trim()) { setStatus("Type a label first."); return; }
-      const textToPlace = autoImproveText ? await improveLabelText() : label.trim();
+      const textResult = autoImproveText
+        ? await improveLabelText()
+        : { text: label.trim(), improved: false, checked: false };
+      const textToPlace = textResult.text;
       if (!textToPlace) return;
       ctx.fillStyle = INK; ctx.font = `600 ${fontSize}px Arial, sans-serif`;
       ctx.textBaseline = "alphabetic";
@@ -205,7 +252,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       }
       if (line) ctx.fillText(line, point.x, y);
       pushHistory(ctx);
-      setStatus(improvement.improved ? "Improved text placed with clean typography." : improvement.checked ? "Text checked and placed with clean typography." : autoImproveText ? "Original text placed. AI improvement was unavailable." : "Text placed with clean typography.");
+      setStatus(textResult.improved ? "Improved text placed with clean typography." : textResult.checked ? "Text checked and placed with clean typography." : autoImproveText ? "Original text placed. AI improvement was unavailable." : "Text placed with clean typography.");
       return;
     }
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -301,6 +348,12 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     </div>
     <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Drawing tools">
       {tools.map(item => <button key={item.id} type="button" aria-pressed={tool === item.id} onClick={() => setTool(item.id)} className={`min-h-10 rounded-lg border px-3 py-2 text-sm ${tool === item.id ? "border-[var(--primary)] bg-[var(--primary)]/10 font-semibold" : "border-[var(--card-border)]"}`}>{item.name}</button>)}
+    </div>
+    <div className="flex flex-wrap items-center gap-2">
+      <button type="button" onClick={() => void recognizeHandwriting()} disabled={recognizingHandwriting || saving} className="min-h-10 rounded-lg border border-[var(--primary)] px-3 py-2 text-sm font-semibold disabled:opacity-40">
+        {recognizingHandwriting ? "Reading handwriting…" : "✦ Read & correct handwriting"}
+      </button>
+      <span className="text-xs text-[var(--muted-foreground)]">Reads the writing on the canvas, resolves likely character confusions using context, and flags uncertain text.</span>
     </div>
     {tool === "label" && <div className="space-y-2">
       <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
