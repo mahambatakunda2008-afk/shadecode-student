@@ -1164,7 +1164,17 @@
         "source_hash_and_page_count",
         "independent_review"
       ],
-      "notes": "ZIMSEC examiner-training material confirms paper codes 4047/1 and 4047/2, and an official 2025 timetable lists 4047/02. These establish subject identity and paper evidence only, not syllabus topics, edition or full content. Exact official syllabus PDF and effective years remain undiscovered. Do not generate a purportedly complete FRS topic tree until retrieved."
+      "notes": "ZIMSEC examiner-training material confirms paper codes 4047/1 and 4047/2, and an official 2025 timetable lists 4047/02. These establish subject identity and paper evidence only, not syllabus topics, edition or full content. A third-party Sytbay Academy listing now advertises a 2024-2030 HBC FRS syllabus copy, but its actual PDF and provenance have not been verified and the host is not an official ZIMSEC/Ministry domain. Keep sourceDocumentUrl null and status source_discovery_required until the PDF is retrieved and independently authenticated against an official copy. Do not generate a purportedly complete FRS topic tree from the listing.",
+      "discoveryLeads": [
+        {
+          "kind": "third_party_hosted_candidate_copy",
+          "url": "https://sytbay.co.zw/download/zimsec-o-level-family-and-religious-studies-hbc-syllabus-2024-2030-pdf/",
+          "claimedEdition": "2024-2030",
+          "claimedHost": "Sytbay Academy",
+          "evidenceStatus": "unverified_not_an_official_ZIMSEC_or_Ministry_host",
+          "nextAction": "Retrieve the actual PDF, inspect its cover, issuing authority, page count and document metadata, then independently compare it with a Ministry/ZIMSEC-issued copy before using it as syllabus authority."
+        }
+      ]
     }
   ]
 }
