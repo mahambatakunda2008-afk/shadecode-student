@@ -58,6 +58,13 @@ export default function Login() {
       }
       void trackEvent("user_logged_in", { authMethod: "password" });
 
+      // Admins belong in the admin area, not the student dashboard or student onboarding.
+      const { data: isAdmin } = await supabase.rpc("has_role", { user_id: user.id, role_name: "admin" });
+      if (isAdmin === true) {
+        router.replace("/admin");
+        return;
+      }
+
       const { data: profile, error: profileError } = await supabase
         .from("user_profiles")
         .select("onboarding_completed")

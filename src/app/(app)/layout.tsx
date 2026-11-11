@@ -1,7 +1,7 @@
 // src/app/(app)/layout.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -26,6 +26,8 @@ import { ShadecodeIconDefs } from "@/components/brand/ShadecodeFeatureIcon";
 import { installTractionSync, trackEvent, trackPageView } from "@/lib/traction/client";
 
 const ADMIN_CACHE_PREFIX = "shadecode:admin:";
+/** Which user last proved to be an admin on this device; lets the admin shell paint first instead of flashing the student one. */
+const LAST_ADMIN_KEY = "shadecode:admin:last";
 const BOOT_AUTH_TIMEOUT_MS = 1_500;
 const ROLE_REFRESH_TIMEOUT_MS = 4_000;
 
@@ -51,6 +53,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
   const isCompLab = pathname === "/comp-lab" || pathname.startsWith("/comp-lab/");
 
+  useLayoutEffect(() => {
+    try { if (window.localStorage.getItem(LAST_ADMIN_KEY)) setIsAdmin(true); } catch {}
+  }, []);
+
   useEffect(() => installLearningEventSync(), []);
   useEffect(() => installTractionSync(), []);
 
@@ -65,12 +71,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         void trackPageView();
         const cachedAdmin = readBooleanCache(ADMIN_CACHE_PREFIX, user.id);
         if (cachedAdmin !== null) setIsAdmin(cachedAdmin);
+        else {
+          // A different account is signed in than the one that was admin here: never keep the optimistic admin shell.
+          try { if (window.localStorage.getItem(LAST_ADMIN_KEY) !== user.id) setIsAdmin(false); } catch {}
+        }
         if (typeof navigator !== "undefined" && !navigator.onLine) return;
         try {
           const adminResult = await withTimeout(supabase.rpc("has_role", { user_id: user.id, role_name: "admin" }), ROLE_REFRESH_TIMEOUT_MS);
           if (cancelled || adminResult.error) return;
           const nextIsAdmin = Boolean(adminResult.data);
           setIsAdmin(nextIsAdmin); writeBooleanCache(ADMIN_CACHE_PREFIX, user.id, nextIsAdmin);
+          try { if (nextIsAdmin) window.localStorage.setItem(LAST_ADMIN_KEY, user.id); else window.localStorage.removeItem(LAST_ADMIN_KEY); } catch {}
           const path = window.location.pathname;
           if (nextIsAdmin && (path === "/dashboard" || path === "/onboarding")) router.replace("/admin");
         } catch (error) { console.warn("[AppLayout] Background role refresh unavailable:", error); }
@@ -79,7 +90,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     void bootstrap();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") void trackEvent("user_logged_in", { authMethod: "session" });
-      if (event === "SIGNED_OUT") { setIsAdmin(false); router.replace("/auth/login"); }
+      if (event === "SIGNED_OUT") { try { window.localStorage.removeItem(LAST_ADMIN_KEY); } catch {} setIsAdmin(false); router.replace("/auth/login"); }
     });
     return () => { cancelled = true; subscription.unsubscribe(); };
   }, [router, supabase]);
