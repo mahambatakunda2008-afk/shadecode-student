@@ -1,0 +1,472 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-11",
+  "status": "structure_extracted_not_independently_reviewed",
+  "trustBoundary": "This is a versioned top-level curriculum structure and assessment map extracted from official public syllabus PDFs. It is not a complete subtopic/outcome transcription, lesson bank, assessment bank, or proof of coverage. Do not mark a learner's curriculum complete from this file alone.",
+  "sources": [
+    {
+      "code": "9609",
+      "edition": "2026-2028",
+      "documentVersion": 2,
+      "published": "2025-12",
+      "pdf": "https://www.cambridgeinternational.org/Images/697371-2026-2028-syllabus.pdf",
+      "updatePdf": "https://www.cambridgeinternational.org/Images/748947-2026-2028-syllabus-update.pdf",
+      "pageCount": 46,
+      "contentsPages": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        24,
+        35,
+        37,
+        38,
+        39,
+        45
+      ]
+    },
+    {
+      "code": "9708",
+      "edition": "2026-2028",
+      "documentVersion": 2,
+      "published": "2025-12",
+      "pdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf",
+      "updatePdf": "https://www.cambridgeinternational.org/Images/748950-2026-2028-syllabus-update.pdf",
+      "pageCount": 44,
+      "contentsPages": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        24,
+        35,
+        36,
+        37,
+        43
+      ]
+    },
+    {
+      "code": "9696",
+      "edition": "2027-2029",
+      "documentVersion": 1,
+      "published": "2024-09",
+      "pdf": "https://www.cambridgeinternational.org/Images/718332-2027-2029-syllabus.pdf",
+      "pageCount": 60,
+      "contentsPages": [
+        8,
+        9,
+        14,
+        48,
+        49,
+        50,
+        51,
+        52,
+        58,
+        59
+      ]
+    }
+  ],
+  "qualifications": [
+    {
+      "board": "cambridge",
+      "code": "9609",
+      "subject": "Business",
+      "level": "AS",
+      "topicRange": "1.1-5.5",
+      "topics": [
+        {
+          "id": "1",
+          "title": "Business and its environment",
+          "subtopicRange": "1.1-1.5"
+        },
+        {
+          "id": "2",
+          "title": "Human resource management",
+          "subtopicRange": "2.1-2.3"
+        },
+        {
+          "id": "3",
+          "title": "Marketing",
+          "subtopicRange": "3.1-3.3"
+        },
+        {
+          "id": "4",
+          "title": "Operations management",
+          "subtopicRange": "4.1-4.3"
+        },
+        {
+          "id": "5",
+          "title": "Finance and accounting",
+          "subtopicRange": "5.1-5.5"
+        }
+      ],
+      "assessment": [
+        {
+          "paper": 1,
+          "name": "Business Concepts 1",
+          "durationMinutes": 75,
+          "marks": 40,
+          "format": "four short-answer questions and one essay from a choice of two"
+        },
+        {
+          "paper": 2,
+          "name": "Business Concepts 2",
+          "durationMinutes": 90,
+          "marks": 60,
+          "format": "two data-response questions"
+        }
+      ],
+      "assessmentObjectives": {
+        "AO1": "Knowledge and understanding",
+        "AO2": "Application",
+        "AO3": "Analysis",
+        "AO4": "Evaluation"
+      },
+      "aoQualificationWeightings": {
+        "AO1": 30,
+        "AO2": 30,
+        "AO3": 20,
+        "AO4": 20
+      }
+    },
+    {
+      "board": "cambridge",
+      "code": "9609",
+      "subject": "Business",
+      "level": "A",
+      "topicRange": "1.1-10.4",
+      "includesAS": true,
+      "topics": [
+        {
+          "id": "6",
+          "title": "Business and its environment",
+          "subtopicRange": "6.1-6.2"
+        },
+        {
+          "id": "7",
+          "title": "Human resource management",
+          "subtopicRange": "7.1-7.4"
+        },
+        {
+          "id": "8",
+          "title": "Marketing",
+          "subtopicRange": "8.1-8.2"
+        },
+        {
+          "id": "9",
+          "title": "Operations management",
+          "subtopicRange": "9.1-9.3"
+        },
+        {
+          "id": "10",
+          "title": "Finance and accounting",
+          "subtopicRange": "10.1-10.4"
+        }
+      ],
+      "assessment": [
+        {
+          "paper": 3,
+          "name": "Business Decision-Making",
+          "durationMinutes": 105,
+          "marks": 60,
+          "format": "five case-study questions"
+        },
+        {
+          "paper": 4,
+          "name": "Business Strategy",
+          "durationMinutes": 75,
+          "marks": 40,
+          "format": "two case-study-based essay questions"
+        }
+      ],
+      "assessmentObjectives": {
+        "AO1": "Knowledge and understanding",
+        "AO2": "Application",
+        "AO3": "Analysis",
+        "AO4": "Evaluation"
+      },
+      "aoQualificationWeightings": {
+        "AO1": 25,
+        "AO2": 25,
+        "AO3": 25,
+        "AO4": 25
+      }
+    },
+    {
+      "board": "cambridge",
+      "code": "9708",
+      "subject": "Economics",
+      "level": "AS",
+      "topicRange": "1.1-6.5",
+      "topics": [
+        {
+          "id": "1",
+          "title": "Basic economic ideas and resource allocation",
+          "subtopicRange": "1.1-1.6"
+        },
+        {
+          "id": "2",
+          "title": "The price system and the microeconomy",
+          "subtopicRange": "2.1-2.5"
+        },
+        {
+          "id": "3",
+          "title": "Government microeconomic intervention",
+          "subtopicRange": "3.1-3.3"
+        },
+        {
+          "id": "4",
+          "title": "The macroeconomy",
+          "subtopicRange": "4.1-4.6"
+        },
+        {
+          "id": "5",
+          "title": "Government macroeconomic intervention",
+          "subtopicRange": "5.1-5.4"
+        },
+        {
+          "id": "6",
+          "title": "International economic issues",
+          "subtopicRange": "6.1-6.5"
+        }
+      ],
+      "assessment": [
+        {
+          "paper": 1,
+          "name": "AS Level Multiple Choice",
+          "durationMinutes": 60,
+          "marks": 30,
+          "format": "30 multiple-choice questions"
+        },
+        {
+          "paper": 2,
+          "name": "AS Level Data Response and Essays",
+          "durationMinutes": 120,
+          "marks": 60,
+          "format": "compulsory data response, one microeconomics essay and one macroeconomics essay"
+        }
+      ],
+      "assessmentObjectives": {
+        "AO1": "Knowledge and understanding",
+        "AO2": "Analysis",
+        "AO3": "Evaluation"
+      },
+      "aoQualificationWeightings": {
+        "AO1": 35,
+        "AO2": 40,
+        "AO3": 25
+      },
+      "requiredSkills": [
+        "economic terminology and definitions",
+        "numerical calculation",
+        "data interpretation",
+        "labelled economic diagrams",
+        "causal analysis",
+        "evaluation and reasoned judgement"
+      ]
+    },
+    {
+      "board": "cambridge",
+      "code": "9708",
+      "subject": "Economics",
+      "level": "A",
+      "topicRange": "1.1-11.6",
+      "includesAS": true,
+      "topics": [
+        {
+          "id": "7",
+          "title": "The price system and the microeconomy",
+          "subtopicRange": "7.1-7.8"
+        },
+        {
+          "id": "8",
+          "title": "Government microeconomic intervention",
+          "subtopicRange": "8.1-8.3"
+        },
+        {
+          "id": "9",
+          "title": "The macroeconomy",
+          "subtopicRange": "9.1-9.4"
+        },
+        {
+          "id": "10",
+          "title": "Government macroeconomic intervention",
+          "subtopicRange": "10.1-10.3"
+        },
+        {
+          "id": "11",
+          "title": "International economic issues",
+          "subtopicRange": "11.1-11.6"
+        }
+      ],
+      "assessment": [
+        {
+          "paper": 3,
+          "name": "A Level Multiple Choice",
+          "durationMinutes": 75,
+          "marks": 30,
+          "format": "30 multiple-choice questions"
+        },
+        {
+          "paper": 4,
+          "name": "A Level Data Response and Essays",
+          "durationMinutes": 120,
+          "marks": 60,
+          "format": "compulsory data response, one microeconomics essay and one macroeconomics essay"
+        }
+      ],
+      "assessmentObjectives": {
+        "AO1": "Knowledge and understanding",
+        "AO2": "Analysis",
+        "AO3": "Evaluation"
+      },
+      "aoQualificationWeightings": {
+        "AO1": 35,
+        "AO2": 40,
+        "AO3": 25
+      },
+      "requiredSkills": [
+        "economic terminology and definitions",
+        "numerical calculation",
+        "data interpretation",
+        "labelled economic diagrams",
+        "causal analysis",
+        "evaluation and reasoned judgement"
+      ]
+    },
+    {
+      "board": "cambridge",
+      "code": "9696",
+      "subject": "Geography",
+      "level": "AS",
+      "topicRange": "six compulsory AS topics",
+      "topics": [
+        {
+          "id": "1",
+          "title": "Hydrology, river processes and hazards",
+          "paper": 1,
+          "group": "Physical Geography",
+          "required": true
+        },
+        {
+          "id": "2",
+          "title": "Atmospheric processes and global climate change",
+          "paper": 1,
+          "group": "Physical Geography",
+          "required": true
+        },
+        {
+          "id": "3",
+          "title": "Earth processes and mass movements",
+          "paper": 1,
+          "group": "Physical Geography",
+          "required": true
+        },
+        {
+          "id": "4",
+          "title": "Population and migration",
+          "paper": 2,
+          "group": "Human Geography",
+          "required": true
+        },
+        {
+          "id": "5",
+          "title": "Water resources and management",
+          "paper": 2,
+          "group": "Human Geography",
+          "required": true
+        },
+        {
+          "id": "6",
+          "title": "Urban areas and management",
+          "paper": 2,
+          "group": "Human Geography",
+          "required": true
+        }
+      ],
+      "assessment": [
+        {
+          "paper": 1,
+          "name": "Physical Geography",
+          "durationMinutes": 90,
+          "marks": 60,
+          "format": "all resource-based short/extended questions plus one essay"
+        },
+        {
+          "paper": 2,
+          "name": "Human Geography",
+          "durationMinutes": 90,
+          "marks": 60,
+          "format": "all resource-based short/extended questions plus one essay"
+        }
+      ],
+      "requiredSkills": [
+        "map and spatial interpretation",
+        "resource and data interpretation",
+        "graph construction and analysis",
+        "process diagrams",
+        "case-study evidence",
+        "evaluative geographical writing"
+      ]
+    },
+    {
+      "board": "cambridge",
+      "code": "9696",
+      "subject": "Geography",
+      "level": "A",
+      "includesAS": true,
+      "topicChoiceRule": "Choose two topics from Paper 3 and two topics from Paper 4. Learner choices must be stored in the curriculum profile and control learning-plan visibility.",
+      "optionalGroups": [
+        {
+          "paper": 3,
+          "name": "Global Environments",
+          "choose": 2,
+          "from": [
+            "Tropical environments",
+            "Coastal environments",
+            "Hazardous environments",
+            "Arid environments"
+          ]
+        },
+        {
+          "paper": 4,
+          "name": "Global Themes",
+          "choose": 2,
+          "from": [
+            "Climate change impacts and governance",
+            "Environmental issues and management",
+            "Trade, aid and tourism",
+            "Disease and geography"
+          ]
+        }
+      ],
+      "assessment": [
+        {
+          "paper": 3,
+          "name": "Global Environments",
+          "durationMinutes": 90,
+          "marks": 60,
+          "format": "two selected topics; resource-based questions and essay"
+        },
+        {
+          "paper": 4,
+          "name": "Global Themes",
+          "durationMinutes": 90,
+          "marks": 60,
+          "format": "two selected topics; resource-based questions and essay"
+        }
+      ],
+      "requiredSkills": [
+        "map and spatial interpretation",
+        "resource and data interpretation",
+        "graph construction and analysis",
+        "process diagrams",
+        "case-study evidence",
+        "evaluative geographical writing"
+      ]
+    }
+  ]
+}
