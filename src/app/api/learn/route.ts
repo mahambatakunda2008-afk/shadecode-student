@@ -8,6 +8,7 @@ import { learnCoursePreviewSchema, learnGenerateLessonSchema, validateRequestBod
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { awardXPBySource } from "@/lib/xp/manager";
 import { normalizeSubjectKey, normalizeSubjectNames } from "@/lib/academic/subjectContract";
+import { canonicalSubjectId, canonicalSubjectName } from "@/lib/subjects/catalog";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
@@ -135,10 +136,15 @@ async function resolveLessonSubject(supabase: SupabaseClient, userId: string, re
   const { data: subjects } = await supabase.from("subjects").select("id, name").eq("user_id", userId);
   const rows = (subjects ?? []) as SubjectRow[];
   const requestedName = (requested ?? "").trim();
-  const exact = rows.find(s => s.name.toLowerCase() === requestedName.toLowerCase());
+  const requestedId = canonicalSubjectId(requestedName);
+  const exact = rows.find(s => canonicalSubjectId(s.name) === requestedId);
   if (exact) return exact;
   if (requestedName.toLowerCase() !== "general" && requestedName) {
-    const existing = rows.find(s => s.name.toLowerCase().includes(requestedName.toLowerCase()) || requestedName.toLowerCase().includes(s.name.toLowerCase()));
+    const canonicalName = canonicalSubjectName(requestedName).toLocaleLowerCase();
+    const existing = rows.find(s => {
+      const rowName = canonicalSubjectName(s.name).toLocaleLowerCase();
+      return rowName.includes(canonicalName) || canonicalName.includes(rowName);
+    });
     if (existing) return existing;
   }
   const topicLower = topic.toLowerCase();
