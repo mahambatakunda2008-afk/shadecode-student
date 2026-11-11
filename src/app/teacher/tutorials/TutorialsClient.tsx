@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { SketchWorkspace } from "./SketchWorkspace";
 
 type Block = {
   id: string;
@@ -149,6 +150,7 @@ export function TutorialsClient() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [mediaKind, setMediaKind] = useState<"image" | "diagram" | "sketch" | "audio">("image");
+  const [showSketch, setShowSketch] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function loadItems() {
@@ -230,11 +232,12 @@ export function TutorialsClient() {
     setVideoUrl(""); setVideoTitle(""); setError("");
   }
 
-  async function uploadImage(file?: File) {
+  async function uploadImage(file?: File, kindOverride?: "image" | "diagram" | "sketch" | "audio") {
     if (!file || !current) return;
-    const supported = mediaKind === "audio" ? ["audio/mpeg", "audio/mp4", "audio/webm"].includes(file.type) : ["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type);
+    const kind = kindOverride ?? mediaKind;
+    const supported = kind === "audio" ? ["audio/mpeg", "audio/mp4", "audio/webm"].includes(file.type) : ["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type);
     if (!supported || file.size > 50 * 1024 * 1024) {
-      setError(mediaKind === "audio" ? "Choose MP3, M4A or WebM audio smaller than 50 MiB." : "Choose JPEG, PNG, WebP or AVIF smaller than 50 MiB."); return;
+      setError(kind === "audio" ? "Choose MP3, M4A or WebM audio smaller than 50 MiB." : "Choose JPEG, PNG, WebP or AVIF smaller than 50 MiB."); return;
     }
     setBusy(true); setError("");
     try {
@@ -250,10 +253,11 @@ export function TutorialsClient() {
       );
       if (uploadError) throw uploadError;
       setBlocks((old) => [...old, {
-        id: crypto.randomUUID(), type: mediaKind, storagePath: signed.path,
-        ...(mediaKind === "audio" ? {} : { alt: file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ") }), caption: "",
+        id: crypto.randomUUID(), type: kind, storagePath: signed.path,
+        ...(kind === "audio" ? {} : { alt: file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ") }), caption: "",
       }]);
-      setMessage("Image uploaded to private teacher storage. Add a descriptive caption before submission.");
+      setMessage(kind === "sketch" ? "Sketch saved to private teacher storage. Add a descriptive caption before submission." : kind === "audio" ? "Audio uploaded to private teacher storage." : "Image uploaded to private teacher storage. Add a descriptive caption before submission.");
+      if (kind === "sketch") setShowSketch(false);
     } catch (e) { setError(e instanceof Error ? e.message : "Upload failed."); }
     finally { setBusy(false); if (fileRef.current) fileRef.current.value = ""; }
   }
@@ -334,6 +338,7 @@ export function TutorialsClient() {
             <button onClick={() => setBlocks(old => [...old, { id: crypto.randomUUID(), type: "graph", title: "Graph", data: { points: [{ x: 0, y: 0 }, { x: 1, y: 1 }] } }])} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm">＋ Graph</button>
             <button onClick={() => setBlocks(old => [...old, { id: crypto.randomUUID(), type: "table", title: "Data table", data: { headers: ["Column 1", "Column 2"], rows: [["", ""]] } }])} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm">＋ Table</button>
             <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => setShowSketch((open) => !open)} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm">{showSketch ? "Close sketch workspace" : "＋ Draw a diagram / sketch"}</button>
               <select value={mediaKind} onChange={(e) => setMediaKind(e.target.value as typeof mediaKind)} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-2 py-2 text-sm"><option value="image">Image</option><option value="diagram">Diagram</option><option value="sketch">Sketch / whiteboard photo</option><option value="audio">Audio explanation</option></select>
               <button onClick={() => fileRef.current?.click()} disabled={!current || busy} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm disabled:opacity-50">Upload visual</button>
               <input ref={fileRef} type="file" accept={mediaKind === "audio" ? "audio/mpeg,audio/mp4,audio/webm" : "image/jpeg,image/png,image/webp,image/avif"} hidden onChange={(e) => uploadImage(e.target.files?.[0])} />
@@ -343,6 +348,7 @@ export function TutorialsClient() {
               <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube or Google Drive link" className="min-w-0 rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm" />
               <button onClick={addVideo} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm">Add video</button>
             </div>
+            {showSketch && <SketchWorkspace onSave={(file) => uploadImage(file, "sketch")} onCancel={() => setShowSketch(false)} saving={busy} />}
             <p className="text-xs text-[var(--muted-foreground)]">Uploads are private and limited to 50 MiB. Video links are validated and do not load a player in the editor.</p>
           </div>}
 
