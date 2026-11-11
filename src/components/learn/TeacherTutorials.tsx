@@ -76,7 +76,13 @@ export default function TeacherTutorials({ subject }: { subject: string }) {
     fetch(`/api/learn/tutorials?subject=${encodeURIComponent(subject)}`, { cache: "no-store" })
       .then(async r => { const body = await r.json(); if (!r.ok) throw new Error(body.error || "Tutorials unavailable."); return body; })
       .then(body => { if (active) setItems(Array.isArray(body.tutorials) ? body.tutorials : []); })
-      .catch(e => { if (active) setError(e instanceof Error ? e.message : "Tutorials unavailable."); });
+      .catch(async e => {
+        try {
+          const cached = (await offlineStorage.getAllLessons()).filter(item => item.id.startsWith("teacher-tutorial:") && item.subject === subject);
+          if (active && cached.length) setItems(cached.map(item => ({ id: item.id.replace("teacher-tutorial:", ""), title: item.title, subject: item.subject, topic: null, summary: item.description ?? null, published_at: item.downloadedAt })));
+          else if (active) setError(e instanceof Error ? e.message : "Tutorials unavailable.");
+        } catch { if (active) setError(e instanceof Error ? e.message : "Tutorials unavailable."); }
+      });
     return () => { active = false; };
   }, [subject]);
 
