@@ -1057,10 +1057,10 @@
         "source_update_pdf_hash_and_page_count",
         "version_2_change_reconciliation"
       ],
-      "notes": "Official Cambridge subject page lists the 2026-2028 syllabus and a separate syllabus update. The 2029 syllabus is a separate edition and must not be inferred from this document. Keep strategy integrated within the five A Level topics and verify the paper 3/4 assessment structure against the actual PDF and update. Retrieved official Version 2 PDF (published December 2025) and separate one-page syllabus update. The syllabus itself states no significant changes affecting teaching; still reconcile the update before finalizing the normalized curriculum.",
+      "notes": "Official Cambridge subject page lists the 2026-2028 syllabus and a separate syllabus update. The 2029 syllabus is a separate edition and must not be inferred from this document. Keep strategy integrated within the five A Level topics and verify the paper 3/4 assessment structure against the actual PDF and update. Official PDF document metadata checked directly: 9609 is Version 3 (September 2023); 9708 is Version 1 (September 2023). Separate syllabus update PDF is listed by Cambridge and must be reconciled. Do not infer the PDF version from the examination-year range.",
       "sourceUpdateDocumentUrl": "https://www.cambridgeinternational.org/Images/748947-2026-2028-syllabus-update.pdf",
-      "documentVersion": "Version 2",
-      "documentVersionPublished": "December 2025"
+      "documentVersion": "Version 3",
+      "documentVersionPublished": "September 2023"
     },
     {
       "id": "cambridge-9708-2026-2028",
@@ -1096,10 +1096,10 @@
         "source_update_pdf_hash_and_page_count",
         "version_2_change_reconciliation"
       ],
-      "notes": "Official Cambridge subject page lists the 2026-2028 syllabus and a separate syllabus update. The 2029 syllabus is a separate edition. The syllabus page describes six AS topics and five A Level topics, but the exact topic tree and paper structure must be extracted from the PDF and update rather than reconstructed from this summary. Retrieved official Version 2 PDF (published December 2025) and separate one-page syllabus update. The syllabus itself states no significant changes affecting teaching; still reconcile the update before finalizing the normalized curriculum.",
+      "notes": "Official Cambridge subject page lists the 2026-2028 syllabus and a separate syllabus update. The 2029 syllabus is a separate edition. The syllabus page describes six AS topics and five A Level topics, but the exact topic tree and paper structure must be extracted from the PDF and update rather than reconstructed from this summary. Official PDF document metadata checked directly: 9609 is Version 3 (September 2023); 9708 is Version 1 (September 2023). Separate syllabus update PDF is listed by Cambridge and must be reconciled. Do not infer the PDF version from the examination-year range.",
       "sourceUpdateDocumentUrl": "https://www.cambridgeinternational.org/Images/748950-2026-2028-syllabus-update.pdf",
-      "documentVersion": "Version 2",
-      "documentVersionPublished": "December 2025"
+      "documentVersion": "Version 1",
+      "documentVersionPublished": "September 2023"
     },
     {
       "id": "cambridge-9696-2027-2029",
