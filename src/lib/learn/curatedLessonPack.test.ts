@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { buildCuratedLearnBlocks, economics9708AS11Pack, economics9708AS12Pack, getCuratedEconomics9708Pack } from "./curatedLessonPack";
+import { buildCuratedLearnBlocks, economics9708AS11Pack, economics9708AS12Pack, economics9708AS13Pack, getCuratedEconomics9708Pack } from "./curatedLessonPack";
 import scarcitySource from "../../../docs/curriculum/lessons/economics-9708-as-1.1-scarcity-choice-opportunity-cost.json";
 import methodologySource from "../../../docs/curriculum/lessons/economics-9708-as-1.2-economic-methodology.json";
+import factorsSource from "../../../docs/curriculum/lessons/economics-9708-as-1.3-factors-of-production.json";
 
 describe("curated Economics lesson integration", () => {
   it.each([
     ["1.1", economics9708AS11Pack, scarcitySource],
     ["1.2", economics9708AS12Pack, methodologySource],
+    ["1.3", economics9708AS13Pack, factorsSource],
   ])("adapts authored AS %s content to Learn renderer blocks", (_topic, pack, source) => {
     expect(pack.blocks.length).toBeGreaterThanOrEqual(12);
     expect(pack.blocks.some((block) => block.type === "objective")).toBe(true);
@@ -27,10 +29,20 @@ describe("curated Economics lesson integration", () => {
     expect(methodologySource.learningObjectives).toHaveLength(4);
   });
 
+
+  it("covers the five Factors of Production outcomes", () => {
+    const text = JSON.stringify(factorsSource).toLowerCase();
+    for (const phrase of ["land, labour, capital and enterprise", "human capital", "physical capital", "rewards", "division of labour", "specialisation", "risk"]) {
+      expect(text).toContain(phrase);
+    }
+    expect(factorsSource.learningObjectives).toHaveLength(5);
+  });
+
   it("does not expose assessment answer keys or marking guidance in learner-visible blocks", () => {
     const visible = JSON.stringify([
       ...buildCuratedLearnBlocks(scarcitySource),
       ...buildCuratedLearnBlocks(methodologySource),
+      ...buildCuratedLearnBlocks(factorsSource),
     ]).toLowerCase();
     expect(visible).not.toContain("marking guidance");
     expect(visible).not.toContain('"answer":');
@@ -41,6 +53,7 @@ describe("curated Economics lesson integration", () => {
   it("resolves only the supported pack identifiers", () => {
     expect(getCuratedEconomics9708Pack("economics-9708-as-1.1")).toBe(economics9708AS11Pack);
     expect(getCuratedEconomics9708Pack("economics-9708-as-1.2")).toBe(economics9708AS12Pack);
+    expect(getCuratedEconomics9708Pack("economics-9708-as-1.3")).toBe(economics9708AS13Pack);
     expect(getCuratedEconomics9708Pack("economics-9708-a-level")).toBeNull();
   });
 });
