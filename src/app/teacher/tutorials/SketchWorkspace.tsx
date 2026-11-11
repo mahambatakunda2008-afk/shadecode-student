@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 type Tool = "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "label";
 type Point = { x: number; y: number };
@@ -34,7 +34,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     historyRef.current = [ctx.getImageData(0, 0, canvas.width, canvas.height)];
   }, []);
 
-  function pointFromEvent(event: React.PointerEvent<HTMLCanvasElement>): Point {
+  function pointFromEvent(event: PointerEvent<HTMLCanvasElement>): Point {
     const canvas = event.currentTarget;
     const rect = canvas.getBoundingClientRect();
     return { x: (event.clientX - rect.left) * canvas.width / rect.width, y: (event.clientY - rect.top) * canvas.height / rect.height };
@@ -65,7 +65,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     }
   }
 
-  function begin(event: React.PointerEvent<HTMLCanvasElement>) {
+  function begin(event: PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
@@ -85,7 +85,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     }
   }
 
-  function move(event: React.PointerEvent<HTMLCanvasElement>) {
+  function move(event: PointerEvent<HTMLCanvasElement>) {
     if (!drawingRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
