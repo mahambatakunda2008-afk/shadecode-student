@@ -7,6 +7,13 @@ package com.shadecode.student
  * This is selectable catalogue metadata only, not a claim that curriculum,
  * lesson, assessment, tool or offline content coverage is complete.
  */
+data class NativeCurriculumOffering(
+    val boardId: String,
+    val qualificationId: String,
+    val syllabusCode: String,
+    val syllabusVersion: String? = null,
+)
+
 data class NativeSubjectOption(
     val code: String,
     val label: String,
@@ -16,6 +23,13 @@ data class NativeSubjectOption(
 )
 
 object NativeSubjectCatalog {
+    val curriculumOfferings = mapOf(
+        "zimsec-family-religious-studies-o-level" to listOf(NativeCurriculumOffering("zimsec", "o_level", "4047")),
+        "cambridge-business-9609" to listOf(NativeCurriculumOffering("cambridge", "a_level", "9609")),
+        "cambridge-economics-9708" to listOf(NativeCurriculumOffering("cambridge", "a_level", "9708")),
+        "cambridge-geography-9696" to listOf(NativeCurriculumOffering("cambridge", "a_level", "9696")),
+    )
+
     val all = listOf(
         NativeSubjectOption("mathematics", "Mathematics", "Mathematics & quantitative", listOf("early-childhood", "primary", "lower-secondary", "upper-secondary", "a-level", "university", "tvet", "professional", "independent"), listOf("Maths", "Numeracy")),
         NativeSubjectOption("additional-mathematics", "Additional Mathematics", "Mathematics & quantitative", listOf("lower-secondary", "upper-secondary", "a-level")),
