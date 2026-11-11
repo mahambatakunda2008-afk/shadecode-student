@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { matchAllowedSubject } from "@/lib/academic/subjectContract";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
