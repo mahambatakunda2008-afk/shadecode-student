@@ -201,6 +201,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [improvingText, setImprovingText] = useState(false);
   const [recognizingHandwriting, setRecognizingHandwriting] = useState(false);
   const [liveCorrection, setLiveCorrection] = useState(true);
+  const [recognitionMode, setRecognitionMode] = useState<"general" | "mathematics" | "science">("general");
   const [handwritingText, setHandwritingText] = useState("");
   const [handwritingRawText, setHandwritingRawText] = useState("");
   const [handwritingUncertainty, setHandwritingUncertainty] = useState<UncertainHandwritingCharacter[]>([]);
@@ -285,7 +286,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       const response = await fetch("/api/teacher/tutorials/recognize-handwriting", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64, mimeType: "image/png" }),
+        body: JSON.stringify({ image: base64, mimeType: "image/png", mode: recognitionMode }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error ?? "Handwriting recognition is unavailable.");
@@ -538,6 +539,11 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       <button type="button" onClick={() => imageInputRef.current?.click()} disabled={saving || recognizingHandwriting} className="min-h-10 rounded-lg border border-[var(--card-border)] px-3 py-2 text-sm">Import handwriting photo</button>
       <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/webp" capture="environment" onChange={importHandwritingImage} className="hidden" />
       <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={liveCorrection} onChange={event => { const enabled = event.target.checked; liveCorrectionRef.current = enabled; setLiveCorrection(enabled); if (!enabled) { recognitionPendingRef.current = false; if (liveRecognitionTimerRef.current) { clearTimeout(liveRecognitionTimerRef.current); liveRecognitionTimerRef.current = null; } } }} />Live handwriting correction</label>
+      <label className="flex min-h-10 items-center gap-2 text-sm">Recognition mode
+        <select value={recognitionMode} onChange={event => setRecognitionMode(event.target.value as "general" | "mathematics" | "science")} className="min-h-10 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2">
+          <option value="general">General writing</option><option value="mathematics">Mathematics</option><option value="science">Science</option>
+        </select>
+      </label>
       <span className="text-xs text-[var(--muted-foreground)]">Automatically reads after you pause, corrects likely character confusions using context, and flags uncertain text.</span>
     </div>
     {handwritingText && <div className="space-y-2 rounded-xl border border-[var(--card-border)] p-3">
