@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent } from "react";
+import { applyHandwritingAlternative, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
 
 type Tool = "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "curve" | "label";
 export type Point = { x: number; y: number };
@@ -152,7 +153,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [liveCorrection, setLiveCorrection] = useState(true);
   const [handwritingText, setHandwritingText] = useState("");
   const [handwritingRawText, setHandwritingRawText] = useState("");
-  const [handwritingUncertainty, setHandwritingUncertainty] = useState<string[]>([]);
+  const [handwritingUncertainty, setHandwritingUncertainty] = useState<UncertainHandwritingCharacter[]>([]);
   const [handwritingConfidence, setHandwritingConfidence] = useState<number | null>(null);
   const [status, setStatus] = useState("Auto-fix is on. Strokes smooth as you draw; shapes snap when you lift the pointer.");
 
@@ -241,9 +242,13 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       setHandwritingRawText(typeof result.transcript === "string" ? result.transcript : corrected);
       setHandwritingText(corrected);
       const uncertainties = Array.isArray(result.uncertainCharacters) ? result.uncertainCharacters : [];
-      setHandwritingUncertainty(uncertainties.map((item: { seen?: string; chosen?: string; alternatives?: string[]; context?: string }) =>
-        `${item.seen || "Character"} → ${item.chosen || "[unclear]"}${item.alternatives?.length ? ` (could be ${item.alternatives.join(" / ")})` : ""}${item.context ? ` in “${item.context}”` : ""}`
-      ));
+      setHandwritingUncertainty(uncertainties.map((item: UncertainHandwritingCharacter) => ({
+        seen: item.seen || "Character",
+        chosen: item.chosen || "[unclear]",
+        alternatives: Array.isArray(item.alternatives) ? item.alternatives : [],
+        context: item.context || "",
+        reason: item.reason || "",
+      })));
       setHandwritingConfidence(typeof result.confidence === "number" ? result.confidence : null);
       const uncertain = uncertainties.length;
       setStatus(uncertain
@@ -490,7 +495,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       </div>
       <textarea value={handwritingText} onChange={event => setHandwritingText(event.target.value)} maxLength={12000} rows={6} spellCheck autoCorrect="on" className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" aria-label="Review and edit recognised handwriting" />
       {handwritingRawText && handwritingRawText !== handwritingText && <details className="rounded-lg bg-[var(--surface)] p-2 text-xs"><summary className="cursor-pointer font-medium">Compare original character reading</summary><p className="mt-2 whitespace-pre-wrap">{handwritingRawText}</p></details>}
-      {handwritingUncertainty.length > 0 && <div className="rounded-lg bg-amber-500/10 p-3 text-xs"><strong>Characters needing a human check</strong><ul className="mt-1 list-disc space-y-1 pl-5">{handwritingUncertainty.map((item, index) => <li key={index}>{item}</li>)}</ul></div>}
+      {handwritingUncertainty.length > 0 && <div className="space-y-3 rounded-lg bg-amber-500/10 p-3 text-xs"><strong>Characters needing a human check</strong>{handwritingUncertainty.map((item, index) => <div key={index} className="space-y-1 border-t border-amber-500/20 pt-2"><p><strong>{item.seen}</strong> was read as <strong>{item.chosen}</strong>{item.context ? <> in “{item.context}”</> : null}</p>{item.reason && <p className="text-[var(--muted-foreground)]">{item.reason}</p>}{item.alternatives.length > 0 && <div className="flex flex-wrap items-center gap-2"><span>Choose:</span>{item.alternatives.map((alternative, optionIndex) => <button key={optionIndex} type="button" onClick={() => { const updated = applyHandwritingAlternative(handwritingText, item, alternative); if (updated === null) { setStatus("Could not safely locate that character. Edit the transcription directly so no other character is changed."); return; } setHandwritingText(updated); setStatus(`Changed the uncertain reading to “${alternative}”. Review the surrounding text.`); }} className="min-h-8 rounded-md border border-amber-600/40 bg-[var(--surface)] px-2 py-1 font-semibold">{alternative}</button>)}</div>}</div>)}</div>}
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={typesetCorrectedHandwriting} className="min-h-10 rounded-lg bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-white">Typeset corrected text on canvas</button>
         <button type="button" onClick={() => { setLabel(handwritingText.slice(0, 240)); setTool("label"); setStatus(handwritingText.length > 240 ? "Only the first 240 characters fit in a single diagram label. The complete transcription remains above." : "Corrected text loaded into the label editor."); }} className="min-h-10 rounded-lg border border-[var(--card-border)] px-3 py-2 text-sm">Use as diagram label</button>
