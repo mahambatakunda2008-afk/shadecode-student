@@ -16,8 +16,28 @@ class NativeStore(private val context: Context) {
     private val userId = stringPreferencesKey("user_id")
     private val email = stringPreferencesKey("email")
     private val cachedProfile = stringPreferencesKey("cached_profile")
+    private val cachedAccountId = stringPreferencesKey("cached_account_id")
 
     fun context(): Context = context
+
+    /**
+     * Room stores a single active learner's subject/lesson snapshots. Clear those
+     * rows before reading them when the authenticated account changes, so offline
+     * startup can never expose the previous learner's cached workspace.
+     */
+    suspend fun prepareAccountCache(accountId: String, database: NativeDatabase) {
+        require(accountId.isNotBlank()) { "A signed-in account is required to prepare local cache." }
+        val previousOwner = context.nativeStore.data.first()[cachedAccountId]
+        if (!accountCacheOwnerChanged(previousOwner, accountId)) return
+
+        database.subjects().clear()
+        database.lessons().clearAll()
+        database.progress().clearAll()
+        context.nativeStore.edit { preferences ->
+            preferences.remove(cachedProfile)
+            preferences[cachedAccountId] = accountId
+        }
+    }
 
     suspend fun saveSession(session: NativeSession) {
         context.nativeStore.edit { prefs ->
@@ -247,3 +267,7 @@ data class NativePendingOperation(
     val payload: String,
     val createdAt: Long,
 )
+
+/** Pure account-boundary policy used by the Room cache guard and its unit tests. */
+internal fun accountCacheOwnerChanged(previousOwner: String?, activeAccountId: String): Boolean =
+    previousOwner != activeAccountId
