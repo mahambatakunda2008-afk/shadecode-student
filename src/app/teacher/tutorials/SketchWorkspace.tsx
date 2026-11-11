@@ -102,6 +102,9 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   saving: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const liveRecognitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastRecognitionAtRef = useRef(0);
   const drawingRef = useRef(false);
   const startRef = useRef<Point | null>(null);
   const pointsRef = useRef<Point[]>([]);
@@ -116,6 +119,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [autoImproveText, setAutoImproveText] = useState(true);
   const [improvingText, setImprovingText] = useState(false);
   const [recognizingHandwriting, setRecognizingHandwriting] = useState(false);
+  const [liveCorrection, setLiveCorrection] = useState(true);
   const [handwritingText, setHandwritingText] = useState("");
   const [handwritingUncertainty, setHandwritingUncertainty] = useState<string[]>([]);
   const [handwritingConfidence, setHandwritingConfidence] = useState<number | null>(null);
@@ -137,7 +141,10 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     historyRef.current = [ctx.getImageData(0, 0, WIDTH, HEIGHT)];
   }, []);
 
-  useEffect(() => () => { if (frameRef.current !== null) cancelAnimationFrame(frameRef.current); }, []);
+  useEffect(() => () => {
+    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    if (liveRecognitionTimerRef.current) clearTimeout(liveRecognitionTimerRef.current);
+  }, []);
 
   async function improveLabelText(): Promise<{ text: string; improved: boolean; checked: boolean }> {
     const original = label.trim();
@@ -168,6 +175,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const canvas = canvasRef.current;
     if (!canvas || recognizingHandwriting) return;
     setRecognizingHandwriting(true);
+    lastRecognitionAtRef.current = Date.now();
     setStatus("Reading handwriting and checking uncertain characters…");
     try {
       const blob = await new Promise<Blob>((resolve, reject) =>
@@ -208,6 +216,42 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       setStatus(error instanceof Error ? error.message : "Could not read handwriting. Your drawing is unchanged.");
     } finally {
       setRecognizingHandwriting(false);
+    }
+  }
+
+  function scheduleLiveHandwritingRecognition() {
+    if (!liveCorrection || recognizingHandwriting) return;
+    if (liveRecognitionTimerRef.current) clearTimeout(liveRecognitionTimerRef.current);
+    const wait = Math.max(1800, 6000 - (Date.now() - lastRecognitionAtRef.current));
+    liveRecognitionTimerRef.current = setTimeout(() => {
+      liveRecognitionTimerRef.current = null;
+      void recognizeHandwriting();
+    }, wait);
+    setStatus("Writing paused. Live character recognition and correction will run shortly…");
+  }
+
+  async function importHandwritingImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 4 * 1024 * 1024) {
+      setStatus("Choose a PNG, JPEG or WebP handwriting image under 4 MiB.");
+      return;
+    }
+    try {
+      const bitmap = await createImageBitmap(file);
+      const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) { bitmap.close(); return; }
+      const scale = Math.min(WIDTH / bitmap.width, HEIGHT / bitmap.height);
+      const width = bitmap.width * scale, height = bitmap.height * scale;
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      ctx.drawImage(bitmap, (WIDTH - width) / 2, (HEIGHT - height) / 2, width, height);
+      bitmap.close();
+      pushHistory(ctx);
+      setStatus("Handwriting image loaded. Reading and correcting characters…");
+      if (liveCorrection) scheduleLiveHandwritingRecognition();
+    } catch {
+      setStatus("Could not open that image. Try a standard PNG, JPEG or WebP photo.");
     }
   }
 
@@ -343,7 +387,9 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       smoothPath(ctx, points);
     }
     pushHistory(ctx);
+    const completedTool = tool;
     startRef.current = null; pointsRef.current = []; snapshotRef.current = null;
+    if (completedTool === "pen") scheduleLiveHandwritingRecognition();
   }
 
   function undo() {
@@ -385,7 +431,10 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       <button type="button" onClick={() => void recognizeHandwriting()} disabled={recognizingHandwriting || saving} className="min-h-10 rounded-lg border border-[var(--primary)] px-3 py-2 text-sm font-semibold disabled:opacity-40">
         {recognizingHandwriting ? "Reading handwriting…" : "✦ Read & correct handwriting"}
       </button>
-      <span className="text-xs text-[var(--muted-foreground)]">Reads the writing on the canvas, resolves likely character confusions using context, and flags uncertain text.</span>
+      <button type="button" onClick={() => imageInputRef.current?.click()} disabled={saving || recognizingHandwriting} className="min-h-10 rounded-lg border border-[var(--card-border)] px-3 py-2 text-sm">Import handwriting photo</button>
+      <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/webp" capture="environment" onChange={importHandwritingImage} className="hidden" />
+      <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={liveCorrection} onChange={event => setLiveCorrection(event.target.checked)} />Live handwriting correction</label>
+      <span className="text-xs text-[var(--muted-foreground)]">Automatically reads after you pause, corrects likely character confusions using context, and flags uncertain text.</span>
     </div>
     {handwritingText && <div className="space-y-2 rounded-xl border border-[var(--card-border)] p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
