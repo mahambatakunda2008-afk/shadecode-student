@@ -23,7 +23,7 @@ Before a syllabus can move to verified/production-ready, Shadecode must retrieve
 
 ## Cambridge International AS & A Level Economics 9708
 
-- Source edition: 2026, 2027 and 2028; Version 1, published September 2023.
+- Source edition: 2026, 2027 and 2028; Version 2, published December 2025. The separate one-page syllabus update states there are no significant changes affecting teaching.
 - Official syllabus PDF: https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf
 - Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-economics-9708/\n- Official 2026–2028 update PDF: https://www.cambridgeinternational.org/Images/748950-2026-2028-syllabus-update.pdf
 - AS scope: topics 1.1–6.5.
