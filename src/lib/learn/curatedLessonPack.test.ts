@@ -9,6 +9,7 @@ describe("curated Economics lesson integration", () => {
     ["1.2", economics9708AS12Pack, methodologySource],
   ])("adapts authored AS %s content to Learn renderer blocks", (_topic, pack, source) => {
     expect(pack.blocks.length).toBeGreaterThanOrEqual(12);
+    expect(pack.blocks.some((block) => block.type === "objective")).toBe(true);
     expect(pack.blocks.some((block) => block.type === "concept")).toBe(true);
     expect(pack.blocks.some((block) => block.type === "checkpoint")).toBe(true);
     expect(pack.blocks.some((block) => block.type === "practice")).toBe(true);
