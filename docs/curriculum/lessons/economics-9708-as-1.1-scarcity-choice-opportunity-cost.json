@@ -199,6 +199,12 @@
         "type": "graph",
         "offlineIncluded": true,
         "source": "original_instructional_graph_illustrative_not_measured_data"
+      },
+      {
+        "assetId": "econ-9708-1-1-resource-allocation",
+        "type": "svg_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
       }
     ],
     "networkRequired": false,
@@ -252,6 +258,24 @@
         "interpret",
         "label",
         "explain"
+      ]
+    },
+    {
+      "assetId": "econ-9708-1-1-resource-allocation",
+      "type": "svg_diagram",
+      "kind": "resource-allocation-questions",
+      "title": "The three resource-allocation questions",
+      "purpose": "Teach the three questions every economic system must answer.",
+      "learningObjectiveIds": [
+        "9708-AS-1.1-LO4"
+      ],
+      "altText": "Three connected economic resource allocation questions: what to produce, how to produce, and for whom to produce.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "label",
+        "explain",
+        "apply"
       ]
     }
   ]
