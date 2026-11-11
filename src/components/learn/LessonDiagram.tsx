@@ -200,6 +200,37 @@ function EconomicTimeHorizons() {
     <text x="300" y="232" textAnchor="middle" fontSize="12" fill={colors.muted}>Conceptual sequence, not a scale of fixed calendar time</text>
   </svg>;
 }
+
+function ResourceAllocationQuestions() {
+  return <svg viewBox="0 0 600 240" role="img" aria-label="Three connected economic resource allocation questions: what to produce, how to produce, and for whom to produce." className="lesson-diagram-svg">
+    {[[15,"WHAT?","Which goods and services?"],[215,"HOW?","Which methods and inputs?"],[415,"FOR WHOM?","How is output distributed?"]].map(([x,h,b])=><g key={String(h)}><rect x={Number(x)} y="50" width="170" height="115" rx="14" fill="#ccfbf1" stroke={colors.line} strokeWidth="2"/><text x={Number(x)+85} y="92" textAnchor="middle" fontSize="17" fontWeight="700" fill="#134e4a">{String(h)}</text><text x={Number(x)+85} y="122" textAnchor="middle" fontSize="12" fill="#134e4a">{String(b)}</text></g>)}
+    <path d="M185 108 H208 M201 101 L209 108 L201 115 M385 108 H408 M401 101 L409 108 L401 115" stroke={colors.line} strokeWidth="2.5" fill="none"/>
+    <text x="300" y="208" textAnchor="middle" fontSize="13" fill="currentColor">Every economic system must address all three.</text>
+  </svg>;
+}
+function PositiveNormativeClaims() {
+  return <svg viewBox="0 0 600 260" role="img" aria-label="Comparison of positive statements, which are testable against evidence, and normative statements, which express what ought to happen and depend on value judgements." className="lesson-diagram-svg">
+    <rect x="18" y="35" width="270" height="170" rx="14" fill="#ccfbf1" stroke={colors.line} strokeWidth="2"/>
+    <rect x="312" y="35" width="270" height="170" rx="14" fill="#ffedd5" stroke={colors.point} strokeWidth="2"/>
+    <text x="153" y="72" textAnchor="middle" fontSize="17" fontWeight="700" fill="#134e4a">POSITIVE</text>
+    <text x="153" y="104" textAnchor="middle" fontSize="13" fill="#134e4a">What is / what may happen</text>
+    <text x="153" y="137" textAnchor="middle" fontSize="12" fill="#134e4a">Can be tested with evidence</text>
+    <text x="153" y="169" textAnchor="middle" fontSize="11" fill="#134e4a">Example: A tax cut raises disposable income.</text>
+    <text x="447" y="72" textAnchor="middle" fontSize="17" fontWeight="700" fill="#7c2d12">NORMATIVE</text>
+    <text x="447" y="104" textAnchor="middle" fontSize="13" fill="#7c2d12">What ought to happen</text>
+    <text x="447" y="137" textAnchor="middle" fontSize="12" fill="#7c2d12">Depends on value judgements</text>
+    <text x="447" y="169" textAnchor="middle" fontSize="11" fill="#7c2d12">Example: The tax cut is fair.</text>
+    <text x="300" y="238" textAnchor="middle" fontSize="12" fill={colors.muted}>Positive does not mean true or good; normative does not mean unsupported.</text>
+  </svg>;
+}
+function EconomicsInquiryCycle() {
+  return <svg viewBox="0 0 600 260" role="img" aria-label="Economics as a social science: observe economic behaviour and data, form a hypothesis or model, compare predictions with evidence, then revise the explanation." className="lesson-diagram-svg">
+    {[[15,"OBSERVE","People, firms and data"],[215,"MODEL","Hypothesis and assumptions"],[415,"TEST","Compare with evidence"]].map(([x,h,b])=><g key={String(h)}><rect x={Number(x)} y="55" width="170" height="105" rx="14" fill="#ccfbf1" stroke={colors.line} strokeWidth="2"/><text x={Number(x)+85} y="96" textAnchor="middle" fontSize="16" fontWeight="700" fill="#134e4a">{String(h)}</text><text x={Number(x)+85} y="124" textAnchor="middle" fontSize="11" fill="#134e4a">{String(b)}</text></g>)}
+    <path d="M185 108 H208 M201 101 L209 108 L201 115 M385 108 H408" stroke={colors.line} strokeWidth="2.5" fill="none"/>
+    <path d="M500 165 V207 H100 V166 M107 174 L100 165 L93 174" stroke={colors.point} strokeWidth="2" fill="none"/>
+    <text x="300" y="232" textAnchor="middle" fontSize="12" fill={colors.muted}>Revise the explanation when evidence challenges the model.</text>
+  </svg>;
+}
 export default function LessonDiagram({ kind, title }: Props) {
   let graphic: ReactNode;
   switch (kind.trim().toLowerCase()) {
@@ -212,6 +243,9 @@ export default function LessonDiagram({ kind, title }: Props) {
     case "ceteris-paribus-model": graphic = <CeterisParibusModel />; break;
     case "factors-of-production-model": graphic = <FactorsOfProductionModel />; break;
     case "economic-time-horizons": graphic = <EconomicTimeHorizons />; break;
+    case "resource-allocation-questions": graphic = <ResourceAllocationQuestions />; break;
+    case "positive-normative-claims": graphic = <PositiveNormativeClaims />; break;
+    case "economics-inquiry-cycle": graphic = <EconomicsInquiryCycle />; break;
     case "unit-circle": graphic = <UnitCircle />; break;
     case "binary-place-values": graphic = <BinaryPlaceValues />; break;
     case "particle-model": graphic = <ParticleModel />; break;
