@@ -371,9 +371,12 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         }
     }
     LaunchedEffect(session.accessToken) {
-        subjects = withContext(Dispatchers.IO) { database.subjects().all() }
-        profile = withContext(Dispatchers.IO) { sessionStore.readProfile() }
         try {
+            // Establish the cache owner before reading any Room or profile snapshot.
+            // This also runs when a different account signs in while offline.
+            withContext(Dispatchers.IO) { sessionStore.prepareAccountCache(session.userId, database) }
+            subjects = withContext(Dispatchers.IO) { database.subjects().all() }
+            profile = withContext(Dispatchers.IO) { sessionStore.readProfile() }
             val loaded = withContext(Dispatchers.IO) { api.loadProfile(session) }
             profile = loaded
             withContext(Dispatchers.IO) { sessionStore.saveProfile(loaded) }
@@ -465,7 +468,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                 },
                 focusStatus = focusStatus,
             )
-            3 -> SnapExtractScreen(padding)
+            3 -> SnapExtractScreen(padding, session)
             else -> ProfileNativeScreen(
                 padding = padding,
                 session = session,
@@ -1253,15 +1256,15 @@ private fun ProfileNativeScreen(
 
 
 @Composable
-private fun SnapExtractScreen(padding: PaddingValues) {
+private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val extractStore = remember { NativeExtractStore(context) }
+    val extractStore = remember(session.userId) { NativeExtractStore(context, session.userId) }
     var savedArtifacts by remember { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
     var artifactSearch by remember { mutableStateOf("") }
     var activeArtifactId by remember { mutableStateOf<String?>(null) }
     var artifactTitle by remember { mutableStateOf("") }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(session.userId) {
         savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
     }
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
