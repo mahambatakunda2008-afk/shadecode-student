@@ -42,7 +42,7 @@ data class NativeLessonProgressEntity(
 @Entity(tableName = "pending_sync")
 data class NativePendingSyncEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val accountId: String,
+    @androidx.room.ColumnInfo(defaultValue = "''") val accountId: String,
     val operation: String,
     val payload: String,
     val createdAt: Long = System.currentTimeMillis(),
