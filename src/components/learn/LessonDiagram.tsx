@@ -151,6 +151,47 @@ function RootBracket() {
   </svg>;
 }
 
+
+function ScarcityChoiceFlow() {
+  return <svg viewBox="0 0 600 250" role="img" aria-label="Flow diagram: limited resources relative to competing wants create scarcity; scarcity requires choice; choosing one option means giving up the next best alternative, which is the opportunity cost." className="lesson-diagram-svg">
+    <defs><marker id="scarcity-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill={colors.line}/></marker></defs>
+    {[[18,"Scarce resources"],[218,"Choice"],[418,"Opportunity cost"]].map(([x,label],i)=><g key={String(label)}><rect x={Number(x)} y="65" width="164" height="86" rx="14" fill={i===2?"#ffedd5":"#ccfbf1"} stroke={i===2?colors.point:colors.line} strokeWidth="2"/><text x={Number(x)+82} y="101" textAnchor="middle" fontSize="15" fontWeight="700" fill={i===2?"#7c2d12":"#134e4a"}>{String(label)}</text><text x={Number(x)+82} y="124" textAnchor="middle" fontSize="11" fill={i===2?"#7c2d12":"#134e4a"}>{["Resources are limited","Select an option","Next best forgone"][i]}</text></g>)}
+    <path d="M184 108 H208 M201 101 L209 108 L201 115 M384 108 H408 M401 101 L409 108 L401 115" stroke={colors.line} strokeWidth="2.5" fill="none"/>
+    <text x="300" y="202" textAnchor="middle" fontSize="13" fill="currentColor">Scarcity → choice → the value of the next best alternative forgone</text>
+  </svg>;
+}
+function ProductionPossibilityCurve() {
+  return <svg viewBox="0 0 600 340" role="img" aria-label="Illustrative production possibility curve bowed outward between consumer goods and capital goods. A point on the curve is productively efficient, a point inside is inefficient or underused resources, and a point outside is currently unattainable." className="lesson-diagram-svg">
+    <path d="M76 278 H550 M76 278 V28" stroke={colors.axis} strokeWidth="2"/>
+    <path d="M105 70 C175 125 290 218 495 258" stroke={colors.line} strokeWidth="4" fill="none"/>
+    <path d="M105 70 C175 125 290 218 495 258 L495 278 L105 278 Z" fill="#ccfbf1" opacity=".22"/>
+    <circle cx="286" cy="188" r="6" fill={colors.point}/><text x="299" y="185" fontSize="13" fill="currentColor">A: on curve</text>
+    <circle cx="260" cy="238" r="6" fill={colors.point}/><text x="273" y="243" fontSize="13" fill="currentColor">B: inside</text>
+    <circle cx="420" cy="125" r="6" fill="#b91c1c"/><text x="432" y="128" fontSize="13" fill="currentColor">C: outside</text>
+    <text x="300" y="321" textAnchor="middle" fontSize="14" fill="currentColor">Consumer goods →</text><text x="22" y="25" fontSize="13" fill="currentColor">Capital goods</text>
+    <text x="330" y="55" fontSize="11" fill={colors.muted}>Illustrative curve, not measured data</text>
+  </svg>;
+}
+function CeterisParibusModel() {
+  return <svg viewBox="0 0 600 300" role="img" aria-label="Ceteris paribus model: change one variable, hold other relevant influences constant, then isolate the predicted relationship. Example: price rises, other demand determinants held constant, quantity demanded falls." className="lesson-diagram-svg">
+    <rect x="20" y="72" width="160" height="104" rx="12" fill="#ccfbf1" stroke={colors.line} strokeWidth="2"/>
+    <rect x="220" y="72" width="160" height="104" rx="12" fill="#e0e7ff" stroke="#4f46e5" strokeWidth="2"/>
+    <rect x="420" y="72" width="160" height="104" rx="12" fill="#ffedd5" stroke={colors.point} strokeWidth="2"/>
+    <text x="100" y="104" textAnchor="middle" fontSize="15" fontWeight="700" fill="#134e4a">Change one</text><text x="100" y="128" textAnchor="middle" fontSize="12" fill="#134e4a">Price of the good</text>
+    <text x="300" y="104" textAnchor="middle" fontSize="15" fontWeight="700" fill="#312e81">Hold others</text><text x="300" y="128" textAnchor="middle" fontSize="12" fill="#312e81">Income, tastes, etc.</text>
+    <text x="500" y="104" textAnchor="middle" fontSize="15" fontWeight="700" fill="#7c2d12">Isolate effect</text><text x="500" y="128" textAnchor="middle" fontSize="12" fill="#7c2d12">Quantity demanded</text>
+    <path d="M182 124 H212 M205 117 L213 124 L205 131 M382 124 H412 M405 117 L413 124 L405 131" stroke={colors.axis} strokeWidth="2.5" fill="none"/>
+    <text x="300" y="224" textAnchor="middle" fontSize="13" fill="currentColor">Example: price rises → quantity demanded falls</text>
+    <text x="300" y="248" textAnchor="middle" fontSize="12" fill={colors.muted}>Prediction assumes other relevant demand determinants are unchanged.</text>
+  </svg>;
+}
+function FactorsOfProductionModel() {
+  return <svg viewBox="0 0 600 340" role="img" aria-label="Four factors of production feed into goods and services: land is natural resources and earns rent; labour is human effort and earns wages; capital is man-made productive assets and earns interest; enterprise organises resources and bears risk, earning profit." className="lesson-diagram-svg">
+    {[[18,35,"LAND","Natural resources","Rent"],[310,35,"LABOUR","Human effort","Wages"],[18,185,"CAPITAL","Produced assets","Interest"],[310,185,"ENTERPRISE","Organises and bears risk","Profit"]].map(([x,y,h,b,r])=><g key={String(h)}><rect x={Number(x)} y={Number(y)} width="260" height="105" rx="12" fill={h==="ENTERPRISE"?"#ffedd5":"#ccfbf1"} stroke={h==="ENTERPRISE"?colors.point:colors.line} strokeWidth="2"/><text x={Number(x)+130} y={Number(y)+28} textAnchor="middle" fontSize="15" fontWeight="700" fill={h==="ENTERPRISE"?"#7c2d12":"#134e4a"}>{String(h)}</text><text x={Number(x)+130} y={Number(y)+53} textAnchor="middle" fontSize="12" fill={h==="ENTERPRISE"?"#7c2d12":"#134e4a"}>{String(b)}</text><text x={Number(x)+130} y={Number(y)+80} textAnchor="middle" fontSize="12" fill={h==="ENTERPRISE"?"#7c2d12":"#134e4a"}>Reward: {String(r)}</text></g>)}
+    <path d="M150 142 V163 H300 M440 142 V163 H300 M150 185 V163 M440 185 V163" stroke={colors.axis} strokeWidth="1.8" fill="none"/>
+    <text x="300" y="325" textAnchor="middle" fontSize="14" fill="currentColor">Combined inputs produce goods and services</text>
+  </svg>;
+}
 export default function LessonDiagram({ kind, title }: Props) {
   let graphic: ReactNode;
   switch (kind.trim().toLowerCase()) {
@@ -158,6 +199,10 @@ export default function LessonDiagram({ kind, title }: Props) {
     case "wave-shape": graphic = <Waves />; break;
     case "force-pairs": graphic = <ForcePairs />; break;
     case "root-bracket": graphic = <RootBracket />; break;
+    case "scarcity-choice-flow": graphic = <ScarcityChoiceFlow />; break;
+    case "production-possibility-curve": graphic = <ProductionPossibilityCurve />; break;
+    case "ceteris-paribus-model": graphic = <CeterisParibusModel />; break;
+    case "factors-of-production-model": graphic = <FactorsOfProductionModel />; break;
     case "unit-circle": graphic = <UnitCircle />; break;
     case "binary-place-values": graphic = <BinaryPlaceValues />; break;
     case "particle-model": graphic = <ParticleModel />; break;
