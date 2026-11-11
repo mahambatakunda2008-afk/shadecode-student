@@ -31,7 +31,7 @@ ${text}`;
   const improved = await executeCortexText(prompt, 1100, {
     operation: "teacher.tutorial.text_improvement",
     userId: reviewer.user.id,
-    feature: "teacher",
+    feature: "cortex",
     subfeature: "tutorial_text_improvement",
   });
 
