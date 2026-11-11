@@ -231,6 +231,28 @@ function EconomicsInquiryCycle() {
     <text x="300" y="232" textAnchor="middle" fontSize="12" fill={colors.muted}>Revise the explanation when evidence challenges the model.</text>
   </svg>;
 }
+
+function EconomicSystemsComparison() {
+  const columns = [
+    { x: 14, title: "MARKET", decision: "Consumers and firms", method: "Prices, demand and supply", distribution: "Purchasing power", fill: "#ccfbf1", stroke: colors.line, ink: "#134e4a" },
+    { x: 210, title: "PLANNED", decision: "Central authority", method: "Plans and directives", distribution: "Administrative priorities", fill: "#dbeafe", stroke: "#2563eb", ink: "#1e40af" },
+    { x: 406, title: "MIXED", decision: "Markets and government", method: "Prices plus public policy", distribution: "Purchasing power and public provision", fill: "#ffedd5", stroke: colors.point, ink: "#7c2d12" },
+  ];
+  return <svg viewBox="0 0 600 290" role="img" aria-label="Comparison of market, planned and mixed economies: market decisions are made mainly by consumers and firms and coordinated by prices; planned decisions are directed by a central authority using plans; mixed economies combine market decisions with government policy. Distribution mechanisms also differ." className="lesson-diagram-svg">
+    {columns.map((item) => <g key={item.title}>
+      <rect x={item.x} y="18" width="180" height="226" rx="12" fill={item.fill} stroke={item.stroke} strokeWidth="2"/>
+      <text x={item.x+90} y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill={item.ink}>{item.title}</text>
+      <text x={item.x+90} y="84" textAnchor="middle" fontSize="11" fontWeight="700" fill={item.ink}>WHO DECIDES?</text>
+      <text x={item.x+90} y="105" textAnchor="middle" fontSize="11" fill={item.ink}>{item.decision}</text>
+      <text x={item.x+90} y="143" textAnchor="middle" fontSize="11" fontWeight="700" fill={item.ink}>HOW COORDINATED?</text>
+      <text x={item.x+90} y="164" textAnchor="middle" fontSize="11" fill={item.ink}>{item.method}</text>
+      <text x={item.x+90} y="202" textAnchor="middle" fontSize="11" fontWeight="700" fill={item.ink}>FOR WHOM?</text>
+      <text x={item.x+90} y="222" textAnchor="middle" fontSize="10" fill={item.ink}>{item.distribution}</text>
+    </g>)}
+    <text x="300" y="273" textAnchor="middle" fontSize="12" fill={colors.muted}>Ideal types for comparison; real economies can combine mechanisms.</text>
+  </svg>;
+}
+
 export default function LessonDiagram({ kind, title }: Props) {
   let graphic: ReactNode;
   switch (kind.trim().toLowerCase()) {
@@ -246,6 +268,7 @@ export default function LessonDiagram({ kind, title }: Props) {
     case "resource-allocation-questions": graphic = <ResourceAllocationQuestions />; break;
     case "positive-normative-claims": graphic = <PositiveNormativeClaims />; break;
     case "economics-inquiry-cycle": graphic = <EconomicsInquiryCycle />; break;
+    case "economic-systems-comparison": graphic = <EconomicSystemsComparison />; break;
     case "unit-circle": graphic = <UnitCircle />; break;
     case "binary-place-values": graphic = <BinaryPlaceValues />; break;
     case "particle-model": graphic = <ParticleModel />; break;
