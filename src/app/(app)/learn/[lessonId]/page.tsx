@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import SocraticTutor from "@/components/SocraticTutor";
 import LessonDiagram from "@/components/learn/LessonDiagram";
+import TeacherTutorials from "@/components/learn/TeacherTutorials";
 import { downloadManager } from "@/lib/offline/downloadManager";
 import { offlineStorage } from "@/lib/offline/storage";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
@@ -415,6 +416,8 @@ export default function LessonDetailPage() {
           {narration.status !== "idle" && narration.voiceCommandsSupported && <p className="lesson-note">Say “next”, “repeat”, or “pause” between sections.</p>}
           </div>
         </div> : <div style={{ textAlign: "center", padding: 50, color: "var(--muted-foreground)" }}><BookOpen size={28} /><p>No content yet.</p><Link href="/learn" style={{ color: "var(--primary)" }}>Generate a new lesson</Link></div>}
+
+        <TeacherTutorials subject={lesson.subject} />
 
         {lesson.updated_at && <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "var(--muted-foreground)", fontSize: 11 }}><Clock size={12} />Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</div>}
       </div>
