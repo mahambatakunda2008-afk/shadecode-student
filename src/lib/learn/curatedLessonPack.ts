@@ -5,6 +5,7 @@ import systemsPack from "../../../docs/curriculum/lessons/economics-9708-as-1.4-
 import ppcPack from "../../../docs/curriculum/lessons/economics-9708-as-1.5-production-possibility-curves.json";
 import goodsPack from "../../../docs/curriculum/lessons/economics-9708-as-1.6-classification-goods-services.json";
 import demandSupplyPack from "../../../docs/curriculum/lessons/economics-9708-as-2.1-demand-and-supply-curves.json";
+import elasticityPack from "../../../docs/curriculum/lessons/economics-9708-as-2.2-price-income-cross-elasticity.json";
 
 export interface CuratedLessonBlock {
   type: string;
@@ -90,6 +91,7 @@ export const economics9708AS14Pack = createLearnPack(systemsPack as AuthoredPack
 export const economics9708AS15Pack = createLearnPack(ppcPack as AuthoredPack, "1.5");
 export const economics9708AS16Pack = createLearnPack(goodsPack as AuthoredPack, "1.6");
 export const economics9708AS21Pack = createLearnPack(demandSupplyPack as AuthoredPack, "2.1");
+export const economics9708AS22Pack = createLearnPack(elasticityPack as AuthoredPack, "2.2");
 
 export function getCuratedEconomics9708Pack(packId: string) {
   if (packId === "economics-9708-as-1.1") return economics9708AS11Pack;
@@ -99,5 +101,6 @@ export function getCuratedEconomics9708Pack(packId: string) {
   if (packId === "economics-9708-as-1.5") return economics9708AS15Pack;
   if (packId === "economics-9708-as-1.6") return economics9708AS16Pack;
   if (packId === "economics-9708-as-2.1") return economics9708AS21Pack;
+  if (packId === "economics-9708-as-2.2") return economics9708AS22Pack;
   return null;
 }
