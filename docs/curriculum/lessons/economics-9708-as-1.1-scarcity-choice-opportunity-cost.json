@@ -278,5 +278,11 @@
         "apply"
       ]
     }
-  ]
+  ],
+  "visualReview": {
+    "status": "reviewed_for_representation_coverage",
+    "objectiveIdConvention": "9708-AS-1.1-LO<n>",
+    "coverage": "Every stated learning objective is mapped to at least one instructional visual or structured representation.",
+    "reviewNote": "This is an authoring coverage check, not independent Cambridge syllabus verification. Teacher review remains required."
+  }
 }
