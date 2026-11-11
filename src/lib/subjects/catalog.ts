@@ -9,12 +9,20 @@ export type SubjectCategory =
   | "Business & commerce"
   | "Creative & practical";
 
+export interface SubjectCurriculumOffering {
+  boardId: "cambridge" | "zimsec";
+  qualificationId: "o_level" | "a_level";
+  syllabusCode: string;
+  syllabusVersion?: string;
+}
+
 export interface SubjectCatalogEntry {
   id: string;
   name: string;
   category: SubjectCategory;
   pathways: readonly string[];
   aliases?: readonly string[];
+  offerings?: readonly SubjectCurriculumOffering[];
 }
 
 /**
@@ -66,18 +74,18 @@ export const SUBJECT_CATALOG: readonly SubjectCatalogEntry[] = [
   { id: "history", name: "History", category: "Humanities & social sciences", pathways: [...SCHOOL_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "geography", name: "Geography", category: "Humanities & social sciences", pathways: [...SCHOOL_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "religious-studies", name: "Religious Studies", category: "Humanities & social sciences", pathways: SCHOOL_PATHWAYS },
-  { id: "zimsec-family-religious-studies-o-level", name: "Family and Religious Studies (ZIMSEC O Level)", category: "Humanities & social sciences", pathways: ["upper-secondary"], aliases: ["FRS", "Family and Religious Studies", "Family & Religious Studies", "ZIMSEC FRS"] },
-  { id: "cambridge-geography-9696", name: "Geography (Cambridge 9696)", category: "Humanities & social sciences", pathways: ["a-level"], aliases: ["Geography 9696", "Cambridge Geography 9696"] },
+  { id: "zimsec-family-religious-studies-o-level", name: "Family and Religious Studies (ZIMSEC O Level)", category: "Humanities & social sciences", pathways: ["upper-secondary"], aliases: ["FRS", "Family and Religious Studies", "Family & Religious Studies", "ZIMSEC FRS"], offerings: [{ boardId: "zimsec", qualificationId: "o_level", syllabusCode: "4047" }] },
+  { id: "cambridge-geography-9696", name: "Geography (Cambridge 9696)", category: "Humanities & social sciences", pathways: ["a-level"], aliases: ["Geography 9696", "Cambridge Geography 9696"], offerings: [{ boardId: "cambridge", qualificationId: "a_level", syllabusCode: "9696" }] },
   { id: "sociology", name: "Sociology", category: "Humanities & social sciences", pathways: [...SECONDARY_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "psychology", name: "Psychology", category: "Humanities & social sciences", pathways: [...SECONDARY_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "philosophy", name: "Philosophy", category: "Humanities & social sciences", pathways: HIGHER_PATHWAYS },
   { id: "global-perspectives", name: "Global Perspectives", category: "Humanities & social sciences", pathways: SCHOOL_PATHWAYS },
   { id: "social-studies", name: "Social Studies", category: "Humanities & social sciences", pathways: ["primary", "lower-secondary"] },
   { id: "business-studies", name: "Business Studies", category: "Business & commerce", pathways: [...SCHOOL_PATHWAYS, ...HIGHER_PATHWAYS], aliases: ["Business"] },
-  { id: "cambridge-business-9609", name: "Business (Cambridge 9609)", category: "Business & commerce", pathways: ["a-level"], aliases: ["Business 9609", "Cambridge Business 9609"] },
+  { id: "cambridge-business-9609", name: "Business (Cambridge 9609)", category: "Business & commerce", pathways: ["a-level"], aliases: ["Business 9609", "Cambridge Business 9609"], offerings: [{ boardId: "cambridge", qualificationId: "a_level", syllabusCode: "9609" }] },
   { id: "business-management", name: "Business Management", category: "Business & commerce", pathways: HIGHER_PATHWAYS },
   { id: "economics", name: "Economics", category: "Business & commerce", pathways: [...SECONDARY_PATHWAYS, ...HIGHER_PATHWAYS] },
-  { id: "cambridge-economics-9708", name: "Economics (Cambridge 9708)", category: "Business & commerce", pathways: ["a-level"], aliases: ["Economics 9708", "Cambridge Economics 9708"] },
+  { id: "cambridge-economics-9708", name: "Economics (Cambridge 9708)", category: "Business & commerce", pathways: ["a-level"], aliases: ["Economics 9708", "Cambridge Economics 9708"], offerings: [{ boardId: "cambridge", qualificationId: "a_level", syllabusCode: "9708" }] },
   { id: "accounting", name: "Accounting", category: "Business & commerce", pathways: [...SECONDARY_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "commerce", name: "Commerce", category: "Business & commerce", pathways: [...SCHOOL_PATHWAYS, "tvet", "independent"] },
   { id: "entrepreneurship", name: "Entrepreneurship", category: "Business & commerce", pathways: HIGHER_PATHWAYS },
