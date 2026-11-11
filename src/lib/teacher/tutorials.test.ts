@@ -51,7 +51,7 @@ describe("tutorial block validation", () => {
 
   it("rejects malformed video IDs and oversized text", () => {
     expect(validateTutorialBlocks([
-      { id: blockId, type: "video", provider: "youtube", providerId: "not-a-video" },
+      { id: blockId, type: "video", provider: "youtube", providerId: "bad-id" },
     ], author).ok).toBe(false);
     expect(validateTutorialBlocks([
       { id: blockId, type: "text", content: "x".repeat(20001) },
