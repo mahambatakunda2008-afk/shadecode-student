@@ -209,6 +209,18 @@
         "type": "timeline",
         "offlineIncluded": true,
         "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-1-2-positive-normative",
+        "type": "comparison_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-1-2-social-science-cycle",
+        "type": "process_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
       }
     ],
     "networkRequired": false,
@@ -258,6 +270,42 @@
         "compare",
         "explain",
         "classify"
+      ]
+    },
+    {
+      "assetId": "econ-9708-1-2-positive-normative",
+      "type": "comparison_diagram",
+      "kind": "positive-normative-claims",
+      "title": "Positive and normative statements",
+      "purpose": "Contrast testable claims with value judgements.",
+      "learningObjectiveIds": [
+        "9708-AS-1.2-LO2"
+      ],
+      "altText": "Positive statements can be tested against evidence; normative statements express what ought to happen and depend on value judgements.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "classify",
+        "compare",
+        "justify"
+      ]
+    },
+    {
+      "assetId": "econ-9708-1-2-social-science-cycle",
+      "type": "process_diagram",
+      "kind": "economics-inquiry-cycle",
+      "title": "Economics as a social science",
+      "purpose": "Show how economists observe behaviour, construct models and compare predictions with evidence.",
+      "learningObjectiveIds": [
+        "9708-AS-1.2-LO1"
+      ],
+      "altText": "Economics as a social science: observe economic behaviour and data, form a hypothesis or model, compare predictions with evidence, then revise the explanation.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "sequence",
+        "explain",
+        "critique"
       ]
     }
   ]
