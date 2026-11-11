@@ -72,7 +72,8 @@ jobs:
         run: cargo install tauri-cli --version "^2.0.0" --locked
 
       - name: Build desktop installer
-        run: cargo tauri build --manifest-path desktop/Cargo.toml --bundles ${{ matrix.bundles }}
+        working-directory: desktop
+        run: cargo tauri build --bundles ${{ matrix.bundles }}
 
       - name: Upload desktop installer
         uses: actions/upload-artifact@v4
