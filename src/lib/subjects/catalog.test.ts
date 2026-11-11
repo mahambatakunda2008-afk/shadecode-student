@@ -104,6 +104,24 @@ describe("central subject catalogue", () => {
     expect(scopeMap).toContain("not a complete normalized syllabus pack");
   });
 
+  it("pins the current official Cambridge syllabus structure and assessment boundaries", () => {
+    const manifest = JSON.parse(readFileSync(join(process.cwd(), "docs/curriculum/manifests/cambridge-2026-2028-and-2027-2029-structure.json"), "utf8"));
+    expect(manifest.status).toBe("structure_extracted_not_independently_reviewed");
+    const economicsAs = manifest.qualifications.find((item: { code: string; level: string }) => item.code === "9708" && item.level === "AS");
+    const economicsA = manifest.qualifications.find((item: { code: string; level: string }) => item.code === "9708" && item.level === "A");
+    expect(economicsAs.topicRange).toBe("1.1-6.5");
+    expect(economicsAs.topics).toHaveLength(6);
+    expect(economicsA.topicRange).toBe("1.1-11.6");
+    expect(economicsA.topics.map((topic: { id: string }) => topic.id)).toEqual(["7", "8", "9", "10", "11"]);
+    expect(economicsAs.assessment.find((paper: { paper: number }) => paper.paper === 2)?.durationMinutes).toBe(120);
+    const businessA = manifest.qualifications.find((item: { code: string; level: string }) => item.code === "9609" && item.level === "A");
+    expect(businessA.topics).toHaveLength(5);
+    expect(businessA.assessment.map((paper: { paper: number }) => paper.paper)).toEqual([3, 4]);
+    const geographyA = manifest.qualifications.find((item: { code: string; level: string }) => item.code === "9696" && item.level === "A");
+    expect(geographyA.optionalGroups.every((group: { choose: number; from: string[] }) => group.choose === 2 && group.from.length === 4)).toBe(true);
+    expect(manifest.sources.every((source: { pageCount: number; pdf: string }) => source.pageCount > 0 && source.pdf.startsWith("https://"))).toBe(true);
+  });
+
   it("keeps the native Android catalogue in exact parity with web metadata", () => {
     const kotlin = readFileSync(
       join(process.cwd(), "android/app/src/main/java/com/shadecode/student/NativeSubjectCatalog.kt"),
