@@ -408,7 +408,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       const recognized = recognizeShape(points);
       if (recognized) {
         ctx.putImageData(snapshotRef.current, 0, 0);
-        drawShape(ctx, recognized.from, recognized.to, recognized.tool);
+        drawShape(ctx, recognized.from, recognized.to, recognized.tool, recognized.control);
         setStatus(`Auto-corrected your stroke into a clean ${recognized.tool}.`);
       } else {
         ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
