@@ -11,6 +11,7 @@ type AuthoredPack = {
   schemaVersion: number;
   status: string;
   identity: { title: string; sourcePdf: string };
+  learningObjectives: string[];
   lesson: Array<Record<string, unknown>>;
   retrievalCheck: Array<{ prompt: string }>;
   practice: Array<{ marks: number; prompt: string }>;
@@ -27,6 +28,7 @@ function asText(value: unknown): string {
  */
 export function buildCuratedLearnBlocks(authoredPack: AuthoredPack): CuratedLessonBlock[] {
   const blocks: CuratedLessonBlock[] = [];
+  blocks.push({ type: "objective", title: "By the end of this lesson", content: authoredPack.learningObjectives.map((objective) => `- ${objective}`).join("\n") });
 
   for (const section of authoredPack.lesson) {
     const type = asText(section.type);
