@@ -95,7 +95,6 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
     items: [
       NAV_ITEMS.adminDashboard,
       NAV_ITEMS.adminAnalytics,
-      NAV_ITEMS.examHub,
       NAV_ITEMS.adminUpload,
       NAV_ITEMS.adminManage,
       NAV_ITEMS.adminModeration,
@@ -103,7 +102,6 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
       NAV_ITEMS.adminContentReview,
       NAV_ITEMS.adminBoards,
       NAV_ITEMS.adminFeedback,
-      NAV_ITEMS.settings,
     ],
   },
 ];
