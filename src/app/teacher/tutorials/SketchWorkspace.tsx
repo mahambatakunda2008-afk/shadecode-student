@@ -311,10 +311,11 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         reason: item.reason || "",
       })));
       setHandwritingConfidence(typeof result.confidence === "number" ? result.confidence : null);
-      const uncertain = uncertainties.length;
-      setStatus(uncertain
-        ? `Handwriting transcribed. ${uncertain} ambiguous character(s) need your review. The full transcription is preserved below.`
-        : "Handwriting transcribed and contextually corrected. Review the full text below.");
+      const confidence = typeof result.confidence === "number" ? result.confidence : null;
+      const needsReview = result.requiresReview === true || uncertainties.length > 0 || confidence === null || confidence < 0.9;
+      setStatus(needsReview
+        ? `Transcription needs review${uncertainties.length ? `: ${uncertainties.length} ambiguous character(s) flagged` : ""}${confidence === null ? "." : ` (model confidence ${Math.round(confidence * 100)}%).`} Check the original reading before using it.`
+        : "High-confidence transcription returned. Review the original reading before placing it.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not read handwriting. Your drawing is unchanged.");
     } finally {
