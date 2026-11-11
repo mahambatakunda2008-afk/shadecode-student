@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_content_requires_subject_review",
+  "identity": {
+    "board": "cambridge",
+    "qualification": "cambridge-as-a-level",
+    "level": "as_level",
+    "subject": "economics",
+    "syllabusCode": "9708",
+    "syllabusVersion": "2026-2028",
+    "topic": "1",
+    "subtopic": "1.1",
+    "title": "Scarcity, choice and opportunity cost",
+    "sourcePrintedPages": "15-16",
+    "sourcePdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf"
+  },
+  "trustBoundary": "Original instructional content aligned to the extracted 9708 AS 1.1 outcomes. It is not official Cambridge material or an independently verified complete syllabus lesson. Teacher review required before publication.",
+  "learningObjectives": [
+    "Explain scarcity as the fundamental economic problem.",
+    "Explain why individuals, firms and governments make choices.",
+    "Define opportunity cost and explain how it arises from choices.",
+    "Explain the basic resource-allocation questions: what, how and for whom to produce."
+  ],
+  "prerequisites": [
+    "Needs and wants",
+    "Resources are limited",
+    "Basic idea of goods and services"
+  ],
+  "lesson": [
+    {
+      "type": "diagnostic",
+      "prompt": "A student has 2 hours free. They can revise Economics, complete a Computer Science assignment or play football. They cannot do all three. What makes this a choice?",
+      "expectedEvidence": [
+        "limited time",
+        "competing uses",
+        "cannot select every option"
+      ],
+      "feedback": "The constraint is scarce time. Several uses compete for the same limited resource."
+    },
+    {
+      "type": "explanation",
+      "heading": "1. Scarcity: the starting point",
+      "body": "Scarcity exists because resources are limited in relation to the wants people would like to satisfy. It does not mean that a resource is rare in an absolute sense. Even a resource that is plentiful has scarcity if people want to use more of it than is available at zero cost. Time, skilled labour, land, machinery and finance all have alternative uses. Since resources cannot satisfy every want simultaneously, choices must be made."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Worked example: a school budget",
+      "scenario": "A school has US$10,000 available. It could buy laboratory equipment, repair classrooms or improve its computer network. Assume the budget cannot fund all three projects.",
+      "reasoning": [
+        "The budget is limited relative to the school's possible projects: scarcity.",
+        "The school must select a combination of projects: choice.",
+        "The selected project uses funds that could have supported another project: an opportunity cost exists."
+      ],
+      "caution": "Do not automatically call the full US$10,000 the opportunity cost. Opportunity cost is the value of the next best alternative forgone, not the value of every rejected alternative added together."
+    },
+    {
+      "type": "explanation",
+      "heading": "2. Opportunity cost",
+      "body": "Opportunity cost is the value of the next best alternative forgone when a choice is made. The decision-maker ranks feasible alternatives, chooses one, and gives up the next best option. The value may be monetary, but it can also be time, satisfaction, output or another benefit. It is specific to the decision-maker and the alternatives actually available."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Worked example: choosing how to spend an afternoon",
+      "scenario": "You can spend Saturday afternoon either at a paid tutoring session worth an estimated US$12 to you, or at a football match worth US$8 to you. You choose tutoring.",
+      "reasoning": [
+        "Chosen option: tutoring.",
+        "Next best alternative forgone: the football match.",
+        "Opportunity cost: the value you attach to attending the match, US$8 in this example."
+      ],
+      "caution": "The US$12 value of tutoring is a benefit of the chosen option, not its opportunity cost. The opportunity cost is the next best forgone alternative."
+    },
+    {
+      "type": "explanation",
+      "heading": "3. The three resource-allocation questions",
+      "body": "Every economic system must address three connected questions. What to produce concerns which goods and services, and in what quantities. How to produce concerns the methods and combinations of resources used, such as labour-intensive or capital-intensive production. For whom to produce concerns how output is distributed among people, often influenced by income, prices, public provision and policy."
+    },
+    {
+      "type": "application",
+      "heading": "4. Apply the three questions",
+      "scenario": "A local authority has funding to support food production.",
+      "prompts": [
+        "What should be produced: maize, vegetables, irrigation infrastructure or a mixture?",
+        "How should it be produced: more hired labour, machinery, irrigation technology or a combination?",
+        "For whom should the output be available: market buyers, low-income households, schools or a mixture?"
+      ],
+      "feedback": "Strong answers identify the decision being made and explain the scarce resources or competing objectives behind it."
+    },
+    {
+      "type": "synthesis",
+      "heading": "5. Connect the ideas",
+      "body": "Scarcity creates the need to choose. Choosing one option means giving up alternatives. The next best alternative forgone is the opportunity cost. The same logic applies to households, businesses and governments, and it underpins decisions about what, how and for whom to produce."
+    }
+  ],
+  "diagrams": [],
+  "practice": [
+    {
+      "id": "q1",
+      "type": "short_answer",
+      "marks": 2,
+      "prompt": "Define scarcity in an economic context.",
+      "answer": [
+        "resources are limited",
+        "relative to wants"
+      ],
+      "marking": [
+        "1 mark for limited resources",
+        "1 mark for wants exceeding what available resources can satisfy"
+      ],
+      "misconception": "Scarcity does not mean that something is necessarily rare or unavailable."
+    },
+    {
+      "id": "q2",
+      "type": "short_answer",
+      "marks": 2,
+      "prompt": "Define opportunity cost.",
+      "answer": [
+        "value of the next best alternative forgone"
+      ],
+      "marking": [
+        "1 mark for next best alternative",
+        "1 mark for value forgone"
+      ],
+      "misconception": "It is not the sum of all alternatives rejected."
+    },
+    {
+      "id": "q3",
+      "type": "application",
+      "marks": 4,
+      "prompt": "A farmer has one hectare available. The farmer can grow groundnuts expected to earn US$900 or maize expected to earn US$700. The farmer grows maize. Identify the opportunity cost and explain.",
+      "answer": [
+        "groundnuts",
+        "US$900 value/return forgone"
+      ],
+      "marking": [
+        "1 mark identify groundnuts",
+        "1 mark identify its value",
+        "up to 2 marks explain it is the next best alternative forgone"
+      ],
+      "misconception": "The opportunity cost is not US$1,600 and is not the return from maize."
+    },
+    {
+      "id": "q4",
+      "type": "structured_response",
+      "marks": 6,
+      "prompt": "A government has a limited budget and must choose between building a clinic, repairing a road and expanding a school. Explain how scarcity and opportunity cost affect this decision.",
+      "answer": [
+        "limited budget is scarce relative to possible projects",
+        "government must choose",
+        "funds used for selected project cannot be used for all alternatives",
+        "opportunity cost is value of next best project forgone"
+      ],
+      "marking": [
+        "1 mark scarcity/limited budget",
+        "1 mark competing uses",
+        "1 mark choice",
+        "1 mark next best alternative",
+        "1 mark value forgone",
+        "1 mark coherent application"
+      ],
+      "misconception": "Naming every rejected project without identifying the next best alternative is insufficient."
+    }
+  ],
+  "retrievalCheck": [
+    {
+      "prompt": "Does scarcity mean that every resource is physically rare?",
+      "answer": "No. It means resources are limited relative to wants."
+    },
+    {
+      "prompt": "Is opportunity cost the sum of all rejected alternatives?",
+      "answer": "No. It is the value of the next best alternative forgone."
+    },
+    {
+      "prompt": "Which resource-allocation question concerns production methods?",
+      "answer": "How to produce."
+    }
+  ],
+  "mastery": {
+    "completionIsNotMastery": true,
+    "requiredEvidence": [
+      "define scarcity accurately",
+      "define opportunity cost accurately",
+      "identify next best alternative in an unfamiliar scenario",
+      "apply what/how/for whom to produce"
+    ],
+    "suggestedThreshold": 0.8,
+    "requireIndependentAttempt": true
+  },
+  "offline": {
+    "selfContained": true,
+    "assets": [],
+    "networkRequired": false,
+    "aiRequired": false
+  },
+  "teacherReview": {
+    "required": true,
+    "checks": [
+      "verify alignment against current official syllabus Version 2",
+      "review economic accuracy and Zimbabwean contextual examples",
+      "validate mark allocations and answer guidance",
+      "check accessibility and language clarity"
+    ]
+  }
+}
