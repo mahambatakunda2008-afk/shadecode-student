@@ -65,3 +65,33 @@ export function normalizeHandwritingRecognition(payload: RecognitionPayload): Ha
     requiresReview: uncertainCharacters.length > 0 || confidence === null || confidence < 0.9,
   };
 }
+
+/** Apply a human-selected OCR candidate only when its location is unambiguous. */
+export function applyHandwritingAlternative(
+  text: string,
+  item: UncertainHandwritingCharacter,
+  alternative: string,
+): string | null {
+  const candidates = [item.chosen, "[unclear]", item.seen].filter((value, index, all) => value.trim() && all.indexOf(value) === index);
+  const context = item.context.trim();
+  if (context) {
+    const contextIndex = text.indexOf(context);
+    if (contextIndex >= 0 && text.indexOf(context, contextIndex + context.length) < 0) {
+      const contextText = text.slice(contextIndex, contextIndex + context.length);
+      for (const candidate of candidates) {
+        const tokenIndex = contextText.indexOf(candidate);
+        if (tokenIndex >= 0 && contextText.indexOf(candidate, tokenIndex + candidate.length) < 0) {
+          const start = contextIndex + tokenIndex;
+          return text.slice(0, start) + alternative + text.slice(start + candidate.length);
+        }
+      }
+    }
+  }
+  for (const candidate of candidates) {
+    const index = text.indexOf(candidate);
+    if (index >= 0 && text.indexOf(candidate, index + candidate.length) < 0) {
+      return text.slice(0, index) + alternative + text.slice(index + candidate.length);
+    }
+  }
+  return null;
+}
