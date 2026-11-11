@@ -433,7 +433,7 @@ export default function LearnPageResilient() {
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--primary)]">Ready-made lessons • No AI required</p>
               <h2 className="mt-1 text-lg font-semibold">Cambridge AS Economics 9708</h2>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Two authored lessons are available. Draft instructional content pending teacher review. Check that this syllabus matches your course before studying.</p>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Three authored lessons are available. Draft instructional content pending teacher review. Check that this syllabus matches your course before studying.</p>
               {curatedPackError && <p role="alert" className="mt-2 text-sm text-red-500">{curatedPackError}</p>}
             </div>
             <div className="flex flex-wrap gap-2">
@@ -444,6 +444,10 @@ export default function LearnPageResilient() {
               <button type="button" onClick={() => void addCuratedEconomicsPack("economics-9708-as-1.2")} disabled={!token || offline || Boolean(addingPackId)} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] px-4 text-sm font-semibold transition hover:bg-[var(--interactive-hover)] disabled:cursor-not-allowed disabled:opacity-50">
                 {addingPackId === "economics-9708-as-1.2" ? <Loader2 size={16} className="animate-spin" /> : <BookOpen size={16} />}
                 {addingPackId === "economics-9708-as-1.2" ? "Adding…" : "1.2 Economic methodology"}
+              </button>
+              <button type="button" onClick={() => void addCuratedEconomicsPack("economics-9708-as-1.3")} disabled={!token || offline || Boolean(addingPackId)} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] px-4 text-sm font-semibold transition hover:bg-[var(--interactive-hover)] disabled:cursor-not-allowed disabled:opacity-50">
+                {addingPackId === "economics-9708-as-1.3" ? <Loader2 size={16} className="animate-spin" /> : <BookOpen size={16} />}
+                {addingPackId === "economics-9708-as-1.3" ? "Adding…" : "1.3 Factors of production"}
               </button>
             </div>
           </div>
