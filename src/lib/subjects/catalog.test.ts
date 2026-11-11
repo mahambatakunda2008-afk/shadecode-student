@@ -47,6 +47,17 @@ describe("central subject catalogue", () => {
     expect(resolveSubjectCatalogEntry("Business")?.id).toBe("business-studies");
   });
 
+  it("carries explicit board, qualification and syllabus identities for reported subjects", () => {
+    expect(SUBJECT_CATALOG.find(subject => subject.id === "zimsec-family-religious-studies-o-level")?.offerings).toEqual([
+      { boardId: "zimsec", qualificationId: "o_level", syllabusCode: "4047" },
+    ]);
+    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-business-9609")?.offerings?.[0]).toEqual({
+      boardId: "cambridge", qualificationId: "a_level", syllabusCode: "9609",
+    });
+    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-economics-9708")?.offerings?.[0].syllabusCode).toBe("9708");
+    expect(SUBJECT_CATALOG.find(subject => subject.id === "cambridge-geography-9696")?.offerings?.[0].syllabusCode).toBe("9696");
+  });
+
   it("preserves custom subject identities without treating them as catalogue entries", () => {
     expect(canonicalSubjectId("Marine Engineering")).toBe("marine-engineering");
     expect(resolveSubjectCatalogEntry("Marine Engineering")).toBeNull();
@@ -70,6 +81,9 @@ describe("central subject catalogue", () => {
       });
     }
 
+    const offeringLines = [...kotlin.matchAll(/"([^"]+)" to listOf\(NativeCurriculumOffering\("([^"]+)", "([^"]+)", "([^"]+)"\)\)/g)];
+    const nativeOfferings = new Map(offeringLines.map(match => [match[1], [{ boardId: match[2], qualificationId: match[3], syllabusCode: match[4] }]]));
+    expect(nativeOfferings.size).toBe(SUBJECT_CATALOG.filter(subject => subject.offerings?.length).length);
     expect(nativeEntries.size).toBe(SUBJECT_CATALOG.length);
     for (const subject of SUBJECT_CATALOG) {
       expect(nativeEntries.get(subject.id)).toEqual({
@@ -78,6 +92,7 @@ describe("central subject catalogue", () => {
         pathways: [...subject.pathways],
         aliases: [...(subject.aliases ?? [])],
       });
+      expect(nativeOfferings.get(subject.id) ?? []).toEqual(subject.offerings ?? []);
     }
   });
 
