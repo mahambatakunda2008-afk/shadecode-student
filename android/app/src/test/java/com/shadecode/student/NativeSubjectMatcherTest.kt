@@ -1,10 +1,17 @@
 package com.shadecode.student
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NativeSubjectMatcherTest {
+    @Test fun accountSwitchNeverReusesAnotherLearnersRoomCache() {
+        assertFalse(accountCacheOwnerChanged("learner-a", "learner-a"))
+        assertTrue(accountCacheOwnerChanged("learner-a", "learner-b"))
+        assertTrue(accountCacheOwnerChanged(null, "learner-a"))
+    }
+
     @Test fun mathematicsAliasesMatchExactly() {
         assertTrue(NativeSubjectMatcher.matchesAny("Mathematics", listOf("Maths")))
         assertTrue(NativeSubjectMatcher.matchesAny("Maths", listOf("Mathematics")))
@@ -26,4 +33,58 @@ class NativeSubjectMatcherTest {
         assertFalse(NativeSubjectMatcher.matchesAny("", listOf("Mathematics")))
         assertFalse(NativeSubjectMatcher.matchesAny("Mathematics", emptyList()))
     }
+    @Test fun nativeCatalogueHasUniqueStableIdsAndBroadSubjectCoverage() {
+        val ids = NativeSubjectCatalog.all.map { it.code }
+        assertEquals(ids.size, ids.toSet().size)
+        assertTrue(ids.size >= 80)
+        assertTrue(ids.containsAll(listOf(
+            "mathematics", "biology", "chemistry", "physics",
+            "computer-science", "geography", "history", "business-studies",
+            "early-literacy", "quantitative-methods", "nursing", "engineering",
+            "art-design", "fashion-textiles", "research-methods", "custom",
+        )))
+    }
+
+    @Test fun nativeCatalogueResolvesWebAliasesAndCanonicalLabels() {
+        assertEquals("mathematics", NativeSubjectCatalog.codeFor("Maths"))
+        assertEquals("ict", NativeSubjectCatalog.codeFor("Information and Communication Technology"))
+        assertEquals("english-language", NativeSubjectCatalog.codeFor("English"))
+        assertEquals("art-design", NativeSubjectCatalog.codeFor("Art and Design"))
+        assertEquals("Mathematics", NativeSubjectCatalog.labelFor("maths"))
+        assertEquals("Public Health", NativeSubjectCatalog.labelFor("public-health"))
+    }
+
+    @Test fun nativeCataloguePathwaysMatchWebRecommendationsWithoutHidingOtherSubjects() {
+        val all = NativeSubjectCatalog.all
+        assertTrue(NativeSubjectCatalog.isRecommended(all.first { it.code == "mathematics" }, "o-level"))
+        assertTrue(NativeSubjectCatalog.isRecommended(all.first { it.code == "chemistry" }, "a-level"))
+        assertFalse(NativeSubjectCatalog.isRecommended(all.first { it.code == "nursing" }, "o-level"))
+        val ordered = NativeSubjectCatalog.recommendedFirst(all, "o-level")
+        assertTrue(ordered.indexOfFirst { it.code == "mathematics" } < ordered.indexOfFirst { it.code == "nursing" })
+        assertTrue(ordered.any { it.code == "nursing" })
+    }
+
+    @Test fun reportedBoardSpecificSubjectsResolveToDistinctStableIds() {
+        assertEquals("zimsec-family-religious-studies-o-level", NativeSubjectCatalog.codeFor("FRS"))
+        assertEquals("zimsec-family-religious-studies-o-level", NativeSubjectCatalog.codeFor("Family and Religious Studies"))
+        assertEquals("cambridge-business-9609", NativeSubjectCatalog.codeFor("Business 9609"))
+        assertEquals("cambridge-economics-9708", NativeSubjectCatalog.codeFor("Economics 9708"))
+        assertEquals("cambridge-geography-9696", NativeSubjectCatalog.codeFor("Geography 9696"))
+        assertEquals("upper-secondary", NativeSubjectCatalog.all.first { it.code == "zimsec-family-religious-studies-o-level" }.pathways.single())
+    }
+
+    @Test fun nativeCatalogueCarriesReportedBoardAndSyllabusCodes() {
+        assertEquals("4047", NativeSubjectCatalog.curriculumOfferings["zimsec-family-religious-studies-o-level"]?.single()?.syllabusCode)
+        assertEquals("zimsec", NativeSubjectCatalog.curriculumOfferings["zimsec-family-religious-studies-o-level"]?.single()?.boardId)
+        assertEquals("9609", NativeSubjectCatalog.curriculumOfferings["cambridge-business-9609"]?.single()?.syllabusCode)
+        assertEquals("9708", NativeSubjectCatalog.curriculumOfferings["cambridge-economics-9708"]?.single()?.syllabusCode)
+        assertEquals("9696", NativeSubjectCatalog.curriculumOfferings["cambridge-geography-9696"]?.single()?.syllabusCode)
+    }
+
+    @Test fun nativeCatalogueSearchIncludesAliasesAndCustomSubjects() {
+        val all = NativeSubjectCatalog.all
+        assertTrue(NativeSubjectCatalog.searchMatches(all.first { it.code == "mathematics" }, "Numeracy"))
+        assertTrue(NativeSubjectCatalog.searchMatches(all.first { it.code == "ict" }, "Information and Communication Technology"))
+    }
+
 }

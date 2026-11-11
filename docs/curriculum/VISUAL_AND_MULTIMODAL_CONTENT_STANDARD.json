@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "title": "Curriculum Visual and Multimodal Evidence Standard",
+  "status": "mandatory_authoring_and_release_gate",
+  "principle": "Every subject and every qualification must use the visual, spatial, symbolic, audio, performance or material representations genuinely required to teach and assess its official learning outcomes. Text-only coverage is not accepted where the syllabus requires or where understanding depends on a non-text representation. Visuals must teach, be interpreted, be constructed or be used as evidence; decoration does not count.",
+  "requirements": [
+    "Map each official learning outcome to required representation modes before lesson authoring.",
+    "Include the exact diagram, graph, sketch, map, chart, timeline, annotated image, specimen, model, notation, score, composition, source extract, practical layout or other artefact needed by that outcome.",
+    "Teach learners how to read, interpret, label, construct, annotate, compare and evaluate each required representation where the syllabus expects those skills.",
+    "Provide worked examples and independent practice using the representation, with accessible text alternatives and answer rationales.",
+    "Keep assets versioned, source-attributed where externally sourced, legible on mobile and desktop, printable where useful, and bundled for offline use when the lesson is marked offline-ready.",
+    "Do not fabricate data, historical artefacts, artworks, maps, quotations, scientific images or exam sources. Clearly label original teaching diagrams and illustrative data.",
+    "Do not force irrelevant visuals into an outcome. Select the modality that carries the subject knowledge accurately."
+  ],
+  "modes": {
+    "mathematics": [
+      "coordinate graphs",
+      "geometric constructions",
+      "proof layouts",
+      "statistical plots",
+      "transformations and vectors sketches",
+      "annotated diagrams"
+    ],
+    "sciences": [
+      "apparatus and circuit diagrams",
+      "labelled biological structures",
+      "particle and molecular models",
+      "reaction profiles",
+      "ray diagrams",
+      "experimental layouts",
+      "graphs with units, scales and uncertainty"
+    ],
+    "geography": [
+      "topographic and thematic maps",
+      "cross-sections",
+      "climate graphs",
+      "population pyramids",
+      "fieldwork sketches",
+      "GIS layers",
+      "annotated photographs",
+      "data tables and spatial diagrams"
+    ],
+    "economics": [
+      "demand and supply graphs",
+      "production possibility curves",
+      "cost/revenue curves",
+      "macroeconomic diagrams",
+      "data-response charts",
+      "tables and flow models; all axes, shifts and labels taught explicitly"
+    ],
+    "business_accounting": [
+      "organisation charts",
+      "decision trees",
+      "process flows",
+      "break-even charts",
+      "cash-flow and financial statements",
+      "ledgers, ratios and data displays"
+    ],
+    "history": [
+      "chronologies and timelines",
+      "historical maps",
+      "source extracts",
+      "annotated primary-source images",
+      "cause/consequence diagrams",
+      "comparison matrices"
+    ],
+    "languages_literature": [
+      "annotated passages",
+      "text structure maps",
+      "phonetic/transcription notation where required",
+      "genre and narrative maps",
+      "visual prompts and source texts"
+    ],
+    "arts_visual": [
+      "artworks and design exemplars",
+      "observational and technical sketches",
+      "composition studies",
+      "colour/value studies",
+      "annotated design boards",
+      "process portfolios",
+      "material and technique demonstrations"
+    ],
+    "music": [
+      "staff notation and score excerpts",
+      "rhythm grids",
+      "instrument diagrams and fingering charts",
+      "listening maps and waveform/spectrogram views when relevant",
+      "performance annotations"
+    ],
+    "drama_dance": [
+      "stage/blocking diagrams",
+      "movement pathways",
+      "choreographic notation or sequence maps",
+      "script extracts",
+      "lighting/sound plots",
+      "costume/set design sketches"
+    ],
+    "physical_technical_vocational": [
+      "technical drawings",
+      "schematics",
+      "plans",
+      "workshop layouts",
+      "process sequences",
+      "safety symbols",
+      "measured sketches",
+      "product prototypes"
+    ]
+  },
+  "assetTypes": [
+    "svg_diagram",
+    "graph",
+    "map",
+    "timeline",
+    "annotated_image",
+    "source_document",
+    "data_visualization",
+    "technical_sketch",
+    "artwork_study",
+    "notation_or_score",
+    "audio_visualization",
+    "performance_blocking",
+    "interactive_model",
+    "printable_worksheet",
+    "comparison_diagram",
+    "process_diagram"
+  ],
+  "representationPractice": [
+    "interpret",
+    "label",
+    "construct",
+    "annotate",
+    "calculate_from",
+    "compare",
+    "critique",
+    "explain"
+  ],
+  "accessibility": [
+    "Every non-decorative visual has meaningful alt text or an equivalent structured description.",
+    "Colour is never the only carrier of meaning.",
+    "Labels, line styles, symbols and units remain distinguishable in grayscale and low-data modes.",
+    "Provide a text or tabular equivalent for essential information."
+  ],
+  "offline": [
+    "Bundle or cache required lesson visuals with their lesson pack.",
+    "No essential diagram may depend on a third-party URL at runtime.",
+    "Record asset checksum, source, licence/permission and version for external assets.",
+    "Offline-ready status is blocked if any required asset is missing."
+  ],
+  "qualityGate": {
+    "requiredFields": [
+      "assetId",
+      "type",
+      "title",
+      "purpose",
+      "learningObjectiveIds",
+      "altText",
+      "source",
+      "offlineIncluded",
+      "practiceModes"
+    ],
+    "rejectIf": [
+      "required visual is only mentioned in prose but not supplied",
+      "graph lacks axis labels/units/scale or declared illustrative data",
+      "map lacks scale/orientation/legend when needed",
+      "image/source lacks provenance or rights status",
+      "art/music/performance subject has been reduced to generic prose when the official outcome requires making or analysing artefacts",
+      "asset is decorative and not connected to an outcome",
+      "lesson claims offline readiness while a required asset is remote or missing"
+    ]
+  }
+}

@@ -1,0 +1,407 @@
+{
+  "schemaVersion": 1,
+  "status": "source_extracted_not_independently_reviewed",
+  "source": {
+    "board": "Cambridge International",
+    "qualification": "AS Level Economics",
+    "syllabusCode": "9708",
+    "examYears": [
+      2026,
+      2027,
+      2028
+    ],
+    "documentVersion": 2,
+    "published": "December 2025",
+    "pdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf",
+    "subjectContentPrintedPages": "15-23",
+    "sourceSections": "3 Subject content, AS Level content",
+    "versionEvidence": "Official Cambridge update confirms Version 2; the linked main PDF URL currently returns a cached Version 1 copy through web extraction. Cambridge says the only update is a weblink and specimen materials are unchanged; refresh the latest PDF before independent sign-off."
+  },
+  "trustBoundary": "A structured transcription of the numbered AS Level syllabus outcome identifiers and learning scope. It is not a lesson bank, assessment bank, complete teaching sequence, or proof that Shadecode currently teaches these outcomes. Independently review against the official PDF before marking content complete.",
+  "qualificationBoundary": {
+    "asLevel": "1.1-6.5",
+    "aLevel": "1.1-11.6",
+    "aLevelAssumesAsKnowledge": true
+  },
+  "topics": [
+    {
+      "id": "1",
+      "title": "Basic economic ideas and resource allocation",
+      "printedPages": "15-16",
+      "subtopics": [
+        [
+          "1.1",
+          "Scarcity, choice and opportunity cost",
+          [
+            "Explain scarcity as the fundamental economic problem.",
+            "Explain why individuals, firms and governments make choices.",
+            "Define opportunity cost and explain how it arises from choices.",
+            "Explain the basic resource-allocation questions: what, how and for whom to produce."
+          ]
+        ],
+        [
+          "1.2",
+          "Economic methodology",
+          [
+            "Explain economics as a social science.",
+            "Distinguish positive statements from normative statements and facts from value judgements.",
+            "Explain ceteris paribus.",
+            "Distinguish short run, long run and very long run."
+          ]
+        ],
+        [
+          "1.3",
+          "Factors of production",
+          [
+            "Define land, labour, capital and enterprise.",
+            "Distinguish human capital from physical capital.",
+            "Identify rewards to each factor of production.",
+            "Explain division of labour and specialisation.",
+            "Explain the entrepreneur's role in risk-taking and organising other factors."
+          ]
+        ],
+        [
+          "1.4",
+          "Resource allocation in different economic systems",
+          [
+            "Explain decision-making in market, planned and mixed economies.",
+            "Explain how resources are allocated in each system."
+          ]
+        ],
+        [
+          "1.5",
+          "Production possibility curves",
+          [
+            "Explain and draw a production possibility curve.",
+            "Explain constant and increasing opportunity cost using PPC shape.",
+            "Explain causes and consequences of PPC shifts.",
+            "Interpret points on, inside and outside a PPC."
+          ]
+        ],
+        [
+          "1.6",
+          "Classification of goods and services",
+          [
+            "Define free goods and private economic goods.",
+            "Define public goods.",
+            "Explain merit goods and under-consumption arising from imperfect market information.",
+            "Explain demerit goods and over-consumption arising from imperfect market information."
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "2",
+      "title": "The price system and the microeconomy",
+      "printedPages": "17-18",
+      "subtopics": [
+        [
+          "2.1",
+          "Demand and supply curves",
+          [
+            "Define effective demand.",
+            "Distinguish individual and market demand and supply.",
+            "Explain determinants of demand and supply.",
+            "Explain factors causing demand-curve and supply-curve shifts.",
+            "Distinguish a curve shift from movement along a curve."
+          ]
+        ],
+        [
+          "2.2",
+          "Price elasticity, income elasticity and cross elasticity of demand",
+          [
+            "Define PED, YED and XED.",
+            "Use formulae to calculate PED, YED and XED.",
+            "Interpret relative percentage changes and the size and sign of each coefficient.",
+            "Classify elasticity: perfectly elastic, elastic, unitary, inelastic and perfectly inelastic.",
+            "Explain variation in elasticity along a straight-line demand curve.",
+            "Explain factors affecting PED, YED and XED.",
+            "Explain the relationship between PED and total expenditure.",
+            "Apply elasticity measures to decision-making."
+          ]
+        ],
+        [
+          "2.3",
+          "Price elasticity of supply",
+          [
+            "Define PES.",
+            "Calculate PES using the formula.",
+            "Interpret relative percentage changes and the size and sign of PES.",
+            "Explain factors affecting PES.",
+            "Explain implications for how quickly and easily firms respond to changed market conditions."
+          ]
+        ],
+        [
+          "2.4",
+          "The interaction of demand and supply",
+          [
+            "Define market equilibrium and disequilibrium.",
+            "Analyse effects of demand and supply shifts on equilibrium price and quantity.",
+            "Explain joint demand (complements), alternative demand (substitutes), derived demand and joint supply.",
+            "Explain price's resource-allocation functions: rationing, signalling/transmission of preferences and incentivising."
+          ]
+        ],
+        [
+          "2.5",
+          "Consumer and producer surplus",
+          [
+            "Explain consumer surplus and its significance.",
+            "Explain producer surplus and its significance.",
+            "Explain causes of changes in consumer and producer surplus.",
+            "Explain how PED and PES affect the extent of surplus changes."
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Government microeconomic intervention",
+      "printedPages": "18-19",
+      "subtopics": [
+        [
+          "3.1",
+          "Reasons for government intervention in markets",
+          [
+            "Explain intervention to address non-provision of public goods.",
+            "Explain intervention to address over-consumption of demerit goods and under-consumption of merit goods.",
+            "Explain government price controls as a reason for intervention."
+          ]
+        ],
+        [
+          "3.2",
+          "Methods and effects of government intervention in markets",
+          [
+            "Analyse impact and incidence of specific indirect taxes.",
+            "Analyse impact and incidence of subsidies.",
+            "Explain direct provision of goods and services.",
+            "Analyse maximum and minimum prices.",
+            "Explain buffer stock schemes.",
+            "Explain provision of information as an intervention method."
+          ]
+        ],
+        [
+          "3.3",
+          "Addressing income and wealth inequality",
+          [
+            "Distinguish income as a flow from wealth as a stock.",
+            "Explain measurement of inequality using the Gini coefficient; calculation is not required.",
+            "Explain economic reasons for income and wealth inequality.",
+            "Evaluate redistribution policies: minimum wage, transfer payments, progressive income taxes, inheritance and capital taxes, and state provision of essential goods and services."
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "4",
+      "title": "The macroeconomy",
+      "printedPages": "19-21",
+      "subtopics": [
+        [
+          "4.1",
+          "National income statistics",
+          [
+            "Explain the meaning of national income.",
+            "Explain GDP, GNI and NNI as measures of national income.",
+            "Adjust measures from market prices to basic prices.",
+            "Adjust gross values to net values."
+          ]
+        ],
+        [
+          "4.2",
+          "Introduction to the circular flow of income",
+          [
+            "Explain circular flow in closed and open economies, including flows between households, firms, government and the international economy.",
+            "Explain injections and leakages; multiplier is not required at this level.",
+            "Explain equilibrium and disequilibrium; marginal and average propensities are not required at this level."
+          ]
+        ],
+        [
+          "4.3",
+          "Aggregate Demand and Aggregate Supply analysis",
+          [
+            "Define AD and explain its components using AD = C + I + G + (X − M).",
+            "Explain determinants of AD; detailed knowledge of AD components is not required.",
+            "Explain the downward-sloping AD curve and causes of shifts.",
+            "Define AS and explain its determinants.",
+            "Explain SRAS shape as an upward-sloping line or sweeping curve.",
+            "Explain LRAS as either a vertical line or a three-section curve (highly elastic, upward sloping, vertical).",
+            "Explain causes of SRAS and LRAS shifts.",
+            "Distinguish movements along from shifts in AD and AS.",
+            "Use AD/AS diagrams to establish equilibrium and determine real output, price level and employment.",
+            "Analyse effects of AD and AS shifts on real output, price level and employment."
+          ]
+        ],
+        [
+          "4.4",
+          "Economic growth",
+          [
+            "Define economic growth.",
+            "Explain measurement of economic growth.",
+            "Distinguish nominal GDP growth from real GDP growth.",
+            "Explain causes of economic growth.",
+            "Analyse consequences of economic growth."
+          ]
+        ],
+        [
+          "4.5",
+          "Unemployment",
+          [
+            "Define unemployment.",
+            "Explain measures of unemployment and difficulties in measurement.",
+            "Explain frictional, structural, cyclical, seasonal and technological unemployment, including causes.",
+            "Analyse consequences of unemployment."
+          ]
+        ],
+        [
+          "4.6",
+          "Price stability",
+          [
+            "Define inflation, deflation and disinflation.",
+            "Explain CPI measurement and possible measurement difficulties.",
+            "Distinguish nominal money values from real data.",
+            "Explain demand-pull and cost-push inflation.",
+            "Analyse consequences of inflation."
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Government macroeconomic intervention",
+      "printedPages": "21-22",
+      "subtopics": [
+        [
+          "5.1",
+          "Government macroeconomic policy objectives",
+          [
+            "Explain use of government policy to achieve price stability, low unemployment and economic growth. Policy conflicts and trade-offs are not required in this subtopic."
+          ]
+        ],
+        [
+          "5.2",
+          "Fiscal policy",
+          [
+            "Explain a government budget.",
+            "Distinguish budget deficit from budget surplus.",
+            "Explain the meaning and significance of national debt.",
+            "Explain direct and indirect taxes, and progressive, regressive and proportional taxes.",
+            "Calculate and distinguish marginal and average tax rates (MRT and ART).",
+            "Explain reasons for taxation.",
+            "Distinguish capital/investment spending from current spending and explain reasons for government spending.",
+            "Distinguish expansionary from contractionary fiscal policy.",
+            "Use AD/AS analysis to evaluate effects of expansionary and contractionary fiscal policy on equilibrium national income, real output, price level and employment."
+          ]
+        ],
+        [
+          "5.3",
+          "Monetary policy",
+          [
+            "Define monetary policy.",
+            "Explain interest rates, money supply and credit regulations as policy tools.",
+            "Distinguish expansionary from contractionary monetary policy.",
+            "Use AD/AS analysis to evaluate effects on equilibrium national income, real output, price level and employment."
+          ]
+        ],
+        [
+          "5.4",
+          "Supply-side policy",
+          [
+            "Explain supply-side policy in terms of its effect on LRAS.",
+            "Explain objectives of increasing productivity and productive capacity.",
+            "Explain tools such as training, infrastructure development and support for technological improvement.",
+            "Use AD/AS analysis to evaluate effects on equilibrium national income, real output, price level and employment."
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "6",
+      "title": "International economic issues",
+      "printedPages": "22-23",
+      "subtopics": [
+        [
+          "6.1",
+          "The reasons for international trade",
+          [
+            "Distinguish absolute advantage from comparative advantage.",
+            "Explain benefits of specialisation and free trade/trade liberalisation, including the trading possibility curve.",
+            "Explain exports, imports and terms of trade; measure terms of trade and explain causes and impacts of changes.",
+            "Explain limitations of absolute and comparative advantage theories."
+          ]
+        ],
+        [
+          "6.2",
+          "Protectionism",
+          [
+            "Define protectionism in international trade.",
+            "Explain tariffs, import quotas, export subsidies, embargoes and excessive administrative burdens ('red tape'), including their impacts.",
+            "Evaluate arguments for and against protectionism."
+          ]
+        ],
+        [
+          "6.3",
+          "Current account of the balance of payments",
+          [
+            "Identify current-account components: trade in goods, trade in services, primary income and secondary income.",
+            "Define balance, deficit and surplus in the current account.",
+            "Calculate balances of trade in goods, trade in services, goods and services, and the current account balance (CAB).",
+            "Explain causes of current-account imbalances.",
+            "Analyse consequences of current-account imbalances for domestic and external economies."
+          ]
+        ],
+        [
+          "6.4",
+          "Exchange rates",
+          [
+            "Define exchange rate.",
+            "Explain determination of a floating exchange rate.",
+            "Distinguish depreciation from appreciation of a floating exchange rate.",
+            "Explain exchange-rate changes through demand and supply of currency.",
+            "Use AD/AS analysis to evaluate effects of exchange-rate changes on equilibrium national income, real output, price level and employment."
+          ]
+        ],
+        [
+          "6.5",
+          "Policies to correct imbalances in the current account of the balance of payments",
+          [
+            "Explain the government policy objective of current-account stability.",
+            "Analyse effects of fiscal, monetary, supply-side and protectionist policies on the current account."
+          ]
+        ]
+      ]
+    }
+  ],
+  "crossCuttingRequirements": {
+    "representations": [
+      "written explanation",
+      "numerical calculation",
+      "labelled economic diagrams",
+      "data interpretation"
+    ],
+    "assessmentObjectives": {
+      "AO1": "Knowledge and understanding: recall facts, formulae and definitions; explain concepts with examples; apply knowledge to economic information in written, numerical and diagrammatic forms.",
+      "AO2": "Analysis: examine issues and relationships; select, interpret and organise written, numerical and diagrammatic information; identify patterns, causes and effects; explain consequences of changes in variables.",
+      "AO3": "Evaluation: recognise assumptions and model/data limitations; assess evidence and arguments; consider priorities and value judgements; communicate reasoned judgements and conclusions."
+    },
+    "qualificationWeightings": {
+      "AO1": 35,
+      "AO2": 40,
+      "AO3": 25
+    },
+    "assessmentPaper2": {
+      "durationMinutes": 120,
+      "marks": 60,
+      "sections": [
+        "A: one data-response question, 20 marks",
+        "B: one microeconomics essay from two choices, two parts, 20 marks",
+        "C: one macroeconomics essay from two choices, two parts, 20 marks"
+      ]
+    },
+    "exclusionsAndCautions": [
+      "Gini coefficient calculation is not required.",
+      "AS circular-flow multiplier is not required.",
+      "AS marginal and average propensities are not required.",
+      "Do not silently teach A Level-only depth as AS requirement."
+    ]
+  }
+}

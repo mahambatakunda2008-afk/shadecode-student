@@ -151,6 +151,178 @@ function RootBracket() {
   </svg>;
 }
 
+
+function ScarcityChoiceFlow() {
+  return <svg viewBox="0 0 600 250" role="img" aria-label="Flow diagram: limited resources relative to competing wants create scarcity; scarcity requires choice; choosing one option means giving up the next best alternative, which is the opportunity cost." className="lesson-diagram-svg">
+    <defs><marker id="scarcity-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill={colors.line}/></marker></defs>
+    {[[18,"Scarce resources"],[218,"Choice"],[418,"Opportunity cost"]].map(([x,label],i)=><g key={String(label)}><rect x={Number(x)} y="65" width="164" height="86" rx="14" fill={i===2?"#ffedd5":"#ccfbf1"} stroke={i===2?colors.point:colors.line} strokeWidth="2"/><text x={Number(x)+82} y="101" textAnchor="middle" fontSize="15" fontWeight="700" fill={i===2?"#7c2d12":"#134e4a"}>{String(label)}</text><text x={Number(x)+82} y="124" textAnchor="middle" fontSize="11" fill={i===2?"#7c2d12":"#134e4a"}>{["Resources are limited","Select an option","Next best forgone"][i]}</text></g>)}
+    <path d="M184 108 H208 M201 101 L209 108 L201 115 M384 108 H408 M401 101 L409 108 L401 115" stroke={colors.line} strokeWidth="2.5" fill="none"/>
+    <text x="300" y="202" textAnchor="middle" fontSize="13" fill="currentColor">Scarcity → choice → the value of the next best alternative forgone</text>
+  </svg>;
+}
+function ProductionPossibilityCurve() {
+  return <svg viewBox="0 0 600 340" role="img" aria-label="Illustrative production possibility curve bowed outward between consumer goods and capital goods. A point on the curve is productively efficient, a point inside is inefficient or underused resources, and a point outside is currently unattainable." className="lesson-diagram-svg">
+    <path d="M76 278 H550 M76 278 V28" stroke={colors.axis} strokeWidth="2"/>
+    <path d="M105 70 C175 125 290 218 495 258" stroke={colors.line} strokeWidth="4" fill="none"/>
+    <path d="M105 70 C175 125 290 218 495 258 L495 278 L105 278 Z" fill="#ccfbf1" opacity=".22"/>
+    <circle cx="286" cy="188" r="6" fill={colors.point}/><text x="299" y="185" fontSize="13" fill="currentColor">A: on curve</text>
+    <circle cx="260" cy="238" r="6" fill={colors.point}/><text x="273" y="243" fontSize="13" fill="currentColor">B: inside</text>
+    <circle cx="420" cy="125" r="6" fill="#b91c1c"/><text x="432" y="128" fontSize="13" fill="currentColor">C: outside</text>
+    <text x="300" y="321" textAnchor="middle" fontSize="14" fill="currentColor">Consumer goods →</text><text x="22" y="25" fontSize="13" fill="currentColor">Capital goods</text>
+    <text x="330" y="55" fontSize="11" fill={colors.muted}>Illustrative curve, not measured data</text>
+  </svg>;
+}
+function CeterisParibusModel() {
+  return <svg viewBox="0 0 600 300" role="img" aria-label="Ceteris paribus model: change one variable, hold other relevant influences constant, then isolate the predicted relationship. Example: price rises, other demand determinants held constant, quantity demanded falls." className="lesson-diagram-svg">
+    <rect x="20" y="72" width="160" height="104" rx="12" fill="#ccfbf1" stroke={colors.line} strokeWidth="2"/>
+    <rect x="220" y="72" width="160" height="104" rx="12" fill="#e0e7ff" stroke="#4f46e5" strokeWidth="2"/>
+    <rect x="420" y="72" width="160" height="104" rx="12" fill="#ffedd5" stroke={colors.point} strokeWidth="2"/>
+    <text x="100" y="104" textAnchor="middle" fontSize="15" fontWeight="700" fill="#134e4a">Change one</text><text x="100" y="128" textAnchor="middle" fontSize="12" fill="#134e4a">Price of the good</text>
+    <text x="300" y="104" textAnchor="middle" fontSize="15" fontWeight="700" fill="#312e81">Hold others</text><text x="300" y="128" textAnchor="middle" fontSize="12" fill="#312e81">Income, tastes, etc.</text>
+    <text x="500" y="104" textAnchor="middle" fontSize="15" fontWeight="700" fill="#7c2d12">Isolate effect</text><text x="500" y="128" textAnchor="middle" fontSize="12" fill="#7c2d12">Quantity demanded</text>
+    <path d="M182 124 H212 M205 117 L213 124 L205 131 M382 124 H412 M405 117 L413 124 L405 131" stroke={colors.axis} strokeWidth="2.5" fill="none"/>
+    <text x="300" y="224" textAnchor="middle" fontSize="13" fill="currentColor">Example: price rises → quantity demanded falls</text>
+    <text x="300" y="248" textAnchor="middle" fontSize="12" fill={colors.muted}>Prediction assumes other relevant demand determinants are unchanged.</text>
+  </svg>;
+}
+function FactorsOfProductionModel() {
+  return <svg viewBox="0 0 600 340" role="img" aria-label="Four factors of production feed into goods and services: land is natural resources and earns rent; labour is human effort and earns wages; capital is man-made productive assets and earns interest; enterprise organises resources and bears risk, earning profit." className="lesson-diagram-svg">
+    {[[18,35,"LAND","Natural resources","Rent"],[310,35,"LABOUR","Human effort","Wages"],[18,185,"CAPITAL","Produced assets","Interest"],[310,185,"ENTERPRISE","Organises and bears risk","Profit"]].map(([x,y,h,b,r])=><g key={String(h)}><rect x={Number(x)} y={Number(y)} width="260" height="105" rx="12" fill={h==="ENTERPRISE"?"#ffedd5":"#ccfbf1"} stroke={h==="ENTERPRISE"?colors.point:colors.line} strokeWidth="2"/><text x={Number(x)+130} y={Number(y)+28} textAnchor="middle" fontSize="15" fontWeight="700" fill={h==="ENTERPRISE"?"#7c2d12":"#134e4a"}>{String(h)}</text><text x={Number(x)+130} y={Number(y)+53} textAnchor="middle" fontSize="12" fill={h==="ENTERPRISE"?"#7c2d12":"#134e4a"}>{String(b)}</text><text x={Number(x)+130} y={Number(y)+80} textAnchor="middle" fontSize="12" fill={h==="ENTERPRISE"?"#7c2d12":"#134e4a"}>Reward: {String(r)}</text></g>)}
+    <path d="M150 142 V163 H300 M440 142 V163 H300 M150 185 V163 M440 185 V163" stroke={colors.axis} strokeWidth="1.8" fill="none"/>
+    <text x="300" y="325" textAnchor="middle" fontSize="14" fill="currentColor">Combined inputs produce goods and services</text>
+  </svg>;
+}
+
+function EconomicTimeHorizons() {
+  return <svg viewBox="0 0 600 250" role="img" aria-label="Three economic time horizons shown from narrow to broad adjustment: short run has at least one fixed factor; long run allows all factors to vary; very long run also allows technology and wider productive conditions to change. No fixed calendar durations are implied." className="lesson-diagram-svg">
+    <path d="M42 126 H558" stroke={colors.axis} strokeWidth="2"/>
+    {[[42,130,"SHORT RUN","At least one factor fixed"],[230,150,"LONG RUN","All factors can vary"],[450,108,"VERY LONG RUN","Technology and structural conditions can change"]].map(([x,w,title,desc])=><g key={String(title)}><rect x={Number(x)} y="52" width={Number(w)} height="148" rx="12" fill={title==="VERY LONG RUN"?"#ffedd5":"#ccfbf1"} stroke={title==="VERY LONG RUN"?colors.point:colors.line} strokeWidth="2"/><text x={Number(x)+Number(w)/2} y="91" textAnchor="middle" fontSize="14" fontWeight="700" fill={title==="VERY LONG RUN"?"#7c2d12":"#134e4a"}>{String(title)}</text><text x={Number(x)+Number(w)/2} y="122" textAnchor="middle" fontSize="11" fill={title==="VERY LONG RUN"?"#7c2d12":"#134e4a"}>{String(desc)}</text></g>)}
+    <text x="300" y="232" textAnchor="middle" fontSize="12" fill={colors.muted}>Conceptual sequence, not a scale of fixed calendar time</text>
+  </svg>;
+}
+
+function ResourceAllocationQuestions() {
+  return <svg viewBox="0 0 600 240" role="img" aria-label="Three connected economic resource allocation questions: what to produce, how to produce, and for whom to produce." className="lesson-diagram-svg">
+    {[[15,"WHAT?","Which goods and services?"],[215,"HOW?","Which methods and inputs?"],[415,"FOR WHOM?","How is output distributed?"]].map(([x,h,b])=><g key={String(h)}><rect x={Number(x)} y="50" width="170" height="115" rx="14" fill="#ccfbf1" stroke={colors.line} strokeWidth="2"/><text x={Number(x)+85} y="92" textAnchor="middle" fontSize="17" fontWeight="700" fill="#134e4a">{String(h)}</text><text x={Number(x)+85} y="122" textAnchor="middle" fontSize="12" fill="#134e4a">{String(b)}</text></g>)}
+    <path d="M185 108 H208 M201 101 L209 108 L201 115 M385 108 H408 M401 101 L409 108 L401 115" stroke={colors.line} strokeWidth="2.5" fill="none"/>
+    <text x="300" y="208" textAnchor="middle" fontSize="13" fill="currentColor">Every economic system must address all three.</text>
+  </svg>;
+}
+function PositiveNormativeClaims() {
+  return <svg viewBox="0 0 600 260" role="img" aria-label="Comparison of positive statements, which are testable against evidence, and normative statements, which express what ought to happen and depend on value judgements." className="lesson-diagram-svg">
+    <rect x="18" y="35" width="270" height="170" rx="14" fill="#ccfbf1" stroke={colors.line} strokeWidth="2"/>
+    <rect x="312" y="35" width="270" height="170" rx="14" fill="#ffedd5" stroke={colors.point} strokeWidth="2"/>
+    <text x="153" y="72" textAnchor="middle" fontSize="17" fontWeight="700" fill="#134e4a">POSITIVE</text>
+    <text x="153" y="104" textAnchor="middle" fontSize="13" fill="#134e4a">What is / what may happen</text>
+    <text x="153" y="137" textAnchor="middle" fontSize="12" fill="#134e4a">Can be tested with evidence</text>
+    <text x="153" y="169" textAnchor="middle" fontSize="11" fill="#134e4a">Example: A tax cut raises disposable income.</text>
+    <text x="447" y="72" textAnchor="middle" fontSize="17" fontWeight="700" fill="#7c2d12">NORMATIVE</text>
+    <text x="447" y="104" textAnchor="middle" fontSize="13" fill="#7c2d12">What ought to happen</text>
+    <text x="447" y="137" textAnchor="middle" fontSize="12" fill="#7c2d12">Depends on value judgements</text>
+    <text x="447" y="169" textAnchor="middle" fontSize="11" fill="#7c2d12">Example: The tax cut is fair.</text>
+    <text x="300" y="238" textAnchor="middle" fontSize="12" fill={colors.muted}>Positive does not mean true or good; normative does not mean unsupported.</text>
+  </svg>;
+}
+function EconomicsInquiryCycle() {
+  return <svg viewBox="0 0 600 260" role="img" aria-label="Economics as a social science: observe economic behaviour and data, form a hypothesis or model, compare predictions with evidence, then revise the explanation." className="lesson-diagram-svg">
+    {[[15,"OBSERVE","People, firms and data"],[215,"MODEL","Hypothesis and assumptions"],[415,"TEST","Compare with evidence"]].map(([x,h,b])=><g key={String(h)}><rect x={Number(x)} y="55" width="170" height="105" rx="14" fill="#ccfbf1" stroke={colors.line} strokeWidth="2"/><text x={Number(x)+85} y="96" textAnchor="middle" fontSize="16" fontWeight="700" fill="#134e4a">{String(h)}</text><text x={Number(x)+85} y="124" textAnchor="middle" fontSize="11" fill="#134e4a">{String(b)}</text></g>)}
+    <path d="M185 108 H208 M201 101 L209 108 L201 115 M385 108 H408" stroke={colors.line} strokeWidth="2.5" fill="none"/>
+    <path d="M500 165 V207 H100 V166 M107 174 L100 165 L93 174" stroke={colors.point} strokeWidth="2" fill="none"/>
+    <text x="300" y="232" textAnchor="middle" fontSize="12" fill={colors.muted}>Revise the explanation when evidence challenges the model.</text>
+  </svg>;
+}
+
+function EffectiveDemandTest() { return <svg viewBox="0 0 520 190" role="img" aria-label="Effective demand requires both willingness to buy and ability to pay at the stated price over a period." className="lesson-diagram-svg"><rect x="150" y="8" width="220" height="42" rx="9" fill={colors.fill} stroke={colors.axis}/><text x="260" y="35" textAnchor="middle" fontSize="15" fill="currentColor" fontWeight="700">WANT THE GOOD?</text><path d="M260 50 V70 H130 V91 M260 70 H390 V91" stroke={colors.axis} strokeWidth="2" fill="none"/><rect x="20" y="91" width="220" height="52" rx="9" fill={colors.fill} stroke={colors.line}/><rect x="280" y="91" width="220" height="52" rx="9" fill={colors.fill} stroke={colors.line}/><text x="130" y="122" textAnchor="middle" fontSize="15" fill="currentColor" fontWeight="700">WILLING TO BUY</text><text x="390" y="122" textAnchor="middle" fontSize="15" fill="currentColor" fontWeight="700">ABLE TO PAY</text><path d="M130 143 V160 H390 V143 M260 160 V174" stroke={colors.line} strokeWidth="2" fill="none"/><text x="260" y="188" textAnchor="middle" fontSize="14" fill={colors.line} fontWeight="700">BOTH: EFFECTIVE DEMAND</text></svg>; }
+function DemandSupplyCurves() { return <svg viewBox="0 0 520 300" role="img" aria-label="Typical demand and supply curves with price on the vertical axis and quantity on the horizontal axis. Demand slopes downwards and supply slopes upwards." className="lesson-diagram-svg"><path d="M65 25 V245 H475" stroke={colors.axis} strokeWidth="2" fill="none"/><path d="M95 55 L420 215" stroke={colors.line} strokeWidth="4" fill="none"/><path d="M95 215 L420 55" stroke={colors.point} strokeWidth="4" fill="none"/><text x="430" y="222" fontSize="16" fill={colors.line} fontWeight="700">D</text><text x="430" y="52" fontSize="16" fill={colors.point} fontWeight="700">S</text><text x="16" y="28" fontSize="14" fill="currentColor">Price</text><text x="425" y="273" fontSize="14" fill="currentColor">Quantity</text><text x="270" y="292" textAnchor="middle" fontSize="11" fill={colors.muted}>Typical relationships, ceteris paribus</text></svg>; }
+function MarketAggregation() { return <svg viewBox="0 0 560 230" role="img" aria-label="At each fixed price, add the quantities demanded by individual consumers or supplied by individual firms horizontally to obtain market demand or supply." className="lesson-diagram-svg"><rect x="12" y="18" width="164" height="82" rx="9" fill={colors.fill} stroke={colors.line}/><rect x="198" y="18" width="164" height="82" rx="9" fill={colors.fill} stroke={colors.line}/><rect x="384" y="18" width="164" height="82" rx="9" fill={colors.fill} stroke={colors.point}/><text x="94" y="45" textAnchor="middle" fontSize="14" fill="currentColor" fontWeight="700">CONSUMER A</text><text x="94" y="72" textAnchor="middle" fontSize="13" fill={colors.muted}>3 units at $5</text><text x="280" y="45" textAnchor="middle" fontSize="14" fill="currentColor" fontWeight="700">CONSUMER B</text><text x="280" y="72" textAnchor="middle" fontSize="13" fill={colors.muted}>4 units at $5</text><text x="466" y="45" textAnchor="middle" fontSize="14" fill={colors.point} fontWeight="700">MARKET</text><text x="466" y="72" textAnchor="middle" fontSize="13" fill={colors.point}>7 units at $5</text><path d="M176 59 H194 M362 59 H380" stroke={colors.axis} strokeWidth="2.5"/><text x="280" y="140" textAnchor="middle" fontSize="16" fill="currentColor" fontWeight="700">HORIZONTAL SUMMATION</text><text x="280" y="169" textAnchor="middle" fontSize="13" fill={colors.muted}>Add quantities at the same price</text><text x="280" y="194" textAnchor="middle" fontSize="12" fill={colors.muted}>Repeat for each price to build the market schedule</text></svg>; }
+function CurveShiftsMovements() { return <svg viewBox="0 0 560 270" role="img" aria-label="Own-price changes cause movement along an unchanged demand or supply curve. Non-price determinants shift the entire curve, changing demand or supply." className="lesson-diagram-svg"><path d="M45 220 H260 M45 220 V20" stroke={colors.axis} strokeWidth="1.5" fill="none"/><path d="M65 45 L225 195" stroke={colors.line} strokeWidth="3.5" fill="none"/><circle cx="115" cy="92" r="5" fill={colors.line}/><circle cx="180" cy="153" r="5" fill={colors.line}/><path d="M120 100 L173 145" stroke={colors.point} strokeWidth="2.5"/><text x="75" y="25" fontSize="13" fill="currentColor" fontWeight="700">MOVE ALONG</text><text x="70" y="245" fontSize="11" fill={colors.muted}>Own-price change</text><path d="M300 220 H540 M300 220 V20" stroke={colors.axis} strokeWidth="1.5" fill="none"/><path d="M325 45 L455 195" stroke={colors.muted} strokeWidth="3" fill="none"/><path d="M365 45 L495 195" stroke={colors.line} strokeWidth="3.5" fill="none"/><path d="M390 85 H430" stroke={colors.point} strokeWidth="2.5"/><text x="335" y="25" fontSize="13" fill="currentColor" fontWeight="700">CURVE SHIFT</text><text x="328" y="245" fontSize="11" fill={colors.muted}>Non-price determinant</text><text x="280" y="265" textAnchor="middle" fontSize="11" fill={colors.muted}>Illustrative demand-curve changes</text></svg>; }
+function GoodsClassificationMap() { return <svg viewBox="0 0 600 250" role="img" aria-label="Three classification questions: scarcity and opportunity cost; rivalry and excludability; imperfect information and consumption." className="lesson-diagram-svg"><g fill="none" stroke={colors.axis} strokeWidth="1.5"><rect x="8" y="35" width="184" height="170" rx="10"/><rect x="208" y="35" width="184" height="170" rx="10"/><rect x="408" y="35" width="184" height="170" rx="10"/></g><g fill="currentColor" fontSize="15" fontWeight="700"><text x="22" y="62">SCARCITY</text><text x="222" y="62">ACCESS</text><text x="422" y="62">INFORMATION</text></g><g fill={colors.line} fontSize="13"><text x="22" y="96">FREE GOOD</text><text x="22" y="116">No opportunity cost</text><text x="22" y="151">ECONOMIC GOOD</text><text x="22" y="171">Scarce; opportunity cost</text><text x="222" y="96">PRIVATE GOOD</text><text x="222" y="116">Rival + excludable</text><text x="222" y="151">PUBLIC GOOD</text><text x="222" y="171">Non-rival + non-excludable</text><text x="422" y="96">MERIT GOOD</text><text x="422" y="116">Benefits underestimated</text><text x="422" y="136">Under-consumption</text><text x="422" y="171">DEMERIT: harms underestimated</text><text x="422" y="189">Over-consumption</text></g></svg>; }
+function PublicGoodTest() { return <svg viewBox="0 0 560 230" role="img" aria-label="A pure public good must be non-rival and non-excludable; together these characteristics can create a free-rider problem." className="lesson-diagram-svg"><rect x="18" y="18" width="245" height="78" rx="10" fill={colors.fill} stroke={colors.line}/><rect x="297" y="18" width="245" height="78" rx="10" fill={colors.fill} stroke={colors.line}/><text x="38" y="48" fontSize="16" fill="currentColor" fontWeight="700">1. NON-RIVAL?</text><text x="38" y="73" fontSize="13" fill={colors.muted}>One user's benefit does not reduce another's</text><text x="317" y="48" fontSize="16" fill="currentColor" fontWeight="700">2. NON-EXCLUDABLE?</text><text x="317" y="73" fontSize="13" fill={colors.muted}>Can non-payers be excluded?</text><path d="M140 100 V128 H420 V100 M280 128 V153" stroke={colors.line} strokeWidth="2.5" fill="none"/><rect x="135" y="153" width="290" height="58" rx="10" fill={colors.fill} stroke={colors.point}/><text x="280" y="177" textAnchor="middle" fontSize="16" fill="currentColor" fontWeight="700">BOTH YES: PURE PUBLIC GOOD</text><text x="280" y="197" textAnchor="middle" fontSize="13" fill={colors.muted}>Free-rider problem may arise</text></svg>; }
+function MeritDemeritFlow() { return <svg viewBox="0 0 560 250" role="img" aria-label="Underestimated benefits of a merit good lead to under-consumption; underestimated harms of a demerit good lead to over-consumption." className="lesson-diagram-svg"><rect x="170" y="10" width="220" height="42" rx="9" fill={colors.fill} stroke={colors.axis}/><text x="280" y="36" textAnchor="middle" fontSize="15" fill="currentColor" fontWeight="700">IMPERFECT INFORMATION</text><path d="M280 52 V76 H145 V100 M280 76 H415 V100" stroke={colors.axis} strokeWidth="2" fill="none"/><rect x="20" y="100" width="250" height="126" rx="10" fill={colors.fill} stroke={colors.line}/><rect x="290" y="100" width="250" height="126" rx="10" fill={colors.fill} stroke={colors.point}/><text x="145" y="128" textAnchor="middle" fontSize="16" fill={colors.line} fontWeight="700">MERIT GOOD</text><text x="145" y="157" textAnchor="middle" fontSize="13" fill="currentColor">Benefits underestimated</text><text x="145" y="190" textAnchor="middle" fontSize="17" fill={colors.line} fontWeight="700">UNDER-CONSUMPTION</text><text x="415" y="128" textAnchor="middle" fontSize="16" fill={colors.point} fontWeight="700">DEMERIT GOOD</text><text x="415" y="157" textAnchor="middle" fontSize="13" fill="currentColor">Harms underestimated</text><text x="415" y="190" textAnchor="middle" fontSize="17" fill={colors.point} fontWeight="700">OVER-CONSUMPTION</text></svg>; }
+function PpcCostShapes() {
+  return <svg viewBox="0 0 560 260" role="img" aria-label="Comparison of production possibility curves: a straight-line frontier shows constant opportunity cost, while a bowed-out frontier shows increasing opportunity cost as progressively more of the other good is sacrificed." className="lesson-diagram-svg">
+    <g transform="translate(12 8)">
+      <path d="M20 205 H250 M20 205 V25" stroke={colors.axis} strokeWidth="1.5" fill="none"/>
+      <path d="M35 190 L225 45" stroke={colors.line} strokeWidth="4" fill="none"/>
+      <text x="73" y="25" fontSize="14" fill="currentColor" fontWeight="700">CONSTANT COST</text>
+      <text x="82" y="230" fontSize="12" fill={colors.muted}>Straight line</text>
+      <text x="27" y="248" fontSize="11" fill={colors.muted}>Equal sacrifice per equal gain</text>
+    </g>
+    <g transform="translate(282 8)">
+      <path d="M20 205 H250 M20 205 V25" stroke={colors.axis} strokeWidth="1.5" fill="none"/>
+      <path d="M35 190 Q105 45 225 45" stroke={colors.point} strokeWidth="4" fill="none"/>
+      <text x="55" y="25" fontSize="14" fill="currentColor" fontWeight="700">INCREASING COST</text>
+      <text x="82" y="230" fontSize="12" fill={colors.muted}>Bowed out</text>
+      <text x="22" y="248" fontSize="11" fill={colors.muted}>Progressively greater sacrifice</text>
+    </g>
+  </svg>;
+}
+
+function PpcShifts() {
+  return <svg viewBox="0 0 560 270" role="img" aria-label="Two production possibility frontiers. Moving from point A to B along the original frontier changes the output mix without changing productive capacity. An outward frontier shows increased productive capacity; an inward frontier shows reduced capacity." className="lesson-diagram-svg">
+    <path d="M55 220 H510 M55 220 V22" stroke={colors.axis} strokeWidth="1.5" fill="none"/>
+    <path d="M75 205 Q145 52 270 45" stroke={colors.muted} strokeWidth="3" fill="none" strokeDasharray="7 5"/>
+    <path d="M75 205 Q190 28 390 20" stroke={colors.line} strokeWidth="4" fill="none"/>
+    <path d="M75 205 Q125 102 205 85" stroke={colors.point} strokeWidth="3" fill="none" strokeDasharray="6 5"/>
+    <circle cx="145" cy="117" r="5" fill={colors.line}/><circle cx="245" cy="57" r="5" fill={colors.line}/>
+    <path d="M151 111 L237 64" stroke={colors.line} strokeWidth="2" strokeDasharray="4 4"/>
+    <text x="130" y="139" fontSize="12" fill="currentColor">A</text><text x="250" y="53" fontSize="12" fill="currentColor">B</text>
+    <text x="310" y="45" fontSize="13" fill={colors.line}>Outward: capacity rises</text>
+    <text x="80" y="183" fontSize="12" fill={colors.point}>Inward: capacity falls</text>
+    <text x="320" y="248" fontSize="13" fill="currentColor">Good X →</text><text x="12" y="24" fontSize="13" fill="currentColor">Good Y</text>
+    <text x="65" y="263" fontSize="11" fill={colors.muted}>Illustrative frontier shapes, not measured data</text>
+  </svg>;
+}
+
+function EconomicSystemsComparison() {
+  const columns = [
+    { x: 14, title: "MARKET", decision: "Consumers and firms", method: "Prices, demand and supply", distribution: "Purchasing power", fill: "#ccfbf1", stroke: colors.line, ink: "#134e4a" },
+    { x: 210, title: "PLANNED", decision: "Central authority", method: "Plans and directives", distribution: "Administrative priorities", fill: "#dbeafe", stroke: "#2563eb", ink: "#1e40af" },
+    { x: 406, title: "MIXED", decision: "Markets and government", method: "Prices plus public policy", distribution: "Purchasing power and public provision", fill: "#ffedd5", stroke: colors.point, ink: "#7c2d12" },
+  ];
+  return <svg viewBox="0 0 600 290" role="img" aria-label="Comparison of market, planned and mixed economies: market decisions are made mainly by consumers and firms and coordinated by prices; planned decisions are directed by a central authority using plans; mixed economies combine market decisions with government policy. Distribution mechanisms also differ." className="lesson-diagram-svg">
+    {columns.map((item) => <g key={item.title}>
+      <rect x={item.x} y="18" width="180" height="226" rx="12" fill={item.fill} stroke={item.stroke} strokeWidth="2"/>
+      <text x={item.x+90} y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill={item.ink}>{item.title}</text>
+      <text x={item.x+90} y="84" textAnchor="middle" fontSize="11" fontWeight="700" fill={item.ink}>WHO DECIDES?</text>
+      <text x={item.x+90} y="105" textAnchor="middle" fontSize="11" fill={item.ink}>{item.decision}</text>
+      <text x={item.x+90} y="143" textAnchor="middle" fontSize="11" fontWeight="700" fill={item.ink}>HOW COORDINATED?</text>
+      <text x={item.x+90} y="164" textAnchor="middle" fontSize="11" fill={item.ink}>{item.method}</text>
+      <text x={item.x+90} y="202" textAnchor="middle" fontSize="11" fontWeight="700" fill={item.ink}>FOR WHOM?</text>
+      <text x={item.x+90} y="222" textAnchor="middle" fontSize="10" fill={item.ink}>{item.distribution}</text>
+    </g>)}
+    <text x="300" y="273" textAnchor="middle" fontSize="12" fill={colors.muted}>Ideal types for comparison; real economies can combine mechanisms.</text>
+  </svg>;
+}
+
+
+function ElasticityVisual({ kind }: { kind: string }) {
+  const ink = "currentColor";
+  if (kind === "elasticity-formula-flow") return <svg viewBox="0 0 600 220" role="img" aria-label="Three elasticity formulae: PED quantity demanded percentage change over own price percentage change; YED quantity demanded percentage change over income percentage change; XED demand for A percentage change over price of B percentage change" className="lesson-diagram-svg">
+    {[["PED","% change in quantity demanded","% change in own price"],["YED","% change in quantity demanded","% change in income"],["XED","% change in demand for A","% change in price of B"]].map((v,i)=><g key={v[0]}><rect x={8+i*200} y="12" width="184" height="192" rx="12" fill={i===0?"#ccfbf1":i===1?"#dbeafe":"#ffedd5"} stroke={i===0?colors.line:i===1?"#2563eb":colors.point} strokeWidth="2"/><text x={100+i*200} y="42" textAnchor="middle" fontSize="17" fontWeight="700" fill={ink}>{v[0]}</text><text x={100+i*200} y="83" textAnchor="middle" fontSize="11" fill={ink}>{v[1]}</text><path d={`M${36+i*200} 101 H${164+i*200}`} stroke={ink} opacity=".45"/><text x={100+i*200} y="132" textAnchor="middle" fontSize="11" fill={ink}>{v[2]}</text><text x={100+i*200} y="176" textAnchor="middle" fontSize="11" fill={ink}>percentage changes</text></g>)}
+  </svg>;
+  if (kind === "ped-elasticity-categories") return <svg viewBox="0 0 560 190" role="img" aria-label="PED magnitude scale: zero perfectly inelastic, between zero and one inelastic, one unitary, above one elastic and infinity perfectly elastic" className="lesson-diagram-svg">
+    <path d="M42 75 H518" stroke={colors.axis} strokeWidth="3"/>{[42,145,248,351,518].map((x,i)=><g key={x}><path d={`M${x} 65 V85`} stroke={colors.axis} strokeWidth="2"/><text x={x} y="108" textAnchor="middle" fontSize="12" fill={ink}>{["0","0 < |PED| < 1","1","|PED| > 1","∞"][i]}</text><text x={x} y="139" textAnchor="middle" fontSize="11" fill={i===0?"#b45309":i===1?"#0f766e":i===2?"#2563eb":i===3?"#7c3aed":"#b45309"}>{["Perfectly inelastic","Inelastic","Unitary","Elastic","Perfectly elastic"][i]}</text></g>)}
+    <text x="280" y="174" textAnchor="middle" fontSize="11" fill={colors.muted}>Classify using magnitude; the calculated PED usually retains its negative sign.</text>
+  </svg>;
+  if (kind === "ped-straight-line-variation") return <svg viewBox="0 0 560 270" role="img" aria-label="Straight-line downward demand curve with elastic upper section, unitary midpoint and inelastic lower section" className="lesson-diagram-svg">
+    <path d="M64 226 V24 M64 226 H505" stroke={colors.axis} strokeWidth="2"/><path d="M102 48 L452 208" stroke={colors.line} strokeWidth="4" fill="none"/>
+    <circle cx="190" cy="88" r="6" fill="#0f766e"/><circle cx="277" cy="128" r="6" fill="#2563eb"/><circle cx="365" cy="168" r="6" fill="#b45309"/>
+    <text x="185" y="65" fontSize="13" fill="#0f766e" fontWeight="700">Elastic</text><text x="282" y="112" fontSize="13" fill="#2563eb" fontWeight="700">Unitary</text><text x="368" y="154" fontSize="13" fill="#b45309" fontWeight="700">Inelastic</text>
+    <text x="18" y="20" fontSize="12" fill={ink}>Price</text><text x="465" y="249" fontSize="12" fill={ink}>Quantity</text><text x="280" y="268" textAnchor="middle" fontSize="11" fill={colors.muted}>Constant gradient, changing elasticity along the line</text>
+  </svg>;
+  if (kind === "ped-total-expenditure") return <svg viewBox="0 0 560 245" role="img" aria-label="When price rises, total expenditure rises with inelastic demand, falls with elastic demand and stays unchanged with unitary elasticity" className="lesson-diagram-svg">
+    {[["INELASTIC","Price ↑  →  TE ↑","Price ↓  →  TE ↓","#ccfbf1","#0f766e"],["ELASTIC","Price ↑  →  TE ↓","Price ↓  →  TE ↑","#dbeafe","#2563eb"],["UNITARY","Price ↑  →  TE unchanged","Price ↓  →  TE unchanged","#ffedd5","#b45309"]].map((v,i)=><g key={v[0]}><rect x="10" y={10+i*78} width="540" height="66" rx="10" fill={v[3]} stroke={v[4]} strokeWidth="1.5"/><text x="28" y={34+i*78} fontSize="13" fontWeight="700" fill={v[4]}>{v[0]}</text><text x="188" y={34+i*78} fontSize="12" fill={ink}>{v[1]}</text><text x="188" y={55+i*78} fontSize="12" fill={ink}>{v[2]}</text></g>)}
+  </svg>;
+  return <svg viewBox="0 0 560 220" role="img" aria-label="YED positive indicates a normal good and negative an inferior good; XED positive indicates substitutes and negative complements" className="lesson-diagram-svg">
+    <rect x="10" y="12" width="260" height="190" rx="12" fill="#dbeafe" stroke="#2563eb" strokeWidth="2"/><rect x="290" y="12" width="260" height="190" rx="12" fill="#ffedd5" stroke={colors.point} strokeWidth="2"/>
+    <text x="140" y="42" textAnchor="middle" fontSize="17" fontWeight="700" fill="#1e40af">YED</text><text x="420" y="42" textAnchor="middle" fontSize="17" fontWeight="700" fill="#7c2d12">XED</text>
+    <text x="140" y="88" textAnchor="middle" fontSize="14" fill="#1e40af">Positive: NORMAL GOOD</text><text x="140" y="127" textAnchor="middle" fontSize="14" fill="#1e40af">Negative: INFERIOR GOOD</text>
+    <text x="420" y="88" textAnchor="middle" fontSize="14" fill="#7c2d12">Positive: SUBSTITUTES</text><text x="420" y="127" textAnchor="middle" fontSize="14" fill="#7c2d12">Negative: COMPLEMENTS</text>
+    <text x="140" y="171" textAnchor="middle" fontSize="11" fill="#1e40af">Income changes</text><text x="420" y="171" textAnchor="middle" fontSize="11" fill="#7c2d12">Other good's price changes</text>
+  </svg>;
+}
+
 export default function LessonDiagram({ kind, title }: Props) {
   let graphic: ReactNode;
   switch (kind.trim().toLowerCase()) {
@@ -158,6 +330,29 @@ export default function LessonDiagram({ kind, title }: Props) {
     case "wave-shape": graphic = <Waves />; break;
     case "force-pairs": graphic = <ForcePairs />; break;
     case "root-bracket": graphic = <RootBracket />; break;
+    case "scarcity-choice-flow": graphic = <ScarcityChoiceFlow />; break;
+    case "production-possibility-curve": graphic = <ProductionPossibilityCurve />; break;
+    case "ceteris-paribus-model": graphic = <CeterisParibusModel />; break;
+    case "factors-of-production-model": graphic = <FactorsOfProductionModel />; break;
+    case "economic-time-horizons": graphic = <EconomicTimeHorizons />; break;
+    case "resource-allocation-questions": graphic = <ResourceAllocationQuestions />; break;
+    case "positive-normative-claims": graphic = <PositiveNormativeClaims />; break;
+    case "economics-inquiry-cycle": graphic = <EconomicsInquiryCycle />; break;
+    case "economic-systems-comparison": graphic = <EconomicSystemsComparison />; break;
+    case "ppc-shifts": graphic = <PpcShifts />; break;
+    case "ppc-cost-shapes": graphic = <PpcCostShapes />; break;
+    case "goods-classification-map": graphic = <GoodsClassificationMap />; break;
+    case "effective-demand-test": graphic = <EffectiveDemandTest />; break;
+    case "demand-supply-curves": graphic = <DemandSupplyCurves />; break;
+    case "elasticity-formula-flow": graphic = <ElasticityVisual kind={kind} />; break;
+    case "ped-elasticity-categories": graphic = <ElasticityVisual kind={kind} />; break;
+    case "ped-straight-line-variation": graphic = <ElasticityVisual kind={kind} />; break;
+    case "ped-total-expenditure": graphic = <ElasticityVisual kind={kind} />; break;
+    case "yed-xed-sign-interpretation": graphic = <ElasticityVisual kind={kind} />; break;
+    case "market-aggregation": graphic = <MarketAggregation />; break;
+    case "curve-shifts-movements": graphic = <CurveShiftsMovements />; break;
+    case "public-good-test": graphic = <PublicGoodTest />; break;
+    case "merit-demerit-information": graphic = <MeritDemeritFlow />; break;
     case "unit-circle": graphic = <UnitCircle />; break;
     case "binary-place-values": graphic = <BinaryPlaceValues />; break;
     case "particle-model": graphic = <ParticleModel />; break;

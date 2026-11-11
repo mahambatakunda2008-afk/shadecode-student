@@ -35,23 +35,22 @@ class NativeApi {
         if (profile.subjects.isEmpty()) return emptyList()
         val rows = request("GET", "/rest/v1/subjects?select=id,name&user_id=eq.${session.userId}&order=name.asc", accessToken = session.accessToken)
         val array = JSONArray(rows)
-        val allowed = profile.subjects.flatMap { code ->
-            val label = NativeSubjectCatalog.labelFor(code)
-            val mappedLabel = when {
-                code.equals("maths", true) || code.equals("mathematics", true) -> "Mathematics"
-                code.equals("computer-science", true) || code.equals("computer_science", true) || code.equals("coding", true) -> "Computer Science"
-                code.equals("english", true) && profile.studyLevel.equals("a-level", true) -> "English Language"
-                code.equals("business", true) && profile.studyLevel.equals("lower-secondary", true) -> "Business Studies"
-                else -> label
-            }
-            listOf(code, label, mappedLabel)
-        }.map { NativeSubjectMatcher.key(it) }.toSet()
+        val allowedCodes = profile.subjects
+            .map { NativeSubjectCatalog.codeFor(it) }
+            .filter { it.isNotBlank() && it != "general" }
+            .toSet()
         val result = mutableListOf<NativeSubjectEntity>()
         for (i in 0 until array.length()) {
             val row = array.getJSONObject(i)
-            val name = row.optString("name").trim()
-            if (name.isBlank() || name.equals("general", ignoreCase = true) || NativeSubjectMatcher.key(name) !in allowed) continue
-            result += NativeSubjectEntity(row.getString("id"), name, NativeSubjectMatcher.key(name))
+            val storedName = row.optString("name").trim()
+            if (storedName.isBlank() || storedName.equals("general", ignoreCase = true)) continue
+            val code = NativeSubjectCatalog.codeFor(storedName)
+            if (code !in allowedCodes) continue
+            result += NativeSubjectEntity(
+                id = row.getString("id"),
+                name = NativeSubjectCatalog.labelFor(code),
+                normalizedName = NativeSubjectMatcher.key(code),
+            )
         }
         return result
     }

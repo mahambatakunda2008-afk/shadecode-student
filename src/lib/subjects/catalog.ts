@@ -1,3 +1,5 @@
+import { normalizeSubjectKey } from "@/lib/academic/subjectContract";
+
 export type SubjectCategory =
   | "Mathematics & quantitative"
   | "Sciences & environment"
@@ -7,12 +9,20 @@ export type SubjectCategory =
   | "Business & commerce"
   | "Creative & practical";
 
+export interface SubjectCurriculumOffering {
+  boardId: "cambridge" | "zimsec";
+  qualificationId: "o_level" | "a_level";
+  syllabusCode: string;
+  syllabusVersion?: string;
+}
+
 export interface SubjectCatalogEntry {
   id: string;
   name: string;
   category: SubjectCategory;
   pathways: readonly string[];
   aliases?: readonly string[];
+  offerings?: readonly SubjectCurriculumOffering[];
 }
 
 /**
@@ -64,14 +74,18 @@ export const SUBJECT_CATALOG: readonly SubjectCatalogEntry[] = [
   { id: "history", name: "History", category: "Humanities & social sciences", pathways: [...SCHOOL_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "geography", name: "Geography", category: "Humanities & social sciences", pathways: [...SCHOOL_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "religious-studies", name: "Religious Studies", category: "Humanities & social sciences", pathways: SCHOOL_PATHWAYS },
+  { id: "zimsec-family-religious-studies-o-level", name: "Family and Religious Studies (ZIMSEC O Level)", category: "Humanities & social sciences", pathways: ["upper-secondary"], aliases: ["FRS", "Family and Religious Studies", "Family & Religious Studies", "ZIMSEC FRS"], offerings: [{ boardId: "zimsec", qualificationId: "o_level", syllabusCode: "4047" }] },
+  { id: "cambridge-geography-9696", name: "Geography (Cambridge 9696)", category: "Humanities & social sciences", pathways: ["a-level"], aliases: ["Geography 9696", "Cambridge Geography 9696"], offerings: [{ boardId: "cambridge", qualificationId: "a_level", syllabusCode: "9696", syllabusVersion: "2027-2029" }] },
   { id: "sociology", name: "Sociology", category: "Humanities & social sciences", pathways: [...SECONDARY_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "psychology", name: "Psychology", category: "Humanities & social sciences", pathways: [...SECONDARY_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "philosophy", name: "Philosophy", category: "Humanities & social sciences", pathways: HIGHER_PATHWAYS },
   { id: "global-perspectives", name: "Global Perspectives", category: "Humanities & social sciences", pathways: SCHOOL_PATHWAYS },
   { id: "social-studies", name: "Social Studies", category: "Humanities & social sciences", pathways: ["primary", "lower-secondary"] },
   { id: "business-studies", name: "Business Studies", category: "Business & commerce", pathways: [...SCHOOL_PATHWAYS, ...HIGHER_PATHWAYS], aliases: ["Business"] },
+  { id: "cambridge-business-9609", name: "Business (Cambridge 9609)", category: "Business & commerce", pathways: ["a-level"], aliases: ["Business 9609", "Cambridge Business 9609"], offerings: [{ boardId: "cambridge", qualificationId: "a_level", syllabusCode: "9609", syllabusVersion: "2026-2028" }] },
   { id: "business-management", name: "Business Management", category: "Business & commerce", pathways: HIGHER_PATHWAYS },
   { id: "economics", name: "Economics", category: "Business & commerce", pathways: [...SECONDARY_PATHWAYS, ...HIGHER_PATHWAYS] },
+  { id: "cambridge-economics-9708", name: "Economics (Cambridge 9708)", category: "Business & commerce", pathways: ["a-level"], aliases: ["Economics 9708", "Cambridge Economics 9708"], offerings: [{ boardId: "cambridge", qualificationId: "a_level", syllabusCode: "9708", syllabusVersion: "2026-2028" }] },
   { id: "accounting", name: "Accounting", category: "Business & commerce", pathways: [...SECONDARY_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "commerce", name: "Commerce", category: "Business & commerce", pathways: [...SCHOOL_PATHWAYS, "tvet", "independent"] },
   { id: "entrepreneurship", name: "Entrepreneurship", category: "Business & commerce", pathways: HIGHER_PATHWAYS },
@@ -119,3 +133,67 @@ export const SUBJECT_CATEGORIES: readonly SubjectCategory[] = [
   "Business & commerce",
   "Creative & practical",
 ];
+
+
+/** Resolve a canonical catalogue entry from its stable ID, display name or alias. */
+export function resolveSubjectCatalogEntry(value: unknown): SubjectCatalogEntry | null {
+  const key = normalizeSubjectKey(value);
+  if (!key || key === "general") return null;
+  return SUBJECT_CATALOG.find((entry) =>
+    [entry.id, entry.name, ...(entry.aliases ?? [])]
+      .some((candidate) => normalizeSubjectKey(candidate) === key),
+  ) ?? null;
+}
+
+/** Stable cross-client identity. Unknown/custom subjects retain a normalized key. */
+export function canonicalSubjectId(value: unknown): string {
+  const entry = resolveSubjectCatalogEntry(value);
+  return entry?.id ?? normalizeSubjectKey(value).replace(/\s+/g, "-");
+}
+
+/** Canonical display name for known subjects; preserve custom subject labels. */
+export function canonicalSubjectName(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return resolveSubjectCatalogEntry(value)?.name ?? value.trim().replace(/\s+/g, " ");
+}
+
+
+export type SubjectReadinessState = "ready" | "needs_setup" | "not_verified";
+export interface SubjectReadinessItem {
+  id: "catalogue" | "curriculum" | "content" | "assessment" | "tools" | "offline";
+  label: string;
+  state: SubjectReadinessState;
+  detail: string;
+}
+
+/**
+ * Learner-facing readiness summary. Only report evidence we actually have:
+ * catalogue selection, explicitly mapped board/syllabus metadata, and saved
+ * lesson count. Assessment, tool and offline coverage remain unverified until
+ * each has a reliable source of truth.
+ */
+export function getSubjectReadiness(
+  subject: SubjectCatalogEntry | null,
+  savedLessonCount: number,
+): SubjectReadinessItem[] {
+  const offering = subject?.offerings?.[0];
+  const count = Number.isFinite(savedLessonCount) ? Math.max(0, Math.floor(savedLessonCount)) : 0;
+  return [
+    { id: "catalogue", label: "Catalogue", state: subject ? "ready" : "needs_setup", detail: subject ? "Available in your subject list" : "Custom subject" },
+    {
+      id: "curriculum",
+      label: "Curriculum",
+      state: offering ? "ready" : "needs_setup",
+      detail: offering ? `${offering.boardId.toUpperCase()} · ${offering.qualificationId.replace("_", " ")} · ${offering.syllabusCode}` : "Board and syllabus mapping needed",
+    },
+    {
+      id: "content",
+      label: "Lessons",
+      state: count > 0 ? "ready" : "needs_setup",
+      detail: count > 0 ? `${count} saved lesson${count === 1 ? "" : "s"} in your library` : "No saved lessons in your library yet",
+    },
+    { id: "assessment", label: "Assessments", state: "not_verified", detail: "Coverage not yet verified" },
+    { id: "tools", label: "Subject tools", state: "not_verified", detail: "Coverage not yet verified" },
+    { id: "offline", label: "Offline pack", state: "not_verified", detail: "Installed content not yet verified" },
+  ];
+}

@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StepActions } from './StepActions';
 import type { StepProps } from '@/types';
-import { SUBJECT_CATALOG, SUBJECT_CATEGORIES } from '@/lib/subjects/catalog';
+import { SUBJECT_CATALOG, SUBJECT_CATEGORIES, canonicalSubjectId } from '@/lib/subjects/catalog';
 
 export function SubjectsStep({ data, onUpdate, onNext, onBack }: StepProps) {
   const level = data.studyLevel;
-  const [selected, setSelected] = useState<string[]>(data.subjects ?? []);
+  const [selected, setSelected] = useState<string[]>(() => [...new Set((data.subjects ?? []).map(canonicalSubjectId).filter(Boolean))]);
   const [search, setSearch] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +22,7 @@ export function SubjectsStep({ data, onUpdate, onNext, onBack }: StepProps) {
     const query = search.trim().toLocaleLowerCase();
     return SUBJECT_CATALOG.filter(subject => {
       const inPathway = Boolean(level && subject.pathways.includes(level));
-      if (!showAll && !inPathway) return false;
+      if (!showAll && !inPathway && !query) return false;
       if (!query) return true;
       return [subject.name, subject.id, ...(subject.aliases ?? [])]
         .some(value => value.toLocaleLowerCase().includes(query));
@@ -91,7 +91,7 @@ export function SubjectsStep({ data, onUpdate, onNext, onBack }: StepProps) {
               }} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '11px 10px', border: 0, background: 'transparent', color: 'var(--foreground)', textAlign: 'left', cursor: 'pointer' }}>
                 <span style={{ display: 'grid', gap: 3 }}>
                   <span style={{ fontSize: 12, fontWeight: 620 }}>{subject.name}</span>
-                  {showAll && !recommended && <span style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>Outside your current pathway · still selectable</span>}
+                  {(showAll || search.trim()) && !recommended && <span style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>Outside your current pathway · still selectable</span>}
                 </span>
                 {active && <span aria-hidden="true" style={{ fontSize: 11, color: 'var(--primary)' }}>✓</span>}
               </button>

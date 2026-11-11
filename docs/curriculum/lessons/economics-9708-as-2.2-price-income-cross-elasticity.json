@@ -1,0 +1,445 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_content_requires_subject_review",
+  "identity": {
+    "board": "cambridge",
+    "qualification": "cambridge-as-a-level",
+    "level": "as_level",
+    "subject": "economics",
+    "syllabusCode": "9708",
+    "syllabusVersion": "2026-2028",
+    "topic": "2",
+    "subtopic": "2.2",
+    "title": "Price Elasticity, Income Elasticity and Cross Elasticity of Demand",
+    "sourcePrintedPages": "17-18",
+    "sourcePdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf"
+  },
+  "trustBoundary": "Original instructional content aligned to the eight extracted Cambridge 9708 AS 2.2 outcomes. It is not official Cambridge material or an independently verified complete syllabus lesson. Teacher review required before publication.",
+  "learningObjectives": [
+    "Define price elasticity of demand (PED), income elasticity of demand (YED) and cross elasticity of demand (XED).",
+    "Use the formulae to calculate PED, YED and XED from percentage changes.",
+    "Interpret relative percentage changes and the size and sign of elasticity coefficients.",
+    "Classify demand as perfectly elastic, elastic, unitary elastic, inelastic or perfectly inelastic.",
+    "Explain why PED varies along a straight-line demand curve.",
+    "Explain factors that affect PED, YED and XED.",
+    "Explain the relationship between PED and total expenditure.",
+    "Apply PED, YED and XED to business and economic decision-making."
+  ],
+  "lesson": [
+    {
+      "type": "diagnostic",
+      "prompt": "A shop raises the price of a product by 10%. Quantity demanded falls by 20%. Has quantity demanded changed by a greater or smaller percentage than price? What does that suggest about responsiveness?"
+    },
+    {
+      "type": "explanation",
+      "heading": "1. What elasticity measures",
+      "body": "Elasticity measures the responsiveness of one variable to a change in another, expressed as a ratio of percentage changes. It allows comparisons between goods and situations even when they use different units. For demand, the three measures in this lesson examine responsiveness to the good's own price, consumer income, and the price of another good."
+    },
+    {
+      "type": "explanation",
+      "heading": "2. Price elasticity of demand (PED)",
+      "body": "PED measures the responsiveness of quantity demanded to a change in the good's own price. PED = percentage change in quantity demanded ÷ percentage change in price. Use the same percentage-change convention for both variables. Unless a question specifies another base, calculate percentage change relative to the original value: (new − original) ÷ original × 100. For a typical downward-sloping demand relationship, PED is negative because price and quantity demanded change in opposite directions. Keep the sign in the calculated coefficient, then use its absolute magnitude when classifying responsiveness."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Calculating PED",
+      "scenario": "The price of a product rises from $10 to $12. Quantity demanded falls from 100 units to 80 units. Use the original values as the percentage-change bases.",
+      "reasoning": [
+        "Percentage change in price = (12 − 10) ÷ 10 × 100 = +20%.",
+        "Percentage change in quantity demanded = (80 − 100) ÷ 100 × 100 = −20%.",
+        "PED = −20% ÷ +20% = −1.",
+        "The magnitude is 1, so demand is unitary elastic over this change."
+      ],
+      "caution": "Do not divide the absolute percentage changes and then forget that PED is normally negative. If a question specifies the midpoint method or another base, follow that instruction."
+    },
+    {
+      "type": "explanation",
+      "heading": "3. Income elasticity of demand (YED)",
+      "body": "YED measures the responsiveness of quantity demanded to a change in consumer income. YED = percentage change in quantity demanded ÷ percentage change in income. A positive YED indicates a normal good: demand rises as income rises. A negative YED indicates an inferior good: demand falls as income rises. For a normal good, a value between 0 and +1 indicates income-inelastic demand; a value above +1 indicates income-elastic demand. These labels describe responsiveness, not whether a good is morally or socially desirable."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Calculating and interpreting YED",
+      "scenario": "Average income rises by 5% and quantity demanded of a product rises by 10%.",
+      "reasoning": [
+        "YED = +10% ÷ +5% = +2.",
+        "The positive sign indicates a normal good.",
+        "The magnitude is greater than 1, so demand is income-elastic: quantity demanded changes by a greater percentage than income."
+      ],
+      "caution": "A negative YED indicates an inferior good in the context described; it does not mean the good has negative utility."
+    },
+    {
+      "type": "explanation",
+      "heading": "4. Cross elasticity of demand (XED)",
+      "body": "XED measures the responsiveness of demand for one good to a change in the price of another good. XED = percentage change in quantity demanded of good A ÷ percentage change in price of good B. A positive XED usually indicates substitutes: when B becomes more expensive, demand for A rises. A negative XED usually indicates complements: when B becomes more expensive, demand for A falls. A coefficient close to zero suggests a weak or no measurable relationship in the situation. A larger absolute value generally indicates a stronger relationship."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Calculating and interpreting XED",
+      "scenario": "The price of coffee rises by 8%. Demand for tea rises by 4%.",
+      "reasoning": [
+        "XED of tea with respect to coffee = +4% ÷ +8% = +0.5.",
+        "The positive sign indicates that tea and coffee are substitutes in this example.",
+        "The magnitude suggests a relatively weak response compared with a larger positive coefficient."
+      ],
+      "caution": "State which good's demand is in the numerator and which good's price is in the denominator. Reversing them changes the measure."
+    },
+    {
+      "type": "explanation",
+      "heading": "5. Reading the size and sign of PED",
+      "body": "For PED, perfect inelasticity is 0: quantity demanded does not respond to price. If 0 < |PED| < 1, demand is price-inelastic. If |PED| = 1, demand is unitary elastic. If |PED| > 1, demand is price-elastic. Perfectly elastic demand has an infinite magnitude in the theoretical model. A perfectly elastic or perfectly inelastic curve is an idealised limiting case. Do not confuse the sign of PED with the magnitude used to classify it."
+    },
+    {
+      "type": "explanation",
+      "heading": "6. Why elasticity changes along a straight-line demand curve",
+      "body": "A straight-line demand curve has a constant slope, but its PED is not constant. At points high up the curve, price is relatively high and quantity relatively low, so demand is elastic. At the midpoint, PED is unitary. At points low down the curve, price is relatively low and quantity relatively high, so demand is inelastic. The ratio of percentage changes varies because the starting price and quantity values vary along the same line."
+    },
+    {
+      "type": "explanation",
+      "heading": "7. Factors affecting PED, YED and XED",
+      "body": "PED is influenced by the availability and closeness of substitutes, how narrowly the market is defined, whether the good is a necessity or luxury, the proportion of income spent on it, habits, and the time available to adjust. More close substitutes and more time to switch tend to make demand more elastic. YED depends on the nature of the good and how consumers change spending as income changes; necessities often have lower positive YED than luxuries, while inferior goods have negative YED. XED depends mainly on how closely goods are related as substitutes or complements and how easily consumers can switch. These are tendencies, not universal laws: use evidence and context."
+    },
+    {
+      "type": "explanation",
+      "heading": "8. PED and total expenditure",
+      "body": "Total expenditure (TE) by consumers on a product equals price × quantity purchased. When demand is price-inelastic, a price rise tends to increase TE and a price fall tends to reduce TE. When demand is price-elastic, a price rise tends to reduce TE and a price fall tends to increase TE. With unitary elasticity, a price change leaves TE unchanged in the simplified model. This relationship assumes other relevant influences are held constant and refers to the same market and period."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Total expenditure and elasticity",
+      "scenario": "A firm reduces price from $10 to $9. Before the change it sells 100 units. Compare two possible demand responses.",
+      "reasoning": [
+        "Inelastic response: quantity rises to 105. TE changes from $10 × 100 = $1,000 to $9 × 105 = $945, so TE falls.",
+        "Elastic response: quantity rises to 120. TE changes from $1,000 to $9 × 120 = $1,080, so TE rises.",
+        "The price reduction raises TE only in the elastic-demand example because the percentage rise in quantity exceeds the percentage fall in price."
+      ],
+      "caution": "Do not decide the revenue effect from the direction of the price change alone. You need the demand response."
+    },
+    {
+      "type": "explanation",
+      "heading": "9. Using elasticity in decisions",
+      "body": "A firm considering a price change can use PED to estimate the likely direction of total expenditure, while recognising that costs and profit also matter. YED helps firms forecast how demand may respond when household incomes change and can inform product positioning and capacity planning. XED helps a firm assess competitor pricing, substitute threats, complementary products and possible joint promotions. Governments may also use elasticity estimates when considering taxes or policy effects. Elasticity estimates are not guarantees: market conditions, time period, income distribution, quality, advertising and other factors can change the outcome."
+    },
+    {
+      "type": "application",
+      "heading": "10. Interpret a set of coefficients",
+      "scenario": "A firm estimates PED = −0.4 for a basic household product, YED = +0.6, and XED = +1.8 between its product and a rival product.",
+      "prompts": [
+        "Classify the product's price responsiveness.",
+        "Interpret the YED and state what it suggests about the product.",
+        "Interpret the XED and explain the relationship with the rival product.",
+        "Give one pricing implication and one limitation of using these estimates."
+      ],
+      "feedback": "PED magnitude 0.4 indicates price-inelastic demand. Positive YED of 0.6 indicates a normal good with income-inelastic demand. Positive XED of 1.8 suggests the goods are substitutes and the relationship is relatively strong. A price rise may increase total expenditure if the estimate holds, but profit, competitor response and changing conditions must also be considered."
+    },
+    {
+      "type": "synthesis",
+      "heading": "11. A reliable calculation routine",
+      "body": "Name the measure and identify the correct variables. Calculate each percentage change using the stated base. Divide the numerator percentage change by the denominator percentage change. Keep the sign, then interpret sign and magnitude separately. Finish with a contextual sentence explaining what the coefficient means for the goods and market in the question."
+    }
+  ],
+  "retrievalCheck": [
+    {
+      "prompt": "What does PED measure, and what is its formula?",
+      "answer": "Responsiveness of quantity demanded to own price; percentage change in quantity demanded divided by percentage change in price."
+    },
+    {
+      "prompt": "Why is PED usually negative?",
+      "answer": "Price and quantity demanded normally move in opposite directions."
+    },
+    {
+      "prompt": "What does a positive YED indicate?",
+      "answer": "A normal good."
+    },
+    {
+      "prompt": "What do positive and negative XED values usually indicate?",
+      "answer": "Positive: substitutes. Negative: complements."
+    },
+    {
+      "prompt": "What are the PED classifications for magnitudes below, equal to and above one?",
+      "answer": "Below one: inelastic; equal to one: unitary; above one: elastic."
+    },
+    {
+      "prompt": "Where is PED unitary on a straight-line demand curve?",
+      "answer": "At its midpoint."
+    },
+    {
+      "prompt": "How does a price rise affect total expenditure when demand is inelastic?",
+      "answer": "Total expenditure tends to rise."
+    },
+    {
+      "prompt": "How can XED help a business?",
+      "answer": "It helps assess substitute or complementary relationships and likely responses to another good's price changes."
+    }
+  ],
+  "practice": [
+    {
+      "id": "q1",
+      "type": "definition",
+      "marks": 3,
+      "prompt": "Define PED, YED and XED.",
+      "answer": [
+        "PED: responsiveness of quantity demanded to own price",
+        "YED: responsiveness of quantity demanded to income",
+        "XED: responsiveness of demand for one good to the price of another"
+      ],
+      "marking": [
+        "1 mark for each accurate definition"
+      ],
+      "misconception": "Do not define XED using the price of the same good."
+    },
+    {
+      "id": "q2",
+      "type": "calculation",
+      "marks": 4,
+      "prompt": "Price rises from $20 to $25 and quantity demanded falls from 200 to 160. Using original values as bases, calculate PED and interpret it.",
+      "answer": [
+        "price change = +25%",
+        "quantity change = −20%",
+        "PED = −20/25 = −0.8",
+        "price-inelastic demand"
+      ],
+      "marking": [
+        "1 mark for each percentage change",
+        "1 mark for coefficient and interpretation"
+      ],
+      "misconception": "Keep the negative sign in the PED coefficient."
+    },
+    {
+      "id": "q3",
+      "type": "calculation",
+      "marks": 3,
+      "prompt": "Income rises by 10% and demand for a product falls by 5%. Calculate YED and classify the good.",
+      "answer": [
+        "YED = −5% ÷ 10% = −0.5",
+        "negative coefficient",
+        "inferior good"
+      ],
+      "marking": [
+        "1 mark for calculation",
+        "1 mark for sign",
+        "1 mark for interpretation"
+      ],
+      "misconception": "A negative YED is not an elastic normal good; it indicates an inferior good."
+    },
+    {
+      "id": "q4",
+      "type": "calculation",
+      "marks": 3,
+      "prompt": "The price of good B rises by 12% and demand for good A falls by 18%. Calculate XED and identify the likely relationship.",
+      "answer": [
+        "XED = −18% ÷ 12% = −1.5",
+        "negative coefficient",
+        "A and B are complements"
+      ],
+      "marking": [
+        "1 mark for calculation",
+        "1 mark for sign",
+        "1 mark for relationship"
+      ],
+      "misconception": "The numerator is the percentage change in demand for A."
+    },
+    {
+      "id": "q5",
+      "type": "explanation",
+      "marks": 4,
+      "prompt": "Explain why PED varies along a straight-line demand curve even though its gradient is constant.",
+      "answer": [
+        "PED is a ratio of percentage changes",
+        "percentage changes depend on starting price and quantity",
+        "at the upper section demand is elastic",
+        "at midpoint unitary and lower section inelastic"
+      ],
+      "marking": [
+        "1 mark for percentage-change ratio",
+        "1 mark for changing base values",
+        "1 mark for upper/midpoint pattern",
+        "1 mark for lower section"
+      ],
+      "misconception": "Constant gradient does not mean constant elasticity."
+    },
+    {
+      "id": "q6",
+      "type": "structured_response",
+      "marks": 6,
+      "prompt": "A firm is considering a price reduction. Explain how PED can help predict the effect on total expenditure and discuss two limitations of relying on the estimate.",
+      "answer": [
+        "elastic demand: price fall tends to raise TE",
+        "inelastic demand: price fall tends to lower TE",
+        "unitary: TE unchanged in simplified model",
+        "limitations include estimates changing over time, competitor response, costs/profit not captured, and other determinants"
+      ],
+      "marking": [
+        "up to 3 marks for accurate TE analysis",
+        "up to 2 marks for explained limitations",
+        "1 mark for contextual conclusion"
+      ],
+      "misconception": "Total expenditure is not the same as profit."
+    }
+  ],
+  "mastery": {
+    "completionIsNotMastery": true,
+    "requiredEvidence": [
+      "calculate PED, YED and XED with correct bases and signs",
+      "classify coefficients by sign and magnitude",
+      "explain the straight-line demand curve elasticity pattern",
+      "analyse the effect of price changes on total expenditure",
+      "apply all three measures to a decision with a limitation"
+    ],
+    "suggestedThreshold": 0.8,
+    "requireIndependentAttempt": true
+  },
+  "offline": {
+    "selfContained": true,
+    "assets": [
+      {
+        "assetId": "econ-9708-2-2-elasticity-formula-flow",
+        "type": "process_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-2-2-ped-categories",
+        "type": "graph",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-2-2-ped-straight-line",
+        "type": "graph",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-2-2-ped-total-expenditure",
+        "type": "comparison_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-2-2-yed-xed-signs",
+        "type": "comparison_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      }
+    ],
+    "networkRequired": false,
+    "aiRequired": false
+  },
+  "visuals": [
+    {
+      "assetId": "econ-9708-2-2-elasticity-formula-flow",
+      "type": "process_diagram",
+      "kind": "elasticity-formula-flow",
+      "title": "Three elasticity measures: variables and formulae",
+      "purpose": "Show the correct numerator and denominator for PED, YED and XED so learners do not reverse the relationship.",
+      "learningObjectiveIds": [
+        "9708-AS-2.2-LO1",
+        "9708-AS-2.2-LO2"
+      ],
+      "altText": "Three formula panels: PED is percentage change in quantity demanded divided by percentage change in own price; YED is percentage change in quantity demanded divided by percentage change in income; XED is percentage change in demand for good A divided by percentage change in price of good B.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "identify",
+        "calculate",
+        "label"
+      ]
+    },
+    {
+      "assetId": "econ-9708-2-2-ped-categories",
+      "type": "graph",
+      "kind": "ped-elasticity-categories",
+      "title": "PED categories by coefficient magnitude",
+      "purpose": "Compare perfectly inelastic, inelastic, unitary, elastic and perfectly elastic demand cases.",
+      "learningObjectiveIds": [
+        "9708-AS-2.2-LO3",
+        "9708-AS-2.2-LO4"
+      ],
+      "altText": "A coefficient scale shows PED magnitude zero as perfectly inelastic, between zero and one as inelastic, one as unitary, above one as elastic, and infinity as perfectly elastic. The usual negative sign is retained in a calculated PED coefficient; magnitude is used for classification.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "classify",
+        "compare",
+        "interpret"
+      ]
+    },
+    {
+      "assetId": "econ-9708-2-2-ped-straight-line",
+      "type": "graph",
+      "kind": "ped-straight-line-variation",
+      "title": "Elasticity varies along a straight-line demand curve",
+      "purpose": "Show elastic demand at the upper section, unitary elasticity at the midpoint and inelastic demand at the lower section.",
+      "learningObjectiveIds": [
+        "9708-AS-2.2-LO4",
+        "9708-AS-2.2-LO5"
+      ],
+      "altText": "A downward-sloping straight-line demand curve is divided into upper, middle and lower sections. The upper section is elastic, the midpoint is unitary elastic and the lower section is inelastic. The straight line has constant gradient but changing elasticity.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "draw",
+        "label",
+        "explain"
+      ]
+    },
+    {
+      "assetId": "econ-9708-2-2-ped-total-expenditure",
+      "type": "comparison_diagram",
+      "kind": "ped-total-expenditure",
+      "title": "PED and the direction of total expenditure",
+      "purpose": "Compare how a price change affects total expenditure under elastic, inelastic and unitary demand.",
+      "learningObjectiveIds": [
+        "9708-AS-2.2-LO7",
+        "9708-AS-2.2-LO8"
+      ],
+      "altText": "For a price rise: with inelastic demand total expenditure rises; with elastic demand total expenditure falls; with unitary elasticity total expenditure is unchanged in the simplified model. The reverse applies to a price fall.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "predict",
+        "compare",
+        "apply"
+      ]
+    },
+    {
+      "assetId": "econ-9708-2-2-yed-xed-signs",
+      "type": "comparison_diagram",
+      "kind": "yed-xed-sign-interpretation",
+      "title": "Interpreting YED and XED signs",
+      "purpose": "Show how coefficient signs identify normal or inferior goods and substitute or complementary relationships.",
+      "learningObjectiveIds": [
+        "9708-AS-2.2-LO1",
+        "9708-AS-2.2-LO3",
+        "9708-AS-2.2-LO6",
+        "9708-AS-2.2-LO8"
+      ],
+      "altText": "YED positive means a normal good and YED negative means an inferior good. XED positive usually means substitutes and XED negative usually means complements. The absolute magnitude indicates strength of responsiveness or relationship.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "classify",
+        "interpret",
+        "apply"
+      ]
+    }
+  ],
+  "visualReview": {
+    "status": "reviewed_for_representation_coverage",
+    "objectiveIdConvention": "9708-AS-2.2-LO<n>",
+    "coverage": "All eight stated learning objectives are mapped to five original offline diagrams covering formulae, PED coefficient categories, variation along a straight-line demand curve, total expenditure and YED/XED sign interpretation.",
+    "reviewNote": "Authoring coverage check only. Teacher review and independent verification against the current official syllabus remain required."
+  },
+  "teacherReview": {
+    "required": true,
+    "checks": [
+      "verify all three elasticity formulae and coefficient sign conventions",
+      "check percentage-change bases and worked calculations",
+      "verify elasticity categories and straight-line demand curve pattern",
+      "review PED and total expenditure analysis and assumptions",
+      "check factors affecting PED, YED and XED and decision-making applications",
+      "validate practice mark allocations and answer guidance"
+    ]
+  }
+}

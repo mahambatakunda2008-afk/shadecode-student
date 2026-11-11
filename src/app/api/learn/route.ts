@@ -7,7 +7,8 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { learnCoursePreviewSchema, learnGenerateLessonSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { awardXPBySource } from "@/lib/xp/manager";
-import { normalizeSubjectKey, normalizeSubjectNames } from "@/lib/academic/subjectContract";
+import { normalizeSubjectNames } from "@/lib/academic/subjectContract";
+import { canonicalSubjectId, canonicalSubjectName } from "@/lib/subjects/catalog";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
@@ -17,6 +18,7 @@ import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
+import { getCuratedEconomics9708Pack } from "@/lib/learn/curatedLessonPack";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -135,10 +137,15 @@ async function resolveLessonSubject(supabase: SupabaseClient, userId: string, re
   const { data: subjects } = await supabase.from("subjects").select("id, name").eq("user_id", userId);
   const rows = (subjects ?? []) as SubjectRow[];
   const requestedName = (requested ?? "").trim();
-  const exact = rows.find(s => s.name.toLowerCase() === requestedName.toLowerCase());
+  const requestedId = canonicalSubjectId(requestedName);
+  const exact = rows.find(s => canonicalSubjectId(s.name) === requestedId);
   if (exact) return exact;
   if (requestedName.toLowerCase() !== "general" && requestedName) {
-    const existing = rows.find(s => s.name.toLowerCase().includes(requestedName.toLowerCase()) || requestedName.toLowerCase().includes(s.name.toLowerCase()));
+    const canonicalName = canonicalSubjectName(requestedName).toLocaleLowerCase();
+    const existing = rows.find(s => {
+      const rowName = canonicalSubjectName(s.name).toLocaleLowerCase();
+      return rowName.includes(canonicalName) || canonicalName.includes(rowName);
+    });
     if (existing) return existing;
   }
   const topicLower = topic.toLowerCase();
@@ -163,8 +170,8 @@ export async function GET(req: Request) {
     if (subjectsError) console.error("Subjects query error:", subjectsError);
     const profile = profileData as (ProfileRow & { subjects?: unknown }) | null;
     const allowedSubjectNames = normalizeSubjectNames(profile?.subjects);
-    const allowedKeys = new Set(allowedSubjectNames.map(name => normalizeSubjectKey(name)));
-    const subjects = ((subjectRows ?? []) as SubjectRow[]).filter(s => allowedKeys.has(normalizeSubjectKey(s.name)));
+    const allowedKeys = new Set(allowedSubjectNames.map(name => canonicalSubjectId(name)));
+    const subjects = ((subjectRows ?? []) as SubjectRow[]).filter(s => allowedKeys.has(canonicalSubjectId(s.name)));
     const subjectById = new Map(subjects.map(s => [s.id, s.name])); const level = profile?.level ?? 1;
     const summary = { currentXP: profile?.xp ?? 0, currentStreak: profile?.streak ?? 0, level, xpGoal: Math.max(100, level * 100) };
     if (lessonId) {
@@ -185,9 +192,39 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   let auth: AuthContext | null = null;
   try {
-    const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter); if (rateLimitCheck) return rateLimitCheck;
     auth = await authenticateRequest(req); if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { supabase, user } = auth; const body = sanitizeLessonText(await req.json()); const { type, subject, topic, difficulty, goal, level, generationJobId } = body;
+    if (type !== "curated_lesson") {
+      const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
+      if (rateLimitCheck) return rateLimitCheck;
+    }
+    if (type === "curated_lesson") {
+      const curatedPack = getCuratedEconomics9708Pack(typeof body.packId === "string" ? body.packId : "");
+      if (!curatedPack) return NextResponse.json({ error: "Unknown curated lesson pack." }, { status: 404 });
+      const subjectAccess = await resolveLearnerSubject(supabase, user.id, curatedPack.subject);
+      if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
+      const packTopic = curatedPack.topic;
+      const { data: existing, error: existingError } = await supabase
+        .from("learn_lessons").select("id, title")
+        .eq("user_id", user.id).eq("subject_id", subjectAccess.subjectId).eq("topic", packTopic).maybeSingle();
+      if (existingError) return NextResponse.json({ error: "Unable to check existing lesson." }, { status: 500 });
+      if (existing?.id) return NextResponse.json({ success: true, alreadyAdded: true, lessonId: existing.id, title: existing.title });
+      const { data: inserted, error: insertError } = await supabase.from("learn_lessons").insert({
+        user_id: user.id,
+        subject_id: subjectAccess.subjectId,
+        topic: packTopic,
+        title: curatedPack.title,
+        description: curatedPack.description,
+        difficulty: curatedPack.difficulty,
+        blocks: curatedPack.blocks,
+        progress: 0,
+      }).select("id, title").single();
+      if (insertError || !inserted) {
+        log.apiFailure({ route: "/api/learn", method: "POST", error: insertError?.message ?? "Curated lesson insert returned no row", userId: user.id });
+        return NextResponse.json({ error: "Unable to add this lesson to Learn." }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, alreadyAdded: false, lessonId: inserted.id, title: inserted.title, offlineReady: true, sourceStatus: curatedPack.status });
+    }
     if (type === "course_preview") {
       if (body.learningMode === "classic") return NextResponse.json({ error: "Classic mode does not use generative AI. Switch to Cortex AI to generate a new course preview.", code: "CLASSIC_MODE_AI_DISABLED" }, { status: 403 });
       const validation = validateRequestBody({ topic, goal, level }, learnCoursePreviewSchema); if (!validation.success) return NextResponse.json({ error: "Validation failed", details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });

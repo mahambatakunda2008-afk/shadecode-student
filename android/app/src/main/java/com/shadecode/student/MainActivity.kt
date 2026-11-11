@@ -161,10 +161,11 @@ private fun NativeSetupScreen(
     var search by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    val filtered = remember(search) {
-        NativeSubjectCatalog.all.distinctBy { it.code }.filter {
-            search.isBlank() || it.label.contains(search, true) || it.group.contains(search, true)
-        }
+    val filtered = remember(search, studyLevel) {
+        NativeSubjectCatalog.recommendedFirst(
+            NativeSubjectCatalog.all.distinctBy { it.code },
+            studyLevel,
+        ).filter { NativeSubjectCatalog.searchMatches(it, search) }
     }
     val stages = listOf("Primary", "Lower secondary", "O Level", "AS Level", "A Level", "University", "TVET / Polytechnic", "Independent study")
     val stageCodes = mapOf(
@@ -370,9 +371,12 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         }
     }
     LaunchedEffect(session.accessToken) {
-        subjects = withContext(Dispatchers.IO) { database.subjects().all() }
-        profile = withContext(Dispatchers.IO) { sessionStore.readProfile() }
         try {
+            // Establish the cache owner before reading any Room or profile snapshot.
+            // This also runs when a different account signs in while offline.
+            withContext(Dispatchers.IO) { sessionStore.prepareAccountCache(session.userId, database) }
+            subjects = withContext(Dispatchers.IO) { database.subjects().all() }
+            profile = withContext(Dispatchers.IO) { sessionStore.readProfile() }
             val loaded = withContext(Dispatchers.IO) { api.loadProfile(session) }
             profile = loaded
             withContext(Dispatchers.IO) { sessionStore.saveProfile(loaded) }
@@ -464,7 +468,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                 },
                 focusStatus = focusStatus,
             )
-            3 -> SnapExtractScreen(padding)
+            3 -> SnapExtractScreen(padding, session)
             else -> ProfileNativeScreen(
                 padding = padding,
                 session = session,
@@ -1128,12 +1132,9 @@ private fun ProfileNativeScreen(
             NativeSubjectOption(code, NativeSubjectCatalog.labelFor(code), "Custom / saved")
         }
     }
-    val filtered = remember(query, catalogue) {
-        val term = query.trim()
-        if (term.isBlank()) catalogue
-        else catalogue.filter {
-            it.label.contains(term, ignoreCase = true) || it.group.contains(term, ignoreCase = true)
-        }
+    val filtered = remember(query, catalogue, studyLevel) {
+        NativeSubjectCatalog.recommendedFirst(catalogue, studyLevel)
+            .filter { NativeSubjectCatalog.searchMatches(it, query) }
     }
 
     LazyColumn(
@@ -1255,17 +1256,14 @@ private fun ProfileNativeScreen(
 
 
 @Composable
-private fun SnapExtractScreen(padding: PaddingValues) {
+private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val extractStore = remember { NativeExtractStore(context) }
+    val extractStore = remember(session.userId) { NativeExtractStore(context, session.userId) }
     var savedArtifacts by remember { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
     var artifactSearch by remember { mutableStateOf("") }
     var activeArtifactId by remember { mutableStateOf<String?>(null) }
     var artifactTitle by remember { mutableStateOf("") }
-    LaunchedEffect(Unit) {
-        savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
-    }
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
     var rawOcr by remember { mutableStateOf("") }
@@ -1275,6 +1273,22 @@ private fun SnapExtractScreen(padding: PaddingValues) {
     var message by remember { mutableStateOf("Choose an image. OCR runs on this device and does not upload it.") }
     val screenActive = remember { AtomicBoolean(true) }
     val activeRecognizer = remember { AtomicReference<com.google.mlkit.vision.text.TextRecognizer?>(null) }
+    LaunchedEffect(session.userId) {
+        // Clear old learner content immediately, before loading the new private store.
+        activeRecognizer.getAndSet(null)?.close()
+        savedArtifacts = emptyList()
+        artifactSearch = ""
+        activeArtifactId = null
+        artifactTitle = ""
+        selectedImage = null
+        imagePreview = null
+        rawOcr = ""
+        editableText = ""
+        redactionTerms = ""
+        processing = false
+        message = "Choose an image. OCR runs on this device and does not upload it."
+        savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
+    }
     DisposableEffect(Unit) {
         screenActive.set(true)
         onDispose {
