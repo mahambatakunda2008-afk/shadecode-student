@@ -23,17 +23,20 @@ concurrency:
 
 jobs:
   desktop-check:
-    name: Desktop compile (${{ matrix.platform }})
+    name: Desktop build (${{ matrix.platform }})
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: ubuntu-24.04
             os: ubuntu-24.04
+            bundles: deb
           - platform: windows
             os: windows-latest
+            bundles: msi
           - platform: macos
             os: macos-latest
+            bundles: dmg
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -64,3 +67,17 @@ jobs:
 
       - name: Run desktop tests
         run: cargo test --manifest-path desktop/Cargo.toml
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2.0.0" --locked
+
+      - name: Build desktop installer
+        run: cargo tauri build --manifest-path desktop/Cargo.toml --bundles ${{ matrix.bundles }}
+
+      - name: Upload desktop installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadecode-student-desktop-${{ matrix.platform }}
+          path: desktop/target/release/bundle/**
+          if-no-files-found: error
+          retention-days: 14
