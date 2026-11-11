@@ -13,6 +13,7 @@ type AuthoredPack = {
   status: string;
   identity: { title: string; sourcePdf: string };
   learningObjectives: string[];
+  visuals?: Array<{ kind: string; title: string; altText: string; purpose: string; learningObjectiveIds: string[]; offlineIncluded: boolean; practiceModes: string[] }>;
   lesson: Array<Record<string, unknown>>;
   retrievalCheck: Array<{ prompt: string }>;
   practice: Array<{ marks: number; prompt: string }>;
@@ -30,6 +31,9 @@ function asText(value: unknown): string {
 export function buildCuratedLearnBlocks(authoredPack: AuthoredPack): CuratedLessonBlock[] {
   const blocks: CuratedLessonBlock[] = [];
   blocks.push({ type: "objective", title: "By the end of this lesson", content: authoredPack.learningObjectives.map((objective) => `- ${objective}`).join("\n") });
+  for (const visual of authoredPack.visuals ?? []) {
+    blocks.push({ type: "diagram", title: visual.title, content: visual.kind });
+  }
 
   for (const section of authoredPack.lesson) {
     const type = asText(section.type);
