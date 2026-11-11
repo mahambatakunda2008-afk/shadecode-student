@@ -1,6 +1,7 @@
 package com.shadecode.student
 
 import android.content.Context
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -219,7 +227,10 @@ private fun NativeLessonBlockCard(number: Int, block: NativeLessonBlock, active:
                 Spacer(Modifier.height(5.dp))
                 Text("$number. ${block.title}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
-            if (block.content.isNotBlank()) {
+            if (block.type == "diagram") {
+                Spacer(Modifier.height(12.dp))
+                NativeLessonDiagram(block.content)
+            } else if (block.content.isNotBlank()) {
                 Spacer(Modifier.height(9.dp))
                 Text(block.content, style = MaterialTheme.typography.bodyLarge)
             }
@@ -266,6 +277,105 @@ private fun NativeLessonBlockCard(number: Int, block: NativeLessonBlock, active:
             } else if (block.answer != null && block.exampleAnswer == null) {
                 Spacer(Modifier.height(8.dp))
                 Text("Answer: ${block.answer}", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun NativeLessonDiagram(kind: String) {
+    val primary = MaterialTheme.colorScheme.primary
+    val surface = MaterialTheme.colorScheme.surfaceVariant
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val items = when (kind) {
+        "scarcity-choice-flow" -> listOf("SCARCITY" to "Limited resources", "CHOICE" to "Select an option", "OPPORTUNITY COST" to "Next best forgone")
+        "resource-allocation-questions" -> listOf("WHAT?" to "Which goods/services", "HOW?" to "Which methods/inputs", "FOR WHOM?" to "How output is shared")
+        "ceteris-paribus-model" -> listOf("CHANGE ONE" to "Price of the good", "HOLD OTHERS" to "Income, tastes, etc.", "ISOLATE EFFECT" to "Quantity demanded")
+        "economic-time-horizons" -> listOf("SHORT RUN" to "At least one factor fixed", "LONG RUN" to "All factors can vary", "VERY LONG RUN" to "Technology can change")
+        "positive-normative-claims" -> listOf("POSITIVE" to "Testable with evidence", "NORMATIVE" to "Value judgement / ought")
+        "economics-inquiry-cycle" -> listOf("OBSERVE" to "Behaviour and data", "MODEL" to "Hypothesis and assumptions", "TEST" to "Compare with evidence")
+        "factors-of-production-model" -> listOf("LAND" to "Natural resources • Rent", "LABOUR" to "Human effort • Wages", "CAPITAL" to "Produced assets • Interest", "ENTERPRISE" to "Organises and bears risk • Profit")
+        "flowchart" -> listOf("DIVIDE TASKS" to "Split production into stages", "SPECIALISE" to "Workers focus on a task", "BUILD SKILL" to "Practice and repetition", "COORDINATE" to "Combine completed stages")
+        else -> emptyList()
+    }
+
+    if (kind == "production-possibility-curve") {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                .padding(10.dp),
+        ) {
+            val left = 42f
+            val bottom = size.height - 30f
+            val right = size.width - 16f
+            val top = 16f
+            drawLine(onSurface, Offset(left, top), Offset(left, bottom), strokeWidth = 3f)
+            drawLine(onSurface, Offset(left, bottom), Offset(right, bottom), strokeWidth = 3f)
+            val curve = Path().apply {
+                moveTo(left + 12f, top + 8f)
+                cubicTo(size.width * .28f, size.height * .35f, size.width * .55f, size.height * .72f, right - 10f, bottom - 8f)
+            }
+            drawPath(curve, primary, style = Stroke(width = 5f))
+            drawCircle(primary, radius = 6f, center = Offset(size.width * .53f, size.height * .68f))
+            drawCircle(Color(0xFFB45309), radius = 6f, center = Offset(size.width * .48f, size.height * .84f))
+            drawCircle(Color(0xFFB91C1C), radius = 6f, center = Offset(size.width * .75f, size.height * .42f))
+            drawIntoCanvas { canvas ->
+                val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                    color = onSurface.toArgb()
+                    textSize = 12.sp.toPx()
+                }
+                canvas.nativeCanvas.drawText("Capital goods", left, 13f, paint)
+                canvas.nativeCanvas.drawText("Consumer goods", size.width * .48f, size.height - 3f, paint)
+                canvas.nativeCanvas.drawText("On curve", size.width * .55f, size.height * .67f, paint)
+                canvas.nativeCanvas.drawText("Inside", size.width * .38f, size.height * .86f, paint)
+                canvas.nativeCanvas.drawText("Outside", size.width * .77f, size.height * .4f, paint)
+            }
+        }
+        Text("Illustrative production possibility curve. Points on, inside and outside the frontier represent different levels of productive efficiency and current attainability.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+        return
+    }
+
+    if (items.isEmpty()) {
+        Text("Visual: $kind", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        return
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        if (items.size == 4) {
+            items.chunked(2).forEach { pair ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    pair.forEach { (heading, detail) ->
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            colors = CardDefaults.cardColors(containerColor = surface),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                                Text(heading, color = primary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                                Text(detail, style = MaterialTheme.typography.bodySmall, color = onSurface)
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            items.forEachIndexed { index, (heading, detail) ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = surface),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("${index + 1}", color = primary, fontWeight = FontWeight.Bold)
+                        Column {
+                            Text(heading, color = primary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                            Text(detail, style = MaterialTheme.typography.bodyMedium, color = onSurface)
+                        }
+                    }
+                }
             }
         }
     }
