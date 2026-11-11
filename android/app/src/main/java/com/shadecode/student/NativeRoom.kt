@@ -67,6 +67,8 @@ interface NativeLessonDao {
     suspend fun replaceAll(lessons: List<NativeLessonEntity>)
     @androidx.room.Query("DELETE FROM lessons WHERE subjectId = :subjectId AND id NOT LIKE 'local:%'")
     suspend fun clearSubject(subjectId: String)
+    @androidx.room.Query("DELETE FROM lessons")
+    suspend fun clearAll()
 }
 
 @androidx.room.Dao
@@ -75,6 +77,8 @@ interface NativeProgressDao {
     suspend fun get(lessonId: String): NativeLessonProgressEntity?
     @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     suspend fun save(progress: NativeLessonProgressEntity)
+    @androidx.room.Query("DELETE FROM lesson_progress")
+    suspend fun clearAll()
 }
 
 @androidx.room.Dao
