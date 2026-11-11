@@ -120,7 +120,9 @@
     "audio_visualization",
     "performance_blocking",
     "interactive_model",
-    "printable_worksheet"
+    "printable_worksheet",
+    "comparison_diagram",
+    "process_diagram"
   ],
   "representationPractice": [
     "interpret",
