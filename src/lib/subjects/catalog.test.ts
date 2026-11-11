@@ -124,7 +124,8 @@ describe("central subject catalogue", () => {
 
   it("validates the Economics 9708 AS numbered outcome registry and explicit exclusions", () => {
     const manifest = JSON.parse(readFileSync(join(process.cwd(), "docs/curriculum/manifests/economics-9708-2026-2028-as-outcomes.json"), "utf8"));
-    expect(manifest.source.documentVersion).toBe(1);
+    expect(manifest.source.documentVersion).toBe(2);
+    expect(manifest.source.versionEvidence).toContain("Official Cambridge update confirms Version 2");
     expect(manifest.qualificationBoundary.asLevel).toBe("1.1-6.5");
     expect(manifest.topics.map((topic: { id: string }) => topic.id)).toEqual(["1", "2", "3", "4", "5", "6"]);
     const subtopics = manifest.topics.flatMap((topic: { subtopics: { 0: string; 2: string[] }[] }) => topic.subtopics);
