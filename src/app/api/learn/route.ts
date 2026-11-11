@@ -18,7 +18,7 @@ import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
-import { economics9708AS11Pack } from "@/lib/learn/curatedLessonPack";
+import { getCuratedEconomics9708Pack } from "@/lib/learn/curatedLessonPack";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -199,10 +199,11 @@ export async function POST(req: Request) {
       if (rateLimitCheck) return rateLimitCheck;
     }
     if (type === "curated_lesson") {
-      if (body.packId !== "economics-9708-as-1.1") return NextResponse.json({ error: "Unknown curated lesson pack." }, { status: 404 });
-      const subjectAccess = await resolveLearnerSubject(supabase, user.id, economics9708AS11Pack.subject);
+      const curatedPack = getCuratedEconomics9708Pack(typeof body.packId === "string" ? body.packId : "");
+      if (!curatedPack) return NextResponse.json({ error: "Unknown curated lesson pack." }, { status: 404 });
+      const subjectAccess = await resolveLearnerSubject(supabase, user.id, curatedPack.subject);
       if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
-      const packTopic = economics9708AS11Pack.topic;
+      const packTopic = curatedPack.topic;
       const { data: existing, error: existingError } = await supabase
         .from("learn_lessons").select("id, title")
         .eq("user_id", user.id).eq("subject_id", subjectAccess.subjectId).eq("topic", packTopic).maybeSingle();
@@ -212,17 +213,17 @@ export async function POST(req: Request) {
         user_id: user.id,
         subject_id: subjectAccess.subjectId,
         topic: packTopic,
-        title: economics9708AS11Pack.title,
-        description: economics9708AS11Pack.description,
-        difficulty: economics9708AS11Pack.difficulty,
-        blocks: economics9708AS11Pack.blocks,
+        title: curatedPack.title,
+        description: curatedPack.description,
+        difficulty: curatedPack.difficulty,
+        blocks: curatedPack.blocks,
         progress: 0,
       }).select("id, title").single();
       if (insertError || !inserted) {
         log.apiFailure({ route: "/api/learn", method: "POST", error: insertError?.message ?? "Curated lesson insert returned no row", userId: user.id });
         return NextResponse.json({ error: "Unable to add this lesson to Learn." }, { status: 500 });
       }
-      return NextResponse.json({ success: true, alreadyAdded: false, lessonId: inserted.id, title: inserted.title, offlineReady: true, sourceStatus: economics9708AS11Pack.status });
+      return NextResponse.json({ success: true, alreadyAdded: false, lessonId: inserted.id, title: inserted.title, offlineReady: true, sourceStatus: curatedPack.status });
     }
     if (type === "course_preview") {
       if (body.learningMode === "classic") return NextResponse.json({ error: "Classic mode does not use generative AI. Switch to Cortex AI to generate a new course preview.", code: "CLASSIC_MODE_AI_DISABLED" }, { status: 403 });
