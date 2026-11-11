@@ -8,7 +8,7 @@
     "build": "next build",
     "prebuild": "npm run generate:brand",
     "start": "next start",
-    "test": "vitest run",
+    "test": "vitest run && npm run validate:curriculum-visuals",
     "lint": "eslint",
     "verify": "tsc --noEmit && npm run lint && npm test",
     "postbuild": "next-sitemap",
