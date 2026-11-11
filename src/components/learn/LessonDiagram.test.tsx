@@ -17,6 +17,10 @@ describe("curriculum visual assets", () => {
     ["goods-classification-map", "scarcity"],
     ["public-good-test", "non-rival"],
     ["merit-demerit-information", "under-consumption"],
+    ["effective-demand-test", "effective demand"],
+    ["demand-supply-curves", "demand"],
+    ["market-aggregation", "horizontal"],
+    ["curve-shifts-movements", "curve shift"],
   ])("renders %s as an accessible offline SVG", (kind, expectedLabel) => {
     const html = renderToStaticMarkup(<LessonDiagram kind={kind} title={kind} />);
     expect(html).toContain("<svg");
