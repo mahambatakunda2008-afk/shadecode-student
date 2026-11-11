@@ -161,10 +161,11 @@ private fun NativeSetupScreen(
     var search by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    val filtered = remember(search) {
-        NativeSubjectCatalog.all.distinctBy { it.code }.filter {
-            search.isBlank() || it.label.contains(search, true) || it.group.contains(search, true)
-        }
+    val filtered = remember(search, studyLevel) {
+        NativeSubjectCatalog.recommendedFirst(
+            NativeSubjectCatalog.all.distinctBy { it.code },
+            studyLevel,
+        ).filter { NativeSubjectCatalog.searchMatches(it, search) }
     }
     val stages = listOf("Primary", "Lower secondary", "O Level", "AS Level", "A Level", "University", "TVET / Polytechnic", "Independent study")
     val stageCodes = mapOf(
@@ -1128,12 +1129,9 @@ private fun ProfileNativeScreen(
             NativeSubjectOption(code, NativeSubjectCatalog.labelFor(code), "Custom / saved")
         }
     }
-    val filtered = remember(query, catalogue) {
-        val term = query.trim()
-        if (term.isBlank()) catalogue
-        else catalogue.filter {
-            it.label.contains(term, ignoreCase = true) || it.group.contains(term, ignoreCase = true)
-        }
+    val filtered = remember(query, catalogue, studyLevel) {
+        NativeSubjectCatalog.recommendedFirst(catalogue, studyLevel)
+            .filter { NativeSubjectCatalog.searchMatches(it, query) }
     }
 
     LazyColumn(
