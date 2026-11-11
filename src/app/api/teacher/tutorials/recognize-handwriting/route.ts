@@ -41,8 +41,8 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const image = typeof body?.image === "string" ? body.image : "";
   const mimeType = body?.mimeType === "image/jpeg" ? "image/jpeg" : "image/png";
-  if (!image || image.length > 5_600_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(image)) {
-    return NextResponse.json({ error: "Provide a valid canvas image under 4 MiB." }, { status: 400 });
+  if (!image || image.length > 4_200_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(image)) {
+    return NextResponse.json({ error: "Provide a valid canvas image under 3 MiB." }, { status: 400 });
   }
 
   const prompt = `You are Shadecode Student's handwriting transcription and character-recovery engine.
