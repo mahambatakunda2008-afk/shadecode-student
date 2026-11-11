@@ -14,6 +14,7 @@ type Block = {
   storagePath?: string;
   provider?: "youtube" | "drive";
   providerId?: string;
+  transcript?: string;
   data?: Record<string, unknown>;
 };
 type Tutorial = {
