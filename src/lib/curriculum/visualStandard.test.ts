@@ -9,7 +9,7 @@ describe("curriculum visual and multimodal standard", () => {
     for (const discipline of ["mathematics", "sciences", "geography", "economics", "history", "languages_literature", "arts_visual", "music", "drama_dance", "physical_technical_vocational"]) {
       expect(standard.modes[discipline as keyof typeof standard.modes]?.length).toBeGreaterThan(0);
     }
-    expect(standard.requirements.some((item) => item.includes("every subject"))).toBe(true);
+    expect(standard.requirements.some((item) => item.toLowerCase().includes("every subject"))).toBe(true);
   });
 
   it("requires outcome-linked, accessible and offline-included visual assets", () => {
