@@ -6,7 +6,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Block = {
   id: string;
-  type: "text" | "image" | "diagram" | "sketch" | "video";
+  type: "text" | "image" | "diagram" | "sketch" | "video" | "audio" | "graph" | "table";
   content?: string;
   title?: string;
   caption?: string;
@@ -14,6 +14,7 @@ type Block = {
   storagePath?: string;
   provider?: "youtube" | "drive";
   providerId?: string;
+  data?: Record<string, unknown>;
 };
 type Tutorial = {
   id: string; author_id: string; title: string; subject: string; topic: string | null; summary: string;
@@ -59,7 +60,7 @@ export function TutorialsClient() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [mediaKind, setMediaKind] = useState<"image" | "diagram" | "sketch">("image");
+  const [mediaKind, setMediaKind] = useState<"image" | "diagram" | "sketch" | "audio">("image");
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function loadItems() {
@@ -143,8 +144,9 @@ export function TutorialsClient() {
 
   async function uploadImage(file?: File) {
     if (!file || !current) return;
-    if (!file.type.startsWith("image/") || file.size > 50 * 1024 * 1024) {
-      setError("Choose a supported image smaller than 50 MiB."); return;
+    const supported = mediaKind === "audio" ? ["audio/mpeg", "audio/mp4", "audio/webm"].includes(file.type) : ["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type);
+    if (!supported || file.size > 50 * 1024 * 1024) {
+      setError(mediaKind === "audio" ? "Choose MP3, M4A or WebM audio smaller than 50 MiB." : "Choose JPEG, PNG, WebP or AVIF smaller than 50 MiB."); return;
     }
     setBusy(true); setError("");
     try {
@@ -161,7 +163,7 @@ export function TutorialsClient() {
       if (uploadError) throw uploadError;
       setBlocks((old) => [...old, {
         id: crypto.randomUUID(), type: mediaKind, storagePath: signed.path,
-        alt: file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " "), caption: "",
+        ...(mediaKind === "audio" ? {} : { alt: file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ") }), caption: "",
       }]);
       setMessage("Image uploaded to private teacher storage. Add a descriptive caption before submission.");
     } catch (e) { setError(e instanceof Error ? e.message : "Upload failed."); }
@@ -226,6 +228,12 @@ export function TutorialsClient() {
                   <input disabled={!editable} value={block.caption ?? ""} onChange={(e) => updateBlock(index, { caption: e.target.value })} placeholder="Caption / labels / source" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" />
                   <p className="text-xs text-[var(--muted-foreground)]">Private media path: {block.storagePath}</p>
                 </div> : null}
+                {["graph", "table"].includes(block.type) ? <div className="space-y-2">
+                  <input disabled={!editable} value={block.title ?? ""} onChange={(e) => updateBlock(index, { title: e.target.value })} placeholder="Visual title" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" />
+                  <textarea disabled={!editable} defaultValue={JSON.stringify(block.data ?? {}, null, 2)} onBlur={(e) => { try { const data = JSON.parse(e.target.value); if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error(); updateBlock(index, { data }); setError(""); } catch { setError(`Enter valid JSON for this ${block.type}.`); } }} rows={5} className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 font-mono text-xs" aria-label={`${block.type} data as JSON`} />
+                  <p className="text-xs text-[var(--muted-foreground)]">{block.type === "graph" ? 'Use {"points":[{"x":0,"y":0},{"x":1,"y":1}]} to plot a graph.' : 'Use {"headers":["A","B"],"rows":[["1","2"]]} to build a table.'}</p>
+                </div> : null}
+                {block.type === "audio" ? <div className="space-y-2"><input disabled={!editable} value={block.title ?? ""} onChange={(e) => updateBlock(index, { title: e.target.value })} placeholder="Audio title" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" /><textarea disabled={!editable} value={block.transcript ?? ""} onChange={(e) => updateBlock(index, { transcript: e.target.value })} rows={3} maxLength={20000} placeholder="Audio transcript (recommended for accessibility and offline study)" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" /></div> : null}
                 {block.type === "video" ? <div className="space-y-1"><p className="font-medium text-sm">{block.title}</p><p className="break-all text-xs text-[var(--muted-foreground)]">{block.provider === "youtube" ? "YouTube" : "Google Drive"} · {block.providerId}</p><p className="text-xs text-[var(--muted-foreground)]">Student playback will be click-to-load with no autoplay.</p></div> : null}
               </article>
             ))}
@@ -234,10 +242,12 @@ export function TutorialsClient() {
           {editable && <div className="space-y-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-3">
             <h3 className="text-sm font-semibold">Add content</h3>
             <button onClick={addText} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm">＋ Text block</button>
+            <button onClick={() => setBlocks(old => [...old, { id: crypto.randomUUID(), type: "graph", title: "Graph", data: { points: [{ x: 0, y: 0 }, { x: 1, y: 1 }] } }])} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm">＋ Graph</button>
+            <button onClick={() => setBlocks(old => [...old, { id: crypto.randomUUID(), type: "table", title: "Data table", data: { headers: ["Column 1", "Column 2"], rows: [["", ""]] } }])} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm">＋ Table</button>
             <div className="flex flex-wrap items-center gap-2">
-              <select value={mediaKind} onChange={(e) => setMediaKind(e.target.value as typeof mediaKind)} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-2 py-2 text-sm"><option value="image">Image</option><option value="diagram">Diagram</option><option value="sketch">Sketch / whiteboard photo</option></select>
+              <select value={mediaKind} onChange={(e) => setMediaKind(e.target.value as typeof mediaKind)} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-2 py-2 text-sm"><option value="image">Image</option><option value="diagram">Diagram</option><option value="sketch">Sketch / whiteboard photo</option><option value="audio">Audio explanation</option></select>
               <button onClick={() => fileRef.current?.click()} disabled={!current || busy} className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm disabled:opacity-50">Upload visual</button>
-              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden onChange={(e) => uploadImage(e.target.files?.[0])} />
+              <input ref={fileRef} type="file" accept={mediaKind === "audio" ? "audio/mpeg,audio/mp4,audio/webm" : "image/jpeg,image/png,image/webp,image/avif"} hidden onChange={(e) => uploadImage(e.target.files?.[0])} />
             </div>
             <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
               <input value={videoTitle} onChange={(e) => setVideoTitle(e.target.value)} placeholder="Video title" className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm" />
