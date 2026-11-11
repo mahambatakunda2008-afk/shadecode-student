@@ -52,6 +52,7 @@ Rules:
     feature: "cortex",
     subfeature: "teacher_handwriting_ocr",
     media: [{ mimeType, data: image }],
+    jsonResponse: true,
     maxChainMs: 42000,
     perProviderMaxMs: 9000,
     skipCurriculumGrounding: true,
