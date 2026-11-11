@@ -258,6 +258,12 @@
         "type": "comparison_diagram",
         "offlineIncluded": true,
         "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-2-1-effective-demand",
+        "type": "process_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
       }
     ],
     "networkRequired": false,
@@ -320,12 +326,29 @@
         "classify",
         "explain"
       ]
+    },
+    {
+      "assetId": "econ-9708-2-1-effective-demand",
+      "type": "process_diagram",
+      "kind": "effective-demand-test",
+      "title": "Effective demand: willingness and ability",
+      "purpose": "Distinguish an effective market demand from an unsupported desire by showing both willingness and ability to pay at a given price.",
+      "learningObjectiveIds": [
+        "9708-AS-2.1-LO1"
+      ],
+      "altText": "A consumer's desire becomes effective demand only when the consumer is both willing and able to buy at the stated price over the stated period. Desire without ability to pay is not effective demand.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "classify",
+        "explain"
+      ]
     }
   ],
   "visualReview": {
     "status": "reviewed_for_representation_coverage",
     "objectiveIdConvention": "9708-AS-2.1-LO<n>",
-    "coverage": "All five stated learning objectives map to offline instructional graphs and process/comparison diagrams. Visuals cover demand and supply, horizontal market aggregation and the movement-versus-shift distinction.",
+    "coverage": "All five stated learning objectives map to offline instructional graphs and process/comparison diagrams. A dedicated effective-demand visual shows willingness and ability to pay; other visuals cover demand and supply curves, horizontal market aggregation and the movement-versus-shift distinction.",
     "reviewNote": "Authoring coverage check only. Teacher review and independent verification against the current official syllabus remain required."
   },
   "teacherReview": {
