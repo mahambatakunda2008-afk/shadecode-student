@@ -7,12 +7,15 @@ class NativeSubjectRepository(private val database: NativeDatabase) {
         val subjects = profile.subjects
             .map { it.trim() }
             .filter { it.isNotBlank() && !it.equals("general", ignoreCase = true) }
-            .distinctBy { it.lowercase() }
-            .map { name ->
+            .distinctBy { NativeSubjectCatalog.codeFor(it) }
+            .map { value ->
+                val code = NativeSubjectCatalog.codeFor(value)
                 NativeSubjectEntity(
-                    id = name.lowercase().replace(Regex("[^\\p{L}\\p{N}]+"), "-").trim('-'),
-                    name = name,
-                    normalizedName = name.trim().lowercase(),
+                    // Stable IDs match the web catalogue; custom subjects use a
+                    // normalized key and remain distinct from known catalogue entries.
+                    id = code,
+                    name = NativeSubjectCatalog.labelFor(code),
+                    normalizedName = NativeSubjectMatcher.key(code),
                 )
             }
         database.subjects().clear()
