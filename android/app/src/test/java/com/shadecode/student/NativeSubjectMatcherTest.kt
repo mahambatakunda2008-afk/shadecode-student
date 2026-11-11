@@ -6,6 +6,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NativeSubjectMatcherTest {
+    @Test fun accountSwitchNeverReusesAnotherLearnersRoomCache() {
+        assertFalse(accountCacheOwnerChanged("learner-a", "learner-a"))
+        assertTrue(accountCacheOwnerChanged("learner-a", "learner-b"))
+        assertTrue(accountCacheOwnerChanged(null, "learner-a"))
+    }
+
     @Test fun mathematicsAliasesMatchExactly() {
         assertTrue(NativeSubjectMatcher.matchesAny("Mathematics", listOf("Maths")))
         assertTrue(NativeSubjectMatcher.matchesAny("Maths", listOf("Mathematics")))
