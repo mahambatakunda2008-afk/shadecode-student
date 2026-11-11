@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_content_requires_subject_review",
+  "identity": {
+    "board": "cambridge",
+    "qualification": "cambridge-as-a-level",
+    "level": "as_level",
+    "subject": "economics",
+    "syllabusCode": "9708",
+    "syllabusVersion": "2026-2028",
+    "topic": "1",
+    "subtopic": "1.2",
+    "title": "Economic Methodology",
+    "sourcePrintedPages": "15-16",
+    "sourcePdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf"
+  },
+  "trustBoundary": "Original instructional content aligned to the four extracted Cambridge 9708 AS 1.2 outcomes. It is not official Cambridge material or an independently verified complete syllabus lesson. Teacher review required before publication.",
+  "learningObjectives": [
+    "Explain economics as a social science.",
+    "Distinguish positive statements from normative statements and facts from value judgements.",
+    "Explain ceteris paribus.",
+    "Distinguish short run, long run and very long run."
+  ],
+  "lesson": [
+    {
+      "type": "diagnostic",
+      "prompt": "A newspaper says, 'Increasing the minimum wage will raise some workers' incomes' and 'The government should increase the minimum wage'. Are these statements the same kind of claim? Explain briefly."
+    },
+    {
+      "type": "explanation",
+      "heading": "1. Economics as a social science",
+      "body": "Economics is a social science because it studies how people, firms, governments and societies make choices and interact when resources are scarce. It investigates human behaviour and social outcomes, using evidence, data, theories and models. Economists observe patterns, form hypotheses, compare evidence and revise explanations. Unlike many laboratory sciences, economists often cannot isolate every variable or repeat a whole-economy experiment under controlled conditions. Human behaviour is influenced by institutions, expectations, culture and changing circumstances. Economic models therefore simplify reality to focus on important relationships. A model is useful when its assumptions and limits are understood and its predictions are compared with evidence."
+    },
+    {
+      "type": "explanation",
+      "heading": "2. Positive statements",
+      "body": "A positive statement makes a claim about what is, was or may happen. It can in principle be tested against evidence, even if the claim later proves false. For example, 'A rise in the price of bus fares reduces the quantity of bus journeys demanded, other things equal' is positive because evidence could be used to investigate it. Positive does not mean beneficial, morally good or automatically correct. It describes the testable nature of the claim, not whether the claim is true."
+    },
+    {
+      "type": "explanation",
+      "heading": "3. Normative statements and value judgements",
+      "body": "A normative statement expresses an opinion about what ought to happen. It depends on values, priorities or judgements about what is desirable. For example, 'The government should subsidise bus fares for low-income households' is normative because the word should expresses a judgement about policy. A value judgement may prioritise equality, efficiency, freedom, affordability or another objective. Evidence can inform the likely consequences of a policy, but evidence alone cannot decide which objective society ought to prioritise."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Worked classification: transport policy",
+      "scenario": "Consider two claims: A. 'A fare subsidy reduces the price paid by eligible passengers.' B. 'A fare subsidy is the fairest way to help low-income households.'",
+      "reasoning": [
+        "Claim A is positive: its effect on the price paid can be checked using the policy rules and observed fares.",
+        "Claim B is normative: 'fairest' depends on a value judgement about fairness and the criteria used.",
+        "A policy debate can contain both: positive analysis predicts effects, while normative judgement evaluates whether those effects are desirable."
+      ],
+      "caution": "A positive statement can be wrong. A normative statement can be carefully argued. The distinction is about testability versus value judgement, not quality."
+    },
+    {
+      "type": "explanation",
+      "heading": "4. Facts, evidence and value judgements",
+      "body": "A fact is a claim supported by reliable observation or evidence, while a value judgement expresses an evaluation based on beliefs or priorities. In economics, facts and value judgements often appear together. A statistic such as the measured rate of inflation is an empirical claim whose accuracy depends on the data and method. Saying that the inflation rate is 'unacceptably high' adds a value judgement because unacceptability depends on a chosen standard. Economists should make the boundary clear: identify the evidence, state the assumptions, and explain where an evaluative judgement enters."
+    },
+    {
+      "type": "explanation",
+      "heading": "5. Ceteris paribus",
+      "body": "Ceteris paribus means 'other things being equal'. Economists use it to examine the relationship between two variables while assuming that other relevant influences remain unchanged. For example, the law of demand predicts that, ceteris paribus, a higher price causes a lower quantity demanded. In real markets, income, tastes, the prices of related goods and expectations may also change. Holding these influences constant in the model helps isolate the effect of price. It is an analytical assumption, not a claim that everything else literally stays unchanged in real life."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Worked example: isolating a price change",
+      "scenario": "Suppose the price of a loaf of bread rises while household income, tastes, the prices of substitutes and complements, and expectations are assumed unchanged.",
+      "reasoning": [
+        "Identify the variable being changed: the price of bread.",
+        "Identify other demand determinants that could also affect purchases.",
+        "Apply ceteris paribus: hold those other determinants constant.",
+        "Predict a movement along the demand curve: quantity demanded falls as price rises."
+      ],
+      "caution": "If income or tastes change at the same time, observed purchases may not move as the simple ceteris paribus prediction suggests."
+    },
+    {
+      "type": "explanation",
+      "heading": "6. Short run",
+      "body": "The short run is a period in which at least one factor of production is fixed. A firm may be able to employ more workers or use more raw materials, but it may not be able to expand its factory, install a new production line or change the size of its premises immediately. The short run is not a fixed number of days or months. Its length depends on the industry and the production decision being considered."
+    },
+    {
+      "type": "explanation",
+      "heading": "7. Long run",
+      "body": "The long run is a period sufficient for all factors of production to become variable. A firm can adjust its scale of operation, including premises, machinery and production capacity. A factory may be expanded, new equipment installed or a different production site selected. The long run is therefore defined by what can be changed, not by a universal calendar duration. What counts as long run differs between industries."
+    },
+    {
+      "type": "explanation",
+      "heading": "8. Very long run",
+      "body": "The very long run allows fundamental conditions of production to change, including technology and the wider productive capabilities of an economy. New production methods, major innovations, changes in skills and changes in the organisation of economic activity can alter what is possible. The distinction is about the scope of adjustment: short run has at least one fixed factor, long run allows all factors to vary, and very long run includes deeper structural and technological change. Do not assign one universal number of years to these periods."
+    },
+    {
+      "type": "comparison",
+      "heading": "9. Compare the three time periods",
+      "body": "Short run: at least one factor of production is fixed. Long run: all factors of production can be varied. Very long run: technology and broader productive conditions can also change. These are not universal calendar labels. A decision that takes months in one industry may take years in another. Always explain the period by identifying which factors can change."
+    },
+    {
+      "type": "synthesis",
+      "heading": "10. Why methodology matters",
+      "body": "Economic conclusions depend on the kind of claim being made, the evidence available and the assumptions used. Positive analysis asks what happens and whether a claim can be tested. Normative analysis asks what ought to happen and requires value judgements. Ceteris paribus helps isolate a relationship, while time-period distinctions clarify which adjustments are possible. A strong economic explanation makes these boundaries visible instead of presenting assumptions or opinions as established facts."
+    }
+  ],
+  "retrievalCheck": [
+    {
+      "prompt": "Why is economics classified as a social science?"
+    },
+    {
+      "prompt": "Does positive mean a statement is morally good or factually correct?"
+    },
+    {
+      "prompt": "What does ceteris paribus allow an economist to isolate?"
+    },
+    {
+      "prompt": "What is the defining feature of the short run?"
+    }
+  ],
+  "practice": [
+    {
+      "id": "q1",
+      "type": "classification",
+      "marks": 2,
+      "prompt": "Classify this statement and explain your choice: 'A fall in income tax increases the disposable income of workers whose tax liability falls.'",
+      "answer": [
+        "positive statement",
+        "testable using tax rules and income data"
+      ],
+      "marking": [
+        "1 mark positive",
+        "1 mark because it can be tested against evidence"
+      ],
+      "misconception": "Positive does not mean beneficial or necessarily true."
+    },
+    {
+      "id": "q2",
+      "type": "classification",
+      "marks": 2,
+      "prompt": "Classify this statement and explain your choice: 'The government should spend more on rural clinics than on urban road construction.'",
+      "answer": [
+        "normative statement",
+        "should expresses a value judgement about priorities"
+      ],
+      "marking": [
+        "1 mark normative",
+        "1 mark identify value judgement/what ought to happen"
+      ],
+      "misconception": "A statement can use economic evidence and still contain a normative judgement."
+    },
+    {
+      "id": "q3",
+      "type": "explanation",
+      "marks": 4,
+      "prompt": "Explain why an economist uses the assumption ceteris paribus when analysing the relationship between the price of a good and its quantity demanded.",
+      "answer": [
+        "other demand determinants may change",
+        "hold relevant influences constant",
+        "isolate effect of price",
+        "predict movement along demand curve"
+      ],
+      "marking": [
+        "1 mark identify other influences",
+        "1 mark explain holding them constant",
+        "1 mark isolate price effect",
+        "1 mark link higher price to lower quantity demanded"
+      ],
+      "misconception": "Ceteris paribus does not claim that all other factors remain unchanged in the real world."
+    },
+    {
+      "id": "q4",
+      "type": "application",
+      "marks": 4,
+      "prompt": "A bakery can hire more workers next week but needs three years to build a larger factory. Explain how the short run and long run apply to this bakery.",
+      "answer": [
+        "short run at least one factor fixed, factory size fixed",
+        "labour can vary",
+        "long run all factors variable",
+        "factory capacity can be expanded"
+      ],
+      "marking": [
+        "1 mark define short run",
+        "1 mark apply fixed factory",
+        "1 mark define long run",
+        "1 mark apply capacity expansion"
+      ],
+      "misconception": "Do not define short run as a fixed number of weeks or months."
+    }
+  ],
+  "mastery": {
+    "completionIsNotMastery": true,
+    "requiredEvidence": [
+      "explain economics as a social science",
+      "classify and justify positive and normative statements",
+      "explain ceteris paribus in an applied example",
+      "distinguish time periods by which factors can change"
+    ],
+    "suggestedThreshold": 0.8,
+    "requireIndependentAttempt": true
+  },
+  "offline": {
+    "selfContained": true,
+    "assets": [],
+    "networkRequired": false,
+    "aiRequired": false
+  },
+  "teacherReview": {
+    "required": true,
+    "checks": [
+      "verify alignment against current official syllabus Version 2",
+      "review time-period terminology against current Cambridge syllabus wording",
+      "review positive/normative examples and economic accuracy",
+      "validate mark allocations and answer guidance"
+    ]
+  }
+}
