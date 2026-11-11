@@ -42,7 +42,7 @@ function drawArrow(ctx: CanvasRenderingContext2D, from: Point, to: Point) {
   ctx.stroke();
 }
 
-function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: Tool) {
+function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: Tool, control?: Point) {
   ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
   const left = Math.min(from.x, to.x), top = Math.min(from.y, to.y);
   const w = Math.abs(to.x - from.x), h = Math.abs(to.y - from.y);
@@ -53,12 +53,14 @@ function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: 
   else if (tool === "triangle") { ctx.beginPath(); ctx.moveTo(left + w / 2, top); ctx.lineTo(left + w, top + h); ctx.lineTo(left, top + h); ctx.closePath(); ctx.stroke(); }
   else if (tool === "curve") {
     const bend = Math.max(24, Math.min(140, distance(from, to) * 0.22));
+    const midpoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+    const controlPoint = control ?? { x: midpoint.x, y: midpoint.y - bend };
     ctx.beginPath(); ctx.moveTo(from.x, from.y);
-    ctx.quadraticCurveTo((from.x + to.x) / 2, (from.y + to.y) / 2 - bend, to.x, to.y); ctx.stroke();
+    ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, to.x, to.y); ctx.stroke();
   }
 }
 
-function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: Point } | null {
+function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: Point; control?: Point } | null {
   if (points.length < 8) return null;
   const first = points[0], last = points[points.length - 1];
   const xs = points.map(p => p.x), ys = points.map(p => p.y);
@@ -72,9 +74,25 @@ function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: Point }
 
   const closed = distance(first, last) < Math.max(30, Math.min(w, h) * 0.22);
   if (!closed) {
-    // Recognize a hand-drawn arrow by checking for a sharp, compact endpoint head.
-    const tail = points[Math.max(0, points.length - 7)];
-    if (distance(tail, last) < 55 && pathLength > direct * 1.2) return { tool: "curve", from: first, to: last };
+    // Fit a quadratic curve to the strongest perpendicular deviation from the chord.
+    // This preserves the direction and bend the teacher actually drew.
+    const dx = last.x - first.x, dy = last.y - first.y;
+    const length = Math.max(Math.hypot(dx, dy), 1);
+    const normal = { x: -dy / length, y: dx / length };
+    let strongest = 0;
+    for (const point of points.slice(1, -1)) {
+      const deviation = (point.x - first.x) * normal.x + (point.y - first.y) * normal.y;
+      if (Math.abs(deviation) > Math.abs(strongest)) strongest = deviation;
+    }
+    if (Math.abs(strongest) >= 12 && pathLength / Math.max(direct, 1) < 1.8) {
+      const midpoint = { x: (first.x + last.x) / 2, y: (first.y + last.y) / 2 };
+      return {
+        tool: "curve",
+        from: first,
+        to: last,
+        control: { x: midpoint.x + normal.x * strongest * 2, y: midpoint.y + normal.y * strongest * 2 },
+      };
+    }
     return null;
   }
 
@@ -104,6 +122,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const liveRecognitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recognitionPendingRef = useRef(false);
   const lastRecognitionAtRef = useRef(0);
   const drawingRef = useRef(false);
   const startRef = useRef<Point | null>(null);
@@ -222,11 +241,19 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       setStatus(error instanceof Error ? error.message : "Could not read handwriting. Your drawing is unchanged.");
     } finally {
       setRecognizingHandwriting(false);
+      if (recognitionPendingRef.current && liveCorrection) {
+        recognitionPendingRef.current = false;
+        scheduleLiveHandwritingRecognition();
+      }
     }
   }
 
   function scheduleLiveHandwritingRecognition() {
-    if (!liveCorrection || recognizingHandwriting) return;
+    if (!liveCorrection) return;
+    if (recognizingHandwriting) {
+      recognitionPendingRef.current = true;
+      return;
+    }
     if (liveRecognitionTimerRef.current) clearTimeout(liveRecognitionTimerRef.current);
     const wait = Math.max(1800, 6000 - (Date.now() - lastRecognitionAtRef.current));
     liveRecognitionTimerRef.current = setTimeout(() => {
@@ -301,7 +328,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     if (tool === "pen" && autoFix) {
       const recognized = recognizeShape(points);
       if (recognized) {
-        drawShape(ctx, recognized.from, recognized.to, recognized.tool);
+        drawShape(ctx, recognized.from, recognized.to, recognized.tool, recognized.control);
         return;
       }
     }
