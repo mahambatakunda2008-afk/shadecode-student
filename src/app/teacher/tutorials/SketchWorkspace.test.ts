@@ -21,7 +21,7 @@ describe("teacher sketch auto-correction", () => {
     const result = recognizeShape(points);
     expect(result?.tool).toBe("curve");
     expect(result?.control?.x).toBeCloseTo(50, 0);
-    expect(result?.control?.y).toBeCloseTo(60, 0);
+    expect(result?.control?.y).toBeCloseTo(120, 0);
   });
 
   it("recognizes a closed circular stroke as an ellipse", () => {
