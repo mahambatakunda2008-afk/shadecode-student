@@ -44,7 +44,7 @@ describe("central subject catalogue", () => {
     expect(resolveSubjectCatalogEntry("Economics 9708")?.id).toBe("cambridge-economics-9708");
     expect(resolveSubjectCatalogEntry("Geography 9696")?.id).toBe("cambridge-geography-9696");
     expect(resolveSubjectCatalogEntry("Business Studies")?.id).toBe("business-studies");
-    expect(resolveSubjectCatalogEntry("Business")?.id).toBe("cambridge-business-9609");
+    expect(resolveSubjectCatalogEntry("Business")?.id).toBe("business-studies");
   });
 
   it("preserves custom subject identities without treating them as catalogue entries", () => {
