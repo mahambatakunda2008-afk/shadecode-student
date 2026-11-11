@@ -51,10 +51,10 @@ describe("central subject catalogue", () => {
       join(process.cwd(), "android/app/src/main/java/com/shadecode/student/NativeSubjectCatalog.kt"),
       "utf8",
     );
-    const parseList = (value: string | undefined) =>
+    const parseList = (value: string | undefined) => [...(value ?? "").matchAll(/"([^"]*)"/g)].map((match) => match[1]);
       [...(value ?? "").matchAll(/"((?:\\\\.|[^"])*)"/g)].map((match) => JSON.parse(`"${match[1]}"`));
     const nativeEntries = new Map<string, { name: string; category: string; pathways: string[]; aliases: string[] }>();
-    const entryPattern = /NativeSubjectOption\("((?:\\\\.|[^"])*)", "((?:\\\\.|[^"])*)", "((?:\\\\.|[^"])*)", listOf\(([^)]*)\)(?:, listOf\(([^)]*)\))?\)/g;
+    const entryPattern = /NativeSubjectOption\("([^"]*)", "([^"]*)", "([^"]*)", listOf\(([^)]*)\)(?:, listOf\(([^)]*)\))?\)/g;
     for (const match of kotlin.matchAll(entryPattern)) {
       nativeEntries.set(JSON.parse(`"${match[1]}"`), {
         name: JSON.parse(`"${match[2]}"`),
