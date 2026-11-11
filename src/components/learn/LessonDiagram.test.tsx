@@ -14,6 +14,9 @@ describe("curriculum visual assets", () => {
     ["positive-normative-claims", "positive"],
     ["economics-inquiry-cycle", "observe"],
     ["economic-systems-comparison", "market"],
+    ["goods-classification-map", "scarcity"],
+    ["public-good-test", "non-rival"],
+    ["merit-demerit-information", "under-consumption"],
   ])("renders %s as an accessible offline SVG", (kind, expectedLabel) => {
     const html = renderToStaticMarkup(<LessonDiagram kind={kind} title={kind} />);
     expect(html).toContain("<svg");
