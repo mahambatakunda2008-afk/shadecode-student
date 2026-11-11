@@ -122,6 +122,20 @@ describe("central subject catalogue", () => {
     expect(manifest.sources.every((source: { pageCount: number; pdf: string }) => source.pageCount > 0 && source.pdf.startsWith("https://"))).toBe(true);
   });
 
+  it("validates the Economics 9708 AS numbered outcome registry and explicit exclusions", () => {
+    const manifest = JSON.parse(readFileSync(join(process.cwd(), "docs/curriculum/manifests/economics-9708-2026-2028-as-outcomes.json"), "utf8"));
+    expect(manifest.source.documentVersion).toBe(1);
+    expect(manifest.qualificationBoundary.asLevel).toBe("1.1-6.5");
+    expect(manifest.topics.map((topic: { id: string }) => topic.id)).toEqual(["1", "2", "3", "4", "5", "6"]);
+    const subtopics = manifest.topics.flatMap((topic: { subtopics: { 0: string; 2: string[] }[] }) => topic.subtopics);
+    expect(subtopics).toHaveLength(29);
+    expect(new Set(subtopics.map((item: { 0: string }) => item[0])).size).toBe(29);
+    expect(subtopics.every((item: { 2: string[] }) => item[2].length > 0)).toBe(true);
+    expect(manifest.crossCuttingRequirements.exclusionsAndCautions).toContain("Gini coefficient calculation is not required.");
+    expect(manifest.crossCuttingRequirements.representations).toContain("labelled economic diagrams");
+    expect(manifest.status).toBe("source_extracted_not_independently_reviewed");
+  });
+
   it("keeps the native Android catalogue in exact parity with web metadata", () => {
     const kotlin = readFileSync(
       join(process.cwd(), "android/app/src/main/java/com/shadecode/student/NativeSubjectCatalog.kt"),
