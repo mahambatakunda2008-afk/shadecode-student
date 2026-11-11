@@ -72,6 +72,8 @@ export default function LearnPageResilient() {
   const [generationJob, setGenerationJob] = useState<LessonJob | null>(null);
   const [showAllLessons, setShowAllLessons] = useState(false);
   const [learningMode, setLearningModeState] = useState<LearningMode>("classic");
+  const [addingEconomicsPack, setAddingEconomicsPack] = useState(false);
+  const [curatedPackError, setCuratedPackError] = useState<string | null>(null);
   const openedJobRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -223,6 +225,27 @@ export default function LearnPageResilient() {
       setGenerationJob(job as LessonJob);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Cortex could not start this learning session.");
+    }
+  }
+
+  async function addEconomicsAS11Pack() {
+    if (!token || addingEconomicsPack || offline) return;
+    setAddingEconomicsPack(true);
+    setCuratedPackError(null);
+    try {
+      const response = await fetch("/api/learn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ type: "curated_lesson", packId: "economics-9708-as-1.1" }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || typeof data.lessonId !== "string") throw new Error(data.error || "Could not add the lesson.");
+      await load(token);
+      router.push(`/learn/${data.lessonId}`);
+    } catch (error) {
+      setCuratedPackError(error instanceof Error ? error.message : "Could not add the lesson.");
+    } finally {
+      setAddingEconomicsPack(false);
     }
   }
 
@@ -403,6 +426,22 @@ export default function LearnPageResilient() {
             </div>
             <button type="button" aria-label="Dismiss generation status" onClick={() => setGenerationJob(null)} className="min-h-11 self-end rounded-lg px-3 py-2 text-[var(--muted-foreground)] transition hover:bg-[var(--surface-2)] dark:hover:bg-[var(--interactive-hover)] sm:self-start"><span className="text-xs font-semibold">Dismiss</span></button>
           </div>
+        </section>}
+
+        {subjects.some((item) => normalizeSubjectKey(item.name) === "economics") && <section className="mt-8 rounded-[22px] border border-[var(--card-border)] bg-[var(--surface)] p-5 dark:bg-[var(--surface)]">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--primary)]">Ready-made lesson • No AI required</p>
+              <h2 className="mt-1 text-lg font-semibold">Scarcity, choice and opportunity cost</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Cambridge AS Economics 9708, topic 1.1. Draft instructional content pending teacher review. Check that this syllabus matches your course before studying.</p>
+              {curatedPackError && <p role="alert" className="mt-2 text-sm text-red-500">{curatedPackError}</p>}
+            </div>
+            <button type="button" onClick={() => void addEconomicsAS11Pack()} disabled={!token || offline || addingEconomicsPack} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-50">
+              {addingEconomicsPack ? <Loader2 size={16} className="animate-spin" /> : <BookOpen size={16} />}
+              {addingEconomicsPack ? "Adding lesson…" : "Add to my Learn library"}
+            </button>
+          </div>
+          {offline && <p className="mt-2 text-xs text-[var(--muted-foreground)]">Connect once to add this lesson. After it is saved, it can be downloaded for offline study.</p>}
         </section>}
 
         <section className="mt-9">
