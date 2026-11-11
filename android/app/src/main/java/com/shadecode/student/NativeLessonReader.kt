@@ -296,6 +296,7 @@ private fun NativeLessonDiagram(kind: String) {
         "positive-normative-claims" -> listOf("POSITIVE" to "Testable with evidence", "NORMATIVE" to "Value judgement / ought")
         "economic-systems-comparison" -> listOf("MARKET" to "Consumers, firms and prices", "PLANNED" to "Central authority and plans", "MIXED" to "Markets plus government policy")
         "ppc-shifts" -> listOf("MOVE ALONG" to "Output mix changes; productive capacity is unchanged", "OUTWARD SHIFT" to "More resources or better technology raise capacity", "INWARD SHIFT" to "Resource loss or destruction lowers capacity")
+        "ppc-cost-shapes" -> listOf("STRAIGHT LINE" to "Constant opportunity cost: equal sacrifice", "BOWED OUT" to "Increasing opportunity cost: progressively greater sacrifice")
         "economics-inquiry-cycle" -> listOf("OBSERVE" to "Behaviour and data", "MODEL" to "Hypothesis and assumptions", "TEST" to "Compare with evidence")
         "factors-of-production-model" -> listOf("LAND" to "Natural resources • Rent", "LABOUR" to "Human effort • Wages", "CAPITAL" to "Produced assets • Interest", "ENTERPRISE" to "Organises and bears risk • Profit")
         "flowchart" -> listOf("DIVIDE TASKS" to "Split production into stages", "SPECIALISE" to "Workers focus on a task", "BUILD SKILL" to "Practice and repetition", "COORDINATE" to "Combine completed stages")
