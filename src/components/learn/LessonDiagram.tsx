@@ -232,6 +232,22 @@ function EconomicsInquiryCycle() {
   </svg>;
 }
 
+function PpcShifts() {
+  return <svg viewBox="0 0 560 270" role="img" aria-label="Two production possibility frontiers. Moving from point A to B along the original frontier changes the output mix without changing productive capacity. An outward frontier shows increased productive capacity; an inward frontier shows reduced capacity." className="lesson-diagram-svg">
+    <path d="M55 220 H510 M55 220 V22" stroke={colors.axis} strokeWidth="1.5" fill="none"/>
+    <path d="M75 205 Q145 52 270 45" stroke={colors.muted} strokeWidth="3" fill="none" strokeDasharray="7 5"/>
+    <path d="M75 205 Q190 28 390 20" stroke={colors.line} strokeWidth="4" fill="none"/>
+    <path d="M75 205 Q125 102 205 85" stroke={colors.point} strokeWidth="3" fill="none" strokeDasharray="6 5"/>
+    <circle cx="145" cy="117" r="5" fill={colors.line}/><circle cx="245" cy="57" r="5" fill={colors.line}/>
+    <path d="M151 111 L237 64" stroke={colors.line} strokeWidth="2" strokeDasharray="4 4"/>
+    <text x="130" y="139" fontSize="12" fill="currentColor">A</text><text x="250" y="53" fontSize="12" fill="currentColor">B</text>
+    <text x="310" y="45" fontSize="13" fill={colors.line}>Outward: capacity rises</text>
+    <text x="80" y="183" fontSize="12" fill={colors.point}>Inward: capacity falls</text>
+    <text x="320" y="248" fontSize="13" fill="currentColor">Good X →</text><text x="12" y="24" fontSize="13" fill="currentColor">Good Y</text>
+    <text x="65" y="263" fontSize="11" fill={colors.muted}>Illustrative frontier shapes, not measured data</text>
+  </svg>;
+}
+
 function EconomicSystemsComparison() {
   const columns = [
     { x: 14, title: "MARKET", decision: "Consumers and firms", method: "Prices, demand and supply", distribution: "Purchasing power", fill: "#ccfbf1", stroke: colors.line, ink: "#134e4a" },
@@ -269,6 +285,7 @@ export default function LessonDiagram({ kind, title }: Props) {
     case "positive-normative-claims": graphic = <PositiveNormativeClaims />; break;
     case "economics-inquiry-cycle": graphic = <EconomicsInquiryCycle />; break;
     case "economic-systems-comparison": graphic = <EconomicSystemsComparison />; break;
+    case "ppc-shifts": graphic = <PpcShifts />; break;
     case "unit-circle": graphic = <UnitCircle />; break;
     case "binary-place-values": graphic = <BinaryPlaceValues />; break;
     case "particle-model": graphic = <ParticleModel />; break;
