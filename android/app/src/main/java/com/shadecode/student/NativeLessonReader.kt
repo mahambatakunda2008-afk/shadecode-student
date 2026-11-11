@@ -134,6 +134,7 @@ fun NativeLessonReader(
                 )
                 database.sync().enqueue(
                     NativePendingSyncEntity(
+                        accountId = session.userId,
                         operation = "lesson_progress",
                         payload = JSONObject()
                             .put("lessonId", lesson.id)
