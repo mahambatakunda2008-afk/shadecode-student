@@ -12,12 +12,12 @@ describe("teacher sketch auto-correction", () => {
 
   it("recognizes a freehand arrow with a retraced tip and two arrowhead wings", () => {
     const points: Point[] = [];
-    for (let index = 0; index <= 12; index++) points.push({ x: index * 10, y: 100 });
-    points.push({ x: 110, y: 90 }, { x: 100, y: 100 }, { x: 110, y: 110 });
+    for (let index = 0; index <= 10; index++) points.push({ x: index * 10, y: 100 });
+    points.push({ x: 120, y: 100 }, { x: 110, y: 90 }, { x: 120, y: 100 }, { x: 110, y: 110 });
     expect(recognizeShape(points)).toMatchObject({
       tool: "arrow",
       from: { x: 0, y: 100 },
-      to: { x: 100, y: 100 },
+      to: { x: 120, y: 100 },
     });
   });
 
