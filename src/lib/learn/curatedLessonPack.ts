@@ -12,26 +12,35 @@ function asText(value: unknown): string {
   return "";
 }
 
-/** Converts an authored, offline-ready curriculum pack into the existing Learn renderer format.
+/** Converts authored curriculum content to the existing Learn renderer format.
  * Assessment keys and marking guidance are intentionally excluded from learner-visible blocks.
  */
 export function buildEconomics9708AS11LearnBlocks(): CuratedLessonBlock[] {
   const blocks: CuratedLessonBlock[] = [];
 
-  for (const section of pack.lesson) {
+  for (const rawSection of pack.lesson) {
+    const section = rawSection as unknown as Record<string, unknown>;
+    const type = asText(section.type);
     let content = "";
-    if (section.type === "worked_example") {
+
+    if (type === "worked_example") {
+      const reasoning = Array.isArray(section.reasoning) ? section.reasoning.map(asText) : [];
       content = [
-        section.scenario,
-        ...section.reasoning.map((line: string, index: number) => `${index + 1}. ${line}`),
-        section.caution ? `Watch out: ${section.caution}` : "",
+        asText(section.scenario),
+        ...reasoning.map((line, index) => `${index + 1}. ${line}`),
+        section.caution ? `Watch out: ${asText(section.caution)}` : "",
       ].filter(Boolean).join("\n");
-    } else if (section.type === "application") {
-      content = [section.scenario, ...section.prompts.map((line: string) => `- ${line}`), section.feedback].filter(Boolean).join("\n");
+    } else if (type === "application") {
+      const prompts = Array.isArray(section.prompts) ? section.prompts.map(asText) : [];
+      content = [asText(section.scenario), ...prompts.map((line) => `- ${line}`), asText(section.feedback)].filter(Boolean).join("\n");
     } else {
       content = asText(section.body ?? section.prompt);
     }
-    if (content.trim()) blocks.push({ type: section.type === "explanation" ? "concept" : section.type === "worked_example" ? "example" : section.type, title: section.heading, content });
+
+    if (content.trim()) {
+      const blockType = type === "explanation" ? "concept" : type === "worked_example" ? "example" : type;
+      blocks.push({ type: blockType, title: asText(section.heading) || undefined, content });
+    }
   }
 
   for (const check of pack.retrievalCheck) {
