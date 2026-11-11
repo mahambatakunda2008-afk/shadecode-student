@@ -24,7 +24,8 @@
     "test:learn:e2e": "playwright test e2e/learn",
     "test:exam:e2e": "playwright test e2e/exam-simulation.spec.ts",
     "validate:curriculum-queue": "node scripts/validate-curriculum-intake-queue.mjs",
-    "test:mobile:e2e": "playwright test e2e/mobile"
+    "test:mobile:e2e": "playwright test e2e/mobile",
+    "validate:curriculum-visuals": "node scripts/validate-curriculum-visuals.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
