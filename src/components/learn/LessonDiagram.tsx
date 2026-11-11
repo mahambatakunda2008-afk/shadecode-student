@@ -192,6 +192,14 @@ function FactorsOfProductionModel() {
     <text x="300" y="325" textAnchor="middle" fontSize="14" fill="currentColor">Combined inputs produce goods and services</text>
   </svg>;
 }
+
+function EconomicTimeHorizons() {
+  return <svg viewBox="0 0 600 250" role="img" aria-label="Three economic time horizons shown from narrow to broad adjustment: short run has at least one fixed factor; long run allows all factors to vary; very long run also allows technology and wider productive conditions to change. No fixed calendar durations are implied." className="lesson-diagram-svg">
+    <path d="M42 126 H558" stroke={colors.axis} strokeWidth="2"/>
+    {[[42,130,"SHORT RUN","At least one factor fixed"],[230,150,"LONG RUN","All factors can vary"],[450,108,"VERY LONG RUN","Technology and structural conditions can change"]].map(([x,w,title,desc])=><g key={String(title)}><rect x={Number(x)} y="52" width={Number(w)} height="148" rx="12" fill={title==="VERY LONG RUN"?"#ffedd5":"#ccfbf1"} stroke={title==="VERY LONG RUN"?colors.point:colors.line} strokeWidth="2"/><text x={Number(x)+Number(w)/2} y="91" textAnchor="middle" fontSize="14" fontWeight="700" fill={title==="VERY LONG RUN"?"#7c2d12":"#134e4a"}>{String(title)}</text><text x={Number(x)+Number(w)/2} y="122" textAnchor="middle" fontSize="11" fill={title==="VERY LONG RUN"?"#7c2d12":"#134e4a"}>{String(desc)}</text></g>)}
+    <text x="300" y="232" textAnchor="middle" fontSize="12" fill={colors.muted}>Conceptual sequence, not a scale of fixed calendar time</text>
+  </svg>;
+}
 export default function LessonDiagram({ kind, title }: Props) {
   let graphic: ReactNode;
   switch (kind.trim().toLowerCase()) {
@@ -203,6 +211,7 @@ export default function LessonDiagram({ kind, title }: Props) {
     case "production-possibility-curve": graphic = <ProductionPossibilityCurve />; break;
     case "ceteris-paribus-model": graphic = <CeterisParibusModel />; break;
     case "factors-of-production-model": graphic = <FactorsOfProductionModel />; break;
+    case "economic-time-horizons": graphic = <EconomicTimeHorizons />; break;
     case "unit-circle": graphic = <UnitCircle />; break;
     case "binary-place-values": graphic = <BinaryPlaceValues />; break;
     case "particle-model": graphic = <ParticleModel />; break;
