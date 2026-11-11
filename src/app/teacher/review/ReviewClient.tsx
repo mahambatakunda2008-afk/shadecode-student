@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { REVIEW_VERDICTS, type ReviewableQuestion, type ReviewVerdict } from "@/lib/exam/curated/registry";
+import { REVIEW_VERDICTS, type ReviewVerdict } from "@/lib/exam/curated/registry";
+import type { ReviewItem } from "@/lib/teacher/reviewItems";
 
 export interface StoredReview {
   question_id: string;
@@ -13,50 +13,55 @@ export interface StoredReview {
 }
 
 interface Props {
-  questions: ReviewableQuestion[];
-  banks: { id: string; label: string }[];
+  items: ReviewItem[];
+  groups: { id: string; label: string }[];
   reviews: StoredReview[];
   reviewerId: string;
-  isAdmin: boolean;
+  initialGroup: string;
 }
 
 type Filter = "todo" | "flagged" | "all";
 
-const VERDICT_LABEL: Record<ReviewVerdict, string> = {
-  correct: "Correct",
-  wrong_answer: "Wrong answer",
-  ambiguous: "Ambiguous",
-  out_of_syllabus: "Out of syllabus",
-};
+function verdictLabel(verdict: ReviewVerdict, group: string): string {
+  if (verdict === "wrong_answer") return group === "lesson" ? "Factual error" : "Wrong answer";
+  return { correct: "Correct", ambiguous: group === "lesson" ? "Unclear" : "Ambiguous", out_of_syllabus: "Out of syllabus" }[verdict];
+}
 
-export function ReviewClient({ questions, banks, reviews, reviewerId, isAdmin }: Props) {
+export function ReviewClient({ items, groups, reviews, reviewerId, initialGroup }: Props) {
   const [mine, setMine] = useState<Record<string, StoredReview>>(() =>
     Object.fromEntries(reviews.filter((r) => r.reviewer_id === reviewerId).map((r) => [r.question_id, r])),
   );
-  const [bank, setBank] = useState<string>(banks[0]?.id ?? "");
+  const [group, setGroup] = useState<string>(initialGroup);
   const [filter, setFilter] = useState<Filter>("todo");
   const [index, setIndex] = useState(0);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const inBank = useMemo(() => questions.filter((q) => q.bank === bank), [questions, bank]);
-  const reviewedCount = inBank.filter((q) => mine[q.id]).length;
-  const flaggedCount = inBank.filter((q) => mine[q.id] && mine[q.id].verdict !== "correct").length;
+  const inGroup = useMemo(() => items.filter((i) => i.group === group), [items, group]);
+  const reviewedCount = inGroup.filter((i) => mine[i.id]).length;
+  const flaggedCount = inGroup.filter((i) => mine[i.id] && mine[i.id].verdict !== "correct").length;
 
   const queue = useMemo(
     () =>
-      inBank.filter((q) => {
-        const r = mine[q.id];
+      inGroup.filter((i) => {
+        const r = mine[i.id];
         if (filter === "todo") return !r;
         if (filter === "flagged") return r && r.verdict !== "correct";
         return true;
       }),
-    [inBank, mine, filter],
+    [inGroup, mine, filter],
   );
 
-  const current = queue[Math.min(index, Math.max(queue.length - 1, 0))];
+  const position = Math.min(index, Math.max(queue.length - 1, 0));
+  const current = queue[position];
   const existing = current ? mine[current.id] : undefined;
+
+  function reset() {
+    setIndex(0);
+    setNote("");
+    setError(null);
+  }
 
   function go(next: number) {
     setIndex(Math.max(0, Math.min(next, queue.length - 1)));
@@ -86,8 +91,8 @@ export function ReviewClient({ questions, banks, reviews, reviewerId, isAdmin }:
         [current.id]: { question_id: current.id, verdict, note: text || null, reviewer_id: reviewerId, reviewed_at: new Date().toISOString() },
       }));
       setNote("");
-      // In the "todo" queue the saved item leaves the list, so the same index now points at the next question.
-      if (filter !== "todo") go(index + 1);
+      // In the "todo" queue the saved item leaves the list, so the same position now points at the next item.
+      if (filter !== "todo") go(position + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save. Try again.");
     } finally {
@@ -95,35 +100,37 @@ export function ReviewClient({ questions, banks, reviews, reviewerId, isAdmin }:
     }
   }
 
-  const pct = inBank.length ? Math.round((reviewedCount / inBank.length) * 100) : 0;
+  const pct = inGroup.length ? Math.round((reviewedCount / inGroup.length) * 100) : 0;
+  const isLesson = group === "lesson";
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-4 bg-[var(--background)] px-4 py-6 text-[var(--foreground)]">
+    <div className="flex flex-col gap-4">
       <header className="space-y-1">
-        <Link href={isAdmin ? "/admin" : "/"} className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]">← {isAdmin ? "Admin" : "Home"}</Link>
-        <h1 className="text-xl font-semibold">Content review</h1>
+        <h1 className="text-xl font-semibold">Review</h1>
         <p className="text-sm text-[var(--muted-foreground)]">
-          Check each question: is the marked answer right, is it unambiguous, and is it on the Form 1–4 syllabus?
+          {isLesson
+            ? "Read each lesson: are the facts right, is it clear, and does it match the syllabus?"
+            : "Check each question: is the marked answer right, is it unambiguous, and is it on the syllabus?"}
         </p>
       </header>
 
-      <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Question bank">
-        {banks.map((b) => (
+      <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Content type">
+        {groups.map((g) => (
           <button
-            key={b.id}
+            key={g.id}
             role="tab"
-            aria-selected={bank === b.id}
-            onClick={() => { setBank(b.id); setIndex(0); setNote(""); setError(null); }}
-            className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-sm transition ${bank === b.id ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}
+            aria-selected={group === g.id}
+            onClick={() => { setGroup(g.id); reset(); }}
+            className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-sm transition ${group === g.id ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}
           >
-            {b.label}
+            {g.label}
           </button>
         ))}
       </div>
 
       <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm">
         <div className="flex items-center justify-between text-sm">
-          <span>{reviewedCount} of {inBank.length} reviewed</span>
+          <span>{reviewedCount} of {inGroup.length} reviewed</span>
           <span className="text-[var(--muted-foreground)]">{flaggedCount} flagged</span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
@@ -137,7 +144,7 @@ export function ReviewClient({ questions, banks, reviews, reviewerId, isAdmin }:
             key={f}
             role="tab"
             aria-selected={filter === f}
-            onClick={() => { setFilter(f); setIndex(0); setNote(""); setError(null); }}
+            onClick={() => { setFilter(f); reset(); }}
             className={`rounded-xl px-3 py-1.5 transition ${filter === f ? "bg-[var(--surface-2)] font-medium" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}
           >
             {f === "todo" ? "To review" : f === "flagged" ? "My flags" : "All"}
@@ -147,30 +154,43 @@ export function ReviewClient({ questions, banks, reviews, reviewerId, isAdmin }:
 
       {!current ? (
         <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-6 text-center text-sm text-[var(--muted-foreground)]">
-          {filter === "todo" ? "Everything in this bank is reviewed. Switch bank or open “All” to revisit." : "Nothing here yet."}
+          {filter === "todo" ? "Everything here is reviewed. Switch tab or open “All” to revisit." : "Nothing here yet."}
         </div>
       ) : (
         <section className="space-y-4 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm">
           <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
             <span>{current.topic}</span>
-            <span>{Math.min(index, queue.length - 1) + 1} / {queue.length}</span>
+            <span>{position + 1} / {queue.length}</span>
           </div>
-          <h2 className="text-lg font-medium leading-snug">{current.question}</h2>
-          <ul className="space-y-2">
-            {current.options.map((o) => {
-              const isAnswer = o === current.answer;
-              return (
-                <li key={o} className={`rounded-xl border px-3 py-2 text-sm ${isAnswer ? "border-[var(--success)] bg-[var(--success-soft)]" : "border-[var(--card-border)]"}`}>
-                  {o}
-                  {isAnswer && <span className="ml-2 text-xs text-[var(--success)]">marked answer</span>}
-                </li>
-              );
-            })}
-          </ul>
+          <h2 className="text-lg font-medium leading-snug">{current.title}</h2>
+
+          {current.options && (
+            <ul className="space-y-2">
+              {current.options.map((o) => {
+                const isAnswer = o === current.answer;
+                return (
+                  <li key={o} className={`rounded-xl border px-3 py-2 text-sm ${isAnswer ? "border-[var(--success)] bg-[var(--success-soft)]" : "border-[var(--card-border)]"}`}>
+                    {o}
+                    {isAnswer && <span className="ml-2 text-xs text-[var(--success)]">marked answer</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {current.body !== undefined && (
+            <div className="max-h-80 overflow-y-auto rounded-xl border border-[var(--card-border)] bg-[var(--surface)] p-3">
+              {current.body ? (
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{current.body}</p>
+              ) : (
+                <p className="text-sm text-[var(--muted-foreground)]">This lesson has no readable text.</p>
+              )}
+            </div>
+          )}
 
           {existing && (
             <p className="text-xs text-[var(--muted-foreground)]">
-              Your verdict: {VERDICT_LABEL[existing.verdict]}{existing.note ? ` — ${existing.note}` : ""}
+              Your verdict: {verdictLabel(existing.verdict, group)}{existing.note ? ` — ${existing.note}` : ""}
             </p>
           )}
 
@@ -192,14 +212,14 @@ export function ReviewClient({ questions, banks, reviews, reviewerId, isAdmin }:
                 onClick={() => submit(v)}
                 className={`min-h-11 rounded-2xl border px-3 py-2 text-sm transition disabled:opacity-50 ${v === "correct" ? "border-[var(--success)] hover:bg-[var(--success-soft)]" : "border-[var(--card-border)] hover:bg-[var(--surface-2)]"}`}
               >
-                {VERDICT_LABEL[v]}
+                {verdictLabel(v, group)}
               </button>
             ))}
           </div>
 
           <div className="flex justify-between text-sm">
-            <button onClick={() => go(index - 1)} disabled={index <= 0} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30">← Previous</button>
-            <button onClick={() => go(index + 1)} disabled={index >= queue.length - 1} className="">Skip →</button>
+            <button onClick={() => go(position - 1)} disabled={position <= 0} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30">← Previous</button>
+            <button onClick={() => go(position + 1)} disabled={position >= queue.length - 1} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30">Skip →</button>
           </div>
         </section>
       )}

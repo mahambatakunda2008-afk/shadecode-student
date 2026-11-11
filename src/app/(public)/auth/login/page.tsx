@@ -58,11 +58,21 @@ export default function Login() {
       }
       void trackEvent("user_logged_in", { authMethod: "password" });
 
-      // Admins belong in the admin area, not the student dashboard or student onboarding.
-      const { data: isAdmin } = await supabase.rpc("has_role", { user_id: user.id, role_name: "admin" });
-      if (isAdmin === true) {
-        router.replace("/admin");
-        return;
+      // Admins and teachers belong in their own areas, not the student dashboard or student onboarding.
+      // A specific return path (for example a teacher invite link) is always honoured.
+      if (redirectTo === "/dashboard") {
+        const [admin, teacher] = await Promise.all([
+          supabase.rpc("has_role", { user_id: user.id, role_name: "admin" }),
+          supabase.rpc("has_role", { user_id: user.id, role_name: "teacher" }),
+        ]);
+        if (admin.data === true) {
+          router.replace("/admin");
+          return;
+        }
+        if (teacher.data === true) {
+          router.replace("/teacher");
+          return;
+        }
       }
 
       const { data: profile, error: profileError } = await supabase

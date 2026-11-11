@@ -36,8 +36,8 @@ export interface ReviewableQuestion {
   answer: string;
 }
 
-/** cyrb53: a fast 53-bit string hash. Not cryptographic; it only needs to make accidental collisions negligible. */
-function cyrb53(text: string): string {
+/** Content hash (cyrb53): a fast 53-bit string hash. Not cryptographic; it only needs to make accidental collisions negligible. */
+export function contentHash(text: string): string {
   let h1 = 0xdeadbeef;
   let h2 = 0x41c6ce57;
   for (let i = 0; i < text.length; i += 1) {
@@ -53,7 +53,7 @@ function cyrb53(text: string): string {
 /** Option order is deliberately ignored: reshuffling the options does not change what a teacher must check. */
 export function questionReviewId(bank: string, question: string, options: string[], answer: string): string {
   const canonical = [bank, question.trim(), answer.trim(), ...[...options].map((o) => o.trim()).sort()].join("\u241f");
-  return `${bank}-${cyrb53(canonical)}`;
+  return `${bank}-${contentHash(canonical)}`;
 }
 
 let cached: ReviewableQuestion[] | null = null;

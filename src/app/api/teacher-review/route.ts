@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { allReviewableQuestions, isReviewVerdict } from "@/lib/exam/curated/registry";
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { lessonReviewTargetExists } from "@/lib/teacher/loadItems";
+import { LESSON_GROUP } from "@/lib/teacher/reviewItems";
 
 export const dynamic = "force-dynamic";
 
@@ -17,14 +19,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Add a short note explaining what is wrong" }, { status: 400 });
   }
 
-  // Only questions that exist in the current banks can be reviewed; the bank is derived server-side, never trusted.
+  // Only content that exists right now can be reviewed; the bank is derived server-side, never trusted from the client.
+  let bank: string | null = null;
   const question = allReviewableQuestions().find((q) => q.id === body.questionId);
-  if (!question) return NextResponse.json({ error: "Unknown or changed question" }, { status: 404 });
+  if (question) bank = question.bank;
+  else if (await lessonReviewTargetExists(reviewer.supabase, body.questionId)) bank = LESSON_GROUP.id;
+  if (!bank) return NextResponse.json({ error: "Unknown or changed content" }, { status: 404 });
 
   const { error } = await reviewer.supabase.from("content_reviews").upsert(
     {
-      question_id: question.id,
-      bank: question.bank,
+      question_id: body.questionId,
+      bank,
       verdict: body.verdict,
       note: note || null,
       reviewer_id: reviewer.user.id,

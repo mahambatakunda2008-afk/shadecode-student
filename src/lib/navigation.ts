@@ -85,7 +85,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   adminQuestions: { href: "/admin/exam-hub/questions", label: "Tag Questions", icon: Tags },
   adminManage: { href: "/admin/exam-hub/manage", label: "Manage Papers", icon: Settings2 },
   adminBoards: { href: "/admin/exam-hub/boards", label: "Exam Boards", icon: Globe },
-  adminContentReview: { href: "/teacher-review", label: "Content Review", icon: FileCheck2 },
+  adminContentReview: { href: "/teacher", label: "Teacher Portal", icon: FileCheck2 },
   adminFeedback: { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 };
 
