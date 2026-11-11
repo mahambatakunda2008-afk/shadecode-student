@@ -59,6 +59,8 @@ export interface CallAIOptions {
   skipCurriculumGrounding?: boolean;
   /** Optional multimodal inputs. Only providers with verified media support receive these parts. */
   media?: Array<{ mimeType: string; data: string }>;
+  /** Ask a compatible multimodal provider for JSON output only when the caller validates JSON. */
+  jsonResponse?: boolean;
   /**
    * For long generations: let each configured first-class provider (Gateway, Groq, OpenRouter, Cloudflare)
    * use a fair share of the remaining chain time, capped so one slow provider cannot consume the whole
@@ -376,7 +378,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
                 ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
               ],
             }],
-            generationConfig: { maxOutputTokens: maxTokens, temperature: media.length ? 0.1 : 0.35, ...(media.length ? { responseMimeType: "application/json" } : {}) },
+            generationConfig: { maxOutputTokens: maxTokens, temperature: media.length ? 0.1 : 0.35, ...(media.length && options.jsonResponse ? { responseMimeType: "application/json" } : {}) },
           }),
         }, timeout);
       } catch (error) {
