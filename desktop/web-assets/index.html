@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#06111c">
+    <title>Shadecode Student</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #06111c; color: #f4f8fc; }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 32px; background: radial-gradient(ellipse at 50% 15%, #12334a 0, #06111c 58%); }
+      main { width: min(100%, 460px); text-align: center; }
+      .mark { width: 56px; height: 56px; margin: 0 auto 26px; display: grid; place-items: center; border: 1px solid #2b6e91; border-radius: 17px; color: #75dcff; font-size: 25px; font-weight: 800; box-shadow: 0 0 48px #1c9bca26; }
+      h1 { margin: 0; font-size: clamp(27px, 5vw, 36px); letter-spacing: -.04em; }
+      p { color: #a8bac8; line-height: 1.7; margin: 14px 0 24px; }
+      #status { min-height: 24px; color: #75dcff; font-size: 13px; }
+      button { display: none; border: 0; border-radius: 11px; padding: 12px 19px; color: #04111b; background: #75dcff; font: inherit; font-weight: 700; cursor: pointer; }
+      button:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+      .foot { margin-top: 34px; color: #6f8798; font-size: 12px; }
+      @media (prefers-reduced-motion: no-preference) { .pulse { animation: pulse 1.6s ease-in-out infinite; } @keyframes pulse { 50% { opacity: .45; } } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark" aria-hidden="true">S</div>
+      <h1>Shadecode Student</h1>
+      <p id="message">Preparing your learning workspace…</p>
+      <div id="status" role="status" aria-live="polite"><span class="pulse">Connecting securely</span></div>
+      <button id="retry" type="button">Try again</button>
+      <p class="foot">Study smarter. Live sharper.</p>
+    </main>
+    <script>
+      (() => {
+        const appUrl = "https://shadecodestudent.vercel.app/auth/login";
+        const message = document.getElementById("message");
+        const status = document.getElementById("status");
+        const retry = document.getElementById("retry");
+        let checking = false;
+
+        async function connect() {
+          if (checking) return;
+          checking = true;
+          retry.style.display = "none";
+          message.textContent = "Opening your secure Shadecode workspace.";
+          status.textContent = "Connecting securely…";
+          try {
+            const controller = new AbortController();
+            const timeout = window.setTimeout(() => controller.abort(), 9000);
+            await fetch(appUrl, { method: "HEAD", mode: "no-cors", cache: "no-store", signal: controller.signal });
+            window.clearTimeout(timeout);
+            window.location.replace(appUrl);
+          } catch {
+            message.textContent = "The desktop app needs an internet connection for its first launch. Connect, then try again.";
+            status.textContent = "You're currently offline.";
+            retry.style.display = "inline-block";
+            checking = false;
+          }
+        }
+
+        retry.addEventListener("click", connect);
+        void connect();
+      })();
+    </script>
+  </body>
+</html>

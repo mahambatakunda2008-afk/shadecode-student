@@ -19,6 +19,7 @@ Built with a strong focus on Cambridge and ZIMSEC learners, Shadecode is expandi
 - **Study organisation** — tasks, timetables, focus sessions and analytics
 - **Gamification** — XP, levels, achievements, streaks, daily challenges and leaderboards
 - **Careers explorer**
+- **Desktop client** — a dedicated Tauri/Rust application for Windows, macOS and Linux, currently at its native-shell foundation and reusing the shared authenticated web experience
 - **PWA / local-first foundations** — useful state is being moved toward durable local storage and reliable synchronization
 
 Feature maturity varies. The project distinguishes shipped foundations from strategic roadmap items instead of presenting prototypes as finished intelligence.
@@ -118,7 +119,7 @@ The product should prove value and retention before aggressive monetization. Pos
 - **Deployment:** Vercel
 - **PWA:** `@ducanh2912/next-pwa`
 - **Testing:** Vitest
-- **CI:** GitHub Actions
+- **CI:** GitHub Actions (web, Android and cross-platform desktop checks)
 - **Monitoring:** Sentry
 
 ## Getting started
@@ -137,7 +138,12 @@ Never commit secrets. Environment requirements belong in deployment configuratio
 | `npm run start` | Serve a production build |
 | `npm test` | Run Vitest |
 | `npm run lint` | Run ESLint |
+| `cargo check --manifest-path desktop/Cargo.toml` | Check the native desktop client |
 | `npm run test:curriculum` | Run curriculum data tests |
+
+## Desktop client
+
+The dedicated Tauri desktop client lives in `desktop/`. Its current foundation provides a native cross-platform window and a connectivity-aware launch into the shared Shadecode Student experience. It is not yet a complete offline desktop build; see `desktop/README.md` for architecture, limitations and release gates.
 
 ## Documentation map
 

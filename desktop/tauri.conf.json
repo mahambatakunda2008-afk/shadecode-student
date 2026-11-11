@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Shadecode Student",
+  "version": "0.1.0",
+  "identifier": "com.shadecode.student.desktop",
+  "build": {
+    "frontendDist": "web-assets"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Shadecode Student",
+        "width": 1440,
+        "height": 920,
+        "minWidth": 960,
+        "minHeight": 680,
+        "resizable": true,
+        "center": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://shadecodestudent.vercel.app"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Education",
+    "shortDescription": "Your personal academic operating system",
+    "longDescription": "Shadecode Student brings lessons, practice, exams, study planning and Cortex learning intelligence into a dedicated desktop application.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
