@@ -1,5 +1,3 @@
-import "server-only";
-
 export type TutorialBlockType = "text" | "image" | "diagram" | "sketch" | "video" | "audio" | "graph" | "table";
 
 export interface TutorialBlock {
