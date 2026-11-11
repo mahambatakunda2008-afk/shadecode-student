@@ -136,11 +136,11 @@ export function resolveSubjectCatalogEntry(value: unknown): SubjectCatalogEntry 
 /** Stable cross-client identity. Unknown/custom subjects retain a normalized key. */
 export function canonicalSubjectId(value: unknown): string {
   const entry = resolveSubjectCatalogEntry(value);
-  return entry?.id ?? normalizeSubjectKey(value).replace(/\\s+/g, "-");
+  return entry?.id ?? normalizeSubjectKey(value).replace(/\s+/g, "-");
 }
 
 /** Canonical display name for known subjects; preserve custom subject labels. */
 export function canonicalSubjectName(value: unknown): string {
   if (typeof value !== "string") return "";
-  return resolveSubjectCatalogEntry(value)?.name ?? value.trim().replace(/\\s+/g, " ");
+  return resolveSubjectCatalogEntry(value)?.name ?? value.trim().replace(/\s+/g, " ");
 }
