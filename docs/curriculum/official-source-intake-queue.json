@@ -1042,7 +1042,7 @@
       ],
       "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-business-9609/",
       "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/697371-2026-2028-syllabus.pdf",
-      "status": "source_confirmed_content_not_ingested",
+      "status": "latest_version_update_verified_main_pdf_refresh_required",
       "priority": 9,
       "requiredChecks": [
         "syllabus_update_retrieval",
@@ -1057,10 +1057,10 @@
         "source_update_pdf_hash_and_page_count",
         "version_2_change_reconciliation"
       ],
-      "notes": "Official Cambridge subject page lists the 2026-2028 syllabus and a separate syllabus update. The 2029 syllabus is a separate edition and must not be inferred from this document. Keep strategy integrated within the five A Level topics and verify the paper 3/4 assessment structure against the actual PDF and update. Official PDF document metadata checked directly: 9609 is Version 3 (September 2023); 9708 is Version 1 (September 2023). Separate syllabus update PDF is listed by Cambridge and must be reconciled. Do not infer the PDF version from the examination-year range.",
+      "notes": "Official one-page syllabus update confirms Version 2, published December 2025, and states the only change is an updated weblink; specimen materials unchanged. The main PDF URL currently resolves through web extraction to an older Version 1 copy. Keep latest PDF retrieval/hash as an outstanding intake check; do not mistake the cached PDF for the current edition.",
       "sourceUpdateDocumentUrl": "https://www.cambridgeinternational.org/Images/748947-2026-2028-syllabus-update.pdf",
-      "documentVersion": "Version 3",
-      "documentVersionPublished": "September 2023"
+      "documentVersion": "Version 2",
+      "documentVersionPublished": "December 2025"
     },
     {
       "id": "cambridge-9708-2026-2028",
@@ -1081,7 +1081,7 @@
       ],
       "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-economics-9708/",
       "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf",
-      "status": "source_confirmed_content_not_ingested",
+      "status": "latest_version_update_verified_main_pdf_refresh_required",
       "priority": 10,
       "requiredChecks": [
         "syllabus_update_retrieval",
@@ -1096,10 +1096,10 @@
         "source_update_pdf_hash_and_page_count",
         "version_2_change_reconciliation"
       ],
-      "notes": "Official Cambridge subject page lists the 2026-2028 syllabus and a separate syllabus update. The 2029 syllabus is a separate edition. The syllabus page describes six AS topics and five A Level topics, but the exact topic tree and paper structure must be extracted from the PDF and update rather than reconstructed from this summary. Official PDF document metadata checked directly: 9609 is Version 3 (September 2023); 9708 is Version 1 (September 2023). Separate syllabus update PDF is listed by Cambridge and must be reconciled. Do not infer the PDF version from the examination-year range.",
+      "notes": "Official one-page syllabus update confirms Version 2, published December 2025, and states the only change is an updated weblink; specimen materials unchanged. The main PDF URL currently resolves through web extraction to an older Version 1 copy. Keep latest PDF retrieval/hash as an outstanding intake check; do not mistake the cached PDF for the current edition.",
       "sourceUpdateDocumentUrl": "https://www.cambridgeinternational.org/Images/748950-2026-2028-syllabus-update.pdf",
-      "documentVersion": "Version 1",
-      "documentVersionPublished": "September 2023"
+      "documentVersion": "Version 2",
+      "documentVersionPublished": "December 2025"
     },
     {
       "id": "cambridge-9696-2027-2029",
