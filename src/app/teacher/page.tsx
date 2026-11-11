@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
-import { loadLessonItems } from "@/lib/teacher/loadItems";
+import { loadLessonItems, loadTutorialItems } from "@/lib/teacher/loadItems";
 import { questionItems, REVIEW_GROUPS } from "@/lib/teacher/reviewItems";
 
 export const dynamic = "force-dynamic";
@@ -8,12 +8,13 @@ export const metadata = { title: "Teacher portal · Shadecode Student" };
 
 export default async function TeacherHome() {
   const reviewer = (await getReviewer())!;
-  const [lessons, { data: rows }] = await Promise.all([
+  const [lessons, tutorials, { data: rows }] = await Promise.all([
     loadLessonItems(reviewer.supabase),
+    loadTutorialItems(reviewer.supabase, reviewer.user.id),
     reviewer.supabase.from("content_reviews").select("question_id,verdict,reviewer_id").limit(10000),
   ]);
 
-  const items = [...questionItems(), ...lessons];
+  const items = [...questionItems(), ...lessons, ...tutorials];
   const reviews = rows ?? [];
   const mine = new Map(reviews.filter((r) => r.reviewer_id === reviewer.user.id).map((r) => [r.question_id as string, r.verdict as string]));
   const flaggedByAnyone = new Set(reviews.filter((r) => r.verdict !== "correct").map((r) => r.question_id as string));

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/teacher", label: "Home", exact: true, adminOnly: false },
+  { href: "/teacher/tutorials", label: "Tutorials", exact: false, adminOnly: false },
   { href: "/teacher/review", label: "Review", exact: false, adminOnly: false },
   { href: "/teacher/invites", label: "Invites", exact: false, adminOnly: true },
 ];

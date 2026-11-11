@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { allReviewableQuestions, isReviewVerdict } from "@/lib/exam/curated/registry";
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
-import { lessonReviewTargetExists } from "@/lib/teacher/loadItems";
-import { LESSON_GROUP } from "@/lib/teacher/reviewItems";
+import { lessonReviewTargetExists, tutorialReviewTargetExists } from "@/lib/teacher/loadItems";
+import { LESSON_GROUP, TUTORIAL_GROUP } from "@/lib/teacher/reviewItems";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +24,7 @@ export async function POST(request: Request) {
   const question = allReviewableQuestions().find((q) => q.id === body.questionId);
   if (question) bank = question.bank;
   else if (await lessonReviewTargetExists(reviewer.supabase, body.questionId)) bank = LESSON_GROUP.id;
+  else if (await tutorialReviewTargetExists(reviewer.supabase, body.questionId, reviewer.user.id)) bank = TUTORIAL_GROUP.id;
   if (!bank) return NextResponse.json({ error: "Unknown or changed content" }, { status: 404 });
 
   const { error } = await reviewer.supabase.from("content_reviews").upsert(
