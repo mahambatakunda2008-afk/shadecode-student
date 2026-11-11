@@ -76,6 +76,25 @@ describe("central subject catalogue", () => {
     expect(canonicalSubjectName("Marine Engineering")).toBe("Marine Engineering");
   });
 
+  it("registers the four reported qualifications against exact official-source intake records", () => {
+    const queue = JSON.parse(readFileSync(join(process.cwd(), "docs/curriculum/official-source-intake-queue.json"), "utf8"));
+    const expected = [
+      ["cambridge-9609-2026-2028", "9609", "2026-2028", "source_confirmed_content_not_ingested"],
+      ["cambridge-9708-2026-2028", "9708", "2026-2028", "source_confirmed_content_not_ingested"],
+      ["cambridge-9696-2027-2029", "9696", "2027-2029", "source_confirmed_content_not_ingested"],
+      ["zimsec-4047-frs-o-level", "4047", "current-edition-to-be-confirmed", "source_discovery_required"],
+    ] as const;
+    for (const [id, code, version, status] of expected) {
+      const item = queue.items.find((entry: { id: string }) => entry.id === id);
+      expect(item).toBeDefined();
+      expect(item.syllabusId).toBe(code);
+      expect(item.syllabusVersion).toBe(version);
+      expect(item.status).toBe(status);
+      expect(item.requiredChecks.length).toBeGreaterThan(0);
+    }
+    expect(queue.items.find((entry: { id: string }) => entry.id === "zimsec-4047-frs-o-level")?.sourceDocumentUrl).toBeNull();
+  });
+
   it("keeps the native Android catalogue in exact parity with web metadata", () => {
     const kotlin = readFileSync(
       join(process.cwd(), "android/app/src/main/java/com/shadecode/student/NativeSubjectCatalog.kt"),
