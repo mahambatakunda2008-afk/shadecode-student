@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Block = {
@@ -70,9 +71,17 @@ export function TutorialsClient() {
 
   useEffect(() => { loadItems().catch((e) => setError(e.message)); }, []);
 
-  function openItem(item: Tutorial) {
-    setCurrent(item); setTitle(item.title); setSubject(item.subject); setTopic(item.topic ?? "");
-    setSummary(item.summary ?? ""); setBlocks(item.blocks ?? []); setError(""); setMessage("");
+  async function openItem(item: Tutorial) {
+    setBusy(true); setError("");
+    try {
+      const res = await fetch(`/api/teacher/tutorials/${item.id}`, { cache: "no-store" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Could not open tutorial.");
+      const full = json.tutorial as Tutorial;
+      setCurrent(full); setTitle(full.title); setSubject(full.subject); setTopic(full.topic ?? "");
+      setSummary(full.summary ?? ""); setBlocks(full.blocks ?? []); setMessage("");
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not open tutorial."); }
+    finally { setBusy(false); }
   }
 
   function resetEditor() {
@@ -169,6 +178,7 @@ export function TutorialsClient() {
           <h1 className="text-xl font-semibold">Tutorial studio</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">Build lessons with explanations, visuals and video. Every submission goes through review.</p>
         </div>
+        {!current && <Link href="/teacher/tutorials/review" className="rounded-xl border border-[var(--card-border)] px-3 py-2 text-sm">Review queue</Link>}
         {!current && <button onClick={createDraft} disabled={busy} className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">＋ New tutorial</button>}
         {current && <button onClick={resetEditor} className="rounded-xl border border-[var(--card-border)] px-3 py-2 text-sm">Back to tutorials</button>}
       </header>
