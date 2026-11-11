@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { SUBJECT_CATALOG, SUBJECT_CATEGORIES } from "@/lib/subjects/catalog";
+import { SUBJECT_CATALOG, SUBJECT_CATEGORIES, canonicalSubjectId } from "@/lib/subjects/catalog";
 import { CurriculumProfileEditor } from "@/components/subjects/CurriculumProfileEditor";
 import {
   ArrowLeft, BookOpen, Zap, Dna, Globe, FlaskConical,
@@ -82,16 +82,18 @@ export default function SubjectsPage() {
 
 
   const normalizeLabel = (value: string) => value.trim().toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").replace(/\s+/g, " ");
-  const existingKeys = new Set(subjects.map(subject => normalizeLabel(subject.name)));
+  const existingKeys = new Set(subjects.map(subject => canonicalSubjectId(subject.name)));
+  const normalizedQuery = normalizeLabel(subjectQuery);
   const matchingCatalogue = SUBJECT_CATEGORIES.map(group => ({
     group,
     items: SUBJECT_CATALOG
       .filter(entry => entry.category === group)
+      .filter(entry => !existingKeys.has(entry.id))
       .filter(entry => {
-        const labels = [entry.name, ...(entry.aliases ?? [])].map(normalizeLabel);
-        return labels.every(label => !existingKeys.has(label)) &&
-          (entry.name.toLocaleLowerCase().includes(subjectQuery.trim().toLocaleLowerCase()) ||
-           (entry.aliases ?? []).some(alias => alias.toLocaleLowerCase().includes(subjectQuery.trim().toLocaleLowerCase())));
+        if (!normalizedQuery) return true;
+        const searchable = [entry.id, entry.name, entry.category, ...(entry.aliases ?? [])]
+          .map(normalizeLabel);
+        return searchable.some(value => value.includes(normalizedQuery));
       })
       .sort((a, b) => Number(b.pathways.includes(studyLevel ?? "")) - Number(a.pathways.includes(studyLevel ?? "")))
       .map(entry => entry.name),
@@ -185,7 +187,7 @@ export default function SubjectsPage() {
         <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 700, height: 400, background: "radial-gradient(ellipse, rgba(109,40,217,0.12) 0%, transparent 65%)", borderRadius: "50%" }} />
       </div>
 
-      <div style={{ position: "relative", maxWidth: 900, margin: "0 auto", padding: "32px 24px" }}>
+      <div style={{ position: "relative", maxWidth: 1180, margin: "0 auto", padding: "32px clamp(16px, 3vw, 36px)" }}>
 
         {/* ── Header ── */}
         <div style={{ marginBottom: 32 }}>
@@ -265,7 +267,7 @@ export default function SubjectsPage() {
 
         {/* ── Subject grid ── */}
         {!error && subjects.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: 16 }}>
             {subjects.map(s => {
               const t    = theme(s.name);
               const Icon = t.icon;
