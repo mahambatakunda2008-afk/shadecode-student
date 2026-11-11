@@ -17,18 +17,25 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const image = typeof body?.image === "string" ? body.image : "";
   const mimeType = body?.mimeType === "image/jpeg" ? "image/jpeg" : "image/png";
+  const mode = body?.mode === "mathematics" || body?.mode === "science" ? body.mode : "general";
   if (!image || image.length > 4_200_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(image)) {
     return NextResponse.json({ error: "Provide a valid canvas image under 3 MiB." }, { status: 400 });
   }
 
+  const modeInstructions = mode === "mathematics"
+    ? "MATHEMATICS MODE: Treat every equation as exact symbolic data, not prose. Preserve minus (−) versus dash, decimal point versus multiplication dot, 1/l/I, 0/O, x/×, +/t, =/≠, </≤, >/≥, brackets, fraction bars, roots, Greek letters, vector arrows, absolute-value bars, factorials, indices and powers. Use unambiguous Unicode or LaTeX notation for readable equations. Never infer a missing sign, digit, exponent, denominator or variable from what would make an equation mathematically valid. Mark uncertain symbols [unclear] and list candidates."
+    : mode === "science"
+      ? "SCIENCE MODE: Preserve chemical element symbols and capitalization, formula subscripts, ionic charges, reaction arrows, state symbols, units, significant figures, scientific notation, Greek symbols, labelled apparatus and biological terminology. Do not normalize a formula or value to what is scientifically expected if the handwriting says otherwise. Mark uncertain characters [unclear]."
+      : "GENERAL MODE: Prioritize faithful handwritten words, letters, numbers, punctuation and layout. Use context to resolve obvious character confusions, but do not rewrite the author's meaning.";
   const prompt = `You are Shadecode Student's handwriting transcription and character-recovery engine.
+${modeInstructions}
 Read ALL handwritten text in this image, including isolated letters, numbers, labels, subscripts, superscripts, punctuation, mathematical notation and scientific symbols.
 This is OCR plus contextual character correction, not a summary.
 Return ONLY valid JSON with this exact shape:
 {"transcript":"literal best-effort transcription","correctedText":"clean corrected transcription","confidence":0.0,"uncertainCharacters":[{"seen":"ambiguous mark","chosen":"best candidate or [unclear]","alternatives":["candidate 1","candidate 2"],"context":"short surrounding context","reason":"why ambiguous"}]}
 Rules:
 - Distinguish visually similar characters using both their shapes and the surrounding word, sentence, equation or subject context. Pay special attention to 0/O, 1/l/I, 2/Z, 5/S, 6/G, 8/B, rn/m, cl/d, u/v, +/t, ×/x, −/dash, decimal points, commas, brackets and superscript/subscript positions.
-- Correct obvious misspellings and malformed words only when the intended characters are supported by the image and context. Do not invent missing content.
+- Correct obvious misspellings and malformed words only when the intended characters are supported by the image and context. Do not invent missing content. In mathematics and science modes, never apply grammar or spelling correction to symbolic expressions, identifiers, formulae or numeric values.
 - Preserve line breaks, lists, equations, units, variable names, chemical formulae, mathematical operators and technical vocabulary.
 - Keep transcript as close to the visible writing as possible. correctedText may repair clear character confusions, spelling and punctuation, but must preserve meaning.
 - If a character or word cannot be determined reliably, put [unclear] in correctedText and explain the candidates in uncertainCharacters. Never silently guess a critical number, formula, sign, unit or variable.
