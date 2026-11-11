@@ -45,3 +45,27 @@ describe("handwriting OCR response parsing", () => {
     expect(normalizeHandwritingRecognition({ transcript: "x", correctedText: "x", confidence: Number.NaN }).confidence).toBeNull();
   });
 });
+
+
+describe("handwriting character alternatives", () => {
+  it("replaces a selected candidate inside its unique context", async () => {
+    const { applyHandwritingAlternative } = await import("./handwriting");
+    expect(applyHandwritingAlternative("The value is 0 in this line.", {
+      seen: "0/O", chosen: "0", alternatives: ["O"], context: "value is 0 in this", reason: "shape ambiguity",
+    }, "O")).toBe("The value is O in this line.");
+  });
+
+  it("replaces an unclear marker when the context contains it", async () => {
+    const { applyHandwritingAlternative } = await import("./handwriting");
+    expect(applyHandwritingAlternative("x = [unclear] + 2", {
+      seen: "ambiguous mark", chosen: "[unclear]", alternatives: ["1", "l"], context: "x = [unclear] + 2", reason: "unclear character",
+    }, "1")).toBe("x = 1 + 2");
+  });
+
+  it("refuses to guess when the target appears more than once", async () => {
+    const { applyHandwritingAlternative } = await import("./handwriting");
+    expect(applyHandwritingAlternative("0 + 0 = 0", {
+      seen: "0/O", chosen: "0", alternatives: ["O"], context: "", reason: "ambiguous",
+    }, "O")).toBeNull();
+  });
+});
