@@ -32,9 +32,10 @@ Install Rust (stable), the platform's Tauri prerequisites, and the system webvie
 - macOS: Xcode Command Line Tools.
 - Linux: WebKitGTK 4.1 and the Tauri system libraries.
 
-From the repository root:
+From the repository root, first generate the native icon set from the official Shadecode app icon, then compile:
 
 ```bash
+npx --yes @tauri-apps/cli@^2 icon public/icons/shadecode-student-512.png --output desktop/icons
 cargo check --manifest-path desktop/Cargo.toml
 cargo run --manifest-path desktop/Cargo.toml
 ```
