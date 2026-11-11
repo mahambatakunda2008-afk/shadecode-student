@@ -19,7 +19,23 @@ export async function GET(request: NextRequest, { params }: Context) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Sign in to open tutorials." }, { status: 401 });
 
-    const { data, error } = await supabase
+    const admin = createSupabaseAdminClient();
+    if (!admin) return NextResponse.json({ error: "Tutorial media is temporarily unavailable." }, { status: 503 });
+    const { data: identity, error: identityError } = await admin
+      .from("teacher_tutorials")
+      .select("id,subject")
+      .eq("id", id)
+      .eq("status", "published")
+      .maybeSingle();
+    if (identityError) throw identityError;
+    if (!identity) return NextResponse.json({ error: "Tutorial not found." }, { status: 404 });
+
+    const access = await resolveLearnerSubject(supabase, user.id, identity.subject);
+    if (!access.ok || matchAllowedSubject(identity.subject, [access.subject]) !== access.subject) {
+      return NextResponse.json({ error: access.ok ? "This tutorial is not available for your subjects." : access.error }, { status: access.ok ? 403 : access.status });
+    }
+
+    const { data, error } = await admin
       .from("teacher_tutorials")
       .select("id,title,subject,topic,summary,blocks,version,published_at")
       .eq("id", id)
@@ -27,14 +43,6 @@ export async function GET(request: NextRequest, { params }: Context) {
       .maybeSingle();
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "Tutorial not found." }, { status: 404 });
-
-    const access = await resolveLearnerSubject(supabase, user.id, data.subject);
-    if (!access.ok || matchAllowedSubject(data.subject, [access.subject]) !== access.subject) {
-      return NextResponse.json({ error: access.ok ? "This tutorial is not available for your subjects." : access.error }, { status: access.ok ? 403 : access.status });
-    }
-
-    const admin = createSupabaseAdminClient();
-    if (!admin) return NextResponse.json({ error: "Tutorial media is temporarily unavailable." }, { status: 503 });
     const blocks = await Promise.all((Array.isArray(data.blocks) ? data.blocks : []).map(async (raw: Record<string, unknown>) => {
       const block = { ...raw };
       const path = typeof block.storagePath === "string" ? block.storagePath : "";
