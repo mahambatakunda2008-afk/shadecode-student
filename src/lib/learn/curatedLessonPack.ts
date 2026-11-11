@@ -1,10 +1,20 @@
-import pack from "../../../docs/curriculum/lessons/economics-9708-as-1.1-scarcity-choice-opportunity-cost.json";
+import scarcityPack from "../../../docs/curriculum/lessons/economics-9708-as-1.1-scarcity-choice-opportunity-cost.json";
+import methodologyPack from "../../../docs/curriculum/lessons/economics-9708-as-1.2-economic-methodology.json";
 
 export interface CuratedLessonBlock {
   type: string;
   title?: string;
   content: string;
 }
+
+type AuthoredPack = {
+  schemaVersion: number;
+  status: string;
+  identity: { title: string; sourcePdf: string };
+  lesson: Array<Record<string, unknown>>;
+  retrievalCheck: Array<{ prompt: string }>;
+  practice: Array<{ marks: number; prompt: string }>;
+};
 
 function asText(value: unknown): string {
   if (typeof value === "string") return value;
@@ -15,14 +25,12 @@ function asText(value: unknown): string {
 /** Converts authored curriculum content to the existing Learn renderer format.
  * Assessment keys and marking guidance are intentionally excluded from learner-visible blocks.
  */
-export function buildEconomics9708AS11LearnBlocks(): CuratedLessonBlock[] {
+export function buildCuratedLearnBlocks(authoredPack: AuthoredPack): CuratedLessonBlock[] {
   const blocks: CuratedLessonBlock[] = [];
 
-  for (const rawSection of pack.lesson) {
-    const section = rawSection as unknown as Record<string, unknown>;
+  for (const section of authoredPack.lesson) {
     const type = asText(section.type);
     let content = "";
-
     if (type === "worked_example") {
       const reasoning = Array.isArray(section.reasoning) ? section.reasoning.map(asText) : [];
       content = [
@@ -36,30 +44,39 @@ export function buildEconomics9708AS11LearnBlocks(): CuratedLessonBlock[] {
     } else {
       content = asText(section.body ?? section.prompt);
     }
-
     if (content.trim()) {
       const blockType = type === "explanation" ? "concept" : type === "worked_example" ? "example" : type;
       blocks.push({ type: blockType, title: asText(section.heading) || undefined, content });
     }
   }
 
-  for (const check of pack.retrievalCheck) {
+  for (const check of authoredPack.retrievalCheck) {
     blocks.push({ type: "checkpoint", title: "Retrieval check", content: check.prompt });
   }
-  for (const question of pack.practice) {
+  for (const question of authoredPack.practice) {
     blocks.push({ type: "practice", title: `Practice • ${question.marks} marks`, content: question.prompt });
   }
-
   return blocks;
 }
 
-export const economics9708AS11Pack = {
-  subject: "Economics",
-  topic: "Economics 9708 AS 1.1",
-  title: pack.identity.title,
-  description: "Offline-ready Cambridge AS Economics lesson covering scarcity, choice, opportunity cost and resource allocation. Draft content pending teacher review.",
-  difficulty: "medium" as const,
-  status: pack.status,
-  source: pack.identity.sourcePdf,
-  blocks: buildEconomics9708AS11LearnBlocks(),
-};
+function createLearnPack(authored: AuthoredPack, subtopic: string) {
+  return {
+    subject: "Economics",
+    topic: `Economics 9708 AS ${subtopic}`,
+    title: authored.identity.title,
+    description: `Offline-ready Cambridge AS Economics lesson for topic ${subtopic}. Draft instructional content pending teacher review.`,
+    difficulty: "medium" as const,
+    status: authored.status,
+    source: authored.identity.sourcePdf,
+    blocks: buildCuratedLearnBlocks(authored),
+  };
+}
+
+export const economics9708AS11Pack = createLearnPack(scarcityPack as AuthoredPack, "1.1");
+export const economics9708AS12Pack = createLearnPack(methodologyPack as AuthoredPack, "1.2");
+
+export function getCuratedEconomics9708Pack(packId: string) {
+  if (packId === "economics-9708-as-1.1") return economics9708AS11Pack;
+  if (packId === "economics-9708-as-1.2") return economics9708AS12Pack;
+  return null;
+}
