@@ -48,6 +48,9 @@ jobs:
             libwebkit2gtk-4.1-dev libxdo-dev librsvg2-dev \
             libayatana-appindicator3-dev
 
+      - name: Generate desktop icons from the official app mark
+        run: npx --yes @tauri-apps/cli@^2 icon public/icons/shadecode-student-512.png --output desktop/icons
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
