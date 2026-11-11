@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { REVIEW_VERDICTS, type ReviewableQuestion, type ReviewVerdict } from "@/lib/exam/curated/registry";
 
@@ -16,6 +17,7 @@ interface Props {
   banks: { id: string; label: string }[];
   reviews: StoredReview[];
   reviewerId: string;
+  isAdmin: boolean;
 }
 
 type Filter = "todo" | "flagged" | "all";
@@ -27,7 +29,7 @@ const VERDICT_LABEL: Record<ReviewVerdict, string> = {
   out_of_syllabus: "Out of syllabus",
 };
 
-export function ReviewClient({ questions, banks, reviews, reviewerId }: Props) {
+export function ReviewClient({ questions, banks, reviews, reviewerId, isAdmin }: Props) {
   const [mine, setMine] = useState<Record<string, StoredReview>>(() =>
     Object.fromEntries(reviews.filter((r) => r.reviewer_id === reviewerId).map((r) => [r.question_id, r])),
   );
@@ -98,8 +100,9 @@ export function ReviewClient({ questions, banks, reviews, reviewerId }: Props) {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-4 bg-[var(--background)] px-4 py-6 text-[var(--foreground)]">
       <header className="space-y-1">
+        <Link href={isAdmin ? "/admin" : "/"} className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]">← {isAdmin ? "Admin" : "Home"}</Link>
         <h1 className="text-xl font-semibold">Content review</h1>
-        <p className="text-sm opacity-70">
+        <p className="text-sm text-[var(--muted-foreground)]">
           Check each question: is the marked answer right, is it unambiguous, and is it on the Form 1–4 syllabus?
         </p>
       </header>
@@ -111,20 +114,20 @@ export function ReviewClient({ questions, banks, reviews, reviewerId }: Props) {
             role="tab"
             aria-selected={bank === b.id}
             onClick={() => { setBank(b.id); setIndex(0); setNote(""); setError(null); }}
-            className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-sm transition ${bank === b.id ? "border-cyan-400/60 bg-cyan-400/10" : "border-white/10 hover:border-white/25"}`}
+            className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-sm transition ${bank === b.id ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}
           >
             {b.label}
           </button>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-white/10 p-4 shadow-sm">
+      <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm">
         <div className="flex items-center justify-between text-sm">
           <span>{reviewedCount} of {inBank.length} reviewed</span>
-          <span className="opacity-70">{flaggedCount} flagged</span>
+          <span className="text-[var(--muted-foreground)]">{flaggedCount} flagged</span>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 transition-all" style={{ width: `${pct}%` }} />
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: "var(--brand-gradient)" }} />
         </div>
       </div>
 
@@ -135,7 +138,7 @@ export function ReviewClient({ questions, banks, reviews, reviewerId }: Props) {
             role="tab"
             aria-selected={filter === f}
             onClick={() => { setFilter(f); setIndex(0); setNote(""); setError(null); }}
-            className={`rounded-xl px-3 py-1.5 transition ${filter === f ? "bg-white/10" : "opacity-70 hover:opacity-100"}`}
+            className={`rounded-xl px-3 py-1.5 transition ${filter === f ? "bg-[var(--surface-2)] font-medium" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}
           >
             {f === "todo" ? "To review" : f === "flagged" ? "My flags" : "All"}
           </button>
@@ -143,12 +146,12 @@ export function ReviewClient({ questions, banks, reviews, reviewerId }: Props) {
       </div>
 
       {!current ? (
-        <div className="rounded-2xl border border-white/10 p-6 text-center text-sm opacity-80">
+        <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-6 text-center text-sm text-[var(--muted-foreground)]">
           {filter === "todo" ? "Everything in this bank is reviewed. Switch bank or open “All” to revisit." : "Nothing here yet."}
         </div>
       ) : (
-        <section className="space-y-4 rounded-2xl border border-white/10 p-4 shadow-sm">
-          <div className="flex items-center justify-between text-xs opacity-70">
+        <section className="space-y-4 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm">
+          <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
             <span>{current.topic}</span>
             <span>{Math.min(index, queue.length - 1) + 1} / {queue.length}</span>
           </div>
@@ -157,16 +160,16 @@ export function ReviewClient({ questions, banks, reviews, reviewerId }: Props) {
             {current.options.map((o) => {
               const isAnswer = o === current.answer;
               return (
-                <li key={o} className={`rounded-xl border px-3 py-2 text-sm ${isAnswer ? "border-emerald-400/60 bg-emerald-400/10" : "border-white/10"}`}>
+                <li key={o} className={`rounded-xl border px-3 py-2 text-sm ${isAnswer ? "border-[var(--success)] bg-[var(--success-soft)]" : "border-[var(--card-border)]"}`}>
                   {o}
-                  {isAnswer && <span className="ml-2 text-xs text-emerald-300">marked answer</span>}
+                  {isAnswer && <span className="ml-2 text-xs text-[var(--success)]">marked answer</span>}
                 </li>
               );
             })}
           </ul>
 
           {existing && (
-            <p className="text-xs opacity-70">
+            <p className="text-xs text-[var(--muted-foreground)]">
               Your verdict: {VERDICT_LABEL[existing.verdict]}{existing.note ? ` — ${existing.note}` : ""}
             </p>
           )}
@@ -177,9 +180,9 @@ export function ReviewClient({ questions, banks, reviews, reviewerId }: Props) {
             maxLength={1000}
             rows={2}
             placeholder="Note (required unless correct): what is wrong, or what it should say"
-            className="w-full rounded-xl border border-white/10 bg-transparent px-3 py-2 text-sm outline-none focus:border-cyan-400/60"
+            className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--primary)]"
           />
-          {error && <p role="alert" className="text-sm text-rose-300">{error}</p>}
+          {error && <p role="alert" className="text-sm text-[var(--danger)]">{error}</p>}
 
           <div className="grid grid-cols-2 gap-2">
             {REVIEW_VERDICTS.map((v) => (
@@ -187,7 +190,7 @@ export function ReviewClient({ questions, banks, reviews, reviewerId }: Props) {
                 key={v}
                 disabled={saving}
                 onClick={() => submit(v)}
-                className={`min-h-11 rounded-2xl border px-3 py-2 text-sm transition disabled:opacity-50 ${v === "correct" ? "border-emerald-400/50 hover:bg-emerald-400/10" : "border-white/15 hover:bg-white/5"}`}
+                className={`min-h-11 rounded-2xl border px-3 py-2 text-sm transition disabled:opacity-50 ${v === "correct" ? "border-[var(--success)] hover:bg-[var(--success-soft)]" : "border-[var(--card-border)] hover:bg-[var(--surface-2)]"}`}
               >
                 {VERDICT_LABEL[v]}
               </button>
@@ -195,8 +198,8 @@ export function ReviewClient({ questions, banks, reviews, reviewerId }: Props) {
           </div>
 
           <div className="flex justify-between text-sm">
-            <button onClick={() => go(index - 1)} disabled={index <= 0} className="opacity-70 hover:opacity-100 disabled:opacity-30">← Previous</button>
-            <button onClick={() => go(index + 1)} disabled={index >= queue.length - 1} className="opacity-70 hover:opacity-100 disabled:opacity-30">Skip →</button>
+            <button onClick={() => go(index - 1)} disabled={index <= 0} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30">← Previous</button>
+            <button onClick={() => go(index + 1)} disabled={index >= queue.length - 1} className="">Skip →</button>
           </div>
         </section>
       )}

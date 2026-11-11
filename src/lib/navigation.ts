@@ -30,6 +30,7 @@ import {
   UserRound,
   FlaskConical,
   LayoutDashboard,
+  FileCheck2,
 } from "lucide-react";
 import type { AcademicExperience } from "@/lib/academic/experience";
 import type { ShadecodeFeatureName } from "@/components/brand/ShadecodeFeatureIcon";
@@ -84,6 +85,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   adminQuestions: { href: "/admin/exam-hub/questions", label: "Tag Questions", icon: Tags },
   adminManage: { href: "/admin/exam-hub/manage", label: "Manage Papers", icon: Settings2 },
   adminBoards: { href: "/admin/exam-hub/boards", label: "Exam Boards", icon: Globe },
+  adminContentReview: { href: "/teacher-review", label: "Content Review", icon: FileCheck2 },
   adminFeedback: { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 };
 
@@ -98,6 +100,7 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
       NAV_ITEMS.adminManage,
       NAV_ITEMS.adminModeration,
       NAV_ITEMS.adminQuestions,
+      NAV_ITEMS.adminContentReview,
       NAV_ITEMS.adminBoards,
       NAV_ITEMS.adminFeedback,
       NAV_ITEMS.settings,
