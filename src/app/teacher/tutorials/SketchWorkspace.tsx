@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent } from "react";
 
 type Tool = "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "curve" | "label";
-type Point = { x: number; y: number };
+export type Point = { x: number; y: number };
 type Stroke = { points: Point[]; tool: "pen" | "eraser"; color: string; width: number };
 
 const WIDTH = 1200;
@@ -60,7 +60,7 @@ function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: 
   }
 }
 
-function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: Point; control?: Point } | null {
+export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: Point; control?: Point } | null {
   if (points.length < 8) return null;
   const first = points[0], last = points[points.length - 1];
   const xs = points.map(p => p.x), ys = points.map(p => p.y);
