@@ -55,7 +55,7 @@ object NativeSubjectCatalog {
         NativeSubjectOption("history", "History", "Humanities & social sciences", listOf("primary", "lower-secondary", "upper-secondary", "a-level", "university", "tvet", "professional", "independent")),
         NativeSubjectOption("geography", "Geography", "Humanities & social sciences", listOf("primary", "lower-secondary", "upper-secondary", "a-level", "university", "tvet", "professional", "independent")),
         NativeSubjectOption("religious-studies", "Religious Studies", "Humanities & social sciences", listOf("primary", "lower-secondary", "upper-secondary", "a-level")),
-        NativeSubjectOption("family-religious-studies", "Family and Religious Studies", "Humanities & social sciences", listOf("primary", "lower-secondary", "upper-secondary", "a-level"), listOf("FRS", "Family & Religious Studies")),
+        NativeSubjectOption("zimsec-family-religious-studies-o-level", "Family and Religious Studies (ZIMSEC O Level)", "Humanities & social sciences", listOf("upper-secondary"), listOf("FRS", "Family and Religious Studies", "Family & Religious Studies", "ZIMSEC FRS")),
         NativeSubjectOption("cambridge-geography-9696", "Geography (Cambridge 9696)", "Humanities & social sciences", listOf("a-level"), listOf("Geography 9696", "Cambridge Geography 9696")),
         NativeSubjectOption("sociology", "Sociology", "Humanities & social sciences", listOf("lower-secondary", "upper-secondary", "a-level", "university", "tvet", "professional", "independent")),
         NativeSubjectOption("psychology", "Psychology", "Humanities & social sciences", listOf("lower-secondary", "upper-secondary", "a-level", "university", "tvet", "professional", "independent")),
