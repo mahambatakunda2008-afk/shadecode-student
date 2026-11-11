@@ -169,8 +169,8 @@ export async function GET(req: Request) {
     if (subjectsError) console.error("Subjects query error:", subjectsError);
     const profile = profileData as (ProfileRow & { subjects?: unknown }) | null;
     const allowedSubjectNames = normalizeSubjectNames(profile?.subjects);
-    const allowedKeys = new Set(allowedSubjectNames.map(name => normalizeSubjectKey(name)));
-    const subjects = ((subjectRows ?? []) as SubjectRow[]).filter(s => allowedKeys.has(normalizeSubjectKey(s.name)));
+    const allowedKeys = new Set(allowedSubjectNames.map(name => canonicalSubjectId(name)));
+    const subjects = ((subjectRows ?? []) as SubjectRow[]).filter(s => allowedKeys.has(canonicalSubjectId(s.name)));
     const subjectById = new Map(subjects.map(s => [s.id, s.name])); const level = profile?.level ?? 1;
     const summary = { currentXP: profile?.xp ?? 0, currentStreak: profile?.streak ?? 0, level, xpGoal: Math.max(100, level * 100) };
     if (lessonId) {
