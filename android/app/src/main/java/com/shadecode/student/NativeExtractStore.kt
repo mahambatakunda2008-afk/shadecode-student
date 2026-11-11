@@ -22,8 +22,13 @@ data class NativeExtractArtifact(
     val updatedAt: Long,
 )
 
-class NativeExtractStore(context: Context) {
-    private val directory = File(context.applicationContext.filesDir, "snap_extract_artifacts")
+class NativeExtractStore(context: Context, accountId: String) {
+    init {
+        require(accountId.matches(Regex("[a-fA-F0-9-]{36}"))) { "A valid signed-in account is required for private extracts." }
+    }
+
+    // Each learner's private OCR documents live in a separate app-private directory.
+    private val directory = File(context.applicationContext.filesDir, "snap_extract_artifacts/$accountId")
     private val maxArtifacts = 20
     private val maxTextChars = 120_000
 
