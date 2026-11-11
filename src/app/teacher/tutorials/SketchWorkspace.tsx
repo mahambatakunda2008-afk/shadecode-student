@@ -97,21 +97,26 @@ export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: 
     return null;
   }
 
+  // Estimate the direction over a sampling window that scales with stroke
+  // length. A fixed two-point window is too sensitive to drawing speed: the
+  // same physical corner can otherwise become several artificial vertices.
+  const turnWindow = Math.max(2, Math.round(points.length * 0.035));
   const cornerCandidates = points.flatMap((point, index) => {
-    if (index < 2 || index > points.length - 3) return [];
-    const before = points[index - 2], after = points[index + 2];
+    if (index < turnWindow || index > points.length - turnWindow - 1) return [];
+    const before = points[index - turnWindow], after = points[index + turnWindow];
     const incoming = Math.atan2(point.y - before.y, point.x - before.x);
     const outgoing = Math.atan2(after.y - point.y, after.x - point.x);
     let turn = Math.abs(outgoing - incoming);
     if (turn > Math.PI) turn = Math.PI * 2 - turn;
-    return turn > 0.62 ? [index] : [];
+    return turn > 0.72 ? [index] : [];
   });
-  // A single physical corner can trigger several neighbouring samples. Collapse
-  // each cluster so the count represents actual vertices, not drawing speed.
+  // Merge neighbouring turn samples into one physical corner. The tolerance
+  // scales with sample density, while remaining small enough to separate
+  // adjacent vertices on compact diagrams.
   const cornerClusters: number[][] = [];
   for (const index of cornerCandidates) {
     const current = cornerClusters[cornerClusters.length - 1];
-    if (current && index - current[current.length - 1] <= 4) current.push(index);
+    if (current && index - current[current.length - 1] <= turnWindow * 3) current.push(index);
     else cornerClusters.push([index]);
   }
   const cornerCount = cornerClusters.length;
