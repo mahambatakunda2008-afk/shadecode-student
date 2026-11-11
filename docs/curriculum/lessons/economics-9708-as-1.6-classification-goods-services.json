@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_content_requires_subject_review",
+  "identity": {
+    "board": "cambridge",
+    "qualification": "cambridge-as-a-level",
+    "level": "as_level",
+    "subject": "economics",
+    "syllabusCode": "9708",
+    "syllabusVersion": "2026-2028",
+    "topic": "1",
+    "subtopic": "1.6",
+    "title": "Classification of Goods and Services",
+    "sourcePrintedPages": "16",
+    "sourcePdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf"
+  },
+  "trustBoundary": "Original instructional content aligned to the four extracted Cambridge 9708 AS 1.6 outcomes. It is not official Cambridge material or an independently verified complete syllabus lesson. Teacher review required before publication.",
+  "learningObjectives": [
+    "Define free goods and private economic goods, explaining scarcity and opportunity cost.",
+    "Define public goods using non-rivalry and non-excludability.",
+    "Explain merit goods and their under-consumption arising from imperfect market information.",
+    "Explain demerit goods and their over-consumption arising from imperfect market information."
+  ],
+  "lesson": [
+    {
+      "type": "diagnostic",
+      "prompt": "A lighthouse warns every ship in a bay. A person who has not paid can still benefit, and one ship receiving the warning does not stop another ship receiving it. What might make it difficult for a private seller to charge every beneficiary?"
+    },
+    {
+      "type": "explanation",
+      "heading": "1. Why economists classify goods",
+      "body": "The word 'good' in economics includes goods and services that satisfy wants. Classification helps explain scarcity, opportunity cost, how markets can supply a product, and why consumption may differ from what is best for individuals or society. Do not classify goods only by whether they are tangible, expensive, owned by the state or sold in a shop."
+    },
+    {
+      "type": "explanation",
+      "heading": "2. Free goods and private economic goods",
+      "body": "A free good is available in sufficient abundance relative to demand that using it has no opportunity cost in the relevant circumstances. For example, clean air may be a free good where it is abundant and access is unrestricted. It is not automatically free everywhere or at every time: pollution, congestion or scarcity can make clean air costly to obtain. A private economic good is scarce relative to demand and therefore has an opportunity cost. It is typically rival and excludable: one person's use reduces what is available to others, and access can be restricted, often through a price. A loaf of bread is a straightforward example. 'Private' here describes the economic type of good, not necessarily whether the producer is a private company; ownership and provision are separate questions."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Classifying clean water",
+      "scenario": "A remote community has abundant clean spring water and no competing demand. Years later, drought reduces the supply and households must queue or pay to obtain it.",
+      "reasoning": [
+        "When water is abundant relative to demand and one person's use does not displace another, it may behave as a free good in that context.",
+        "When drought makes water scarce, obtaining and using it has an opportunity cost: it is an economic good.",
+        "The classification depends on scarcity and context, not on the physical substance changing."
+      ],
+      "caution": "A good is not permanently free just because it is usually available without a money payment."
+    },
+    {
+      "type": "explanation",
+      "heading": "3. Public goods: non-rival and non-excludable",
+      "body": "A public good has two defining characteristics. Non-rivalry means one person's consumption does not reduce the amount available for another person. Non-excludability means it is not feasible, or is prohibitively difficult, to prevent people who have not paid from benefiting. A pure public good has both characteristics. National defence is a standard example: protection benefits people across the territory and it is difficult to exclude a non-payer. A lighthouse signal is another textbook illustration. Do not define a public good merely as something supplied by government or used by many people."
+    },
+    {
+      "type": "explanation",
+      "heading": "4. The free-rider problem",
+      "body": "Because non-payers cannot readily be excluded, individuals may wait for others to pay while still receiving the benefit. This is the free-rider problem. A private firm may struggle to collect revenue from all beneficiaries, so a pure public good may not be provided in sufficient quantity through the market. Governments may finance or provide it collectively. Public funding does not change the defining characteristics; the key test remains non-rivalry and non-excludability."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Is a busy road a pure public good?",
+      "scenario": "A road is quiet and has no toll. Later, traffic becomes congested and a toll gate is installed.",
+      "reasoning": [
+        "When quiet, one extra user may not reduce others' use, so the road may be non-rival at that level of use.",
+        "When congested, an extra vehicle can slow other users, so the road becomes rival in use.",
+        "A toll gate can make access excludable. The road is therefore not a straightforward pure public good; it may be a quasi-public or common-access case depending on congestion and access rules."
+      ],
+      "caution": "Do not use roads as an automatic example of a pure public good. Test both characteristics and consider congestion and exclusion."
+    },
+    {
+      "type": "explanation",
+      "heading": "5. Merit goods and under-consumption",
+      "body": "A merit good is a good or service considered beneficial to consumers, but consumers may underestimate its benefits because of imperfect information. As a result, they may consume less than they would if they understood the benefits fully. Education and preventive healthcare are common examples. The key syllabus explanation is the information gap: people may not know the full private or wider benefits. Merit goods are not defined by being non-rival and non-excludable. They can be rival and excludable, and private providers can sell them."
+    },
+    {
+      "type": "explanation",
+      "heading": "6. Demerit goods and over-consumption",
+      "body": "A demerit good is a good or service considered harmful to consumers, but consumers may underestimate its costs because of imperfect information. As a result, they may consume more than they would if they understood the risks fully. Tobacco products are a common example where consumers may underestimate long-term health risks. The syllabus focus here is over-consumption arising from imperfect market information. Do not assume every purchase that an observer dislikes is automatically a demerit good; explain the information problem and the harm being underestimated."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Compare the information problem",
+      "scenario": "A student is unaware of the long-term benefits of vaccination. Another consumer underestimates the health risks associated with smoking.",
+      "reasoning": [
+        "In the first case, incomplete information about benefits can lead to under-consumption of a merit good.",
+        "In the second case, incomplete information about harms can lead to over-consumption of a demerit good.",
+        "In both cases, the consumer's decision is affected by imperfect information, but the direction of the consumption error differs."
+      ],
+      "caution": "Merit and demerit are not synonyms for public and private. The classifications answer different questions."
+    },
+    {
+      "type": "explanation",
+      "heading": "7. Keep the classifications separate",
+      "body": "Free versus economic goods concerns scarcity and opportunity cost. Private versus public goods concerns rivalry and excludability. Merit versus demerit goods concerns perceived benefits or harms and imperfect information that can lead to under- or over-consumption. A product can be a private economic good and also be considered a merit or demerit good. A service being publicly funded does not automatically make it a pure public good."
+    },
+    {
+      "type": "synthesis",
+      "heading": "8. A reliable classification method",
+      "body": "First ask whether the good is scarce relative to demand and has an opportunity cost. Next, if considering public versus private goods, test rivalry and excludability separately. Finally, if considering merit or demerit, identify the information consumers lack, the benefit or harm they underestimate, and whether this causes under- or over-consumption. Use a specific example and explain the reasoning rather than relying on the label alone."
+    }
+  ],
+  "retrievalCheck": [
+    {
+      "prompt": "What makes a good free in the economic sense?",
+      "answer": "It is sufficiently abundant relative to demand that use has no opportunity cost in the relevant context."
+    },
+    {
+      "prompt": "What two characteristics define a pure public good?",
+      "answer": "Non-rivalry and non-excludability."
+    },
+    {
+      "prompt": "What is the free-rider problem?",
+      "answer": "People can benefit without paying because they cannot readily be excluded, weakening the incentive for private providers to supply the good."
+    },
+    {
+      "prompt": "Why may a merit good be under-consumed?",
+      "answer": "Consumers may underestimate its benefits because of imperfect information."
+    },
+    {
+      "prompt": "Why may a demerit good be over-consumed?",
+      "answer": "Consumers may underestimate its harms or costs because of imperfect information."
+    },
+    {
+      "prompt": "Does government provision automatically make a good a public good?",
+      "answer": "No. Public-good classification depends on non-rivalry and non-excludability."
+    },
+    {
+      "prompt": "Can a merit good also be a private economic good?",
+      "answer": "Yes. Merit status concerns perceived benefits and information; private economic status concerns scarcity, rivalry and excludability."
+    }
+  ],
+  "practice": [
+    {
+      "id": "q1",
+      "type": "classification",
+      "marks": 4,
+      "prompt": "Explain why clean air in an unpolluted, sparsely populated area may be treated as a free good, while bottled water in a drought-affected town is an economic good.",
+      "answer": [
+        "clean air abundant relative to demand",
+        "use has no opportunity cost in that context",
+        "bottled water scarce relative to demand",
+        "obtaining it involves opportunity cost"
+      ],
+      "marking": [
+        "1 mark for abundance relative to demand",
+        "1 mark for no opportunity cost",
+        "1 mark for scarcity of bottled water",
+        "1 mark for opportunity cost"
+      ],
+      "misconception": "Free does not simply mean no money price; explain scarcity and opportunity cost."
+    },
+    {
+      "id": "q2",
+      "type": "structured_response",
+      "marks": 4,
+      "prompt": "Define a pure public good and explain why non-rivalry and non-excludability matter.",
+      "answer": [
+        "non-rival: one person's use does not reduce another's benefit",
+        "non-excludable: non-payers cannot feasibly be prevented from benefiting",
+        "free-rider problem",
+        "private market may not collect revenue from beneficiaries"
+      ],
+      "marking": [
+        "1 mark for non-rivalry",
+        "1 mark for non-excludability",
+        "1 mark for free-rider explanation",
+        "1 mark for link to private provision"
+      ],
+      "misconception": "A good used by many people is not necessarily non-rival or non-excludable."
+    },
+    {
+      "id": "q3",
+      "type": "comparison",
+      "marks": 5,
+      "prompt": "Distinguish a public good from a merit good, using one example of each.",
+      "answer": [
+        "public good defined by non-rivalry and non-excludability",
+        "example such as national defence or lighthouse signal",
+        "merit good defined by benefits consumers may underestimate",
+        "imperfect information can cause under-consumption",
+        "example such as education or preventive healthcare"
+      ],
+      "marking": [
+        "1 mark for public-good characteristics",
+        "1 mark for relevant public-good example",
+        "1 mark for merit-good explanation",
+        "1 mark for information failure and under-consumption",
+        "1 mark for relevant merit-good example"
+      ],
+      "misconception": "A merit good is not defined by being non-rival and non-excludable."
+    },
+    {
+      "id": "q4",
+      "type": "application",
+      "marks": 5,
+      "prompt": "Explain why imperfect information may cause over-consumption of a demerit good.",
+      "answer": [
+        "consumers lack or underestimate information about harm",
+        "they perceive the private cost/benefit inaccurately",
+        "they consume more than they would with better information",
+        "example relevant to a demerit good"
+      ],
+      "marking": [
+        "1 mark for imperfect information",
+        "1 mark for underestimated harm",
+        "1 mark for inaccurate consumer decision",
+        "1 mark for over-consumption",
+        "1 mark for applied example"
+      ],
+      "misconception": "Do not merely state that the good is harmful; explain how information changes consumption."
+    },
+    {
+      "id": "q5",
+      "type": "classification",
+      "marks": 6,
+      "prompt": "Classify each case and justify your answer: (a) national defence, (b) a paid school textbook, (c) a student who underestimates the long-term benefits of education, (d) a smoker who underestimates health risks.",
+      "answer": [
+        "national defence: public good, non-rival and non-excludable",
+        "textbook: private economic good, scarce, rival and excludable",
+        "education: merit good, imperfect information about benefits can cause under-consumption",
+        "tobacco: demerit good, imperfect information about harms can cause over-consumption"
+      ],
+      "marking": [
+        "up to 2 marks for public-good characteristics",
+        "1 mark for textbook classification with reasoning",
+        "up to 1 mark for merit-good application",
+        "up to 2 marks for demerit-good application"
+      ],
+      "misconception": "Different classification systems can apply to the same product. State which feature you are testing."
+    }
+  ],
+  "mastery": {
+    "completionIsNotMastery": true,
+    "requiredEvidence": [
+      "distinguish free goods from scarce economic goods using opportunity cost",
+      "explain both characteristics of pure public goods and the free-rider problem",
+      "distinguish public goods from merit goods",
+      "explain information failure leading to under-consumption of merit goods",
+      "explain information failure leading to over-consumption of demerit goods",
+      "classify unfamiliar examples with justified reasoning"
+    ],
+    "suggestedThreshold": 0.8,
+    "requireIndependentAttempt": true
+  },
+  "offline": {
+    "selfContained": true,
+    "assets": [
+      {
+        "assetId": "econ-9708-1-6-classification-map",
+        "type": "comparison_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-1-6-public-good-test",
+        "type": "process_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-1-6-information-failure",
+        "type": "process_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      }
+    ],
+    "networkRequired": false,
+    "aiRequired": false
+  },
+  "visuals": [
+    {
+      "assetId": "econ-9708-1-6-classification-map",
+      "type": "comparison_diagram",
+      "kind": "goods-classification-map",
+      "title": "Three different classification questions",
+      "purpose": "Separate scarcity/opportunity cost, rivalry/excludability and imperfect information/consumption outcomes.",
+      "learningObjectiveIds": [
+        "9708-AS-1.6-LO1",
+        "9708-AS-1.6-LO2",
+        "9708-AS-1.6-LO3",
+        "9708-AS-1.6-LO4"
+      ],
+      "altText": "Three-column concept map. Free versus economic goods is tested by scarcity and opportunity cost. Public versus private goods is tested by rivalry and excludability. Merit versus demerit goods is tested by imperfect information about benefits or harms and the resulting under- or over-consumption.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "classify",
+        "compare",
+        "explain"
+      ]
+    },
+    {
+      "assetId": "econ-9708-1-6-public-good-test",
+      "type": "process_diagram",
+      "kind": "public-good-test",
+      "title": "Testing for a pure public good",
+      "purpose": "Apply non-rivalry and non-excludability as two independent tests and connect them to the free-rider problem.",
+      "learningObjectiveIds": [
+        "9708-AS-1.6-LO2"
+      ],
+      "altText": "Two-question test for a pure public good: does one person's use reduce another person's benefit, and can non-payers be excluded? A pure public good is both non-rival and non-excludable. These characteristics can create a free-rider problem.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "classify",
+        "trace",
+        "explain"
+      ]
+    },
+    {
+      "assetId": "econ-9708-1-6-information-failure",
+      "type": "process_diagram",
+      "kind": "merit-demerit-information",
+      "title": "Imperfect information and consumption",
+      "purpose": "Contrast under-consumption of merit goods with over-consumption of demerit goods.",
+      "learningObjectiveIds": [
+        "9708-AS-1.6-LO3",
+        "9708-AS-1.6-LO4"
+      ],
+      "altText": "Two pathways: consumers underestimate benefits of a merit good, leading to under-consumption; consumers underestimate harms of a demerit good, leading to over-consumption. Both pathways begin with imperfect information.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "compare",
+        "trace",
+        "explain"
+      ]
+    }
+  ],
+  "visualReview": {
+    "status": "reviewed_for_representation_coverage",
+    "objectiveIdConvention": "9708-AS-1.6-LO<n>",
+    "coverage": "All four stated learning objectives map to offline concept maps and process diagrams. Diagrams distinguish the three classification frameworks and trace the public-good and information-failure mechanisms.",
+    "reviewNote": "Authoring coverage check only. Teacher review and independent verification against the current official syllabus remain required."
+  },
+  "teacherReview": {
+    "required": true,
+    "checks": [
+      "verify definitions and examples against current official syllabus Version 2",
+      "check distinctions between free/economic, private/public and merit/demerit classifications",
+      "review rivalry, excludability, congestion, free-rider and quasi-public examples",
+      "check information-failure explanations and consumption direction",
+      "validate practice mark allocations and answer guidance"
+    ]
+  }
+}
