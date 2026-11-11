@@ -119,7 +119,15 @@ export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: 
     if (current && index - current[current.length - 1] <= turnWindow * 3) current.push(index);
     else cornerClusters.push([index]);
   }
-  const cornerCount = cornerClusters.length;
+  // The first and last samples share the same point on a closed stroke,
+  // so the corner at the stroke seam has no samples on both sides. Count it
+  // explicitly from the incoming and outgoing endpoint tangents.
+  const firstDirection = Math.atan2(points[1].y - first.y, points[1].x - first.x);
+  const lastDirection = Math.atan2(last.y - points[points.length - 2].y, last.x - points[points.length - 2].x);
+  let seamTurn = Math.abs(firstDirection - lastDirection);
+  if (seamTurn > Math.PI) seamTurn = Math.PI * 2 - seamTurn;
+  const seamCorner = closed && seamTurn > 0.72;
+  const cornerCount = cornerClusters.length + (seamCorner ? 1 : 0);
   if (closed && cornerCount >= 3 && cornerCount <= 5) {
     if (cornerCount === 3) return { tool: "triangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
     if (cornerCount === 4 || cornerCount === 5) return { tool: "rectangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
