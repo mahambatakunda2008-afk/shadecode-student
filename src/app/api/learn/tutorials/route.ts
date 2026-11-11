@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
-import { matchAllowedSubject, normalizeSubjectNames } from "@/lib/academic/subjectContract";
+import { matchAllowedSubject } from "@/lib/academic/subjectContract";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 
 export const dynamic = "force-dynamic";
