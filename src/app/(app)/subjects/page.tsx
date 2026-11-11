@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { SUBJECT_CATALOG, SUBJECT_CATEGORIES, canonicalSubjectId } from "@/lib/subjects/catalog";
+import { SUBJECT_CATALOG, SUBJECT_CATEGORIES, canonicalSubjectId, getSubjectReadiness, resolveSubjectCatalogEntry } from "@/lib/subjects/catalog";
 import { CurriculumProfileEditor } from "@/components/subjects/CurriculumProfileEditor";
 import {
   ArrowLeft, BookOpen, Zap, Dna, Globe, FlaskConical,
@@ -289,6 +289,21 @@ export default function SubjectsPage() {
                         {s.lessonCount} lesson{s.lessonCount !== 1 ? "s" : ""}
                       </p>
                     </div>
+                  </div>
+
+                  {/* Evidence-backed readiness, deliberately separate from subject selection. */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "9px 12px", marginBottom: 16 }}>
+                    {getSubjectReadiness(resolveSubjectCatalogEntry(s.name), s.lessonCount).map(item => {
+                      const stateLabel = item.state === "ready" ? "Available" : item.state === "needs_setup" ? "Needs setup" : "Not verified";
+                      const stateColor = item.state === "ready" ? "#34d399" : item.state === "needs_setup" ? "#fbbf24" : "var(--muted-foreground)";
+                      return (
+                        <div key={item.id} title={item.detail} style={{ minWidth: 0 }}>
+                          <p style={{ margin: 0, color: "var(--muted-foreground)", fontSize: 10, fontWeight: 650 }}>{item.label}</p>
+                          <p style={{ margin: "3px 0 0", color: stateColor, fontSize: 11, fontWeight: 650 }}>{stateLabel}</p>
+                          <p style={{ margin: "2px 0 0", color: "var(--muted-foreground)", fontSize: 10, lineHeight: 1.35, overflowWrap: "anywhere" }}>{item.detail}</p>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Divider */}
