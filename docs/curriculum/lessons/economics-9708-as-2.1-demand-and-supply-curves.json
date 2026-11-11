@@ -1,0 +1,341 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_content_requires_subject_review",
+  "identity": {
+    "board": "cambridge",
+    "qualification": "cambridge-as-a-level",
+    "level": "as_level",
+    "subject": "economics",
+    "syllabusCode": "9708",
+    "syllabusVersion": "2026-2028",
+    "topic": "2",
+    "subtopic": "2.1",
+    "title": "Demand and Supply Curves",
+    "sourcePrintedPages": "17-18",
+    "sourcePdf": "https://www.cambridgeinternational.org/Images/697423-2026-2028-syllabus.pdf"
+  },
+  "trustBoundary": "Original instructional content aligned to the five extracted Cambridge 9708 AS 2.1 outcomes. It is not official Cambridge material or an independently verified complete syllabus lesson. Teacher review required before publication.",
+  "learningObjectives": [
+    "Define effective demand.",
+    "Distinguish individual and market demand and supply.",
+    "Explain determinants of demand and supply.",
+    "Explain factors causing demand-curve and supply-curve shifts.",
+    "Distinguish a curve shift from movement along a curve."
+  ],
+  "lesson": [
+    {
+      "type": "diagnostic",
+      "prompt": "A student says, 'I want a new laptop, so that is demand.' What else must be true before this want counts as effective demand in a market?"
+    },
+    {
+      "type": "explanation",
+      "heading": "1. Effective demand",
+      "body": "Demand is not simply a wish or desire. Effective demand exists when consumers are willing and able to buy a good or service at a given price over a stated period. A person may want a luxury car but lack the ability to pay; that want alone is not effective demand. Demand is a relationship between price and quantity consumers are willing and able to purchase, with other relevant factors held constant."
+    },
+    {
+      "type": "explanation",
+      "heading": "2. The demand curve",
+      "body": "A demand curve shows the quantities consumers are willing and able to buy at different prices over a given period, ceteris paribus. Price is measured on the vertical axis and quantity demanded on the horizontal axis. A typical demand curve slopes downwards from left to right: as the price falls, quantity demanded tends to rise; as price rises, quantity demanded tends to fall. This is a relationship between price and quantity demanded, not a claim that every consumer behaves identically in every circumstance."
+    },
+    {
+      "type": "explanation",
+      "heading": "3. The supply curve",
+      "body": "A supply curve shows the quantities producers are willing and able to offer for sale at different prices over a given period, ceteris paribus. Price is measured on the vertical axis and quantity supplied on the horizontal axis. A typical supply curve slopes upwards from left to right: a higher price can make production more profitable and encourage firms to supply more, while a lower price can reduce the incentive to supply. The curve represents a relationship, not a promise that every producer has identical costs."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Reading a demand and supply schedule",
+      "scenario": "At prices of $2, $4 and $6, consumers are willing and able to buy 90, 60 and 30 units respectively. At those same prices, firms are willing to supply 20, 50 and 80 units.",
+      "reasoning": [
+        "The demand schedule shows quantity demanded falling as price rises.",
+        "The supply schedule shows quantity supplied rising as price rises.",
+        "Plot price vertically and quantity horizontally; label each curve and its axes.",
+        "At $4, the quantities in this example are not equal, so the market is not necessarily in equilibrium. Equilibrium is studied in the next subtopic."
+      ],
+      "caution": "Do not confuse a schedule, which lists values, with a curve, which represents the relationship graphically."
+    },
+    {
+      "type": "explanation",
+      "heading": "4. Individual and market demand",
+      "body": "Individual demand is the quantity one consumer is willing and able to buy at each price over a given period. Market demand is the total quantity all consumers in the market are willing and able to buy at each price. To obtain market demand, add individual quantities horizontally at each price. For example, if at $5 one consumer demands 3 units and another demands 4 units, market demand at $5 is 7 units. Do not add prices vertically or add quantities from different prices."
+    },
+    {
+      "type": "explanation",
+      "heading": "5. Individual and market supply",
+      "body": "Individual supply is the quantity one producer is willing and able to offer at each price over a given period. Market supply is the total quantity all producers are willing and able to offer at each price. Market supply is found by adding the quantities supplied by all producers horizontally at each price. The number of firms and their costs can therefore affect the market supply curve."
+    },
+    {
+      "type": "worked_example",
+      "heading": "Horizontal summation",
+      "scenario": "At a price of $10, Firm A supplies 12 units and Firm B supplies 8 units. At $12, Firm A supplies 15 and Firm B supplies 11.",
+      "reasoning": [
+        "At $10, market supply is 12 + 8 = 20 units.",
+        "At $12, market supply is 15 + 11 = 26 units.",
+        "Repeat the horizontal addition at each price to construct the market supply schedule."
+      ],
+      "caution": "Add quantities at the same price. Do not add the price values or quantities from different rows."
+    },
+    {
+      "type": "explanation",
+      "heading": "6. Determinants of demand",
+      "body": "A determinant other than the good's own price can change demand and shift the whole demand curve. Important examples include: income (for a normal good, higher income tends to increase demand; for an inferior good it may reduce demand); tastes, fashion and preferences; prices of related goods (a higher substitute price can increase demand for this good, while a higher complement price can reduce it); population or the number of consumers; and expectations about future prices, income or availability. The direction depends on the context and the type of good."
+    },
+    {
+      "type": "explanation",
+      "heading": "7. Determinants of supply",
+      "body": "A determinant other than the good's own price can shift the whole supply curve. Examples include production costs such as wages, raw materials and energy; productivity and technology; indirect taxes and subsidies; the number of producers; expectations about future prices; and natural conditions such as weather for agricultural products. Lower production costs, improved productivity or a subsidy tend to increase supply. Higher costs or an indirect tax tend to reduce supply, other things being equal."
+    },
+    {
+      "type": "explanation",
+      "heading": "8. Movement along a curve versus a shift",
+      "body": "A change in the good's own price causes a movement along the existing demand curve and changes quantity demanded. A change in another determinant of demand shifts the entire demand curve and changes demand. The same distinction applies to supply: the good's own price causes a movement along the existing supply curve and changes quantity supplied; a non-price determinant shifts the supply curve and changes supply. Use precise language: 'increase in quantity demanded' for movement along demand, and 'increase in demand' for a rightward shift."
+    },
+    {
+      "type": "application",
+      "heading": "9. Diagnose the change",
+      "scenario": "Consider four events: (a) the price of tea falls; (b) household incomes rise and tea is a normal good; (c) wages paid to tea producers rise; (d) a new production method lowers the cost of processing tea.",
+      "prompts": [
+        "For each event, identify whether demand or supply is affected.",
+        "State whether the change is a movement along a curve or a shift.",
+        "Identify the direction of the shift where relevant.",
+        "Use 'demand', 'quantity demanded', 'supply' and 'quantity supplied' accurately."
+      ],
+      "feedback": "(a) is a movement along demand and raises quantity demanded. (b) shifts demand right. (c) shifts supply left. (d) shifts supply right. These are ceteris paribus predictions."
+    },
+    {
+      "type": "synthesis",
+      "heading": "10. A diagram checklist",
+      "body": "Label both axes with price and quantity. Label demand D and supply S. State the time period where relevant. When drawing a shift, show the original and new curve and label the direction. When showing a movement, keep the curve fixed and mark the movement between two points. Explain which variable changed and why; a correctly drawn arrow without economic reasoning is incomplete."
+    }
+  ],
+  "retrievalCheck": [
+    {
+      "prompt": "What is effective demand?",
+      "answer": "Willingness and ability to buy a good or service at a given price over a stated period."
+    },
+    {
+      "prompt": "How is market demand obtained from individual demand?",
+      "answer": "By adding the quantities demanded by all consumers horizontally at each price."
+    },
+    {
+      "prompt": "How is market supply obtained?",
+      "answer": "By adding the quantities supplied by all producers horizontally at each price."
+    },
+    {
+      "prompt": "Name three non-price determinants of demand.",
+      "answer": "Examples include income, tastes, prices of related goods, population and expectations."
+    },
+    {
+      "prompt": "Name three non-price determinants of supply.",
+      "answer": "Examples include production costs, productivity/technology, indirect taxes/subsidies, number of firms, expectations and natural conditions."
+    },
+    {
+      "prompt": "What happens when the good's own price changes?",
+      "answer": "There is a movement along the existing curve, changing quantity demanded or quantity supplied."
+    },
+    {
+      "prompt": "What happens when a non-price determinant changes?",
+      "answer": "The whole demand or supply curve shifts."
+    }
+  ],
+  "practice": [
+    {
+      "id": "q1",
+      "type": "definition",
+      "marks": 2,
+      "prompt": "Define effective demand.",
+      "answer": [
+        "willingness to buy",
+        "ability to pay at the given price, over a stated period"
+      ],
+      "marking": [
+        "1 mark for willingness to buy",
+        "1 mark for ability to pay at a given price"
+      ],
+      "misconception": "A desire without ability to pay is not effective demand."
+    },
+    {
+      "id": "q2",
+      "type": "calculation",
+      "marks": 3,
+      "prompt": "At $8, three consumers demand 2, 5 and 4 units. Calculate market demand at this price and explain the method.",
+      "answer": [
+        "11 units",
+        "horizontal addition at the same price"
+      ],
+      "marking": [
+        "1 mark for adding the quantities",
+        "1 mark for 11 units",
+        "1 mark for stating that quantities are added at the same price"
+      ],
+      "misconception": "Do not add quantities from different prices."
+    },
+    {
+      "id": "q3",
+      "type": "diagram_construction",
+      "marks": 4,
+      "prompt": "Draw and label a typical demand curve and a typical supply curve on one set of axes. Label price and quantity.",
+      "answer": [
+        "price on vertical axis",
+        "quantity on horizontal axis",
+        "downward-sloping demand curve labelled D",
+        "upward-sloping supply curve labelled S"
+      ],
+      "marking": [
+        "1 mark for axes",
+        "1 mark for demand curve and label",
+        "1 mark for supply curve and label",
+        "1 mark for appropriate slopes"
+      ],
+      "misconception": "Both curves use price vertically and quantity horizontally."
+    },
+    {
+      "id": "q4",
+      "type": "classification",
+      "marks": 5,
+      "prompt": "For each event, state whether it causes a movement along a curve or a shift: (a) the price of oranges rises; (b) consumer income rises and oranges are a normal good; (c) the cost of fertiliser rises; (d) more orange growers enter the market.",
+      "answer": [
+        "(a) movement along demand; quantity demanded falls",
+        "(b) demand shifts right",
+        "(c) supply shifts left",
+        "(d) supply shifts right"
+      ],
+      "marking": [
+        "1 mark for (a)",
+        "1 mark for (b)",
+        "1 mark for (c)",
+        "1 mark for (d)",
+        "1 mark for correct use of movement/shift terminology"
+      ],
+      "misconception": "The price of the good itself does not shift its own curve."
+    },
+    {
+      "id": "q5",
+      "type": "structured_response",
+      "marks": 6,
+      "prompt": "Explain two determinants that could increase demand for bus travel and two determinants that could decrease the supply of bus services.",
+      "answer": [
+        "demand rise: higher income if bus travel is a normal good, preference shift, higher substitute fares, larger population or expectations",
+        "supply fall: higher fuel/wage costs, indirect tax, fewer operators, lower productivity or adverse conditions"
+      ],
+      "marking": [
+        "up to 2 marks for two explained demand determinants",
+        "up to 2 marks for two explained supply determinants",
+        "up to 2 marks for clear causal links and ceteris paribus"
+      ],
+      "misconception": "Explain how each determinant affects willingness to buy or willingness to sell."
+    }
+  ],
+  "mastery": {
+    "completionIsNotMastery": true,
+    "requiredEvidence": [
+      "define effective demand accurately",
+      "construct and interpret demand and supply curves",
+      "calculate market demand and supply by horizontal summation",
+      "explain demand and supply determinants",
+      "classify changes as movements along curves or shifts"
+    ],
+    "suggestedThreshold": 0.8,
+    "requireIndependentAttempt": true
+  },
+  "offline": {
+    "selfContained": true,
+    "assets": [
+      {
+        "assetId": "econ-9708-2-1-demand-supply-curves",
+        "type": "graph",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-2-1-market-aggregation",
+        "type": "process_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      },
+      {
+        "assetId": "econ-9708-2-1-shifts-movements",
+        "type": "comparison_diagram",
+        "offlineIncluded": true,
+        "source": "original_instructional_diagram"
+      }
+    ],
+    "networkRequired": false,
+    "aiRequired": false
+  },
+  "visuals": [
+    {
+      "assetId": "econ-9708-2-1-demand-supply-curves",
+      "type": "graph",
+      "kind": "demand-supply-curves",
+      "title": "Typical demand and supply curves",
+      "purpose": "Show the relationship between price and quantity demanded or supplied, with correctly labelled axes and opposite typical slopes.",
+      "learningObjectiveIds": [
+        "9708-AS-2.1-LO1",
+        "9708-AS-2.1-LO2"
+      ],
+      "altText": "A single set of axes with price on the vertical axis and quantity on the horizontal axis. The demand curve slopes downwards from left to right and the supply curve slopes upwards from left to right. Both curves show price-quantity relationships over a stated period, other things equal.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "draw",
+        "label",
+        "interpret"
+      ]
+    },
+    {
+      "assetId": "econ-9708-2-1-market-aggregation",
+      "type": "process_diagram",
+      "kind": "market-aggregation",
+      "title": "From individual to market demand and supply",
+      "purpose": "Demonstrate horizontal summation of individual quantities at each identical price to form market curves.",
+      "learningObjectiveIds": [
+        "9708-AS-2.1-LO2"
+      ],
+      "altText": "At a fixed price, individual consumer quantities demanded are added horizontally to obtain market demand. At the same fixed price, individual producer quantities supplied are added horizontally to obtain market supply. Repeat at each price.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "calculate",
+        "trace",
+        "explain"
+      ]
+    },
+    {
+      "assetId": "econ-9708-2-1-shifts-movements",
+      "type": "comparison_diagram",
+      "kind": "curve-shifts-movements",
+      "title": "Movement along a curve versus a curve shift",
+      "purpose": "Contrast own-price changes that move along an unchanged curve with non-price determinants that shift the whole curve.",
+      "learningObjectiveIds": [
+        "9708-AS-2.1-LO3",
+        "9708-AS-2.1-LO4",
+        "9708-AS-2.1-LO5"
+      ],
+      "altText": "A comparison of two cases: a change in the good's own price causes movement along the existing demand or supply curve; a change in a non-price determinant shifts the entire curve. Demand and supply shifts are labelled separately from changes in quantity demanded or quantity supplied.",
+      "source": "original_instructional_diagram",
+      "offlineIncluded": true,
+      "practiceModes": [
+        "compare",
+        "classify",
+        "explain"
+      ]
+    }
+  ],
+  "visualReview": {
+    "status": "reviewed_for_representation_coverage",
+    "objectiveIdConvention": "9708-AS-2.1-LO<n>",
+    "coverage": "All five stated learning objectives map to offline instructional graphs and process/comparison diagrams. Visuals cover demand and supply, horizontal market aggregation and the movement-versus-shift distinction.",
+    "reviewNote": "Authoring coverage check only. Teacher review and independent verification against the current official syllabus remain required."
+  },
+  "teacherReview": {
+    "required": true,
+    "checks": [
+      "verify effective-demand wording and curve definitions against the current official syllabus",
+      "check horizontal summation examples and graph conventions",
+      "review determinants and direction of demand/supply shifts",
+      "check distinction between change in demand/supply and change in quantity demanded/supplied",
+      "validate practice mark allocations and answer guidance"
+    ]
+  }
+}
