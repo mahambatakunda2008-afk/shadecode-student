@@ -96,21 +96,30 @@ export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: 
     return null;
   }
 
-  const corners = points.filter((p, i) => {
-    if (i < 2 || i > points.length - 3) return false;
-    const a = points[i - 2], b = points[i], c = points[i + 2];
-    const v1 = Math.atan2(b.y - a.y, b.x - a.x);
-    const v2 = Math.atan2(c.y - b.y, c.x - b.x);
-    let delta = Math.abs(v2 - v1); if (delta > Math.PI) delta = Math.PI * 2 - delta;
-    return delta > 0.55;
+  const cornerCandidates = points.flatMap((point, index) => {
+    if (index < 2 || index > points.length - 3) return [];
+    const before = points[index - 2], after = points[index + 2];
+    const incoming = Math.atan2(point.y - before.y, point.x - before.x);
+    const outgoing = Math.atan2(after.y - point.y, after.x - point.x);
+    let turn = Math.abs(outgoing - incoming);
+    if (turn > Math.PI) turn = Math.PI * 2 - turn;
+    return turn > 0.62 ? [index] : [];
   });
+  // A single physical corner can trigger several neighbouring samples. Collapse
+  // each cluster so the count represents actual vertices, not drawing speed.
+  const cornerClusters: number[][] = [];
+  for (const index of cornerCandidates) {
+    const current = cornerClusters[cornerClusters.length - 1];
+    if (current && index - current[current.length - 1] <= 4) current.push(index);
+    else cornerClusters.push([index]);
+  }
+  const cornerCount = cornerClusters.length;
+  if (closed && cornerCount >= 3 && cornerCount <= 5) {
+    if (cornerCount === 3) return { tool: "triangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
+    if (cornerCount === 4 || cornerCount === 5) return { tool: "rectangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
+  }
   const circularity = (4 * Math.PI * (w * h)) / Math.max(pathLength * pathLength, 1);
   if (circularity > 0.48 && Math.min(w, h) / Math.max(w, h) > 0.45) return { tool: "ellipse", from: { x: left, y: top }, to: { x: right, y: bottom } };
-  if (corners.length >= 3 && corners.length <= 7) {
-    if (corners.length <= 3) return { tool: "triangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
-    const nearRect = Math.abs(w - h) < Math.max(w, h) * 0.18 || (w > h * 0.45 && h > w * 0.45);
-    if (nearRect) return { tool: "rectangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
-  }
   return null;
 }
 
@@ -123,6 +132,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const liveRecognitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recognitionPendingRef = useRef(false);
+  const recognitionInFlightRef = useRef(false);
+  const liveCorrectionRef = useRef(true);
   const lastRecognitionAtRef = useRef(0);
   const drawingRef = useRef(false);
   const startRef = useRef<Point | null>(null);
@@ -193,7 +204,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
 
   async function recognizeHandwriting() {
     const canvas = canvasRef.current;
-    if (!canvas || recognizingHandwriting) return;
+    if (!canvas || recognitionInFlightRef.current) return;
+    recognitionInFlightRef.current = true;
     if (liveRecognitionTimerRef.current) {
       clearTimeout(liveRecognitionTimerRef.current);
       liveRecognitionTimerRef.current = null;
@@ -240,8 +252,9 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not read handwriting. Your drawing is unchanged.");
     } finally {
+      recognitionInFlightRef.current = false;
       setRecognizingHandwriting(false);
-      if (recognitionPendingRef.current && liveCorrection) {
+      if (recognitionPendingRef.current && liveCorrectionRef.current) {
         recognitionPendingRef.current = false;
         scheduleLiveHandwritingRecognition();
       }
@@ -249,8 +262,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   }
 
   function scheduleLiveHandwritingRecognition() {
-    if (!liveCorrection) return;
-    if (recognizingHandwriting) {
+    if (!liveCorrectionRef.current) return;
+    if (recognitionInFlightRef.current) {
       recognitionPendingRef.current = true;
       return;
     }
@@ -282,7 +295,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       bitmap.close();
       pushHistory(ctx);
       setStatus("Handwriting image loaded. Reading and correcting characters…");
-      if (liveCorrection) scheduleLiveHandwritingRecognition();
+      if (liveCorrectionRef.current) scheduleLiveHandwritingRecognition();
     } catch {
       setStatus("Could not open that image. Try a standard PNG, JPEG or WebP photo.");
     }
@@ -467,7 +480,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       </button>
       <button type="button" onClick={() => imageInputRef.current?.click()} disabled={saving || recognizingHandwriting} className="min-h-10 rounded-lg border border-[var(--card-border)] px-3 py-2 text-sm">Import handwriting photo</button>
       <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/webp" capture="environment" onChange={importHandwritingImage} className="hidden" />
-      <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={liveCorrection} onChange={event => { const enabled = event.target.checked; setLiveCorrection(enabled); if (!enabled && liveRecognitionTimerRef.current) { clearTimeout(liveRecognitionTimerRef.current); liveRecognitionTimerRef.current = null; } }} />Live handwriting correction</label>
+      <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={liveCorrection} onChange={event => { const enabled = event.target.checked; liveCorrectionRef.current = enabled; setLiveCorrection(enabled); if (!enabled) { recognitionPendingRef.current = false; if (liveRecognitionTimerRef.current) { clearTimeout(liveRecognitionTimerRef.current); liveRecognitionTimerRef.current = null; } } }} />Live handwriting correction</label>
       <span className="text-xs text-[var(--muted-foreground)]">Automatically reads after you pause, corrects likely character confusions using context, and flags uncertain text.</span>
     </div>
     {handwritingText && <div className="space-y-2 rounded-xl border border-[var(--card-border)] p-3">
