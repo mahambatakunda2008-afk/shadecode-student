@@ -44,6 +44,33 @@ describe("handwriting OCR response parsing", () => {
   it("does not turn a non-finite confidence into a trusted score", () => {
     expect(normalizeHandwritingRecognition({ transcript: "x", correctedText: "x", confidence: Number.NaN }).confidence).toBeNull();
   });
+
+  it("normalizes structured math OCR without silently trusting uncertain symbols", () => {
+    const result = normalizeHandwritingRecognition({
+      transcript: "x = 1O",
+      correctedText: "x = 1O",
+      confidence: 0.96,
+      uncertainCharacters: [],
+      mathExpressions: [
+        { sourceText: "x = 1O", latex: "x = 10", confidence: 0.72, uncertainTokens: ["0/O"] },
+        { sourceText: "ignored", latex: "<script>alert(1)</script>", confidence: 1, uncertainTokens: [] },
+      ],
+    });
+    expect(result.mathExpressions).toHaveLength(1);
+    expect(result.mathExpressions[0]).toMatchObject({ sourceText: "x = 1O", latex: "x = 10", confidence: 0.72, uncertainTokens: ["0/O"] });
+    expect(result.requiresReview).toBe(true);
+  });
+
+  it("bounds structured math expressions and confidence values", () => {
+    const result = normalizeHandwritingRecognition({
+      transcript: "x",
+      correctedText: "x",
+      confidence: 0.99,
+      mathExpressions: [{ sourceText: "x²", latex: "x^2", confidence: 3, uncertainTokens: [] }],
+    });
+    expect(result.mathExpressions[0].confidence).toBe(1);
+    expect(result.requiresReview).toBe(false);
+  });
 });
 
 
