@@ -37,6 +37,27 @@ describe("resolveLearnerSubjects cross-client identity", () => {
     ]);
   });
 
+  it("resolves the reported ZIMSEC and Cambridge subjects across legacy database labels", async () => {
+    const result = await resolveLearnerSubjects(
+      clientFor(
+        [
+          "zimsec-family-religious-studies-o-level",
+          "cambridge-business-9609",
+          "cambridge-economics-9708",
+          "cambridge-geography-9696",
+        ],
+        ["FRS", "Business 9609", "Economics 9708", "Geography 9696"],
+      ),
+      "learner-2",
+    );
+    expect(result.subjects.map(subject => subject.name)).toEqual([
+      "Family and Religious Studies (ZIMSEC O Level)",
+      "Business (Cambridge 9609)",
+      "Economics (Cambridge 9708)",
+      "Geography (Cambridge 9696)",
+    ]);
+  });
+
   it("keeps custom subjects while removing duplicate aliases", async () => {
     const result = await resolveLearnerSubjects(
       clientFor(["Maths", "mathematics", "Marine Engineering"], ["Mathematics", "Marine Engineering"]),
