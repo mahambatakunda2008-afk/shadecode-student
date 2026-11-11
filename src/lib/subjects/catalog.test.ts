@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SUBJECT_CATALOG, SUBJECT_CATEGORIES, canonicalSubjectId, canonicalSubjectName, resolveSubjectCatalogEntry } from "./catalog";
 
@@ -42,6 +44,35 @@ describe("central subject catalogue", () => {
     expect(canonicalSubjectId("Marine Engineering")).toBe("marine-engineering");
     expect(resolveSubjectCatalogEntry("Marine Engineering")).toBeNull();
     expect(canonicalSubjectName("Marine Engineering")).toBe("Marine Engineering");
+  });
+
+  it("keeps the native Android catalogue in exact parity with web metadata", () => {
+    const kotlin = readFileSync(
+      join(process.cwd(), "android/app/src/main/java/com/shadecode/student/NativeSubjectCatalog.kt"),
+      "utf8",
+    );
+    const parseList = (value: string | undefined) =>
+      [...(value ?? "").matchAll(/"((?:\\\\.|[^"])*)"/g)].map((match) => JSON.parse(`"${match[1]}"`));
+    const nativeEntries = new Map<string, { name: string; category: string; pathways: string[]; aliases: string[] }>();
+    const entryPattern = /NativeSubjectOption\("((?:\\\\.|[^"])*)", "((?:\\\\.|[^"])*)", "((?:\\\\.|[^"])*)", listOf\(([^)]*)\)(?:, listOf\(([^)]*)\))?\)/g;
+    for (const match of kotlin.matchAll(entryPattern)) {
+      nativeEntries.set(JSON.parse(`"${match[1]}"`), {
+        name: JSON.parse(`"${match[2]}"`),
+        category: JSON.parse(`"${match[3]}"`),
+        pathways: parseList(match[4]),
+        aliases: parseList(match[5]),
+      });
+    }
+
+    expect(nativeEntries.size).toBe(SUBJECT_CATALOG.length);
+    for (const subject of SUBJECT_CATALOG) {
+      expect(nativeEntries.get(subject.id)).toEqual({
+        name: subject.name,
+        category: subject.category,
+        pathways: [...subject.pathways],
+        aliases: [...(subject.aliases ?? [])],
+      });
+    }
   });
 
 });
