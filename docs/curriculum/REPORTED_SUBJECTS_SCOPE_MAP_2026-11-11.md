@@ -59,6 +59,9 @@ Before a syllabus can move to verified/production-ready, Shadecode must retrieve
 - These records corroborate subject identity and paper numbering only. They do **not** establish the current syllabus edition, full topic structure, objectives, assessment weighting or effective exam years.
 - Status: exact official syllabus PDF not yet discovered. Do not generate or publish a purported complete FRS topic tree until the exact syllabus and any circulars are retrieved and reviewed.
 
+- Discovery lead (not accepted as authority): Sytbay Academy advertises a third-party-hosted copy described as the ZIMSEC O Level Family and Religious Studies HBC syllabus for 2024–2030 (https://sytbay.co.zw/download/zimsec-o-level-family-and-religious-studies-hbc-syllabus-2024-2030-pdf/). The listing is not an official ZIMSEC or Ministry domain, and the underlying PDF has not yet been retrieved, fingerprinted or authenticated. Its claimed edition must not be treated as confirmed. The intake queue records this only as an unverified discovery lead; `sourceDocumentUrl` remains null and status remains `source_discovery_required`.
+- Next verification: retrieve the actual PDF; inspect the cover, issuing body, publication date, document metadata and page count; then compare against a Ministry/ZIMSEC-issued copy or obtain confirmation from an official authority before extracting topic scope or assessment rules.
+
 ## Implementation order
 
 1. Retrieve and fingerprint the three Cambridge PDFs and syllabus update notices for 9609 and 9708; independently verify page counts and source hashes.
