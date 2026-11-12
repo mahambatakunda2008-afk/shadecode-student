@@ -196,6 +196,7 @@ describe("Cortex tutor learner continuity", () => {
     });
 
     expect(response).not.toContain("recorded learning attempts");
+    expect(response).not.toContain("latest recorded practice score");
   });
 
   it("does not invent continuity when evidence is absent", async () => {
