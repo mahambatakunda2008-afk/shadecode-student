@@ -96,6 +96,8 @@ export default function QuizPage() {
                 review.topicId === lessonContext.topicId
               ) {
                 reviewSessionIdRef.current = review.reviewSessionId;
+              } else {
+                sessionStorage.removeItem("shadecode:cortex:active-review:v1");
               }
             }
           } catch { reviewSessionIdRef.current = undefined; }
