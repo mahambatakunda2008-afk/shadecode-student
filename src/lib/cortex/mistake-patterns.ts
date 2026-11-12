@@ -19,8 +19,8 @@ export interface RepeatedTopicError {
  * count as one attempt, not a recurring weakness.
  *
  * This deliberately does not infer a specific misconception from a wrong
- * answer. A mistakeId can be added to the event schema later when producers
- * provide a stable, validated diagnosis.
+ * answer. Specific recurring diagnoses are handled separately and require a
+ * stable mistakeId emitted by the deterministic marking pipeline.
  */
 export function deriveRepeatedTopicErrors(
   rows: MistakeEventRecord[],
