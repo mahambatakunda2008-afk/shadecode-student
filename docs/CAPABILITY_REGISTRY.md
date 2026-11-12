@@ -49,6 +49,7 @@ Do not delete or avoid a capability merely because it is not ready for the defau
 | Confidence intelligence | Cortex | ✓ | ✓ | ✓ | 🔵 | Contextual |
 | Response-speed intelligence | Cortex | ✓ | ✓ | ✓ | 🟡 | Invisible |
 | Repeated topic-error evidence (2+ distinct attempts) | Cortex/Data | ✓ | ✓ | ✓ | 🟡 | Progressive |
+| Attributable Cortex review sessions (Learn quiz, exam simulation, Biology practical) | Cortex/Data | ✓ | ✓ | ✓ | 🟡 | Progressive |
 | Next-best-action engine | Cortex | ✓ | ✓ | ✓ | ⚪ | Contextual |
 | Learner reflection | Cortex | ✓ | ✓ | ✓ | ⚪ | Progressive |
 | Learning replay / history | Cortex | ✓ | ✓ | ✓ | ⚪ | Progressive |
