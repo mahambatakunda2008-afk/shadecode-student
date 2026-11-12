@@ -70,6 +70,8 @@ fun NativeExamSimulationScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf<String?>(null) }
     var attemptRestored by remember { mutableStateOf(false) }
+    var attemptId by remember(session.userId) { mutableStateOf("") }
+    var submissionPending by remember { mutableStateOf(false) }
 
     // Restore an unfinished attempt before enabling autosave, so initial empty Compose state
     // cannot overwrite a saved attempt when Android recreates the activity.
@@ -92,6 +94,8 @@ fun NativeExamSimulationScreen(
                 }
                 if (parsed.isNotEmpty()) {
                     paper = exam
+                    attemptId = saved.attemptId
+                    submissionPending = saved.submissionPending
                     questions = parsed
                     questionsJson = rawArray
                     answers = JSONObject(saved.answersJson).let { objectJson ->
@@ -109,7 +113,9 @@ fun NativeExamSimulationScreen(
                     deadlineMillis = if (taking) {
                         if (saved.deadlineMillis > now) saved.deadlineMillis else now + restoredSeconds * 1000L
                     } else 0L
-                    status = if (saved.taking && restoredSeconds == 0) {
+                    status = if (saved.submissionPending) {
+                        "A submission was started earlier. Retry safely: Shadecode will reuse the same submission ID and prevent duplicate marking."
+                    } else if (saved.taking && restoredSeconds == 0) {
                         "Time expired while the app was closed. Your answers are saved; submit when ready."
                     } else {
                         "Recovered your unfinished exam on this device."
@@ -120,7 +126,7 @@ fun NativeExamSimulationScreen(
         attemptRestored = true
     }
 
-    LaunchedEffect(paper, answers, selectedSubject, secondsLeft, taking, deadlineMillis, report, attemptRestored) {
+    LaunchedEffect(paper, answers, selectedSubject, secondsLeft, taking, deadlineMillis, report, attemptRestored, attemptId, submissionPending) {
         if (!attemptRestored) return@LaunchedEffect
         if (paper == null || report != null) {
             NativeExamAttemptStore.clear(context, session.userId)
@@ -128,6 +134,7 @@ fun NativeExamSimulationScreen(
             NativeExamAttemptStore.write(
                 context = context,
                 userId = session.userId,
+                attemptId = attemptId,
                 subject = selectedSubject,
                 paperJson = paper.toString(),
                 questionsJson = questionsJson.toString(),
@@ -135,6 +142,7 @@ fun NativeExamSimulationScreen(
                 secondsLeft = secondsLeft,
                 taking = taking,
                 deadlineMillis = deadlineMillis,
+                submissionPending = submissionPending,
             )
         }
     }
@@ -182,6 +190,8 @@ fun NativeExamSimulationScreen(
                 }
                 if (parsed.isEmpty()) throw IllegalStateException("No valid questions were returned. Nothing was started.")
                 paper = exam
+                attemptId = java.util.UUID.randomUUID().toString()
+                submissionPending = false
                 questions = parsed
                 questionsJson = rawArray
                 answers = emptyMap()
@@ -204,18 +214,40 @@ fun NativeExamSimulationScreen(
         busy = true
         error = null
         taking = false
+        deadlineMillis = 0L
+        submissionPending = true
         scope.launch {
             try {
                 val answerObject = JSONObject()
                 answers.forEach { (id, value) -> answerObject.put(id, value) }
+                // Commit the exact payload and stable attempt identity before network I/O.
+                withContext(Dispatchers.IO) {
+                    NativeExamAttemptStore.write(
+                        context = context,
+                        userId = session.userId,
+                        attemptId = attemptId,
+                        subject = selectedSubject,
+                        paperJson = paper?.toString().orEmpty(),
+                        questionsJson = questionsJson.toString(),
+                        answersJson = answerObject.toString(),
+                        secondsLeft = secondsLeft,
+                        taking = false,
+                        deadlineMillis = 0L,
+                        submissionPending = true,
+                    )
+                }
                 val response = withContext(Dispatchers.IO) {
-                    api.markNativeExam(session, selectedSubject, null, questionsJson, answerObject)
+                    api.markNativeExam(session, selectedSubject, null, questionsJson, answerObject, attemptId)
                 }
                 report = response.optJSONObject("report") ?: throw IllegalStateException("The marking service returned no report.")
-                status = "Marking report received."
+                submissionPending = false
+                status = "Marking report received and safely recorded."
             } catch (e: Exception) {
-                taking = secondsLeft > 0
-                error = e.message ?: "Marking failed. Your answers are still on this screen; retry when connected."
+                // Keep the same ID and exact answers. A retry replays the server result
+                // if the first request completed but its response was lost.
+                submissionPending = true
+                status = "Submission not yet confirmed. Your answers and submission ID are saved. Retry safely when connected."
+                error = e.message ?: "Marking failed. Your saved submission can be retried."
             } finally {
                 busy = false
             }
@@ -305,7 +337,7 @@ fun NativeExamSimulationScreen(
                     }
                 }
                 Button(onClick = { submit() }, enabled = !busy && questions.isNotEmpty() && report == null, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (busy) "Marking…" else "Submit for marking")
+                    Text(if (busy) "Marking…" else if (submissionPending) "Retry safe submission" else "Submit for marking")
                 }
             } else {
                 val percentage = currentReport.optDouble("percentage", 0.0).toInt()
