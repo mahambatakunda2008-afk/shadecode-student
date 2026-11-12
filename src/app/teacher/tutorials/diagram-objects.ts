@@ -32,7 +32,7 @@ export function translateDiagramObject(o: DiagramObject, dx: number, dy: number)
   }
 }
 export function moveDiagramObjectWithinCanvas(o: DiagramObject, dx: number, dy: number): DiagramObject {
-  const b = getDiagramObjectBounds(o), x = clamp(b.x + dx, 0, DIAGRAM_WIDTH - b.width), y = clamp(b.y + dy, 0, DIAGRAM_HEIGHT - b.height);
+  const b = getDiagramObjectBounds(o), maxX = Math.max(0, DIAGRAM_WIDTH - b.width), maxY = Math.max(0, DIAGRAM_HEIGHT - b.height), x = clamp(b.x + dx, 0, maxX), y = clamp(b.y + dy, 0, maxY);
   return translateDiagramObject(o, x - b.x, y - b.y);
 }
 export function resizeDiagramObject(o: DiagramObject, b: DiagramBounds): DiagramObject {
@@ -59,7 +59,8 @@ export function hitTestDiagramObject(o: DiagramObject, p: DiagramPoint, toleranc
   const b=getDiagramObjectBounds(o);
   if(p.x<b.x-tolerance||p.x>b.x+b.width+tolerance||p.y<b.y-tolerance||p.y>b.y+b.height+tolerance)return false;
   switch(o.type){
-    case "line": case "arrow": return distanceToSegment(p,o.from,o.to)<=tolerance;
+    case "line": return distanceToSegment(p,o.from,o.to)<=tolerance;
+    case "arrow": { const angle=Math.atan2(o.to.y-o.from.y,o.to.x-o.from.x),size=18,a={x:o.to.x-size*Math.cos(angle-Math.PI/6),y:o.to.y-size*Math.sin(angle-Math.PI/6)},c={x:o.to.x-size*Math.cos(angle+Math.PI/6),y:o.to.y-size*Math.sin(angle+Math.PI/6)}; return distanceToSegment(p,o.from,o.to)<=tolerance||distanceToSegment(p,a,o.to)<=tolerance||distanceToSegment(p,o.to,c)<=tolerance; }
     case "rectangle": return Math.min(Math.abs(p.x-b.x),Math.abs(p.x-b.x-b.width),Math.abs(p.y-b.y),Math.abs(p.y-b.y-b.height))<=tolerance;
     case "ellipse": {const rx=Math.max(1,o.width/2),ry=Math.max(1,o.height/2),n=Math.sqrt(((p.x-o.x-rx)/rx)**2+((p.y-o.y-ry)/ry)**2);return Math.abs(n-1)*Math.min(rx,ry)<=tolerance;}
     case "triangle": return insidePolygon(p,[{x:o.x+o.width/2,y:o.y},{x:o.x+o.width,y:o.y+o.height},{x:o.x,y:o.y+o.height}]);
