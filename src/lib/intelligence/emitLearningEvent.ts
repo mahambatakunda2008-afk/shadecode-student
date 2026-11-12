@@ -1,4 +1,4 @@
-import type { LearningEventKind } from "./learningEvents";
+import { isLearningEventDeliveryComplete, type LearningEventKind } from "./learningEvents";
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 import { getRememberedUserId } from "@/lib/local-first/identity";
 import { normalizeLearningContext } from "./learningContextKey";
@@ -78,7 +78,9 @@ async function post(input: LearningEventInput): Promise<boolean> {
       body: JSON.stringify(input),
       keepalive: true,
     }, POST_TIMEOUT_MS);
-    if (response.ok && input.source === "learn" && input.type === "lesson.viewed" && input.subjectId && input.topicId) {
+    const responseBody = await response.json().catch(() => null) as Record<string, unknown> | null;
+    const deliveryComplete = isLearningEventDeliveryComplete(response.ok, responseBody);
+    if (deliveryComplete && input.source === "learn" && input.type === "lesson.viewed" && input.subjectId && input.topicId) {
       // Keep the canonical learning-event pipeline authoritative; this is a
       // best-effort personalization signal and must never block the event.
       void fetchWithTimeout("/api/learn/memory", {
@@ -93,7 +95,7 @@ async function post(input: LearningEventInput): Promise<boolean> {
         keepalive: true,
       }, POST_TIMEOUT_MS).catch(() => undefined);
     }
-    return response.ok;
+    return deliveryComplete;
   } catch { return false; }
 }
 
