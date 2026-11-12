@@ -90,6 +90,46 @@ export function normalizeHandwritingRecognition(payload: RecognitionPayload): Ha
   };
 }
 
+export type HandwritingReviewRange = { start: number; end: number; seen: string; chosen: string };
+
+/** Locate uncertain readings for inline highlighting without guessing repeated occurrences. */
+export function findHandwritingReviewRanges(
+  text: string,
+  items: UncertainHandwritingCharacter[],
+): HandwritingReviewRange[] {
+  const ranges: HandwritingReviewRange[] = [];
+  for (const item of items) {
+    const candidates = [item.chosen, "[unclear]", item.seen].filter((value, index, all) => value.trim() && all.indexOf(value) === index);
+    const context = item.context.trim();
+    let match: { start: number; end: number } | null = null;
+    if (context) {
+      const contextStart = text.indexOf(context);
+      if (contextStart >= 0 && text.indexOf(context, contextStart + context.length) < 0) {
+        for (const candidate of candidates) {
+          const tokenStart = context.indexOf(candidate);
+          if (tokenStart >= 0 && context.indexOf(candidate, tokenStart + candidate.length) < 0) {
+            match = { start: contextStart + tokenStart, end: contextStart + tokenStart + candidate.length };
+            break;
+          }
+        }
+      }
+    }
+    if (!match) {
+      for (const candidate of candidates) {
+        const start = text.indexOf(candidate);
+        if (start >= 0 && text.indexOf(candidate, start + candidate.length) < 0) {
+          match = { start, end: start + candidate.length };
+          break;
+        }
+      }
+    }
+    if (match && !ranges.some(range => match!.start < range.end && match!.end > range.start)) {
+      ranges.push({ ...match, seen: item.seen, chosen: item.chosen });
+    }
+  }
+  return ranges.sort((a, b) => a.start - b.start);
+}
+
 /** Apply a human-selected OCR candidate only when its location is unambiguous. */
 export function applyHandwritingAlternative(
   text: string,
