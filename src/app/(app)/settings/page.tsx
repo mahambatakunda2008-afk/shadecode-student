@@ -26,6 +26,9 @@ import { WhatsAppSettingsCard } from "@/components/settings/WhatsAppSettingsCard
 import { LearningModeCard } from "@/components/settings/LearningModeCard";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
+import { clearDeletedAccountLocalData } from "@/lib/account-deletion/clear-local-data";
+
+const deletionStorageKey = (id: string) => `shadecode:account-deletion:${id}`;
 
 export default function Settings() {
   const [username, setUsername] = useState("");
@@ -37,6 +40,8 @@ export default function Settings() {
   const [accountError, setAccountError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [requestingDeletion, setRequestingDeletion] = useState(false);
+  const [deletionRequestId, setDeletionRequestId] = useState("");
   const [toast, setToast] = useState("");
   const [userId, setUserId] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,6 +78,7 @@ export default function Settings() {
 
         const currentUsername = profileRow?.username ?? "";
         setUserId(user.id);
+        try { setDeletionRequestId(window.localStorage.getItem(deletionStorageKey(user.id)) ?? ""); } catch { setDeletionRequestId(""); }
         setEmail(user.email ?? "");
         setUsername(currentUsername);
         setSavedUsername(currentUsername);
@@ -92,6 +98,41 @@ export default function Settings() {
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, [router, supabase]);
+
+  useEffect(() => {
+    if (!userId || !deletionRequestId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(
+          `/api/account/deletion-status?requestId=${encodeURIComponent(deletionRequestId)}`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) throw new Error("Deletion status is temporarily unavailable.");
+        const status = await response.json() as { completed?: boolean };
+        if (cancelled) return;
+        if (status.completed) {
+          await clearDeletedAccountLocalData(userId);
+          const { error } = await supabase.auth.signOut();
+          if (error) throw error;
+          window.localStorage.removeItem(deletionStorageKey(userId));
+          router.replace("/");
+          return;
+        }
+      } catch (error) {
+        console.warn("[AccountDeletion] Status check or local cleanup will retry.", error);
+      }
+      if (!cancelled) timer = setTimeout(() => void checkStatus(), 30_000);
+    };
+
+    void checkStatus();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [deletionRequestId, router, supabase, userId]);
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -124,6 +165,36 @@ export default function Settings() {
       setUsernameError("Your username could not be saved. Please try again.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const requestAccountDeletion = async () => {
+    if (requestingDeletion) return;
+    const confirmed = window.confirm(
+      "Submit an account deletion request? This records your request for manual verification. Your account will not be deleted automatically yet.",
+    );
+    if (!confirmed) return;
+
+    setRequestingDeletion(true);
+    setAccountError(null);
+    try {
+      const response = await fetch("/api/account/deletion-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      });
+      const payload = await response.json().catch(() => ({})) as { error?: string; requestId?: string };
+      if (!response.ok) throw new Error(payload.error || "Your request could not be submitted.");
+      if (!payload.requestId) throw new Error("The request was accepted without a tracking ID. Please contact support.");
+      setDeletionRequestId(payload.requestId);
+      try { window.localStorage.setItem(deletionStorageKey(userId), payload.requestId); } catch {
+        setAccountError("Your request was accepted, but this browser cannot save its tracking ID. Keep this tab open and contact support if you need an update.");
+      }
+      showToast("Deletion request recorded. Sync is paused while Shadecode verifies and processes it.");
+    } catch (error) {
+      setAccountError(error instanceof Error ? error.message : "Your deletion request could not be submitted.");
+    } finally {
+      setRequestingDeletion(false);
     }
   };
 
@@ -267,9 +338,10 @@ export default function Settings() {
         <ShadeNetSettingsCard />
       </section>
 
-      <section aria-label="More settings" className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="More settings" className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
         <ActionCard icon={<MessageSquare size={22} aria-hidden="true" />} title="Send feedback" description="Report a bug or suggest an improvement." onClick={() => router.push("/feedback")} />
         <ActionCard icon={<Heart size={22} aria-hidden="true" />} title="Support Shadecode" description="Contribute voluntarily to help keep learning accessible." onClick={() => router.push("/support")} />
+        <ActionCard icon={<Shield size={22} aria-hidden="true" />} title="Delete account" description={requestingDeletion ? "Submitting your request…" : deletionRequestId ? "Deletion request pending. Browser offline sync is paused until completion." : "Request deletion of your account and associated personal data."} onClick={() => void requestAccountDeletion()} disabled={requestingDeletion || Boolean(deletionRequestId)} />
         <InfoCard
           icon={<Shield size={22} aria-hidden="true" />}
           title={isBeyond ? "Workspace details" : isFoundation ? "Learning space details" : "Study space details"}
@@ -327,14 +399,16 @@ function ActionCard({
   title,
   description,
   onClick,
+  disabled = false,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
-    <button type="button" onClick={onClick} className="ssc-card-interactive flex min-h-24 items-center justify-between gap-4 p-5 text-left">
+    <button type="button" onClick={onClick} disabled={disabled} className="ssc-card-interactive flex min-h-24 items-center justify-between gap-4 p-5 text-left disabled:cursor-not-allowed disabled:opacity-60">
       <span className="flex min-w-0 items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)]">{icon}</span>
         <span className="min-w-0">

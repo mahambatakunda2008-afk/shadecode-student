@@ -12,14 +12,24 @@ const STORE_TO_ENTITY: Record<string, LocalEntity> = { tasks: "task", subjects: 
 
 function progressRecordId(userId: string, lessonId: string): string { return `progress:${userId}:${lessonId}`; }
 
+function isAccountDeletionPending(userId: string): boolean {
+  if (!userId || typeof window === "undefined") return false;
+  try {
+    return Boolean(window.localStorage.getItem(`shadecode:account-deletion:${userId}`));
+  } catch {
+    // If browser storage is unavailable, fail closed for synchronization.
+    return true;
+  }
+}
+
 export class OfflineSync {
   private syncInProgress = false;
   private syncInterval: ReturnType<typeof setInterval> | null = null;
   private onlineHandler: (() => void) | null = null;
   startAutoSync(): void { if (this.syncInterval) return; if (typeof window !== "undefined") { this.onlineHandler = () => void this.syncAll(); window.addEventListener("online", this.onlineHandler); } this.syncInterval = setInterval(() => { if (typeof navigator !== "undefined" && navigator.onLine) void this.syncAll(); }, 30000); }
   stopAutoSync(): void { if (this.syncInterval) clearInterval(this.syncInterval); this.syncInterval = null; if (typeof window !== "undefined" && this.onlineHandler) window.removeEventListener("online", this.onlineHandler); this.onlineHandler = null; }
-  async syncAll(): Promise<void> { if (this.syncInProgress || (typeof navigator !== "undefined" && !navigator.onLine)) return; this.syncInProgress = true; try { await this.bridgeLocalOperations(); await this.syncMutations(); } catch (error) { console.error("[OfflineSync] Sync failed:", error); } finally { this.syncInProgress = false; } }
-  async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">): Promise<OfflineMutation<T>> { const auth = await this.getCurrentUser(); if (!auth) throw new Error("Cannot queue offline mutation without an authenticated user"); return mutationQueue.enqueue({ ...input, ownerId: auth.user.id }); }
+  async syncAll(): Promise<void> { if (this.syncInProgress || (typeof navigator !== "undefined" && !navigator.onLine)) return; this.syncInProgress = true; try { const auth = await this.getCurrentUser(); if (!auth || isAccountDeletionPending(auth.user.id)) return; await this.bridgeLocalOperations(); await this.syncMutations(); } catch (error) { console.error("[OfflineSync] Sync failed:", error); } finally { this.syncInProgress = false; } }
+  async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">): Promise<OfflineMutation<T>> { const auth = await this.getCurrentUser(); if (!auth) throw new Error("Cannot queue offline mutation without an authenticated user"); if (isAccountDeletionPending(auth.user.id)) throw new Error("Account deletion is pending. New offline changes are paused."); return mutationQueue.enqueue({ ...input, ownerId: auth.user.id }); }
   private async getCurrentUser() { const supabase = createClient(); const { data: { session } } = await supabase.auth.getSession(); if (!session?.user) return null; return { supabase, user: session.user }; }
   private async bridgeLocalOperations(): Promise<void> { const auth = await this.getCurrentUser(); if (!auth) return; const operations = await localFirstStore.listPendingOperations(auth.user.id), deviceId = await localFirstStore.deviceId(); for (const operation of operations) { if (operation.entity === "education_profile") continue; try { await mutationQueue.enqueue({ ...this.operationToMutation(operation, deviceId), ownerId: auth.user.id }); } catch (error) { console.error("[OfflineSync] Failed to bridge local operation:", operation.id, error); } } }
   private operationToMutation(operation: LocalOperation, deviceId: string): Omit<OfflineMutation, "id" | "createdAt" | "attempts" | "ownerId"> { const store = operation.entity === "task" ? "tasks" : operation.entity === "subject" ? "subjects" : operation.entity === "progress" ? "learn_lessons" : null; if (!store) throw new Error(`Unsupported local sync entity: ${operation.entity}`); const payload = operation.kind === "delete" ? { id: operation.entityId, user_id: operation.userId } : operation.payload; if (!payload || typeof payload !== "object") throw new Error(`Local ${operation.entity} operation has no payload`); return { operation: operation.kind, store, payload: { ...(payload as Record<string, unknown>), id: operation.entityId, user_id: operation.userId }, clientVersion: operation.lamport, baseVersion: operation.baseVersion ?? 0, deviceId }; }

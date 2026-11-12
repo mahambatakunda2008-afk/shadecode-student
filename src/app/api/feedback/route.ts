@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { checkAccountDeletionWriteGate, createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -106,6 +106,12 @@ export async function POST(request: Request) {
     const rateLimitSecret = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!admin || !rateLimitSecret) {
       return NextResponse.json({ error: "Feedback is temporarily unavailable. Please try again later." }, { status: 503 });
+    }
+    if (user) {
+      const deletionGate = await checkAccountDeletionWriteGate(admin, user.id);
+      if (!deletionGate.allowed) {
+        return NextResponse.json({ error: deletionGate.message, code: deletionGate.code }, { status: deletionGate.status });
+      }
     }
 
     const ip = getClientIp(request);

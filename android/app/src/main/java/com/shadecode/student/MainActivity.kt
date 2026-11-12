@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.room.withTransaction
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -332,6 +334,8 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     val api = remember { NativeApi() }; val database = remember { NativeDatabase.get(sessionStore.context()) }
     var profile by remember { mutableStateOf<NativeProfile?>(null) }; var subjects by remember { mutableStateOf<List<NativeSubjectEntity>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }; var error by remember { mutableStateOf<String?>(null) }; var selected by remember { mutableStateOf(0) }
+    var accountDeletionPending by remember(session.userId) { mutableStateOf(false) }
+    var deletionStateLoaded by remember(session.userId) { mutableStateOf(false) }
     var showExamHub by remember { mutableStateOf(false) }
     var showExamSimulation by remember { mutableStateOf(false) }
     var focusDuration by remember { mutableStateOf(25 * 60) }
@@ -340,6 +344,21 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     var focusCompletionHandled by remember { mutableStateOf(false) }
     var focusStatus by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(session.userId) {
+        val pending = withContext(Dispatchers.IO) { sessionStore.isDeletionPending() }
+        accountDeletionPending = pending
+        if (pending) {
+            selected = 4
+            focusRunning = false
+        }
+        deletionStateLoaded = true
+    }
+
+    if (!deletionStateLoaded) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        return
+    }
 
     // Keep the countdown above tab navigation so learners can move into Learn without losing the sprint.
     LaunchedEffect(focusRunning) {
@@ -350,7 +369,8 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         if (focusRemaining == 0) focusRunning = false
     }
 
-    LaunchedEffect(focusRemaining) {
+    LaunchedEffect(focusRemaining, accountDeletionPending) {
+        if (accountDeletionPending) return@LaunchedEffect
         if (focusRemaining == 0 && !focusCompletionHandled) {
             focusCompletionHandled = true
             focusRunning = false
@@ -369,7 +389,11 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
             }
         }
     }
-    LaunchedEffect(session.accessToken) {
+    LaunchedEffect(session.accessToken, accountDeletionPending) {
+        if (accountDeletionPending) {
+            loading = false
+            return@LaunchedEffect
+        }
         subjects = withContext(Dispatchers.IO) { database.subjects().all() }
         profile = withContext(Dispatchers.IO) { sessionStore.readProfile() }
         try {
@@ -417,7 +441,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     }
 
         Scaffold(containerColor = ShadeBackground, bottomBar = {
-        if (!showExamHub && !showExamSimulation) NavigationBar(containerColor = ShadeSurface) {
+        if (!showExamHub && !showExamSimulation && !accountDeletionPending) NavigationBar(containerColor = ShadeSurface) {
             NavigationBarItem(selected == 0, { selected = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
             NavigationBarItem(selected == 1, { selected = 1 }, icon = { Icon(Icons.Default.Book, null) }, label = { Text("Learn") })
             NavigationBarItem(selected == 2, { selected = 2 }, icon = { Icon(Icons.Default.PlayArrow, null) }, label = { Text("Practice") })
@@ -464,7 +488,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                 },
                 focusStatus = focusStatus,
             )
-            3 -> SnapExtractScreen(padding)
+            3 -> SnapExtractScreen(padding, session.userId)
             else -> ProfileNativeScreen(
                 padding = padding,
                 session = session,
@@ -488,6 +512,10 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                 },
                 onSignOut = {
                     scope.launch { withContext(Dispatchers.IO) { sessionStore.clearSession() }; onSignOut() }
+                },
+                onDeletionPendingChanged = {
+                    accountDeletionPending = it
+                    if (it) focusRunning = false
                 },
             )
         }
@@ -1110,6 +1138,7 @@ private fun ProfileNativeScreen(
     sessionStore: NativeStore,
     onProfileSaved: (NativeProfile) -> Unit,
     onSignOut: () -> Unit,
+    onDeletionPendingChanged: (Boolean) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var displayName by remember(profile?.id, profile?.displayName) { mutableStateOf(profile?.displayName.orEmpty()) }
@@ -1120,8 +1149,50 @@ private fun ProfileNativeScreen(
     var query by remember { mutableStateOf("") }
     var customSubject by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
+    var requestingDeletion by remember { mutableStateOf(false) }
+    var confirmDeletion by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
+    var deletionPending by remember(session.userId) { mutableStateOf(false) }
+    var deletionStatus by remember(session.userId) { mutableStateOf("pending") }
+    var deletionStateLoaded by remember(session.userId) { mutableStateOf(false) }
+    val appContext = LocalContext.current.applicationContext
+
+    LaunchedEffect(session.userId, deletionPending) {
+        val pending = withContext(Dispatchers.IO) { sessionStore.isDeletionPending() }
+        deletionPending = pending
+        onDeletionPendingChanged(pending)
+        deletionStateLoaded = true
+        if (pending) {
+            val requestId = withContext(Dispatchers.IO) { sessionStore.deletionRequestId() }
+            if (requestId.isNullOrBlank()) {
+                deletionStatus = "tracking_unavailable"
+            } else {
+                while (true) {
+                    try {
+                        val status = withContext(Dispatchers.IO) { api.loadAccountDeletionStatus(requestId) }
+                        deletionStatus = status.optString("status", "pending")
+                        if (status.optBoolean("completed", false)) {
+                            withContext(Dispatchers.IO) {
+                                // Remove only Snap & Extract files written under this account's private directory.
+                                // Legacy unassigned extracts are preserved for explicit device-owner review.
+                                check(NativeExtractStore(appContext, session.userId).clearAccount()) {
+                                    "Could not clear this account's saved extracts. Keep this device locked and retry."
+                                }
+                                sessionStore.clearDeletedAccountData(session.userId)
+                            }
+                            deletionPending = false
+                            onSignOut()
+                            break
+                        }
+                    } catch (_: Exception) {
+                        // Keep the lock and retry. A transient network error must never unlock sync.
+                    }
+                    delay(30_000)
+                }
+            }
+        }
+    }
     val catalogue = remember(selectedCodes) {
         val known = NativeSubjectCatalog.all.distinctBy { it.code }
         known + selectedCodes.filterNot { code -> known.any { it.code == code } }.map { code ->
@@ -1134,6 +1205,75 @@ private fun ProfileNativeScreen(
         else catalogue.filter {
             it.label.contains(term, ignoreCase = true) || it.group.contains(term, ignoreCase = true)
         }
+    }
+
+    if (!deletionStateLoaded) {
+        Column(Modifier.fillMaxSize().padding(padding).padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator()
+            Spacer(Modifier.height(12.dp))
+            Text("Checking account status…")
+        }
+        return
+    }
+    if (deletionPending) {
+        Column(Modifier.fillMaxSize().padding(padding).padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator()
+            Spacer(Modifier.height(16.dp))
+            Text("Account deletion requested", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                when (deletionStatus) {
+                    "failed" -> "Your request needs manual review. Sync remains paused. Please contact shadecodetech@gmail.com."
+                    "processing" -> "Shadecode is processing your request. This screen will update when deletion is complete."
+                    "tracking_unavailable" -> "Your request is saved, but its tracking ID is unavailable. Sync remains paused. Contact shadecodetech@gmail.com."
+                    else -> "Your request is awaiting verification. Sync and offline changes remain paused on this device."
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(12.dp))
+            Text("This device will clear account-owned data and sign out only after the server confirms completion.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
+
+    if (confirmDeletion) {
+        AlertDialog(
+            onDismissRequest = { if (!requestingDeletion) confirmDeletion = false },
+            title = { Text("Request account deletion?") },
+            text = {
+                Text("This sends a deletion request for manual verification. Your account and personal data will not be deleted automatically yet.")
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !requestingDeletion,
+                    onClick = {
+                        confirmDeletion = false
+                        requestingDeletion = true
+                        failure = null
+                        message = null
+                        scope.launch {
+                            try {
+                                val accepted = withContext(Dispatchers.IO) { api.requestAccountDeletion(session) }
+                                val requestId = accepted.optString("requestId")
+                                if (requestId.isBlank()) error("The server accepted the request without a tracking ID. Please contact support before signing out.")
+                                sessionStore.markDeletionPending(requestId)
+                                deletionStatus = "pending"
+                                deletionPending = true
+                                onDeletionPendingChanged(true)
+                                message = "Request received. Sync is paused on this device while Shadecode verifies and processes your request. Your account has not been deleted yet."
+                            } catch (e: Exception) {
+                                failure = e.message ?: "Could not submit your request. Check your connection and try again."
+                            } finally {
+                                requestingDeletion = false
+                            }
+                        }
+                    },
+                ) { Text(if (requestingDeletion) "Submitting…" else "Submit request") }
+            },
+            dismissButton = {
+                TextButton(enabled = !requestingDeletion, onClick = { confirmDeletion = false }) { Text("Cancel") }
+            },
+        )
     }
 
     LazyColumn(
@@ -1247,6 +1387,14 @@ private fun ProfileNativeScreen(
             ) {
                 if (saving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Text("Save learning profile")
             }
+            OutlinedButton(
+                onClick = { confirmDeletion = true; failure = null; message = null },
+                enabled = !requestingDeletion && !saving,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (requestingDeletion) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                else Text("Request account deletion")
+            }
             TextButton(onClick = onSignOut) { Text("Sign out") }
             Spacer(Modifier.height(24.dp))
         }
@@ -1255,16 +1403,19 @@ private fun ProfileNativeScreen(
 
 
 @Composable
-private fun SnapExtractScreen(padding: PaddingValues) {
+private fun SnapExtractScreen(padding: PaddingValues, accountId: String) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val extractStore = remember { NativeExtractStore(context) }
-    var savedArtifacts by remember { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
+    val extractStore = remember(accountId) { NativeExtractStore(context, accountId) }
+    var savedArtifacts by remember(accountId) { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
+    var legacyArtifactCount by remember(accountId) { mutableStateOf(0) }
+    var confirmLegacyClear by remember { mutableStateOf(false) }
     var artifactSearch by remember { mutableStateOf("") }
     var activeArtifactId by remember { mutableStateOf<String?>(null) }
     var artifactTitle by remember { mutableStateOf("") }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(accountId) {
         savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
+        legacyArtifactCount = withContext(Dispatchers.IO) { extractStore.legacyArtifactCount() }
     }
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -1367,6 +1518,25 @@ private fun SnapExtractScreen(padding: PaddingValues) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("Shadecode extracted text", value))
         message = "Copied the selected text representation. The source image was not changed."
+    }
+
+    if (confirmLegacyClear) {
+        AlertDialog(
+            onDismissRequest = { confirmLegacyClear = false },
+            title = { Text("Delete unassigned old extracts?") },
+            text = { Text("This permanently removes $legacyArtifactCount older extracts from this device. They are not assigned to any account, so this action is separate from account deletion.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmLegacyClear = false
+                    scope.launch {
+                        val cleared = withContext(Dispatchers.IO) { extractStore.clearLegacyArtifacts() }
+                        legacyArtifactCount = withContext(Dispatchers.IO) { extractStore.legacyArtifactCount() }
+                        message = if (cleared) "Unassigned older extracts removed from this device." else "Some older extracts could not be removed. Try again."
+                    }
+                }) { Text("Delete old extracts") }
+            },
+            dismissButton = { TextButton(onClick = { confirmLegacyClear = false }) { Text("Cancel") } },
+        )
     }
 
     LazyColumn(
@@ -1489,9 +1659,14 @@ private fun SnapExtractScreen(padding: PaddingValues) {
         item {
             Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
                 Column(Modifier.fillMaxWidth().padding(18.dp)) {
-                    Text("Saved extracts on this device", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Saved extracts for this account", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(6.dp))
-                    Text("Private to this app on this device. Up to 20 recent extracts are kept; older ones are removed automatically. Source images are not stored.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text("Private to this signed-in account on this device. Up to 20 recent extracts are kept; older ones are removed automatically. Source images are not stored.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    if (legacyArtifactCount > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("$legacyArtifactCount older extracts are unassigned to an account. Review them here or remove them separately before deleting your account.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                        TextButton(onClick = { confirmLegacyClear = true }, modifier = Modifier.fillMaxWidth()) { Text("Remove unassigned older extracts") }
+                    }
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = artifactSearch,

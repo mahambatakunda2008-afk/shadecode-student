@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.room.withTransaction
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlinx.coroutines.flow.first
@@ -16,6 +17,8 @@ class NativeStore(private val context: Context) {
     private val userId = stringPreferencesKey("user_id")
     private val email = stringPreferencesKey("email")
     private val cachedProfile = stringPreferencesKey("cached_profile")
+    private val deletionPending = androidx.datastore.preferences.core.booleanPreferencesKey("account_deletion_pending")
+    private val deletionRequestId = stringPreferencesKey("account_deletion_request_id")
 
     fun context(): Context = context
 
@@ -234,6 +237,50 @@ class NativeStore(private val context: Context) {
         }
     }
 
+    /** Persist a deletion lock before leaving the request screen. Sync must stop immediately. */
+    suspend fun markDeletionPending(requestId: String) {
+        require(requestId.isNotBlank())
+        context.nativeStore.edit { prefs ->
+            prefs[deletionPending] = true
+            prefs[deletionRequestId] = requestId
+        }
+    }
+
+    suspend fun isDeletionPending(): Boolean =
+        context.nativeStore.data.first()[deletionPending] == true
+
+    suspend fun deletionRequestId(): String? =
+        context.nativeStore.data.first()[deletionRequestId]
+
+    /** Called only after the server confirms deletion has completed. */
+    suspend fun clearDeletedAccountData(accountId: String) {
+        require(accountId.isNotBlank())
+
+        // Keep the deletion lock and credentials until every local database
+        // cleanup succeeds. A process crash must not reopen sync or sign-in
+        // while learner-owned Room data is only partially cleared.
+        val database = NativeDatabase.get(context)
+        database.withTransaction {
+            database.subjects().clear()
+            database.progress().clearAll()
+            database.sync().clearAll()
+            database.lessons().resetCachedLessonProgress()
+        }
+
+        context.nativeStore.edit { prefs ->
+            prefs.remove(accessToken)
+            prefs.remove(refreshToken)
+            prefs.remove(userId)
+            prefs.remove(email)
+            prefs.remove(cachedProfile)
+            prefs.remove(stringPreferencesKey("cached_tasks_$accountId"))
+            prefs.remove(stringPreferencesKey("cached_timetable_$accountId"))
+            prefs.remove(stringPreferencesKey("pending_native_sync_$accountId"))
+            // Release the hard sync barrier only after local data is cleared.
+            prefs.remove(deletionRequestId)
+            prefs.remove(deletionPending)
+        }
+    }
     suspend fun clearSession() {
         context.nativeStore.edit { it.clear() }
     }

@@ -1,7 +1,7 @@
 // src/app/api/challenge/mark/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { checkAccountDeletionWriteGate, createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { sanitizeQuestions } from '@/lib/challenge/questions'
 import { markAgainstKey, type KeyEntry } from '@/lib/challenge/serverMarking'
@@ -39,6 +39,10 @@ export async function POST(request: NextRequest) {
 
     const admin = createSupabaseAdminClient()
     if (!admin) return NextResponse.json({ error: 'Marking is temporarily unavailable. Please try again.', retryable: true }, { status: 503 })
+    const deletionGate = await checkAccountDeletionWriteGate(admin, user.id)
+    if (!deletionGate.allowed) {
+      return NextResponse.json({ error: deletionGate.message, code: deletionGate.code }, { status: deletionGate.status })
+    }
 
     const [{ data: challenge }, { data: frozen }, { data: keyRow }] = await Promise.all([
       supabase.from('challenges').select('percentage, challenger_id, subject').eq('id', challengeId).maybeSingle(),

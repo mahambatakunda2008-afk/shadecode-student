@@ -9,9 +9,8 @@ Sentry.init({
   // Setting this option to true will print useful information to the console if you're triggering dev mode
   debug: false,
 
-  replaysOnErrorSampleRate: 1.0,
-
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
+  // Session Replay is disabled until privacy masking, capture scope and
+  // retention have been reviewed and explicitly configured.
+  replaysOnErrorSampleRate: 0.0,
+  replaysSessionSampleRate: 0.0,
 });

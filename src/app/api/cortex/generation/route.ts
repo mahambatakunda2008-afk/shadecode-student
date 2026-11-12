@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { checkAccountDeletionWriteGate } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -16,7 +17,9 @@ async function authenticate(req: Request) {
   if (!token) return null;
   const client = admin();
   const { data: { user }, error } = await client.auth.getUser(token);
-  return error || !user ? null : { client, user };
+  if (error || !user) return null;
+  const deletionGate = await checkAccountDeletionWriteGate(client, user.id);
+  return { client, user, deletionGate };
 }
 
 function validId(id: unknown): id is string {
@@ -35,6 +38,9 @@ export async function GET(req: Request) {
   try {
     const auth = await authenticate(req);
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.deletionGate.allowed) {
+      return NextResponse.json({ error: auth.deletionGate.message, code: auth.deletionGate.code }, { status: auth.deletionGate.status });
+    }
 
     const id = new URL(req.url).searchParams.get("id");
     let query = auth.client
@@ -72,6 +78,9 @@ export async function POST(req: Request) {
   try {
     const auth = await authenticate(req);
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.deletionGate.allowed) {
+      return NextResponse.json({ error: auth.deletionGate.message, code: auth.deletionGate.code }, { status: auth.deletionGate.status });
+    }
 
     const body = await req.json();
     if (!validId(body.id) || !["lesson", "course", "revision", "exam"].includes(body.kind)) {
@@ -141,6 +150,9 @@ export async function PATCH(req: Request) {
   try {
     const auth = await authenticate(req);
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.deletionGate.allowed) {
+      return NextResponse.json({ error: auth.deletionGate.message, code: auth.deletionGate.code }, { status: auth.deletionGate.status });
+    }
 
     const body = await req.json();
     if (!validId(body.id)) return NextResponse.json({ error: "Invalid generation id." }, { status: 400 });

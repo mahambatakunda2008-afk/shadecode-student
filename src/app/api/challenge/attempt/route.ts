@@ -5,7 +5,7 @@ import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { didWin, validateAttempt } from '@/lib/challenge/attempt'
 import { gradeForPercentage } from '@/lib/challenge/fromResult'
 import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
-import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { checkAccountDeletionWriteGate, createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { recordBattleAttempt } from '@/lib/challenge/recordAttempt'
 
 export const dynamic = "force-dynamic";
@@ -47,7 +47,13 @@ export async function POST(request: NextRequest) {
     const won = didWin(attempt.percentage, Number(challenge.percentage))
 
     // Self-reported papers are recorded unverified; only the service role may write attempts.
-    const saved = await recordBattleAttempt(createSupabaseAdminClient(), {
+    const admin = createSupabaseAdminClient()
+    if (!admin) return NextResponse.json({ error: 'Challenge recording is temporarily unavailable.' }, { status: 503 })
+    const deletionGate = await checkAccountDeletionWriteGate(admin, user.id)
+    if (!deletionGate.allowed) {
+      return NextResponse.json({ error: deletionGate.message, code: deletionGate.code }, { status: deletionGate.status })
+    }
+    const saved = await recordBattleAttempt(admin, {
       challengeId: attempt.challengeId,
       userId: user.id,
       userName: user_name,

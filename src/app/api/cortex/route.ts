@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { log } from "@/lib/observability";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { checkAccountDeletionWriteGate } from '@/lib/supabase/admin';
 import { getUserIdFromRequest, requirePermission } from '@/lib/auth/rbac';
 import { cortexApproveDraftSchema, cortexRequestSchema, validateRequestBody } from '@/lib/validation/schemas';
 
@@ -25,6 +26,16 @@ function getSupabaseAdmin() {
   return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
+async function pendingDeletionResponse(userId: string) {
+  try {
+    const gate = await checkAccountDeletionWriteGate(getSupabaseAdmin(), userId);
+    if (gate.allowed) return null;
+    return Response.json({ error: gate.message, code: gate.code }, { status: gate.status });
+  } catch {
+    return Response.json({ error: 'Account state could not be verified. Please retry later.', code: 'ACCOUNT_STATE_UNAVAILABLE' }, { status: 503 });
+  }
+}
+
 function requestedCurriculumSubjectId(payload: unknown): string | undefined {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return undefined;
   const value = (payload as Record<string, unknown>).subjectId ?? (payload as Record<string, unknown>).curriculumSubjectId;
@@ -37,6 +48,10 @@ export async function GET(req: Request) {
     if (action !== 'get_drafts') return Response.json({ error: 'unsupported_action' }, { status: 400 });
     const permissionCheck = await requirePermission(req, 'approve_drafts');
     if (permissionCheck) return permissionCheck;
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const deletionBlocked = await pendingDeletionResponse(userId);
+    if (deletionBlocked) return deletionBlocked;
     try {
       const supabase = getSupabaseAdmin();
       const { data, error } = await supabase.from('generated_course_drafts').select('*').order('created_at', { ascending: false }).limit(200);
@@ -60,11 +75,15 @@ export async function POST(req: Request) {
     if (action === 'approve_draft') {
       const permissionCheck = await requirePermission(req, 'approve_drafts');
       if (permissionCheck) return permissionCheck;
+      const approverUserId = await getUserIdFromRequest(req);
+      if (!approverUserId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      const deletionBlocked = await pendingDeletionResponse(approverUserId);
+      if (deletionBlocked) return deletionBlocked;
       body = await req.json().catch(() => ({}));
       const validation = validateRequestBody(body, cortexApproveDraftSchema);
       if (!validation.success) return Response.json({ error: 'Validation failed', details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });
       const id = validation.data?.id;
-      let userId: string | undefined;
+      let draftOwnerId: string | undefined;
       try {
         const supabase = getSupabaseAdmin();
         const { data: draftsData } = await supabase.from('generated_course_drafts').select('*').eq('id', id).maybeSingle();
@@ -76,19 +95,21 @@ export async function POST(req: Request) {
           entry = drafts[idx];
         }
         if (!entry?.draft) return Response.json({ error: 'invalid_entry' }, { status: 400 });
-        userId = entry.user_id || entry.userId;
-        if (!userId) throw new Error('Missing user id on draft');
+        draftOwnerId = entry.user_id || entry.userId || undefined;
+        if (!draftOwnerId) throw new Error('Missing user id on draft');
+        const ownerDeletionBlocked = await pendingDeletionResponse(draftOwnerId);
+        if (ownerDeletionBlocked) return ownerDeletionBlocked;
         const subjName = (entry.draft.title && entry.draft.title.length <= 60) ? entry.draft.title : 'Generated Course';
-        const { data: existing } = await supabase.from('subjects').select('id').eq('user_id', userId).eq('name', subjName).maybeSingle();
+        const { data: existing } = await supabase.from('subjects').select('id').eq('user_id', draftOwnerId).eq('name', subjName).maybeSingle();
         let subjectId = existing?.id ?? null;
         if (!subjectId) {
-          const { data: insertedSub, error: subjectError } = await supabase.from('subjects').insert({ user_id: userId, name: subjName }).select('id').single();
+          const { data: insertedSub, error: subjectError } = await supabase.from('subjects').insert({ user_id: draftOwnerId, name: subjName }).select('id').single();
           if (subjectError) throw subjectError;
           subjectId = insertedSub?.id ?? null;
         }
         if (!subjectId) throw new Error('Failed to resolve subject');
         const lessons = Array.isArray(entry.draft.lessons) ? entry.draft.lessons : [];
-        const lessonsToInsert = lessons.map((l: any) => ({ user_id: userId, subject_id: subjectId, title: (l.title ?? l.summary ?? 'Untitled').toString().slice(0,255), description: (l.summary ?? '').toString().slice(0,1000), difficulty: l.difficulty === 'hard' ? 'hard' : l.difficulty === 'medium' ? 'medium' : 'easy', blocks: Array.isArray(l.blocks) ? l.blocks : [{ type: 'text', content: l.summary ?? '' }], progress: 0 }));
+        const lessonsToInsert = lessons.map((l: any) => ({ user_id: draftOwnerId, subject_id: subjectId, title: (l.title ?? l.summary ?? 'Untitled').toString().slice(0,255), description: (l.summary ?? '').toString().slice(0,1000), difficulty: l.difficulty === 'hard' ? 'hard' : l.difficulty === 'medium' ? 'medium' : 'easy', blocks: Array.isArray(l.blocks) ? l.blocks : [{ type: 'text', content: l.summary ?? '' }], progress: 0 }));
         const { data: insertedLessons, error: lessonsInsertError } = await supabase.from('learn_lessons').insert(lessonsToInsert).select('id, title');
         if (lessonsInsertError) throw new Error(`Failed to insert lessons: ${lessonsInsertError.message}`);
         if (lessonsToInsert.length > 0 && (insertedLessons ?? []).length === 0) throw new Error('Lesson insert returned no rows despite lessons being submitted');
@@ -121,7 +142,7 @@ export async function POST(req: Request) {
         } catch { /* database remains authoritative */ }
         return Response.json({ ok: true, result });
       } catch (e: any) {
-        log.cortexFailure({ stage: "approve_draft", error: e.message || String(e), userId });
+        log.cortexFailure({ stage: "approve_draft", error: e.message || String(e), userId: draftOwnerId });
         return Response.json({ error: e.message || String(e) }, { status: 500 });
       }
     }
@@ -129,6 +150,8 @@ export async function POST(req: Request) {
     body = await req.json().catch(() => ({}));
     const authenticatedUserId = await getUserIdFromRequest(req);
     if (!authenticatedUserId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const deletionBlocked = await pendingDeletionResponse(authenticatedUserId);
+    if (deletionBlocked) return deletionBlocked;
 
     if (body?.requestType) {
       const requestedUserId = body?.payload?.userId;

@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, fix/exam-hub-subject-access, fix/library-subject-access-followup]
@@ -46,3 +49,58 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+  account_deletion_database:
+    name: Account deletion database contract
+    if: github.event_name == 'pull_request' && github.head_ref == 'feat/account-deletion-job-foundation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v3.2.0
+        with:
+          version: 3.0.0
+
+      - name: Initialize disposable local Supabase config
+        run: supabase init --force
+
+      - name: Select isolated account-deletion migration test set
+        run: |
+          mkdir -p /tmp/account-deletion-migrations
+          cp supabase/migrations/20261104170000_account_deletion_request_queue.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105100000_account_deletion_preview_rpc.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105110000_add_missing_account_identity_foreign_keys.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105120000_account_deletion_worker_leases.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105130000_account_deletion_worker_lease_lifecycle.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105140000_account_deletion_storage_manifest.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261105150000_account_deletion_database_cleanup_rpc.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261110100000_account_deletion_sync_barrier.sql /tmp/account-deletion-migrations/
+          cp supabase/migrations/20261110110000_account_deletion_direct_write_barrier.sql /tmp/account-deletion-migrations/
+          find supabase/migrations -maxdepth 1 -type f -name '*.sql' -delete
+          cp supabase/tests/fixtures/account_deletion_schema.sql supabase/migrations/20261101000000_account_deletion_test_baseline.sql
+          cp /tmp/account-deletion-migrations/*.sql supabase/migrations/
+
+      - name: Start disposable Supabase stack and apply isolated migrations
+        run: supabase start
+
+      - name: Run account-deletion SQL contract
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            --set ON_ERROR_STOP=1 \
+            --file supabase/tests/account_deletion_contract.sql
+
+      - name: Run two-account account-deletion integration contract
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            --set ON_ERROR_STOP=1 \
+            --file supabase/tests/account_deletion_integration.sql
+
+      - name: Stop disposable Supabase stack
+        if: always()
+        run: |
+          if command -v supabase >/dev/null 2>&1; then
+            supabase stop --no-backup
+          fi

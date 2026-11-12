@@ -23,6 +23,12 @@ export async function POST(request: Request) {
   const id = typeof payload.id === "string" ? payload.id : null;
   if (!id || !ID_RE.test(id)) return bad("A valid record id is required");
   if (typeof payload.user_id === "string" && payload.user_id !== user.id) return bad("Payload owner does not match authenticated user", 403);
+  const { data: deletionPending, error: deletionCheckError } = await supabase.rpc("account_deletion_is_pending");
+  if (deletionCheckError) {
+    console.error("[api/sync] Could not verify account deletion state", { code: deletionCheckError.code ?? "unknown" });
+    return bad("Sync is temporarily unavailable", 503);
+  }
+  if (deletionPending === true) return bad("Account deletion is pending. Sync is paused.", 423);
   const { data, error } = await supabase.rpc("apply_sync_mutation", { p_store: store, p_operation: operation, p_record_id: id, p_payload: { ...payload, user_id: user.id }, p_base_version: baseVersion, p_client_version: clientVersion, p_device_id: deviceId });
   if (error) {
     // The RPC raises this exact message for a cross-account write; it is safe to

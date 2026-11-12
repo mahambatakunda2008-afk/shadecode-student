@@ -191,6 +191,36 @@ class NativeApi {
         )
     }
 
+    /** Submit an authenticated account-deletion request from the native Profile screen. */
+    fun loadAccountDeletionStatus(requestId: String): JSONObject {
+        require(requestId.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}"))) {
+            "Invalid deletion request identifier."
+        }
+        val encoded = java.net.URLEncoder.encode(requestId, "UTF-8")
+        return JSONObject(
+            request(
+                "GET",
+                "/api/account/deletion-status?requestId=$encoded",
+                urlBase = BuildConfig.APP_BASE_URL.trimEnd('/'),
+            ),
+        )
+    }
+
+    fun requestAccountDeletion(session: NativeSession): JSONObject {
+        val response = request(
+            "POST",
+            "/api/account/deletion-request",
+            "{}",
+            accessToken = session.accessToken,
+            urlBase = BuildConfig.APP_BASE_URL.trimEnd('/'),
+        )
+        return JSONObject(response).also {
+            if (!it.optBoolean("accepted", false)) {
+                throw IllegalStateException(it.optString("error").ifBlank { "Deletion request was not accepted." })
+            }
+        }
+    }
+
     fun completeTask(session: NativeSession, taskId: String) {
         request(
             "PUT",
@@ -344,7 +374,7 @@ class NativeApi {
             val stream = if (code in 200..299) connection.inputStream else connection.errorStream
             val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
             if (code !in 200..299) {
-                val message = runCatching { val json = JSONObject(text); json.optString("msg").ifBlank { json.optString("message") }.ifBlank { json.optString("error_description") } }.getOrNull()
+                val message = runCatching { val json = JSONObject(text); json.optString("msg").ifBlank { json.optString("message") }.ifBlank { json.optString("error_description") }.ifBlank { json.optString("error") } }.getOrNull()
                 throw IllegalStateException(message?.ifBlank { null } ?: "Request failed ($code)")
             }
             return text

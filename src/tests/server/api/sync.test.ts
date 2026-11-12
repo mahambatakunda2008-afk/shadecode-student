@@ -40,7 +40,7 @@ describe("POST /api/sync", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getUser.mockResolvedValue({ data: { user: USER }, error: null });
-    rpc.mockResolvedValue({ data: { ok: true, status: "accepted", version: 3 }, error: null });
+    rpc.mockImplementation((fn: string) => fn === "account_deletion_is_pending" ? Promise.resolve({ data: false, error: null }) : Promise.resolve({ data: { ok: true, status: "accepted", version: 3 }, error: null }));
   });
 
   describe("authentication", () => {
@@ -56,6 +56,26 @@ describe("POST /api/sync", () => {
       const res = await post(validBody());
       expect(res.status).toBe(401);
       expect(rpc).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("account deletion barrier", () => {
+    it("rejects queued sync while the caller has an active deletion request", async () => {
+      rpc.mockImplementation((fn: string) => fn === "account_deletion_is_pending"
+        ? Promise.resolve({ data: true, error: null })
+        : Promise.resolve({ data: { status: "accepted" }, error: null }));
+      const res = await post(validBody());
+      expect(res.status).toBe(423);
+      expect(await res.json()).toEqual({ ok: false, error: "Account deletion is pending. Sync is paused." });
+      expect(rpc).toHaveBeenCalledTimes(1);
+      expect(rpc.mock.calls[0][0]).toBe("account_deletion_is_pending");
+    });
+
+    it("fails closed when deletion state cannot be checked", async () => {
+      rpc.mockResolvedValue({ data: null, error: { code: "PGRST202", message: "function unavailable" } });
+      const res = await post(validBody());
+      expect(res.status).toBe(503);
+      expect(rpc).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -124,8 +144,9 @@ describe("POST /api/sync", () => {
 
     it("always writes as the authenticated user, even if the client omits user_id", async () => {
       await post(validBody());
-      expect(rpc).toHaveBeenCalledTimes(1);
-      const [fn, args] = rpc.mock.calls[0];
+      expect(rpc).toHaveBeenCalledTimes(2);
+      expect(rpc.mock.calls[0][0]).toBe("account_deletion_is_pending");
+      const [fn, args] = rpc.mock.calls[1];
       expect(fn).toBe("apply_sync_mutation");
       expect(args.p_payload.user_id).toBe(USER.id);
       expect(args).toMatchObject({
@@ -152,17 +173,17 @@ describe("POST /api/sync", () => {
     });
 
     it("returns 200 for an idempotent replay so retries are safe", async () => {
-      rpc.mockResolvedValue({ data: { ok: true, status: "already-applied", version: 3 }, error: null });
+      rpc.mockImplementation((fn: string) => fn === "account_deletion_is_pending" ? Promise.resolve({ data: false, error: null }) : Promise.resolve({ data: { ok: true, status: "already-applied", version: 3 }, error: null }));
       const res = await post(validBody());
       expect(res.status).toBe(200);
       expect(await res.json()).toMatchObject({ status: "already-applied" });
     });
 
     it("returns 409 with the server version on a causal conflict", async () => {
-      rpc.mockResolvedValue({
+      rpc.mockImplementation((fn: string) => fn === "account_deletion_is_pending" ? Promise.resolve({ data: false, error: null }) : Promise.resolve({
         data: { ok: true, status: "conflict", currentVersion: 9, currentDeviceId: "device-b" },
         error: null,
-      });
+      }));
       const res = await post(validBody());
       expect(res.status).toBe(409);
       expect(await res.json()).toMatchObject({ status: "conflict", currentVersion: 9, currentDeviceId: "device-b" });
@@ -170,10 +191,10 @@ describe("POST /api/sync", () => {
 
     it("returns a generic 500 (client retries) and never leaks database error text", async () => {
       const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-      rpc.mockResolvedValue({
+      rpc.mockImplementation((fn: string) => fn === "account_deletion_is_pending" ? Promise.resolve({ data: false, error: null }) : Promise.resolve({
         data: null,
         error: { code: "23505", message: 'duplicate key value violates unique constraint "sync_revisions_pkey"' },
-      });
+      }));
       const res = await post(validBody());
       expect(res.status).toBe(500);
       const text = JSON.stringify(await res.json());
@@ -188,17 +209,17 @@ describe("POST /api/sync", () => {
     });
 
     it("returns 403 with the fixed message for a cross-account record", async () => {
-      rpc.mockResolvedValue({ data: null, error: { message: "Record ownership does not match authenticated user" } });
+      rpc.mockImplementation((fn: string) => fn === "account_deletion_is_pending" ? Promise.resolve({ data: false, error: null }) : Promise.resolve({ data: null, error: { message: "Record ownership does not match authenticated user" } }));
       const res = await post(validBody());
       expect(res.status).toBe(403);
       expect(await res.json()).toEqual({ ok: false, error: "Record ownership does not match authenticated user" });
     });
 
     it("never reports success for an unrecognised RPC result", async () => {
-      rpc.mockResolvedValue({ data: { ok: true, status: "mystery" }, error: null });
+      rpc.mockImplementation((fn: string) => fn === "account_deletion_is_pending" ? Promise.resolve({ data: false, error: null }) : Promise.resolve({ data: { ok: true, status: "mystery" }, error: null }));
       const res = await post(validBody());
       expect(res.status).toBe(500);
-      rpc.mockResolvedValue({ data: null, error: null });
+      rpc.mockImplementation((fn: string) => fn === "account_deletion_is_pending" ? Promise.resolve({ data: false, error: null }) : Promise.resolve({ data: null, error: null }));
       const res2 = await post(validBody());
       expect(res2.status).toBe(500);
     });

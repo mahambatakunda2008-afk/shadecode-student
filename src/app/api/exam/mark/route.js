@@ -6,6 +6,7 @@ import { emitExamCompleted } from "@/lib/events";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
+import { checkAccountDeletionWriteGate, createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { calculateExamScore, computeTopicScores } from "@/lib/exam/scoring";
@@ -139,6 +140,12 @@ export async function POST(req) {
     if (rateLimitCheck) return rateLimitCheck;
     const { user, error: authError } = await getVerifiedUser(req);
     if (!user) return NextResponse.json({ error: authError || "You need to be signed in to mark an exam." }, { status: 401 });
+    const admin = createSupabaseAdminClient();
+    if (!admin) return NextResponse.json({ error: "Exam marking is temporarily unavailable." }, { status: 503 });
+    const deletionGate = await checkAccountDeletionWriteGate(admin, user.id);
+    if (!deletionGate.allowed) {
+      return NextResponse.json({ error: deletionGate.message, code: deletionGate.code }, { status: deletionGate.status });
+    }
 
     const body = await req.json();
     const validation = validateRequestBody(body, examMarkSchema);
