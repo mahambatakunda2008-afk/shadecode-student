@@ -136,7 +136,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       .from("cortex_events")
       .select("type, data, created_at")
       .eq("user_id", userId)
-      .in("type", ["question_attempted", "quiz_completed"])
+      .in("type", ["question_attempted", "quiz_completed", "exam_completed", "activity_completed"])
       .order("created_at", { ascending: false })
       .limit(500),
   ]);
