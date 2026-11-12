@@ -15,7 +15,11 @@ class NativeStore(private val context: Context) {
     private val refreshToken = stringPreferencesKey("refresh_token")
     private val userId = stringPreferencesKey("user_id")
     private val email = stringPreferencesKey("email")
-    private val cachedProfile = stringPreferencesKey("cached_profile")
+    // Profile snapshots are account-scoped. The legacy unscoped key is migrated
+    // only when its embedded profile ID matches the requested account.
+    private fun cachedProfile(accountId: String) =
+        stringPreferencesKey("cached_profile_$accountId")
+    private val legacyCachedProfile = stringPreferencesKey("cached_profile")
 
     fun context(): Context = context
 
@@ -49,11 +53,23 @@ class NativeStore(private val context: Context) {
             .put("subjects", JSONArray(profile.subjects))
             .put("onboardingCompleted", profile.onboardingCompleted)
             .toString()
-        context.nativeStore.edit { it[cachedProfile] = encoded }
+        context.nativeStore.edit { it[cachedProfile(profile.id)] = encoded }
     }
 
-    suspend fun readProfile(): NativeProfile? {
-        val encoded = context.nativeStore.data.first()[cachedProfile] ?: return null
+    suspend fun readProfile(accountId: String): NativeProfile? {
+        val preferences = context.nativeStore.data.first()
+        val encoded = preferences[cachedProfile(accountId)]
+            ?: preferences[legacyCachedProfile]?.takeIf { legacy ->
+                runCatching { JSONObject(legacy).optString("id") == accountId }.getOrDefault(false)
+            }?.also { legacy ->
+                // Migrate only the matching learner's legacy profile. Never expose
+                // an unscoped profile to a different account.
+                context.nativeStore.edit {
+                    it[cachedProfile(accountId)] = legacy
+                    it.remove(legacyCachedProfile)
+                }
+            }
+            ?: return null
         return runCatching {
             val json = JSONObject(encoded)
             val subjectsJson = json.optJSONArray("subjects") ?: JSONArray()
@@ -234,8 +250,18 @@ class NativeStore(private val context: Context) {
         }
     }
 
+    /**
+     * Sign out by removing credentials only. Cached academic data and queued
+     * offline operations are deliberately retained under their account IDs.
+     * A separate, explicit account-data deletion flow must own destructive wipes.
+     */
     suspend fun clearSession() {
-        context.nativeStore.edit { it.clear() }
+        context.nativeStore.edit { prefs ->
+            prefs.remove(accessToken)
+            prefs.remove(refreshToken)
+            prefs.remove(userId)
+            prefs.remove(email)
+        }
     }
 }
 
