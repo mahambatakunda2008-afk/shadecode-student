@@ -343,6 +343,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const vectorHistoryRef = useRef<DiagramObject[][]>([[]]);
   const vectorDragRef = useRef<{ id: string; origin: Point; object: DiagramObject } | null>(null);
   const vectorResizeRef = useRef<{ id: string; origin: Point; object: DiagramObject; bounds: ReturnType<typeof getDiagramObjectBounds> } | null>(null);
+  const vectorPointDragRef = useRef<{ id: string; kind: "polygon" | "curve"; index: number; origin: Point; object: DiagramObject } | null>(null);
   const [vectorObjects, setVectorObjects] = useState<DiagramObject[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [objectLabelDraft, setObjectLabelDraft] = useState("");
@@ -602,6 +603,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const point = pointFromEvent(event);
     if (tool === "select") {
       const selectedVector = vectorObjectsRef.current.find(object => object.id === selectedObjectId);
+      if (selectedVector?.type === "polygon") { const index=selectedVector.points.findIndex(vertex=>distance(point,vertex)<=16); if(index>=0){vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];vectorPointDragRef.current={id:selectedVector.id,kind:"polygon",index,origin:point,object:selectedVector};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
+      if (selectedVector?.type === "curve") { let target:{segment:number;control:DiagramPoint}|null=null;selectedVector.segments.forEach((segment,index)=>{if(distance(point,segment.control)<=16)target={segment:index,control:segment.control};}); if(target){const index=selectedVector.segments.findIndex(segment=>segment.control===target?.control);vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];vectorPointDragRef.current={id:selectedVector.id,kind:"curve",index,origin:point,object:selectedVector};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
       if (selectedVector) { const bounds=getDiagramObjectBounds(selectedVector), handle={x:bounds.x+bounds.width,y:bounds.y+bounds.height}; if(distance(point,handle)<=18){vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];vectorResizeRef.current={id:selectedVector.id,origin:point,object:selectedVector,bounds};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
       const hit=[...vectorObjectsRef.current].reverse().find(object=>hitTestDiagramObject(object,point,14));
       if(hit){vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];vectorDragRef.current={id:hit.id,origin:point,object:hit};setSelectedObjectId(hit.id);drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;}
@@ -650,6 +653,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   function move(event: PointerEvent<HTMLCanvasElement>) {
     if (!drawingRef.current) return;
     const point = pointFromEvent(event);
+    if(vectorPointDragRef.current){const drag=vectorPointDragRef.current,dx=point.x-drag.origin.x,dy=point.y-drag.origin.y;const next=vectorObjectsRef.current.map(object=>{if(object.id!==drag.id)return object;if(drag.kind==="polygon"&&object.type==="polygon")return {...object,points:object.points.map((vertex,index)=>index===drag.index?{x:vertex.x+dx,y:vertex.y+dy}:vertex)};if(drag.kind==="curve"&&object.type==="curve")return {...object,segments:object.segments.map((segment,index)=>index===drag.index?{...segment,control:{x:segment.control.x+dx,y:segment.control.y+dy}}:segment)};return object;});vectorObjectsRef.current=next;setVectorObjects(next);return;}
     if(vectorResizeRef.current){const resize=vectorResizeRef.current,dx=point.x-resize.origin.x,dy=point.y-resize.origin.y;const next=vectorObjectsRef.current.map(object=>object.id===resize.id?resizeDiagramObject(resize.object,{...resize.bounds,width:Math.max(12,resize.bounds.width+dx),height:Math.max(12,resize.bounds.height+dy)}):object);vectorObjectsRef.current=next;setVectorObjects(next);return;}
     if(vectorDragRef.current){const drag=vectorDragRef.current,dx=point.x-drag.origin.x,dy=point.y-drag.origin.y;const next=vectorObjectsRef.current.map(object=>object.id===drag.id?moveDiagramObjectWithinCanvas(drag.object,dx,dy):object);vectorObjectsRef.current=next;setVectorObjects(next);return;}
     pointsRef.current.push(point);
@@ -684,6 +688,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     if (frameRef.current !== null) { cancelAnimationFrame(frameRef.current); frameRef.current = null; }
     const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
     if(!canvas||!ctx)return;
+    if(vectorPointDragRef.current){vectorPointDragRef.current=null;setCanUndo(true);setStatus("Diagram control point adjusted.");return;}
     if(vectorResizeRef.current){vectorResizeRef.current=null;setCanUndo(true);setStatus("Object resized. It remains independently editable.");return;}
     if(vectorDragRef.current){vectorDragRef.current=null;setCanUndo(true);setStatus("Object moved. It remains independently editable.");return;}
     if(!snapshotRef.current)return;
