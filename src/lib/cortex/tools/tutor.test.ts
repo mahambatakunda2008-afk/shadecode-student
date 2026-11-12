@@ -11,6 +11,16 @@ const context: CortexStudentContext = {
     observedAt: "2026-11-12T11:00:00.000Z",
     level: 3,
     streak: 2,
+    subjects: ["Mathematics"],
+    studyLevel: "A Level",
+    educationStage: "secondary",
+    curriculumDeclaration: {
+      board: "Cambridge",
+      qualification: "A Level",
+      syllabusCode: "9702",
+      syllabusYear: "2025-2027",
+      verified: false,
+    },
     frequentlyStudiedSubjects: ["Mathematics"],
     strongSubjects: [],
     weakSubjects: [],
@@ -25,6 +35,8 @@ const context: CortexStudentContext = {
     items: [{
       topicId: "chain-rule",
       subjectKey: "Mathematics",
+      syllabusId: "cambridge-9702",
+      curriculumTopicKey: "1.1",
       masteryScore: 61,
       attempts: 4,
       retention: 55,
@@ -48,6 +60,32 @@ describe("Cortex tutor learner continuity", () => {
 
     expect(response).toContain("4 recorded learning attempts");
     expect(response).toContain("rather than assume this is your first encounter");
+  });
+
+  it("does not reuse topic evidence from a different active syllabus", async () => {
+    const response = await generateTutoringResponse("chain-rule", {
+      studentContext: context,
+      subjectName: "Mathematics",
+      curriculum: {
+        identity: {
+          boardId: "cambridge",
+          qualificationId: "alevel",
+          syllabusId: "cambridge-9700",
+          syllabusVersion: "2025-2027",
+          subjectId: "biology",
+        },
+        objectives: [],
+        knowledge: { items: [] },
+        required: [],
+        supporting: [],
+        assessment: [],
+        practical: [],
+        terminology: [],
+        provenanceWarnings: [],
+      },
+    });
+
+    expect(response).not.toContain("recorded learning attempts");
   });
 
   it("does not leak evidence across subjects", async () => {
