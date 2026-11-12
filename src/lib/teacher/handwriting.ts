@@ -60,7 +60,7 @@ export function findHandwritingNotationWarnings(transcript: string, correctedTex
   const arithmeticOperators = /[A-Za-zΑ-Ωα-ω0-9)]\s*(?:[+−×÷*/^]|\s-\s)\s*[A-Za-zΑ-Ωα-ω0-9]/g;
   const checks: Array<[HandwritingNotationWarning, RegExp]> = [
     ["numbers", /\b\d+(?:[.,]\d+)?(?:[eE][+-]?\d+)?\b/g],
-    ["equations", /\b[A-Za-z][A-Za-z0-9_]*\s*(?:=|≈|≠|≤|≥|<|>)\s*[A-Za-z0-9_α-ωΑ-Ωπμλθ√∞.+\-*/^()]+/g],
+    ["equations", /\b[A-Za-z][A-Za-z0-9_]*(?:\s*(?:[+−×÷*/^]|\s-\s)\s*[A-Za-z0-9_α-ωΑ-Ωπμλθ√∞.()]+)*\s*(?:=|≈|≠|≤|≥|<|>)\s*[A-Za-z0-9_α-ωΑ-Ωπμλθ√∞.+\-*/^()]+/g],
     ["units", /(?<=\d)\s*(?:mmHg|cmH2O|km|cm|mm|µm|μm|nm|kg|mg|µg|g|mol|mmol|kPa|MPa|Pa|mL|L|m3|cm3|m³|cm³|m²|cm²|ms|min|h|s|mA|A|mV|V|kW|W|kJ|J|kN|N|MHz|kHz|Hz|°C|K)\b/g],
     ["chemical formulae", /\b[A-Z][a-z]?\d*(?:[A-Z][a-z]?\d*)+\b/g],
     ["scientific symbols", /[α-ωΑ-ΩπμλθΔ∑∫√∞±×÷≤≥≈≠∝°µ²³⁰¹⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g],
