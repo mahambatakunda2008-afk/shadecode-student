@@ -48,6 +48,22 @@ export function parseHandwritingRecognition(text: string): RecognitionPayload | 
   }
 }
 
+export type HandwritingNotationWarning = "numbers" | "equations" | "units" | "chemical formulae" | "scientific symbols";
+
+/** Detect protected notation changed by the OCR correction pass. A change is a review flag, never an automatic rejection. */
+export function findHandwritingNotationWarnings(transcript: string, correctedText: string): HandwritingNotationWarning[] {
+  if (!transcript || !correctedText || transcript === correctedText) return [];
+  const occurrences = (value: string, pattern: RegExp) => [...value.matchAll(pattern)].map(match => match[0]).sort();
+  const checks: Array<[HandwritingNotationWarning, RegExp]> = [
+    ["numbers", /\\b\\d+(?:[.,]\\d+)?(?:[eE][+-]?\\d+)?\\b/g],
+    ["equations", /\\b[A-Za-z][A-Za-z0-9_]*\\s*(?:=|≈|≠|≤|≥|<|>)\\s*[A-Za-z0-9_α-ωΑ-Ωπμλθ√∞.+\\-*/^()]+/g],
+    ["units", /(?<=\\d)\\s*(?:mmHg|cmH2O|km|cm|mm|µm|μm|nm|kg|mg|µg|g|mol|mmol|kPa|MPa|Pa|mL|L|m3|cm3|m³|cm³|m²|cm²|ms|min|h|s|mA|A|mV|V|kW|W|kJ|J|kN|N|MHz|kHz|Hz|°C|K)\\b/g],
+    ["chemical formulae", /\\b[A-Z][a-z]?\\d*(?:[A-Z][a-z]?\\d*)+\\b/g],
+    ["scientific symbols", /[α-ωΑ-ΩπμλθΔ∑∫√∞±×÷≤≥≈≠∝°µ²³⁰¹⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g],
+  ];
+  return checks.filter(([, pattern]) => JSON.stringify(occurrences(transcript, pattern)) !== JSON.stringify(occurrences(correctedText, pattern))).map(([label]) => label);
+}
+
 export function normalizeHandwritingRecognition(payload: RecognitionPayload): HandwritingRecognition {
   const transcript = typeof payload.transcript === "string" ? payload.transcript.trim().slice(0, 12000) : "";
   const correctedText = typeof payload.correctedText === "string" ? payload.correctedText.trim().slice(0, 12000) : "";
@@ -89,7 +105,7 @@ export function normalizeHandwritingRecognition(payload: RecognitionPayload): Ha
     confidence,
     uncertainCharacters,
     mathExpressions,
-    requiresReview: uncertainCharacters.length > 0 || mathExpressions.some(item => item.uncertainTokens.length > 0 || item.confidence === null || item.confidence < 0.9) || confidence === null || confidence < 0.9,
+    requiresReview: uncertainCharacters.length > 0 || notationWarnings.length > 0 || mathExpressions.some(item => item.uncertainTokens.length > 0 || item.confidence === null || item.confidence < 0.9) || confidence === null || confidence < 0.9,\n    notationWarnings,
   };
 }
 
