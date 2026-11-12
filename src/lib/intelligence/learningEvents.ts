@@ -110,6 +110,24 @@ export function normalizeLearningEvent(input: SupportedSourceEvent): EventNormal
   };
 }
 
+
+/**
+ * A canonical event is fully delivered only when the server confirms durable
+ * persistence and has not deferred its mastery projection. A 202 response
+ * with projectionPending must remain in the device outbox so an idempotent
+ * replay can retry the projection.
+ */
+export function isLearningEventDeliveryComplete(
+  responseOk: boolean,
+  responseBody: unknown,
+): boolean {
+  if (!responseOk || !responseBody || typeof responseBody !== "object" || Array.isArray(responseBody)) {
+    return false;
+  }
+  const payload = responseBody as Record<string, unknown>;
+  return payload.persisted === true && payload.projectionPending !== true;
+}
+
 export class LearningEventInbox {
   private readonly accepted = new Set<string>();
 
