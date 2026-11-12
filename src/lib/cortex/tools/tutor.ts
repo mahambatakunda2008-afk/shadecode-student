@@ -7,6 +7,7 @@
  */
 
 import type { SystemCurriculumContext } from "@/lib/curriculum/system-curriculum-context";
+import type { CortexStudentContext } from "@/lib/cortex/student-context";
 
 export interface TutoringContext {
   level?: number;
@@ -17,6 +18,9 @@ export interface TutoringContext {
     curriculumCompletionPercent?: number;
   } | null;
   curriculum?: SystemCurriculumContext | null;
+  studentContext?: CortexStudentContext | null;
+  subjectId?: string;
+  subjectName?: string;
 }
 
 function uniqueTitles(items: SystemCurriculumContext["knowledge"]["items"]): string[] {
@@ -39,6 +43,26 @@ function curriculumNote(context: SystemCurriculumContext | null | undefined): st
   return parts.join("");
 }
 
+function learnerContinuityNote(
+  context: TutoringContext,
+  topic: string,
+): string {
+  const subjectKeys = [context.subjectId, context.subjectName]
+    .map((value) => value?.trim().toLocaleLowerCase())
+    .filter((value): value is string => Boolean(value));
+  if (!context.studentContext || subjectKeys.length === 0) return "";
+
+  const normalizedTopic = topic.trim().toLocaleLowerCase();
+  const evidence = context.studentContext.topics.items.find((item) =>
+    item.topicId.trim().toLocaleLowerCase() === normalizedTopic &&
+    subjectKeys.includes(item.subjectId.trim().toLocaleLowerCase()) &&
+    item.attempts > 0
+  );
+  if (!evidence) return "";
+
+  return ` I have ${evidence.attempts} recorded learning attempts for this topic in this subject, so I'll build on that history rather than assume this is your first encounter.`;
+}
+
 export async function generateTutoringResponse(
   topic: string,
   context: TutoringContext = {},
@@ -47,6 +71,7 @@ export async function generateTutoringResponse(
   const level = context.level ?? 1;
   const recommended = context.snapshot?.recommendedNextLesson?.title;
   const curriculum = curriculumNote(context.curriculum);
+  const continuity = learnerContinuityNote(context, safeTopic);
 
   const lead = `Let's work through ${safeTopic}.`;
   const levelNote =
@@ -59,5 +84,5 @@ export async function generateTutoringResponse(
     ? ` When you're ready, your recommended next lesson is "${recommended}".`
     : "";
 
-  return `${lead}${levelNote}${curriculum}${nextNote}`;
+  return `${lead}${levelNote}${curriculum}${continuity}${nextNote}`;
 }
