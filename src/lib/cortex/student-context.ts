@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { deriveRepeatedTopicErrors, type RepeatedTopicError } from "./mistake-patterns";
 
 export type EvidenceState = "available" | "insufficient_evidence" | "unavailable";
 
@@ -56,6 +57,12 @@ export interface CortexStudentContext {
     evidenceCount: number;
     items: StudentTopicEvidence[];
   };
+  mistakes: {
+    state: EvidenceState;
+    source: "cortex_events";
+    inspectedEventCount: number;
+    repeatedTopicErrors: RepeatedTopicError[];
+  };
 }
 
 /**
@@ -86,7 +93,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
   }
 
   const userId = authData.user.id;
-  const [academicProfileResult, memoryResult, topicsResult] = await Promise.all([
+  const [academicProfileResult, memoryResult, topicsResult, mistakeEventsResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("level, subjects, study_level, education_stage, curriculum_board, qualification, syllabus_code, syllabus_year, created_at")
@@ -103,6 +110,13 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       .eq("user_id", userId)
       .order("last_attempted", { ascending: false })
       .limit(200),
+    supabase
+      .from("cortex_events")
+      .select("type, data, created_at")
+      .eq("user_id", userId)
+      .eq("type", "question_attempted")
+      .order("created_at", { ascending: false })
+      .limit(500),
   ]);
 
   if (academicProfileResult.error) {
@@ -116,6 +130,11 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
   if (topicsResult.error) {
     console.error("[cortex student context] topic evidence read failed:", topicsResult.error);
     throw new Error("STUDENT_CONTEXT_TOPICS_UNAVAILABLE");
+  }
+
+  if (mistakeEventsResult.error) {
+    console.error("[cortex student context] learning-event read failed:", mistakeEventsResult.error);
+    throw new Error("STUDENT_CONTEXT_EVENTS_UNAVAILABLE");
   }
 
   const academicProfile = academicProfileResult.data;
@@ -179,6 +198,12 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       source: "topic_mastery",
       evidenceCount,
       items: topics,
+    },
+    mistakes: {
+      state: (mistakeEventsResult.data ?? []).length > 0 ? "available" : "insufficient_evidence",
+      source: "cortex_events",
+      inspectedEventCount: (mistakeEventsResult.data ?? []).length,
+      repeatedTopicErrors: deriveRepeatedTopicErrors(mistakeEventsResult.data ?? []),
     },
   };
 }
