@@ -165,11 +165,9 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       if (result.score !== null) {
         await updateMemory(input.userId, {
           lastPracticeScore: result.score,
-          ...(practiceTopic ? { lastPracticeTopic: practiceTopic } : {}),
-          ...(practiceSubject ? { lastPracticeSubject: practiceSubject } : {}),
-          ...(input.curriculum?.identity.syllabusId
-            ? { lastPracticeSyllabusId: input.curriculum.identity.syllabusId }
-            : {}),
+          lastPracticeTopic: practiceTopic ?? null,
+          lastPracticeSubject: practiceSubject ?? null,
+          lastPracticeSyllabusId: input.curriculum?.identity.syllabusId ?? null,
         });
       } else if (practiceTopic) {
         // Preserve study continuity without recording an unverified score.
