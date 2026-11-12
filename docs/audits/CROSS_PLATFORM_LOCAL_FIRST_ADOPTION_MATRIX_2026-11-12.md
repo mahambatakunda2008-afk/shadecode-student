@@ -211,3 +211,20 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 - A separate privilege check confirmed service_role can execute the RPC while authenticated and anon cannot.
 - Concurrency safety is provided by the database's unique-key upsert row lock, but a simultaneous multi-connection stress test has not yet been run. The SQL regression test currently covers retry/idempotency, not a real concurrent race.
 - The exam event pipeline still has secondary handlers outside this atomic score-memory RPC. They are not yet moved into a transactional outbox, so the system does not claim exactly-once delivery for every analytics/recommendation side effect.
+
+
+## 2026-11-12 implementation update: durable exam completion outbox
+
+- Added and applied migration `20261112210000_exam_completion_outbox.sql`.
+- `complete_exam_submission` now accepts the completion event payload and, in the same database transaction that marks the attempt completed, inserts one `exam_completion_outbox` row keyed by `(user_id, attempt_id)`. A committed exam result therefore cannot be separated from its pending durable completion event.
+- Added service-role-only RPCs:
+  - `claim_exam_completion_outbox`: claims pending jobs with `FOR UPDATE SKIP LOCKED`, rotates the lease token, and reclaims stale processing jobs.
+  - `finish_exam_completion_outbox`: acknowledges completion or schedules retry with exponential backoff. Lease-token fencing prevents an expired worker from acknowledging a job claimed by a newer worker.
+- The authenticated exam route now moves Cortex event persistence, Cortex exam-score memory, and the unified exam-completed event out of the synchronous request path for attempts with stable IDs. Those side effects are queued atomically with result finalization.
+- Added protected worker endpoint `/api/internal/process-exam-outbox`. It validates the payload, writes the deterministic durable Cortex exam event, calls the atomic exam-score memory RPC, emits the unified exam-completed event, then acknowledges the outbox job. Failures are retried with backoff.
+- Added GitHub Actions schedule `.github/workflows/process-exam-outbox.yml` (every 15 minutes) plus manual dispatch. **Operational setup remains required:** configure the same high-entropy `CRON_SECRET` as a GitHub Actions repository secret and as a Vercel environment variable, then redeploy. Until that secret is configured and the worker deployment is live, outbox rows remain safely pending.
+- Legacy requests without a stable attempt ID retain synchronous side effects for compatibility; they do not receive the same transactional outbox guarantee.
+- Added and executed `supabase/tests/exam_completion_outbox.test.sql` against the active Supabase project. It verifies result finalization enqueues one outbox job, failed jobs can be reclaimed, lease tokens rotate, and stale workers cannot acknowledge reclaimed work. The test transaction rolls back its writes.
+- Verified RPC permissions: service_role can execute the outbox RPCs; authenticated users cannot read the outbox table or claim jobs.
+- The event worker is idempotent for durable Cortex event IDs and exam-score submission identities. The unified in-process event pipeline still has non-durable handlers and is not yet a transactional event bus. This is not a claim of exactly-once delivery for every analytics or cache side effect.
+- No full Next.js build, deployed endpoint test, real scheduled GitHub Actions execution, or end-to-end exam submission test has yet passed for this change.
