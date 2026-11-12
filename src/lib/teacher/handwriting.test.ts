@@ -227,6 +227,10 @@ describe("handwriting correction notation safeguards", () => {
     expect(findHandwritingNotationWarnings("The measured charge was +5", "The measured charge was -5")).toContain("numbers");
   });
 
+  it("allows spacing changes around fraction division without a false operator warning", () => {
+    expect(findHandwritingNotationWarnings("The ratio is 1 / 2", "The ratio is 1/2")).toEqual([]);
+  });
+
   it("flags arithmetic operator substitutions inside expressions", () => {
     expect(findHandwritingNotationWarnings("x + 2 = 5", "x − 2 = 5")).toContain("scientific symbols");
     expect(findHandwritingNotationWarnings("a × b", "a + b")).toContain("scientific symbols");
