@@ -152,3 +152,24 @@ describe("handwriting OCR retry selection", () => {
     )).toBe(false);
   });
 });
+
+
+describe("inline handwriting uncertainty highlighting", () => {
+  it("locates a uniquely contextualised uncertain character", () => {
+    const ranges = findHandwritingReviewRanges("The value is 10 m/s.", [{ seen: "lO", chosen: "10", alternatives: ["10", "1O"], context: "value is 10 m/s", reason: "O or zero" }]);
+    expect(ranges).toEqual([{ start: 13, end: 15, seen: "lO", chosen: "10" }]);
+  });
+
+  it("does not highlight repeated ambiguous candidates without unique context", () => {
+    const ranges = findHandwritingReviewRanges("x + x = 2", [{ seen: "?", chosen: "x", alternatives: ["x", "y"], context: "", reason: "unclear variable" }]);
+    expect(ranges).toEqual([]);
+  });
+
+  it("keeps overlapping uncertainty ranges from producing duplicate highlights", () => {
+    const ranges = findHandwritingReviewRanges("A1B", [
+      { seen: "l", chosen: "1", alternatives: ["1"], context: "A1B", reason: "digit or letter" },
+      { seen: "I", chosen: "1", alternatives: ["I"], context: "A1B", reason: "same location" },
+    ]);
+    expect(ranges).toHaveLength(1);
+  });
+});
