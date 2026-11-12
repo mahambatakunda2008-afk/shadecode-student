@@ -172,7 +172,7 @@ export async function POST(req: Request) {
       requestedCurriculumSubjectId(validatedPayload),
     );
     const authorization = req.headers.get("authorization") ?? "";
-    const accessToken = authorization.match(/^Bearer\\s+(.+)$/i)?.[1];
+    const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
     return Response.json(await CortexCore({
       userId: validatedUserId,
       accessToken,
