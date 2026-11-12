@@ -73,6 +73,8 @@ describe("persistent Cortex memory mapping", () => {
       weakSubjects: ["Physics"],
       lastPracticeScore: 75,
       lastPracticeTopic: "Photosynthesis",
+      lastPracticeSubject: "Biology",
+      lastPracticeSyllabusId: "cambridge-9700",
     });
 
     expect(builder.upsert).toHaveBeenCalledWith(
@@ -82,6 +84,8 @@ describe("persistent Cortex memory mapping", () => {
         weak_subjects: ["Physics"],
         last_practice_score: 75,
         last_practice_topic: "Photosynthesis",
+        last_practice_subject: "Biology",
+        last_practice_syllabus_id: "cambridge-9700",
       },
       { onConflict: "user_id" },
     );
