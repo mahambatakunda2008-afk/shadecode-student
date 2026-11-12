@@ -6,7 +6,7 @@ export interface AcademicExperience { stage: StudyLevel; family: ExperienceFamil
 
 const FOUNDATION_ROUTES = ["/dashboard", "/learn", "/daily-challenge", "/achievements", "/settings"];
 const PRIMARY_ROUTES = ["/dashboard", "/learn", "/daily-challenge", "/tasks", "/focus", "/timetable", "/study-plan", "/achievements", "/settings"];
-const SCHOOL_ROUTES = ["/dashboard", "/learn", "/curriculum", "/study", "/focus", "/tasks", "/timetable", "/study-plan", "/studyspace", "/exams", "/exam-sim", "/exam-hub", "/analytics", "/leaderboard", "/achievements", "/insights/history", "/share", "/settings", "/comp-lab"];
+const SCHOOL_ROUTES = ["/dashboard", "/learn", "/learn/tutorials", "/curriculum", "/study", "/focus", "/tasks", "/timetable", "/study-plan", "/studyspace", "/exams", "/exam-sim", "/exam-hub", "/analytics", "/leaderboard", "/achievements", "/insights/history", "/share", "/settings", "/comp-lab"];
 const SENIOR_ROUTES = [...SCHOOL_ROUTES, "/careers"];
 const TERTIARY_ROUTES = ["/dashboard", "/learn", "/curriculum", "/focus", "/tasks", "/timetable", "/study-plan", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/insights/history", "/share", "/achievements", "/settings", "/comp-lab"];
 const TVET_ROUTES = ["/dashboard", "/learn", "/curriculum", "/focus", "/tasks", "/timetable", "/study-plan", "/studyspace", "/projects", "/workmate", "/exams", "/exam-sim", "/analytics", "/careers", "/insights/history", "/share", "/achievements", "/settings", "/comp-lab"];

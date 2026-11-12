@@ -103,13 +103,27 @@ describe("Comp Lab visibility across learner experiences", () => {
 
 describe("teacher tutorials navigation", () => {
   it("lights up Tutorials, not Learn, on tutorial pages, and still lights up Learn elsewhere", async () => {
-    const { isRouteActive, NAV_ITEMS, SIDEBAR_GROUPS } = await import("./navigation");
+    const { isRouteActive, NAV_ITEMS } = await import("./navigation");
     expect(isRouteActive("/learn/tutorials", NAV_ITEMS.teacherTutorials.href)).toBe(true);
     expect(isRouteActive("/learn/tutorials/abc", NAV_ITEMS.teacherTutorials.href)).toBe(true);
     expect(isRouteActive("/learn/tutorials", NAV_ITEMS.learn.href)).toBe(false);
     expect(isRouteActive("/learn/tutorials/abc", NAV_ITEMS.learn.href)).toBe(false);
     expect(isRouteActive("/learn", NAV_ITEMS.learn.href)).toBe(true);
     expect(isRouteActive("/learn/some-lesson-id", NAV_ITEMS.learn.href)).toBe(true);
-    expect(SIDEBAR_GROUPS.flatMap((g) => g.items.map((i) => i.href))).toContain("/learn/tutorials");
+  });
+
+  it("actually appears for school learners (every school stage), using the real experience definitions", async () => {
+    const { getAcademicExperience } = await import("@/lib/academic/experience");
+    for (const stage of ["lower-secondary", "upper-secondary", "a-level"]) {
+      const groups = getExperienceNavGroups(getAcademicExperience(stage), [], ["Biology"]);
+      expect(hrefs(groups), stage).toContain("/learn/tutorials");
+    }
+  });
+
+  it("stays out of the nav for young learners, where tutorials are not offered", async () => {
+    const { getAcademicExperience } = await import("@/lib/academic/experience");
+    for (const stage of ["early-childhood", "primary"]) {
+      expect(hrefs(getExperienceNavGroups(getAcademicExperience(stage), [], [])), stage).not.toContain("/learn/tutorials");
+    }
   });
 });

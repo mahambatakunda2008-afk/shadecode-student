@@ -16,7 +16,14 @@ export function TeacherNav({ isAdmin }: { isAdmin: boolean }) {
   return (
     <nav className="mx-auto flex w-full max-w-3xl gap-1 overflow-x-auto px-3 pb-2" aria-label="Teacher portal">
       {ITEMS.filter((i) => isAdmin || !i.adminOnly).map((item) => {
-        const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+        const inTutorialReview = pathname.startsWith("/teacher/tutorials/review");
+        const active = item.exact
+          ? pathname === item.href
+          : item.href === "/teacher/review"
+            ? pathname.startsWith("/teacher/review") || inTutorialReview
+            : item.href === "/teacher/tutorials"
+              ? pathname.startsWith("/teacher/tutorials") && !inTutorialReview
+              : pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}

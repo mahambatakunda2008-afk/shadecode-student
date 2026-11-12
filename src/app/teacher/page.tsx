@@ -28,6 +28,12 @@ export default async function TeacherHome() {
     };
   }).filter((c) => c.total > 0);
 
+  const { count: tutorialsWaiting } = await reviewer.supabase
+    .from("teacher_tutorials")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "in_review")
+    .neq("author_id", reviewer.user.id);
+
   const totalLeft = cards.reduce((n, c) => n + (c.total - c.reviewed), 0);
 
   return (
@@ -38,6 +44,17 @@ export default async function TeacherHome() {
           {totalLeft > 0 ? `${totalLeft} items are waiting for your review.` : "You have reviewed everything available. Thank you."}
         </p>
       </section>
+
+      <Link
+        href="/teacher/tutorials/review"
+        className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm transition hover:border-[var(--primary)]"
+      >
+        <span>
+          <span className="block font-medium">Tutorials awaiting review</span>
+          <span className="block text-xs text-[var(--muted-foreground)]">Check other teachers’ tutorials before they go to students.</span>
+        </span>
+        <span className="shrink-0 rounded-full bg-[var(--primary-glow)] px-3 py-1 text-sm font-semibold">{tutorialsWaiting ?? 0}</span>
+      </Link>
 
       <section className="grid gap-3 sm:grid-cols-2">
         {cards.map((c) => {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { REVIEW_VERDICTS, type ReviewVerdict } from "@/lib/exam/curated/registry";
 import type { ReviewItem } from "@/lib/teacher/reviewItems";
@@ -113,6 +114,8 @@ export function ReviewClient({ items, groups, reviews, reviewerId, initialGroup 
             : "Check each question: is the marked answer right, is it unambiguous, and is it on the syllabus?"}
         </p>
       </header>
+
+      <Link href="/teacher/tutorials/review" className="text-sm text-[var(--primary)]">Tutorials awaiting review →</Link>
 
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Content type">
         {groups.map((g) => (

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandLockup } from "@/components/brand/BrandLockup";
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { TeacherAccountMenu } from "./TeacherAccountMenu";
 import { TeacherNav } from "./TeacherNav";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +17,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       <header className="sticky top-0 z-30 border-b border-[var(--card-border)] bg-[var(--surface)]">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <Link href="/teacher" aria-label="Teacher portal home"><BrandLockup compact /></Link>
-          <span className="rounded-full border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-1 text-[11px] font-semibold text-[var(--muted-foreground)]">
-            {reviewer.isAdmin ? "Admin" : "Teacher"}
-          </span>
+          <TeacherAccountMenu isAdmin={reviewer.isAdmin} />
         </div>
         <TeacherNav isAdmin={reviewer.isAdmin} />
       </header>
