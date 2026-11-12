@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
-import { updateCortexFromExam, emitCortexEvent } from "@/lib/cortex";
+import { updateCortexFromExam } from "@/lib/cortex";
 import { emitExamCompleted } from "@/lib/events";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
@@ -115,6 +115,14 @@ function buildProjectionEventId(userId, attemptId, payload) {
   return `exam-mastery:${userId}:${digest}`;
 }
 
+function buildExamCortexEventId(userId, attemptId, payload) {
+  const identity = attemptId?.trim()
+    ? `exam-attempt:${userId}:${attemptId.trim()}`
+    : `exam-result:${userId}:${JSON.stringify(payload)}`;
+  const hex = createHash("sha256").update(identity).digest("hex").slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
 async function claimMasteryProjection(svc, userId, eventId, payload) {
   const { error } = await svc.from("cortex_events").insert({
     user_id: userId,
@@ -213,8 +221,13 @@ export async function POST(req) {
 
 
     try {
-      await updateCortexFromExam({ userId, subject, percentage, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas });
-      await emitCortexEvent({ userId, type: "exam.marking.completed", source: "exam", data: { subject, percentage, grade } });
+      await updateCortexFromExam({
+        userId,
+        subject,
+        score: totalScore,
+        maxScore,
+        eventId: buildExamCortexEventId(userId, attemptId, { subject, difficulty, questions, answers, timeTaken }),
+      });
       await emitExamCompleted(userId, { examId, subject, topic: difficulty, score: percentage, totalMarks: maxScore, grade, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas, timeSpent: timeTaken }, "exam");
     } catch (eventError) {
       console.error("[exam/mark] Cortex/event persistence failed:", eventError);
