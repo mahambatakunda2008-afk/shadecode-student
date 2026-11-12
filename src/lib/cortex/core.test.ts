@@ -9,6 +9,10 @@ vi.mock("./student-context", () => ({
   resolveAuthenticatedCortexStudentContext: vi.fn(),
 }));
 
+vi.mock("./events", () => ({
+  recordVerifiedPracticeAttempt: vi.fn(),
+}));
+
 vi.mock("./tools/tutor", () => ({
   generateTutoringResponse: vi.fn(),
 }));
@@ -26,6 +30,7 @@ vi.mock("./memoryTracker", () => ({
 
 import { getMemory, updateMemory } from "./memory";
 import { resolveAuthenticatedCortexStudentContext } from "./student-context";
+import { recordVerifiedPracticeAttempt } from "./events";
 import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
 import {
@@ -62,6 +67,7 @@ describe("CortexCore learning requests", () => {
     vi.clearAllMocks();
     vi.mocked(getMemory).mockResolvedValue(memory);
     vi.mocked(updateMemory).mockResolvedValue(memory);
+    vi.mocked(recordVerifiedPracticeAttempt).mockResolvedValue({ recorded: true });
     vi.mocked(resolveAuthenticatedCortexStudentContext).mockRejectedValue(new Error("No session context in this unit test."));
     vi.mocked(generateTutoringResponse).mockResolvedValue("A tutoring response.");
     vi.mocked(getCurriculumState).mockRejectedValue(new Error("Curriculum is not needed in this unit test."));
@@ -110,6 +116,32 @@ describe("CortexCore learning requests", () => {
     }));
     expect(trackStudySession).not.toHaveBeenCalled();
     expect(trackExamResult).not.toHaveBeenCalled();
+  });
+
+  it("records only verified practice against the resolved syllabus without storing answers", async () => {
+    await CortexCore({
+      userId: "learner-1",
+      accessToken: "learner-access-token",
+      type: "practice",
+      curriculum: { identity: { syllabusId: "cambridge-9700" } } as any,
+      payload: {
+        attemptId: "attempt-1",
+        questionId: "question-1",
+        subjectId: "biology-id",
+        subjectName: "Biology",
+        topicId: "photosynthesis",
+        answer: "correct answer text",
+        correctAnswer: "correct answer text",
+      },
+    });
+
+    expect(recordVerifiedPracticeAttempt).toHaveBeenCalledWith({
+      userId: "learner-1",
+      accessToken: "learner-access-token",
+      payload: expect.objectContaining({ attemptId: "attempt-1" }),
+      score: 100,
+      syllabusId: "cambridge-9700",
+    });
   });
 
   it("does not persist a score when no marking guide is available", async () => {
