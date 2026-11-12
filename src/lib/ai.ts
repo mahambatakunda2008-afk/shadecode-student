@@ -410,7 +410,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       const textParts = parts
         .map((part: { text?: unknown }) => typeof part?.text === "string" ? part.text : "")
         .filter(Boolean);
-      return textParts.length ? textParts.join("\\n") : null;
+      return textParts.length ? textParts.join("\n") : null;
     }, `gemini:${model}:key-${keyIndex + 1}`);
   }
 
