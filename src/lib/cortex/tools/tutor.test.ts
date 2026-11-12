@@ -124,6 +124,62 @@ describe("Cortex tutor learner continuity", () => {
     expect(response).toContain("not proof of mastery");
   });
 
+  it("uses repeated-error and retrieval history to shape the next explanation", async () => {
+    const eventContext: CortexStudentContext = {
+      ...context,
+      mistakes: {
+        state: "available",
+        source: "cortex_events",
+        inspectedEventCount: 4,
+        repeatedTopicErrors: [{
+          subjectKey: "Mathematics",
+          topicId: "chain-rule",
+          incorrectResponses: 3,
+          distinctAttempts: 2,
+          lastObservedAt: "2026-11-12T10:00:00.000Z",
+          evidenceState: "repeated_topic_errors",
+        }],
+        recurringMistakes: [{
+          subjectKey: "Mathematics",
+          topicId: "chain-rule",
+          mistakeId: "omitted-inner-derivative",
+          incorrectResponses: 2,
+          distinctAttempts: 2,
+          lastObservedAt: "2026-11-12T10:00:00.000Z",
+          evidenceState: "recurring_mistake",
+        }],
+      },
+      spacedRetrieval: {
+        state: "available",
+        source: "cortex_events",
+        inspectedEventCount: 3,
+        topics: [{
+          subjectKey: "Mathematics",
+          topicId: "chain-rule",
+          distinctAttempts: 3,
+          observedSpanDays: 5,
+          intervalsDays: [2, 3],
+          medianIntervalDays: 2.5,
+          lastRetrievedAt: "2026-11-12T10:00:00.000Z",
+          evidenceState: "observed_spacing",
+          interpretation: "descriptive_only",
+        }],
+        interpretation: "descriptive_only",
+      },
+    };
+
+    const response = await generateTutoringResponse("chain-rule", {
+      studentContext: eventContext,
+      subjectName: "Mathematics",
+      curriculum: { identity: { syllabusId: "cambridge-9702" } } as any,
+    });
+
+    expect(response).toContain("3 incorrect responses across 2 separate attempts");
+    expect(response).toContain("A diagnosed error pattern has recurred across 2 separate attempts");
+    expect(response).toContain("3 separate attempts over 5 days");
+    expect(response).toContain("not a guarantee of mastery");
+  });
+
   it("does not reuse topic evidence from a different active syllabus", async () => {
     const response = await generateTutoringResponse("chain-rule", {
       studentContext: context,
