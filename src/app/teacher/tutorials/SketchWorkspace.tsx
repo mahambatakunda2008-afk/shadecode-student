@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent, type ReactNode } from "react";
 import { applyHandwritingAlternative, findHandwritingReviewRanges, shouldUseHandwritingRetry, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
-import { getDiagramObjectBounds, hitTestDiagramObject, moveDiagramObjectWithinCanvas, type DiagramObject, type DiagramStyle } from "./diagram-objects";
+import { getDiagramObjectBounds, hitTestDiagramObject, moveDiagramObjectWithinCanvas, resizeDiagramObject, type DiagramObject, type DiagramStyle } from "./diagram-objects";
 
 type Tool = "select" | "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "polygon" | "curve" | "label";
 export type Point = { x: number; y: number };
@@ -341,7 +341,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const frameRef = useRef<number | null>(null);
   const vectorObjectsRef = useRef<DiagramObject[]>([]);
   const vectorHistoryRef = useRef<DiagramObject[][]>([[]]);
-  const vectorDragRef = useRef<{ id: string; origin: Point; object: DiagramObject } | null>(null);
+  const vectorDragRef = useRef<{ id: string; origin: Point; object: DiagramObject } | null>(null);\n  const vectorResizeRef = useRef<{ id: string; origin: Point; object: DiagramObject; bounds: ReturnType<typeof getDiagramObjectBounds> } | null>(null);
   const [vectorObjects, setVectorObjects] = useState<DiagramObject[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [objectLabelDraft, setObjectLabelDraft] = useState("");
