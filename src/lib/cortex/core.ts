@@ -160,16 +160,25 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
     case "practice": {
       const result = await scoreAnswer(asRecord(input.payload) as ScoreAnswerInput);
       const practiceTopic = asString(asRecord(input.payload).topic);
-      await updateMemory(input.userId, {
-        lastPracticeScore: result.score,
-        ...(practiceTopic ? { lastPracticeTopic: practiceTopic } : {}),
-        weakTopics: result.weakTopics,
-      });
+      if (result.score !== null) {
+        await updateMemory(input.userId, {
+          lastPracticeScore: result.score,
+          ...(practiceTopic ? { lastPracticeTopic: practiceTopic } : {}),
+          weakTopics: result.weakTopics,
+        });
+      } else if (practiceTopic) {
+        // Preserve study continuity without recording an unverified score.
+        await updateMemory(input.userId, { lastTopic: practiceTopic });
+      }
 
       const recommendation = await generateRecommendation(input.userId);
       return {
         response: result.feedback,
-        nextAction: result.score >= 80 ? "advance_or_recall" : "review_and_retry",
+        nextAction: result.needsReview
+          ? "review_with_marking_guide"
+          : result.score !== null && result.score >= 80
+            ? "advance_or_recall"
+            : "review_and_retry",
         recommendation,
         updatedState: await outputState(input.userId),
       };
