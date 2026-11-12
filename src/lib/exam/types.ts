@@ -28,6 +28,9 @@ export type ExamResult = {
 };
 
 export type ExamResults = {
+  /** Selected inside ExamWorkspace, including when the parent route started in general mode. */
+  subject?: string;
+  topic?: string;
   totalScore: number;
   maxScore: number;
   percentage: number;
