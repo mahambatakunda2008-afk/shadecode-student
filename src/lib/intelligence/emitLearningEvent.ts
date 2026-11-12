@@ -148,8 +148,14 @@ export async function emitLearningEvent(input: LearningEventInput): Promise<bool
     return false;
   }
   const sent = await post(input);
-  if (!sent && ownerId) enqueue(input, ownerId);
-  else if (sent) void flushLearningEvents();
+  if (!sent && ownerId) {
+    enqueue(input, ownerId);
+    // A 202 projection-pending response is already persisted server-side, but
+    // the mastery read model still needs another idempotent projection pass.
+    // Retry once after a short delay; if it is still unavailable, keep the
+    // event in the outbox for the next startup/online sync instead of looping.
+    if (navigator.onLine) window.setTimeout(() => void flushLearningEvents(), 1_500);
+  } else if (sent) void flushLearningEvents();
   return sent;
 }
 
