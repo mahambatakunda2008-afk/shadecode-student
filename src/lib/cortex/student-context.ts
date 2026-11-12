@@ -20,7 +20,7 @@ export interface StudentProfileMemory {
 
 export interface StudentTopicEvidence {
   topicId: string;
-  subjectId: string;
+  subjectKey: string;
   masteryScore: number | null;
   attempts: number;
   retention: number | null;
@@ -90,7 +90,7 @@ export async function resolveAuthenticatedCortexStudentContext(): Promise<Cortex
   const topicRows = topicsResult.data ?? [];
   const topics: StudentTopicEvidence[] = topicRows.map((row) => ({
     topicId: row.topic,
-    subjectId: row.subject,
+    subjectKey: row.subject,
     masteryScore: typeof row.mastery_score === "number" ? row.mastery_score : null,
     attempts: Math.max(0, Number(row.attempts) || 0),
     retention: typeof row.retention === "number" ? row.retention : null,
