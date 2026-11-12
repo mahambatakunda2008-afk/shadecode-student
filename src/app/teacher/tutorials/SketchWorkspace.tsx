@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent, type ReactNode } from "react";
 import { applyHandwritingAlternative, findHandwritingReviewRanges, shouldUseHandwritingRetry, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
 
-type Tool = "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "polygon" | "curve" | "label";
+type Tool = "select" | "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "polygon" | "curve" | "label";
 export type Point = { x: number; y: number };
 type Stroke = { points: Point[]; tool: "pen" | "eraser"; color: string; width: number };
 
@@ -335,6 +335,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const pointsRef = useRef<Point[]>([]);
   const snapshotRef = useRef<ImageData | null>(null);
   const historyRef = useRef<ImageData[]>([]);
+  const selectionRef = useRef<{ x: number; y: number; width: number; height: number; image: ImageData } | null>(null);
+  const selectionModeRef = useRef<"new" | "move" | null>(null);
   const frameRef = useRef<number | null>(null);
   const [tool, setTool] = useState<Tool>("pen");
   const [label, setLabel] = useState("");
@@ -588,6 +590,16 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     const point = pointFromEvent(event);
+    if (tool === "select") {
+      const selected = selectionRef.current;
+      const inside = selected && point.x >= selected.x && point.y >= selected.y && point.x <= selected.x + selected.width && point.y <= selected.y + selected.height;
+      selectionModeRef.current = inside ? "move" : "new";
+      if (!inside) selectionRef.current = null;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      drawingRef.current = true; startRef.current = point; pointsRef.current = [point];
+      snapshotRef.current = ctx.getImageData(0, 0, WIDTH, HEIGHT);
+      return;
+    }
     if (tool === "label") {
       if (!label.trim()) { setStatus("Type a label first."); return; }
       const textResult = autoImproveText
@@ -629,7 +641,18 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       frameRef.current = null;
       const ctx = canvasRef.current?.getContext("2d");
       if (!ctx || !snapshotRef.current) return;
-      if (["line", "arrow", "rectangle", "ellipse", "triangle", "curve"].includes(tool)) {
+      if (tool === "select") {
+        ctx.putImageData(snapshotRef.current, 0, 0);
+        const from = startRef.current, to = pointsRef.current[pointsRef.current.length - 1];
+        if (from && to && selectionModeRef.current === "move" && selectionRef.current) {
+          const selected = selectionRef.current;
+          ctx.fillStyle = "#ffffff"; ctx.fillRect(selected.x, selected.y, selected.width, selected.height);
+          ctx.putImageData(selected.image, Math.round(selected.x + to.x - from.x), Math.round(selected.y + to.y - from.y));
+        } else if (from && to) {
+          ctx.save(); ctx.strokeStyle = "#0891b2"; ctx.lineWidth = 2; ctx.setLineDash([8, 5]);
+          ctx.strokeRect(Math.min(from.x,to.x), Math.min(from.y,to.y), Math.abs(to.x-from.x), Math.abs(to.y-from.y)); ctx.restore();
+        }
+      } else if (["line", "arrow", "rectangle", "ellipse", "triangle", "curve"].includes(tool)) {
         ctx.putImageData(snapshotRef.current, 0, 0);
         const from = startRef.current, to = pointsRef.current[pointsRef.current.length - 1];
         if (from && to) drawShape(ctx, from, to, tool);
@@ -645,6 +668,33 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     if (!canvas || !ctx || !snapshotRef.current) return;
     const points = pointsRef.current;
     ctx.putImageData(snapshotRef.current, 0, 0);
+    if (tool === "select") {
+      const from = startRef.current, to = points[points.length - 1];
+      if (from && to && selectionModeRef.current === "move" && selectionRef.current) {
+        const selected = selectionRef.current;
+        const x = Math.max(0, Math.min(WIDTH - selected.width, Math.round(selected.x + to.x - from.x)));
+        const y = Math.max(0, Math.min(HEIGHT - selected.height, Math.round(selected.y + to.y - from.y)));
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(selected.x, selected.y, selected.width, selected.height);
+        ctx.putImageData(selected.image, x, y);
+        selectionRef.current = { ...selected, x, y };
+        setStatus("Selected diagram region moved.");
+      } else if (from && to) {
+        const x = Math.max(0, Math.min(WIDTH, Math.floor(Math.min(from.x, to.x))));
+        const y = Math.max(0, Math.min(HEIGHT, Math.floor(Math.min(from.y, to.y))));
+        const width = Math.max(0, Math.min(WIDTH - x, Math.ceil(Math.abs(to.x - from.x))));
+        const height = Math.max(0, Math.min(HEIGHT - y, Math.ceil(Math.abs(to.y - from.y))));
+        if (width >= 3 && height >= 3) {
+          const image = ctx.getImageData(x, y, width, height);
+          selectionRef.current = { x, y, width, height, image };
+          ctx.fillStyle = "#ffffff"; ctx.fillRect(x, y, width, height);
+          ctx.save(); ctx.strokeStyle = "#0891b2"; ctx.lineWidth = 2; ctx.setLineDash([8, 5]); ctx.strokeRect(x, y, width, height); ctx.restore();
+          setStatus("Region selected. Drag inside it to move its contents.");
+        } else setStatus("Selection is too small. Drag a larger rectangle.");
+      }
+      pushHistory(ctx);
+      selectionModeRef.current = null; startRef.current = null; pointsRef.current = []; snapshotRef.current = null;
+      return;
+    }
     if (["line", "arrow", "rectangle", "ellipse", "triangle", "curve"].includes(tool)) {
       const from = startRef.current, to = points[points.length - 1];
       if (from && to) drawShape(ctx, from, to, tool);
@@ -768,7 +818,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     </div>}
     <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={autoFix} onChange={event => setAutoFix(event.target.checked)} />Auto-fix freehand lines and shapes</label>
     <div className="overflow-hidden rounded-xl border border-[var(--card-border)] bg-white">
-      <canvas ref={canvasRef} onPointerDown={begin} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish} onPointerLeave={finish} className="block h-auto w-full touch-none" style={{ aspectRatio: "12 / 7", cursor: tool === "label" ? "text" : "crosshair" }} aria-label="Drawing canvas. Strokes update as you draw and are smoothed or shape-corrected when finished." />
+      <canvas ref={canvasRef} onPointerDown={begin} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish} onPointerLeave={finish} className="block h-auto w-full touch-none" style={{ aspectRatio: "12 / 7", cursor: tool === "label" ? "text" : tool === "select" ? "move" : "crosshair" }} aria-label="Drawing canvas. Select and move rectangular regions, draw freehand strokes and shapes, and correct handwriting." />
     </div>
     <p className="text-xs text-[var(--muted-foreground)]" aria-live="polite">{status}</p>
     <div className="flex flex-wrap justify-end gap-2">
