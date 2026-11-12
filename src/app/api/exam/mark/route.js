@@ -221,45 +221,6 @@ export async function POST(req) {
 
 
     try {
-      await updateCortexFromExam({
-        userId,
-        subject,
-        score: totalScore,
-        maxScore,
-        eventId: buildExamCortexEventId(userId, attemptId, { subject, difficulty, questions, answers, timeTaken }),
-      });
-      await emitExamCompleted(userId, { examId, subject, topic: difficulty, score: percentage, totalMarks: maxScore, grade, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas, timeSpent: timeTaken }, "exam");
-    } catch (eventError) {
-      console.error("[exam/mark] Cortex/event persistence failed:", eventError);
-    }
-
-    try {
-      const svc = createSupabaseServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
-      const scoreIdentity = attemptId?.trim() ? `attempt:${attemptId.trim()}` : `exam:${examId}`;
-      const scoreRecord = {
-        examId,
-        submissionIdentity: scoreIdentity,
-        subject,
-        score: totalScore,
-        totalMarks: maxScore,
-        percentage,
-        grade,
-        weakAreas: markingData.weakAreas,
-        strongAreas: markingData.strongAreas,
-        date: new Date().toISOString(),
-      };
-      const { error: memoryError } = await svc.rpc("record_exam_score", {
-        p_user_id: userId,
-        p_score: scoreRecord,
-      });
-      if (memoryError) {
-        console.error("[exam/mark] Atomic Cortex exam memory update failed:", memoryError.message);
-      }
-    } catch (memErr) {
-      console.error("[exam/mark] Atomic Cortex exam memory update threw:", memErr);
-    }
-
-    try {
       const svc2 = createSupabaseServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
       const topicScores = computeTopicScores(questions, markingData.results);
       if (topicScores.length > 0) {
@@ -316,6 +277,19 @@ export async function POST(req) {
         p_payload_hash: submissionHash,
         p_claim_token: submissionClaimToken,
         p_result: submissionResult,
+        p_event: {
+          eventId: buildExamCortexEventId(userId, attemptId, { subject, difficulty, questions, answers, timeTaken }),
+          examId,
+          subject,
+          difficulty,
+          score: totalScore,
+          maxScore,
+          percentage,
+          grade,
+          weakAreas: markingData.weakAreas,
+          strongAreas: markingData.strongAreas,
+          timeTaken,
+        },
       });
       if (finalizeError || finalized !== true) {
         console.error("[exam/mark] Submission result finalization failed:", finalizeError?.message || "No row finalized");
