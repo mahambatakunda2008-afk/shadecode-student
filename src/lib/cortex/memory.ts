@@ -426,7 +426,7 @@ export interface CortexUserMemory {
   completedTasks: number;
   subjects: string[];
   weakTopics: string[];
-  weakSubjects?: string[];
+  weakSubjects: string[];
   lastTopic?: string;
   lastPracticeScore?: number;
   lastPracticeTopic?: string;
@@ -458,6 +458,7 @@ const DEFAULT_USER_MEMORY: CortexUserMemory = {
   completedTasks: 0,
   subjects: [],
   weakTopics: [],
+  weakSubjects: [],
   frequentlyStudiedSubjects: [],
   strongSubjects: [],
   preferredStudyHours: [],
@@ -492,7 +493,8 @@ export async function getMemory(userId: string): Promise<CortexUserMemory> {
       totalTasks: 0, // Tasks are stored elsewhere
       completedTasks: (data as any).total_lessons_completed ?? 0,
       subjects: (data as any).frequently_studied_subjects ?? [],
-      weakTopics: (data as any).weak_subjects ?? [],
+      weakTopics: (data as any).weak_topics ?? [],
+      weakSubjects: (data as any).weak_subjects ?? [],
       lastTopic: (data as any).last_topic ?? undefined,
       lastPracticeScore: (data as any).last_practice_score ?? undefined,
       lastPracticeTopic: (data as any).last_practice_topic ?? undefined,
@@ -531,7 +533,8 @@ export async function updateMemory(
     if (patch.level !== undefined) updateData.level = patch.level;
     if (patch.streak !== undefined) updateData.current_streak = patch.streak;
     if (patch.subjects !== undefined) updateData.frequently_studied_subjects = patch.subjects;
-    if (patch.weakTopics !== undefined) updateData.weak_subjects = patch.weakTopics;
+    if (patch.weakTopics !== undefined) updateData.weak_topics = patch.weakTopics;
+    if (patch.weakSubjects !== undefined) updateData.weak_subjects = patch.weakSubjects;
     if (patch.lastTopic !== undefined) updateData.last_topic = patch.lastTopic;
     if (patch.lastPracticeScore !== undefined) updateData.last_practice_score = patch.lastPracticeScore;
     if (patch.lastPracticeTopic !== undefined) updateData.last_practice_topic = patch.lastPracticeTopic;
