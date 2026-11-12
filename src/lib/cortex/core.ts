@@ -1,4 +1,5 @@
 import { getMemory, updateMemory } from "./memory";
+import { resolveAuthenticatedCortexStudentContext } from "./student-context";
 import { scoreAnswer, type ScoreAnswerInput } from "./tools/scoring";
 import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
@@ -134,12 +135,23 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
     case "learn": {
       const payload = asRecord(input.payload);
       const topic = asString(payload.topic) ?? "your current topic";
-      const response = await generateTutoringResponse(topic, context);
-
-      await updateStreak(input.userId, true);
-
       const subjectId = asString(payload.subjectId);
       const subjectName = asString(payload.subjectName);
+      let studentContext = null;
+      try {
+        studentContext = await resolveAuthenticatedCortexStudentContext();
+      } catch (error) {
+        // Saved progress remains usable even if the learner-context read is temporarily unavailable.
+        console.error("[cortex] learner context unavailable; continuing without cross-session topic evidence:", error);
+      }
+      const response = await generateTutoringResponse(topic, {
+        ...context,
+        studentContext,
+        subjectId,
+        subjectName,
+      });
+
+      await updateStreak(input.userId, true);
       if (subjectId && subjectName) {
         await trackStudySession({
           userId: input.userId,
