@@ -70,7 +70,8 @@ export default function Timetable() {
   useEffect(() => {
     let cancelled = false;
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { router.push("/auth/login"); return; }
       if (cancelled) return;
       setUserId(user.id);
