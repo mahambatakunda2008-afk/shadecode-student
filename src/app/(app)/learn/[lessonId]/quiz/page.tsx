@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { emitLearningEvent } from "@/lib/intelligence/emitLearningEvent";
 import { buildQuizQuestionEvidence, buildQuizCompletionEvidence } from "@/lib/intelligence/quizEvidence";
+import { normalizeLearningContext } from "@/lib/intelligence/learningContextKey";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
   ArrowRight, RotateCcw, Trophy, Brain,
@@ -43,6 +44,7 @@ export default function QuizPage() {
   const params   = useParams();
   const lessonId = params?.lessonId as string;
   const quizAttemptIdRef = useRef<string>("");
+  const reviewSessionIdRef = useRef<string | undefined>(undefined);
 
   const createQuizAttemptId = () => {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
@@ -79,6 +81,24 @@ export default function QuizPage() {
           setLessonTitle(lesson.title ?? "");
           setLessonSubject(typeof lesson.subject === "string" && lesson.subject !== "Unknown subject" ? lesson.subject : "");
           setLessonTopic(typeof lesson.topic === "string" ? lesson.topic : "");
+          try {
+            const rawReview = sessionStorage.getItem("shadecode:cortex:active-review:v1");
+            if (rawReview) {
+              const review = JSON.parse(rawReview) as { reviewSessionId?: unknown; subjectKey?: unknown; topicId?: unknown };
+              const lessonContext = normalizeLearningContext(
+                typeof lesson.subject === "string" ? lesson.subject : "",
+                typeof lesson.topic === "string" ? lesson.topic : "",
+              );
+              if (
+                typeof review.reviewSessionId === "string" &&
+                review.reviewSessionId.length <= 100 &&
+                review.subjectKey === lessonContext.subjectId &&
+                review.topicId === lessonContext.topicId
+              ) {
+                reviewSessionIdRef.current = review.reviewSessionId;
+              }
+            }
+          } catch { reviewSessionIdRef.current = undefined; }
         }
       } catch {}
 
@@ -114,6 +134,7 @@ export default function QuizPage() {
     const [event] = buildQuizQuestionEvidence(quizAttemptIdRef.current, lessonId, [result], {
       subject: lessonSubject || undefined,
       topicId: lessonTopic || undefined,
+      reviewSessionId: reviewSessionIdRef.current,
     });
     if (event) void emitLearningEvent(event);
   }
@@ -135,6 +156,7 @@ export default function QuizPage() {
         percentage: finalPercentage,
         questionCount: questions.length,
         correctCount: finalCorrectCount,
+        reviewSessionId: reviewSessionIdRef.current,
       });
       void emitLearningEvent(completion);
       setPhase("results");
