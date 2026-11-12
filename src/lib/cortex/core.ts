@@ -170,7 +170,6 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
           ...(input.curriculum?.identity.syllabusId
             ? { lastPracticeSyllabusId: input.curriculum.identity.syllabusId }
             : {}),
-          weakTopics: result.weakTopics,
         });
       } else if (practiceTopic) {
         // Preserve study continuity without recording an unverified score.
