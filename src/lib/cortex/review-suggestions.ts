@@ -23,7 +23,7 @@ export interface EvidenceBasedReviewSuggestion {
  */
 function latestObservedAt(...values: Array<string | null | undefined>): string | null {
   return values
-    .filter((value): value is string => Boolean(value) && Number.isFinite(Date.parse(value)))
+    .filter((value): value is string => typeof value === "string" && value.length > 0 && Number.isFinite(Date.parse(value)))
     .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null;
 }
 
