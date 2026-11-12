@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent } from "react";
-import { applyHandwritingAlternative, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
+import { applyHandwritingAlternative, shouldUseHandwritingRetry, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
 
 type Tool = "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "polygon" | "curve" | "label";
 export type Point = { x: number; y: number };
@@ -376,13 +376,11 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         setStatus("Checking an untouched copy too, to avoid losing faint strokes or mathematical symbols…");
         try {
           const originalResult = await requestRecognition(originalBlob);
-          const originalText = typeof originalResult.correctedText === "string" ? originalResult.correctedText.trim() : "";
-          const currentText = typeof result.correctedText === "string" ? result.correctedText.trim() : "";
           const originalUncertainty = Array.isArray(originalResult.uncertainCharacters) ? originalResult.uncertainCharacters.length : 0;
-          const originalConfidence = typeof originalResult.confidence === "number" ? originalResult.confidence : 0;
-          const currentScore = firstConfidence - firstUncertaintyCount * 0.035;
-          const originalScore = originalConfidence - originalUncertainty * 0.035;
-          if (originalText && (!currentText || originalScore > currentScore)) result = originalResult;
+          if (shouldUseHandwritingRetry(
+            { text: result.correctedText, confidence: result.confidence, uncertainCount: firstUncertaintyCount },
+            { text: originalResult.correctedText, confidence: originalResult.confidence, uncertainCount: originalUncertainty },
+          )) result = originalResult;
         } catch {
           // The prepared-image result remains usable if the optional second pass fails.
         }
