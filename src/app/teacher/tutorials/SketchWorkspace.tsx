@@ -339,13 +339,13 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const selectionRef = useRef<{ x: number; y: number; width: number; height: number; image: ImageData } | null>(null);
   const selectionModeRef = useRef<"new" | "move" | null>(null);
   const frameRef = useRef<number | null>(null);
-  const vectorObjectsRef = useRef<DiagramObject[]>([]);
+  const vectorObjectsRef = useRef<DiagramObject[]>([]);\n  const vectorHistoryRef = useRef<DiagramObject[][]>([[]]);
   const vectorDragRef = useRef<{ id: string; origin: Point; object: DiagramObject } | null>(null);
   const [vectorObjects, setVectorObjects] = useState<DiagramObject[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [objectLabelDraft, setObjectLabelDraft] = useState("");
   const defaultStyle: DiagramStyle = { stroke: INK, fill: "none", strokeWidth: 4 };
-  const commitVectorObjects = (next: DiagramObject[]) => { vectorObjectsRef.current = next; setVectorObjects(next); };
+  const commitVectorObjects = (next: DiagramObject[]) => { vectorHistoryRef.current = [...vectorHistoryRef.current.slice(-24), vectorObjectsRef.current.map(object => ({ ...object }))]; vectorObjectsRef.current = next; setVectorObjects(next); setCanUndo(true); };
   const [tool, setTool] = useState<Tool>("pen");
   const [label, setLabel] = useState("");
   const [fontSize, setFontSize] = useState(28);
