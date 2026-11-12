@@ -333,11 +333,13 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
             const { data: existingResult } = await supabase.from("exam_results").select("id").eq("user_id", userId).eq("attempt_id", resultIdentity).maybeSingle();
             saved = existingResult;
           }
-          // Preserve question snapshots only on first creation, never duplicate them on a retry.
+          // The result_id primary key makes this insert idempotent. Retrying also repairs
+          // a partial save where the result row succeeded but its question snapshot did not.
           const frozen = sanitizeQuestions(questions);
           if (saved?.id) setSavedResultId(saved.id);
-          if (createdNewResult && saved?.id && frozen && !serverMarkChallengeId) {
-            await supabase.from("exam_result_questions").insert({ result_id: saved.id, user_id: userId, questions: frozen });
+          if (saved?.id && frozen && !serverMarkChallengeId) {
+            const { error: snapshotError } = await supabase.from("exam_result_questions").insert({ result_id: saved.id, user_id: userId, questions: frozen });
+            if (snapshotError && snapshotError.code !== "23505") console.error("[exam] Could not persist question snapshot:", snapshotError.message);
           }
         } catch {}
       }
