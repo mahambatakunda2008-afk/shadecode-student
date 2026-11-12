@@ -33,7 +33,7 @@ export default function CortexReviewSuggestions() {
         if (!response.ok) throw new Error("context unavailable");
         return response.json();
       })
-      .then((context: { reviewSuggestions?: { items?: EvidenceBasedReviewSuggestion[] }; reviewActivity?: { sessions?: Array<{ subjectKey: string; topicId: string; answeredQuestionCount: number; state: "practised" | "completed" }> } }) => {
+      .then((context: { reviewSuggestions?: { items?: EvidenceBasedReviewSuggestion[] }; reviewActivity?: { sessions?: Array<{ subjectKey: string; topicId: string; answeredQuestionCount: number; state: "practised" | "completed"; completionKind: "quiz" | "exam" | "practical" | null }> } }) => {
         if (!active) return;
         setItems(Array.isArray(context.reviewSuggestions?.items) ? context.reviewSuggestions.items : []);
         setReviewActivity(Array.isArray(context.reviewActivity?.sessions) ? context.reviewActivity.sessions : []);
