@@ -6,7 +6,7 @@ describe("quiz evidence builders", () => {
     const events = buildQuizQuestionEvidence("attempt-1", "lesson-7", [
       { questionId: "q1", correct: true, score: 100, maxScore: 100, questionIndex: 0 },
       { questionId: "q2", correct: false, score: 0, maxScore: 100, questionIndex: 1 },
-    ]);
+    ], { subject: "Physics", topicId: "waves" });
 
     expect(events).toHaveLength(2);
     expect(events[0]).toMatchObject({
@@ -15,8 +15,10 @@ describe("quiz evidence builders", () => {
       type: "question.attempted",
       entityId: "q1",
       attemptId: "attempt-1",
+      subjectId: "Physics",
+      topicId: "waves",
     });
-    expect(events[0].metadata).toMatchObject({ lessonId: "lesson-7", correct: true, percentage: 100 });
+    expect(events[0].metadata).toMatchObject({ lessonId: "lesson-7", subject: "Physics", correct: true, percentage: 100 });
     expect(events[1].metadata).toMatchObject({ correct: false, percentage: 0 });
   });
 
