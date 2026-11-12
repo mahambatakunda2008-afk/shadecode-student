@@ -148,3 +148,26 @@ export function validateHandwritingImageData(image: string, mimeType: string): H
     ? { valid: true }
     : { valid: false, error: "The image content does not match its declared PNG or JPEG type." };
 }
+
+
+/** Score an OCR candidate without allowing uncertainty to be hidden by confidence alone. */
+export function handwritingRecognitionScore(confidence: unknown, uncertainCount: number): number {
+  const score = typeof confidence === "number" && Number.isFinite(confidence)
+    ? Math.max(0, Math.min(1, confidence)) : 0;
+  const uncertainty = Number.isFinite(uncertainCount) ? Math.max(0, Math.min(100, Math.floor(uncertainCount))) : 0;
+  return score - uncertainty * 0.035;
+}
+
+/** Prefer an untouched-image retry only when it supplies usable text and a stronger score. */
+export function shouldUseHandwritingRetry(current: {
+  text: unknown; confidence: unknown; uncertainCount: number;
+}, retry: {
+  text: unknown; confidence: unknown; uncertainCount: number;
+}): boolean {
+  const retryText = typeof retry.text === "string" ? retry.text.trim() : "";
+  const currentText = typeof current.text === "string" ? current.text.trim() : "";
+  if (!retryText) return false;
+  if (!currentText) return true;
+  return handwritingRecognitionScore(retry.confidence, retry.uncertainCount)
+    > handwritingRecognitionScore(current.confidence, current.uncertainCount);
+}
