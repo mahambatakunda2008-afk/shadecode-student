@@ -23,7 +23,7 @@ export interface ScoreAnswerResult {
 }
 
 function normalizeExactAnswer(value: string): string {
-  return value.trim().replace(/\\s+/g, " ").toLocaleLowerCase();
+  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase();
 }
 
 export async function scoreAnswer(
