@@ -63,7 +63,7 @@ Do not replace the existing stores or introduce a second mastery model.
 
 ### Phase 1: Authenticated read-only context resolver
 
-- Trace and document the RLS policies, database constraints and canonical identity for each store.
+- Trace and document the RLS policies, database constraints and canonical identity for each store. Initial live schema and policy inspection is complete for profiles, cortex_memory and topic_mastery.
 - Add a server-only resolver using the authenticated Supabase user, never a client-provided identity.
 - Return a versioned typed contract with explicit available, insufficient_evidence, and unavailable states.
 - Join only on stable IDs and the learner's active subject/curriculum selection.
@@ -101,9 +101,9 @@ Do not replace the existing stores or introduce a second mastery model.
 ## Implementation added on the audit branch
 
 - Added a server-only `resolveAuthenticatedCortexStudentContext()` resolver. It accepts no user ID and derives identity from `supabase.auth.getUser()`.
-- Added `GET /api/cortex/student-context`, with private/no-store caching and 401/503 failure semantics.
+- Added `GET /api/cortex/student-context`, supporting browser cookie sessions and native bearer tokens, with private/no-store caching and 401/503 failure semantics.
 - The resolver reads only the authenticated learner's `cortex_memory` and `topic_mastery` rows. Missing rows are represented as `insufficient_evidence`; read failures throw rather than masquerading as empty learner history.
-- Cortex Learn now attempts to load the same durable context and passes it to the deterministic tutor. If the read is unavailable, tutoring continues without continuity claims.
+- Cortex Learn now forwards the already-authenticated bearer token to the resolver, loads the same durable context, and passes it to the deterministic tutor. If the read is unavailable, tutoring continues without continuity claims.
 - The tutor only references recorded attempts when the topic key, subject key and exact verified syllabus ID match. It does not expose a mastery percentage or claim a misconception from this limited evidence.
 - Added focused tests for matching topic/subject, cross-subject isolation, and absent evidence.
 
