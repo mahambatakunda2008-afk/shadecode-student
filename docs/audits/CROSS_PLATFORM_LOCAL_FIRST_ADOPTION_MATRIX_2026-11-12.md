@@ -179,3 +179,15 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 - ExamWorkspace now writes `attempt_id` with the result row. A unique index is added to `exam_results(user_id, attempt_id)` only if that legacy table exists. On a duplicate insert, the client retrieves the existing result instead of attempting an UPDATE, avoiding a dependency on an UPDATE RLS policy; question snapshots are only inserted on first result creation.
 - Important remaining boundary: Cortex event emitters are not yet backed by a transactional outbox, and memory read/modify/write can still race across truly concurrent workers. This is not a blanket exactly-once guarantee for every downstream side effect. Older clients that omit `attemptId` continue on the legacy path.
 - Migration application, schema/RLS verification, clean build, automated retry/concurrency tests, and real-device/airplane-mode tests remain outstanding. Vercel deployment checks have previously been blocked by the account's build-rate limit, not by a confirmed compiler error.
+
+
+## 2026-11-12 implementation update: exam submission ledger verified in Supabase
+
+- The `exam_submission_ledger` migration is now applied to the active Shadecode Student Supabase project. The deployed table has RLS enabled; authenticated users receive owner-filtered SELECT only, while the server-side service role has the table privileges needed by the RPCs.
+- Both ledger RPCs now use `SECURITY INVOKER`, not `SECURITY DEFINER`. Execute is revoked from `PUBLIC`, `anon`, and `authenticated`, and granted only to `service_role`.
+- A rollback-only database verification exercised the initial claim, lease-token completion, completed-result replay, and payload-conflict paths. The test transaction was rolled back, leaving no verification attempt row behind.
+- The live database confirms the `exam_results(user_id, attempt_id)` unique index exists.
+- The API now claims an identified attempt before invoking potentially expensive AI/deterministic marking. Completed retries return the stored result without repeating marking work or downstream side effects.
+- The client now retries the question-snapshot insert even when it finds an already-created result row. The snapshot table's `result_id` primary key makes the insert naturally idempotent; a duplicate-key response is treated as already persisted. This repairs the partial-write case where the result row succeeded but the question snapshot did not.
+- Supabase security advisors show no new warning for the exam ledger table or its RPCs. Existing unrelated warnings remain elsewhere in the project (including other SECURITY DEFINER functions, RLS tables without policies, and Auth leaked-password protection).
+- This verifies the database contract and SQL state, not a full application integration test. A deployed route retry test, concurrent request test, clean build, and browser/device test remain outstanding. Downstream Cortex event writes and memory read/modify/write are not yet a transactional outbox, so exactly-once semantics for every secondary effect are not claimed.
