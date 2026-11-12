@@ -29,6 +29,14 @@ export function validateTeacherTextImprovement(original: string, candidate: stri
   if (JSON.stringify(occurrences(source, equationPattern).sort()) !== JSON.stringify(occurrences(improved, equationPattern).sort())) {
     return { valid: false, reason: "The proposed edit changes an equation or variable relationship. The original wording has been preserved." };
   }
+  const unitPattern = /(?<=\\d)\\s*(?:mmHg|cmH2O|km|cm|mm|µm|μm|nm|kg|mg|µg|g|mol|mmol|kPa|MPa|Pa|mL|L|m3|cm3|m³|cm³|m²|cm²|ms|min|h|s|mA|A|mV|V|kW|W|kJ|J|kN|N|MHz|kHz|Hz|°C|K)\\b/g;
+  if (JSON.stringify(occurrences(source, unitPattern).sort()) !== JSON.stringify(occurrences(improved, unitPattern).sort())) {
+    return { valid: false, reason: "The proposed edit changes a measurement unit. The original wording has been preserved." };
+  }
+  const chemicalFormulaPattern = /\\b[A-Z][a-z]?\\d*(?:[A-Z][a-z]?\\d*)+\\b/g;
+  if (JSON.stringify(occurrences(source, chemicalFormulaPattern).sort()) !== JSON.stringify(occurrences(improved, chemicalFormulaPattern).sort())) {
+    return { valid: false, reason: "The proposed edit changes a chemical formula. The original wording has been preserved." };
+  }
   const notationPattern = /[α-ωΑ-ΩπμλθΔ∑∫√∞±×÷≤≥≈≠∝°µ²³⁰¹⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g;
   if (JSON.stringify(occurrences(source, notationPattern).sort()) !== JSON.stringify(occurrences(improved, notationPattern).sort())) {
     return { valid: false, reason: "The proposed edit changes scientific or mathematical notation. The original wording has been preserved." };
