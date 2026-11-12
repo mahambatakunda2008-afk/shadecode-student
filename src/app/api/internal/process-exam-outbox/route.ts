@@ -106,7 +106,7 @@ async function processOutbox(req: Request) {
         ) {
           throw new Error("Exam topic mastery payload failed validation");
         }
-        const { data: projected, error: projectionError } = await svc.rpc("project_exam_topic_mastery", {
+        const { error: projectionError } = await svc.rpc("project_exam_topic_mastery", {
           p_user_id: job.user_id,
           p_attempt_id: job.attempt_id,
           p_subject: payload.subject,
