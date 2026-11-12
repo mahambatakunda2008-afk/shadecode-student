@@ -313,8 +313,10 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         const correct = markingData.results?.filter((r: ExamResult) => r.correct).length ?? 0;
         try {
           const supabase = createClient();
-          const { data: saved } = await supabase.from("exam_results").insert({
+          const resultIdentity = workId.current ?? null;
+          const resultPayload = {
             user_id: userId,
+            ...(resultIdentity ? { attempt_id: resultIdentity } : {}),
             subject,
             topic: topic || null,
             difficulty: LEVELS[level].label,
@@ -323,7 +325,10 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
             correct_answers: correct,
             weak_areas: markingData.weakAreas ?? [],
             time_taken: totalRef.current - secondsRef.current
-          }).select("id").single();
+          };
+          const { data: saved } = resultIdentity
+            ? await supabase.from("exam_results").upsert(resultPayload, { onConflict: "user_id,attempt_id" }).select("id").single()
+            : await supabase.from("exam_results").insert(resultPayload).select("id").single();
           // Keep the sat questions so this result can later be turned into a fair battle.
           const frozen = sanitizeQuestions(questions);
           if (saved?.id) setSavedResultId(saved.id);

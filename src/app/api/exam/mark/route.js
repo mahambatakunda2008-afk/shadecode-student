@@ -179,6 +179,7 @@ export async function POST(req) {
     // A stable attempt ID is claimed before any Cortex or mastery side effects.
     // A retry receives the original server-marked result instead of replaying them.
     let submissionService = null;
+    let submissionClaimToken = null;
     if (attemptId?.trim()) {
       submissionService = createSupabaseServiceClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -204,9 +205,10 @@ export async function POST(req) {
       if (claim?.state === "payload_conflict") {
         return NextResponse.json({ error: "This attempt ID was already used with different answers. Restore the original attempt before retrying." }, { status: 409 });
       }
-      if (claim?.state !== "claimed") {
+      if (claim?.state !== "claimed" || !claim.claim_token) {
         return NextResponse.json({ error: "The exam submission could not be claimed safely. Please retry." }, { status: 503 });
       }
+      submissionClaimToken = claim.claim_token;
     }
 
     try {
@@ -221,7 +223,9 @@ export async function POST(req) {
       const svc = createSupabaseServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
       const { data: existingMemory } = await svc.from("cortex_memory").select("exam_scores").eq("user_id", userId).maybeSingle();
       const priorScores = Array.isArray(existingMemory?.exam_scores) ? existingMemory.exam_scores : [];
-      const newScores = [...priorScores, { examId, subject, score: totalScore, totalMarks: maxScore, percentage, grade, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas, date: new Date().toISOString() }];
+      const scoreIdentity = attemptId?.trim() ? `attempt:${attemptId.trim()}` : `exam:${examId}`;
+      const dedupedScores = priorScores.filter((score) => score?.submissionIdentity !== scoreIdentity);
+      const newScores = [...dedupedScores, { examId, submissionIdentity: scoreIdentity, subject, score: totalScore, totalMarks: maxScore, percentage, grade, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas, date: new Date().toISOString() }];
       const avgScore = Math.round(newScores.reduce((sum, s) => sum + (s.percentage ?? s.score ?? 0), 0) / newScores.length);
       const { error: memoryError } = await svc.from("cortex_memory").upsert({ user_id: userId, exam_scores: newScores, average_exam_score: avgScore }, { onConflict: "user_id" });
       if (memoryError) console.error("[exam/mark] Failed to persist exam_scores:", memoryError.message);
@@ -282,6 +286,7 @@ export async function POST(req) {
         p_user_id: userId,
         p_attempt_id: attemptId.trim(),
         p_payload_hash: submissionHash,
+        p_claim_token: submissionClaimToken,
         p_result: submissionResult,
       });
       if (finalizeError || finalized !== true) {
