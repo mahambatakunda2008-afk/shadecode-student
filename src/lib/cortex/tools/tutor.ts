@@ -55,7 +55,7 @@ function learnerContinuityNote(
   const normalizedTopic = topic.trim().toLocaleLowerCase();
   const evidence = context.studentContext.topics.items.find((item) =>
     item.topicId.trim().toLocaleLowerCase() === normalizedTopic &&
-    subjectKeys.includes(item.subjectId.trim().toLocaleLowerCase()) &&
+    subjectKeys.includes(item.subjectKey.trim().toLocaleLowerCase()) &&
     item.attempts > 0
   );
   if (!evidence) return "";
