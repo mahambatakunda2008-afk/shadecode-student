@@ -49,6 +49,13 @@ const context: CortexStudentContext = {
       source: "topic_mastery",
     }],
   },
+  mistakes: {
+    state: "insufficient_evidence",
+    source: "cortex_events",
+    inspectedEventCount: 0,
+    repeatedTopicErrors: [],
+    recurringMistakes: [],
+  },
 };
 
 describe("Cortex tutor learner continuity", () => {
