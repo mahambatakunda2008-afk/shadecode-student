@@ -426,7 +426,7 @@ export interface CortexUserMemory {
   completedTasks: number;
   subjects: string[];
   weakTopics: string[];
-  weakSubjects: string[];
+  weakSubjects?: string[];
   lastTopic?: string;
   lastPracticeScore?: number;
   lastPracticeTopic?: string;
