@@ -600,6 +600,11 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     if (!canvas || !ctx) return;
     const point = pointFromEvent(event);
     if (tool === "select") {
+      const selectedVector = vectorObjectsRef.current.find(object => object.id === selectedObjectId);
+      if (selectedVector) { const bounds=getDiagramObjectBounds(selectedVector), handle={x:bounds.x+bounds.width,y:bounds.y+bounds.height}; if(distance(point,handle)<=18){vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];vectorResizeRef.current={id:selectedVector.id,origin:point,object:selectedVector,bounds};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
+      const hit=[...vectorObjectsRef.current].reverse().find(object=>hitTestDiagramObject(object,point,14));
+      if(hit){vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];vectorDragRef.current={id:hit.id,origin:point,object:hit};setSelectedObjectId(hit.id);drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;}
+      setSelectedObjectId(null);
       const selected = selectionRef.current;
       const inside = selected && point.x >= selected.x && point.y >= selected.y && point.x <= selected.x + selected.width && point.y <= selected.y + selected.height;
       selectionModeRef.current = inside ? "move" : "new";
@@ -616,6 +621,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         : { text: label.trim(), improved: false, checked: false };
       const textToPlace = textResult.text;
       if (!textToPlace) return;
+      const textObject:DiagramObject={id:`text-${Date.now()}`,type:"text",x:point.x,y:point.y,text:textToPlace,fontSize,style:{...defaultStyle}};commitVectorObjects([...vectorObjectsRef.current,textObject]);setSelectedObjectId(textObject.id);setStatus("Text added as an editable object.");return;
       ctx.fillStyle = INK; ctx.font = `600 ${fontSize}px Arial, sans-serif`;
       ctx.textBaseline = "alphabetic";
       const words = textToPlace.split(/\s+/);
@@ -643,6 +649,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   function move(event: PointerEvent<HTMLCanvasElement>) {
     if (!drawingRef.current) return;
     const point = pointFromEvent(event);
+    if(vectorResizeRef.current){const resize=vectorResizeRef.current,dx=point.x-resize.origin.x,dy=point.y-resize.origin.y;const next=vectorObjectsRef.current.map(object=>object.id===resize.id?resizeDiagramObject(resize.object,{...resize.bounds,width:Math.max(12,resize.bounds.width+dx),height:Math.max(12,resize.bounds.height+dy)}):object);vectorObjectsRef.current=next;setVectorObjects(next);return;}
+    if(vectorDragRef.current){const drag=vectorDragRef.current,dx=point.x-drag.origin.x,dy=point.y-drag.origin.y;const next=vectorObjectsRef.current.map(object=>object.id===drag.id?moveDiagramObjectWithinCanvas(drag.object,dx,dy):object);vectorObjectsRef.current=next;setVectorObjects(next);return;}
     pointsRef.current.push(point);
     if (pointsRef.current.length > 5000) pointsRef.current.shift();
     if (frameRef.current !== null) return;
@@ -674,7 +682,10 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     drawingRef.current = false;
     if (frameRef.current !== null) { cancelAnimationFrame(frameRef.current); frameRef.current = null; }
     const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx || !snapshotRef.current) return;
+    if(!canvas||!ctx)return;
+    if(vectorResizeRef.current){vectorResizeRef.current=null;setCanUndo(true);setStatus("Object resized. It remains independently editable.");return;}
+    if(vectorDragRef.current){vectorDragRef.current=null;setCanUndo(true);setStatus("Object moved. It remains independently editable.");return;}
+    if(!snapshotRef.current)return;
     const points = pointsRef.current;
     ctx.putImageData(snapshotRef.current, 0, 0);
     if (tool === "select") {
@@ -706,8 +717,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     }
     if (["line", "arrow", "rectangle", "ellipse", "triangle", "curve"].includes(tool)) {
       const from = startRef.current, to = points[points.length - 1];
-      if (from && to) drawShape(ctx, from, to, tool);
-      setStatus("Shape rendered cleanly in real time.");
+      if(from&&to){const id=`shape-${Date.now()}`,left=Math.min(from.x,to.x),top=Math.min(from.y,to.y),width=Math.abs(to.x-from.x),height=Math.abs(to.y-from.y);let object:DiagramObject|null=null;if(tool==="line"||tool==="arrow")object={id,type:tool,from,to,style:{...defaultStyle}};else if(tool==="rectangle"||tool==="ellipse"||tool==="triangle")object={id,type:tool,x:left,y:top,width,height,style:{...defaultStyle}};else if(tool==="curve"){const fit=fitQuadraticCurve(points);object={id,type:"curve",segments:[{from,control:fit?.control??{x:(from.x+to.x)/2,y:(from.y+to.y)/2-30},to}],style:{...defaultStyle}};}if(object){commitVectorObjects([...vectorObjectsRef.current,object]);setSelectedObjectId(id);}}
+      setStatus("Shape created as an editable vector object.");
     } else if (tool === "pen" && autoFix) {
       const recognized = recognizeShape(points);
       if (recognized) {
