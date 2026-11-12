@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, HelpCircle, Loader2, RotateCcw, X } from "lucide-react";
 import type { RevisionCard, RevisionRating } from "@/lib/study/revisionDeck";
 import type { SyllabusSummary } from "@/lib/study/subsectionMastery";
+import CortexReviewSuggestions from "./CortexReviewSuggestions";
 
 const SUBJECT_LABEL: Record<string, string> = { physics: "Physics", chemistry: "Chemistry", biology: "Biology", mathematics: "Mathematics" };
 const LEVEL_LABEL: Record<string, string> = { as_level: "AS", a_level: "A Level" };
@@ -75,6 +76,8 @@ export default function RevisionHub() {
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">Test yourself on the official learning outcomes, then rate how you did. Works offline from AI and never runs out of cards.</p>
         <a href="/study/library" className="mt-2 inline-block text-sm font-semibold text-[var(--primary)] hover:underline">Search the lesson library →</a>
       </header>
+
+      <CortexReviewSuggestions />
 
       {load.status === "loading" && <p role="status" className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]"><Loader2 className="size-4 animate-spin" aria-hidden /> Loading your syllabus…</p>}
 
