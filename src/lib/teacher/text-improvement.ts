@@ -38,7 +38,7 @@ export function validateTeacherTextImprovement(original: string, candidate: stri
     return { valid: false, reason: "The proposed edit changes a chemical formula. The original wording has been preserved." };
   }
   const arithmeticPattern = /[A-Za-zΑ-Ωα-ω0-9)]\s*(?:[+−×÷*/^]|\s-\s)\s*[A-Za-zΑ-Ωα-ω0-9]/g;
-  if (JSON.stringify(occurrences(source, arithmeticPattern).map(value => value.replace(/\\s+/g, ""))) !== JSON.stringify(occurrences(improved, arithmeticPattern).map(value => value.replace(/\\s+/g, "")))) {
+  if (JSON.stringify(occurrences(source, arithmeticPattern).map(value => value.replace(/\s+/g, ""))) !== JSON.stringify(occurrences(improved, arithmeticPattern).map(value => value.replace(/\s+/g, "")))) {
     return { valid: false, reason: "The proposed edit changes an arithmetic operator or exponent. The original wording has been preserved." };
   }
   const notationPattern = /[α-ωΑ-ΩπμλθΔ∑∫√∞±×÷≤≥≈≠∝°µ²³⁰¹⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g;
