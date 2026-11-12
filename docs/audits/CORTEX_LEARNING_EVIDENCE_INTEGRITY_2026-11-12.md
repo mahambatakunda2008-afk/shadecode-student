@@ -62,3 +62,24 @@ The production build for the code above completed and the deployment is READY. A
 - Add a live authenticated practice attempt and verify the event appears in the learner's next Cortex context exactly once after a retry.
 - Add rubric-aware grading for free-response answers before assigning partial or incorrect scores.
 - Run the full `npm run verify` suite and capture a successful CI result.
+
+
+## Follow-up: offline event acknowledgement and projection retry
+
+A delivery audit found that the browser outbox treated every HTTP 2xx response as fully complete. The canonical event API can return HTTP 202 when the event is durably persisted but the rebuildable `topic_mastery` projection failed. Treating that response as complete removed the event from the local outbox, so the projection might never be retried.
+
+Implemented directly on main:
+
+- Added `isLearningEventDeliveryComplete()`. It only acknowledges a response when the server confirms `persisted: true` and does not report `projectionPending: true`.
+- The browser event sender now parses the response body and retains projection-pending events in the owner-scoped local outbox.
+- An event that receives a pending response schedules one delayed retry while online. If the retry still fails, it remains queued for the next app startup or online sync. This avoids an unbounded retry loop.
+- The retry reuses the original source and source-event ID, so canonical event insertion remains idempotent. The server can retry the projection without creating a second source event.
+- Added regression tests for pending projection, completed persistence, and incomplete success responses.
+
+Commits:
+- `aa55f49598b5ac08aa923e8085c968f87c926516`
+- `78f6ddd028128bfee76a247f6ad99b2cc6c1cb59`
+- `cbf56cc6291cafcc1613f477a84f83ff1e797f69`
+- `d9965062c292a3c170e44421db78db730d19368d`
+
+Verification: GitHub Actions CI was queued for the latest commit at the time of this update. No local Vitest run, browser offline/online replay test, or live database projection-failure simulation has been performed. The Vercel status remains a build-rate-limit failure and is not evidence of a TypeScript or application-build failure.
