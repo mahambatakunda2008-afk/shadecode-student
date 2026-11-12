@@ -7,6 +7,7 @@ type PracticeEventInput = {
   userId: string;
   accessToken?: string;
   payload: Record<string, unknown>;
+  subjectId?: string | null;
   score: number | null;
   syllabusId?: string | null;
 };
@@ -34,7 +35,8 @@ export async function recordVerifiedPracticeAttempt(
   if (!input.accessToken) return { recorded: false, reason: "missing_auth" };
 
   const attemptId = nonEmptyString(input.payload.attemptId);
-  const subjectId = nonEmptyString(input.payload.subjectId);
+  // Subject identity comes from the server-resolved curriculum, never the client payload.
+  const subjectId = nonEmptyString(input.subjectId);
   const topicId = nonEmptyString(input.payload.topicId) ?? nonEmptyString(input.payload.topic);
   const syllabusId = nonEmptyString(input.syllabusId);
   if (!input.userId || !attemptId || !subjectId || !topicId || !syllabusId) {
