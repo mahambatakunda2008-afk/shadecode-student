@@ -56,7 +56,7 @@ export function findHandwritingNotationWarnings(transcript: string, correctedTex
   if (!transcript || !correctedText || transcript === correctedText) return [];
   const occurrences = (value: string, pattern: RegExp) => [...value.matchAll(pattern)].map(match => match[0]).sort();
   // Arithmetic operators are protected only between mathematical operands, not prose punctuation.
-  const arithmeticOperators = /[A-Za-zΑ-Ωα-ω0-9)\]]\s*[+\-−×÷*/^]\s*[A-Za-zΑ-Ωα-ω0-9([]/g;
+  const arithmeticOperators = /[A-Za-zΑ-Ωα-ω0-9)]\s*[+\-−×÷*/^]\s*[A-Za-zΑ-Ωα-ω0-9]/g;
   const checks: Array<[HandwritingNotationWarning, RegExp]> = [
     ["numbers", /\b\d+(?:[.,]\d+)?(?:[eE][+-]?\d+)?\b/g],
     ["equations", /\b[A-Za-z][A-Za-z0-9_]*\s*(?:=|≈|≠|≤|≥|<|>)\s*[A-Za-z0-9_α-ωΑ-Ωπμλθ√∞.+\-*/^()]+/g],
