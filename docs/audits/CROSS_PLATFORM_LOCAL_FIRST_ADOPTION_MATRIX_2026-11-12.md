@@ -245,3 +245,15 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 - Legacy exam requests without a stable attempt ID retain their compatibility synchronous event/memory path; they do not get the transactional mastery outbox guarantee.
 - The outbox worker still emits the unified event pipeline after the durable Cortex and mastery projections. That pipeline's secondary analytics/cache handlers are not yet all independently durable or exactly-once.
 - GitHub Actions runs for the latest commits were still in progress when checked. Vercel build/deployment remains unverified due the previously reported build-rate-limit failure. No full TypeScript build, application test suite, real concurrent stress test, or end-to-end deployed exam test has passed for this change.
+
+
+## 2026-11-12 implementation update: durable exam analytics ingestion
+
+- Added and applied migration `20261112240000_durable_exam_analytics_event.sql`.
+- Added service-role-only RPC `record_exam_completion_analytics`. It writes a normalized `exam_completed` row to the existing `learning_events` table using the deterministic exam event UUID as the row ID. A replay with the same ID is acknowledged without creating a duplicate.
+- The exam outbox worker now persists this analytics event after Cortex score memory and per-topic mastery projections, and before acknowledging the outbox job. Analytics persistence failure therefore requeues the job.
+- Removed the worker's call to the in-process unified event pipeline. That pipeline's analytics handler is currently a logging TODO, its Cortex handler routes through a browser-local queue (no-op in a server process), and recommendation cache invalidation is process-local. Calling it from a cron worker did not provide durable downstream delivery.
+- Added and executed `supabase/tests/durable_exam_analytics_event.test.sql`. It verified the first insert, duplicate replay suppression, event fields and attempt identity; the transaction rolled back.
+- This makes exam analytics ingestion durable and idempotent. It does not yet make all analytics aggregations or recommendation-cache invalidation globally durable. Recommendation caches remain in-memory with bounded TTLs (10 minutes in the recommendation engine and 15 minutes in the student-intelligence engine); a cross-instance cache-version mechanism remains future work.
+- Legacy exam requests without stable attempt IDs still use the compatibility synchronous path.
+- GitHub Actions and Vercel checks for the newest commits must be checked before deployment claims. No full app build, deployed worker run, or end-to-end exam submission has been verified for this increment.
