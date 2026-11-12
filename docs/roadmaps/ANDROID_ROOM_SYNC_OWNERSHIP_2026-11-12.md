@@ -53,3 +53,24 @@ Date: 2026-11-12
 ### Remaining migration caveat
 
 Legacy lesson-progress rows are preserved but held in the unassigned namespace. An explicit recovery/export path is still needed if the original owner must reclaim that progress. No automatic assignment is safe because the old database did not store the account ID.
+
+## Follow-up: durable exam-attempt recovery (Room v5)
+
+- Advanced the native Room database from v4 to v5 with an `exam_attempts` table.
+- Exam snapshots are keyed by the authenticated account ID. The stored record includes a stable attempt ID, subject, paper JSON, question JSON, answer JSON, remaining seconds, active/taking state, save timestamp, and deadline.
+- `NativeExamAttemptStore` now reads and writes through Room instead of using SharedPreferences as the primary store. A completed Room write is committed before the checkpoint call returns.
+- The first read for an account imports that account's existing `native_exam_attempts_v1` SharedPreferences snapshot. The legacy key is removed only after Room successfully saves the imported record. No unscoped snapshot is assigned to a learner.
+- The existing Compose recovery flow continues to restore the paper, questions, answers, timer deadline, and subject. The timer deadline remains wall-clock based, so time continues to elapse while the app is closed.
+- This schema currently stores one active/recoverable exam attempt per account, matching the existing one-snapshot-per-user behavior. It is not yet an exam history/archive.
+- Failed marking keeps the local attempt available for retry. This does not guarantee exactly-once server submission: the marking endpoint has not been given a server-enforced idempotency key in this change.
+
+### Commit
+
+- Room v5 exam-attempt table and migration: `c4d9c470f2b1628ea8b7503868270ce9bd6aae6d`
+- Room-backed account-scoped exam recovery store: `6e45962859a1364e2b4a5f8c09e18b650902af71`
+
+### Verification limits and next checks
+
+- Source was re-fetched after the commits. Room is at schema version 5, migration 4→5 is registered, and the simulation still has one read, write, and clear integration point.
+- No Gradle build, migration test, emulator test, or force-close test was run. Do not treat this as device-verified.
+- Next verification: migrate a real v4 database, import a legacy snapshot, force-stop during an active attempt, restore after process death, switch between two accounts, and simulate a marking timeout followed by retry.
