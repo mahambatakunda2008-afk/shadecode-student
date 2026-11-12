@@ -9,7 +9,7 @@ object NativeExamAttemptStore {
     data class SavedAttempt(
         val attemptId: String, val subject: String, val paperJson: String, val questionsJson: String,
         val answersJson: String, val secondsLeft: Int, val taking: Boolean,
-        val savedAt: Long, val deadlineMillis: Long,
+        val savedAt: Long, val deadlineMillis: Long, val submissionPending: Boolean,
     )
 
     private fun legacyPrefs(context: Context) =
@@ -17,7 +17,7 @@ object NativeExamAttemptStore {
     private fun legacyKey(userId: String) = "attempt_" + userId
 
     private fun NativeExamAttemptEntity.toSavedAttempt() = SavedAttempt(
-        attemptId, subject, paperJson, questionsJson, answersJson, secondsLeft, taking, savedAt, deadlineMillis,
+        attemptId, subject, paperJson, questionsJson, answersJson, secondsLeft, taking, savedAt, deadlineMillis, submissionPending,
     )
 
     /** Imports the matching account's old snapshot, deleting it only after Room commits it. */
@@ -50,7 +50,7 @@ object NativeExamAttemptStore {
     suspend fun write(
         context: Context, userId: String, attemptId: String, subject: String, paperJson: String,
         questionsJson: String, answersJson: String, secondsLeft: Int,
-        taking: Boolean, deadlineMillis: Long,
+        taking: Boolean, deadlineMillis: Long, submissionPending: Boolean = false,
     ) {
         if (userId.isBlank()) return
         val dao = NativeDatabase.get(context).examAttempts()
@@ -63,6 +63,7 @@ object NativeExamAttemptStore {
                 answersJson = answersJson, secondsLeft = secondsLeft.coerceAtLeast(0),
                 taking = taking, savedAt = System.currentTimeMillis(),
                 deadlineMillis = if (taking) deadlineMillis.coerceAtLeast(0L) else 0L,
+                submissionPending = submissionPending,
             ),
         )
     }
