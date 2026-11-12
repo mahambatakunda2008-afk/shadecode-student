@@ -57,10 +57,6 @@ function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
-function asPositiveNumber(value: unknown, fallback: number): number {
-  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
-}
-
 async function buildSnapshot(userId: string, memory?: Awaited<ReturnType<typeof getMemory>>): Promise<CortexSnapshot> {
   const resolvedMemory = memory ?? await getMemory(userId);
   let curriculumState = null;
