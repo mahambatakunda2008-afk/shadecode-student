@@ -18,7 +18,7 @@ export function validateTeacherTextImprovement(original: string, candidate: stri
     return { valid: false, reason: "The proposed edit changes the text too substantially." };
   }
   const numberPattern = /\b\d+(?:[.,]\d+)?(?:[eE][+-]?\d+)?\b/g;
-  if (JSON.stringify(occurrences(source, numberPattern).sort()) !== JSON.stringify(occurrences(improved, numberPattern).sort())) {
+  if (JSON.stringify(occurrences(source, numberPattern)) !== JSON.stringify(occurrences(improved, numberPattern))) {
     return { valid: false, reason: "The proposed edit changes a number. The original wording has been preserved." };
   }
   const protectedPattern = /`[^`\n]+`|https?:\/\/[^\s)]+/g;
@@ -36,6 +36,10 @@ export function validateTeacherTextImprovement(original: string, candidate: stri
   const chemicalFormulaPattern = /\b[A-Z][a-z]?\d*(?:[A-Z][a-z]?\d*)+\b/g;
   if (JSON.stringify(occurrences(source, chemicalFormulaPattern).sort()) !== JSON.stringify(occurrences(improved, chemicalFormulaPattern).sort())) {
     return { valid: false, reason: "The proposed edit changes a chemical formula. The original wording has been preserved." };
+  }
+  const arithmeticPattern = /[A-Za-zΑ-Ωα-ω0-9)]\s*(?:[+−×÷*/^]|\s-\s)\s*[A-Za-zΑ-Ωα-ω0-9]/g;
+  if (JSON.stringify(occurrences(source, arithmeticPattern)) !== JSON.stringify(occurrences(improved, arithmeticPattern))) {
+    return { valid: false, reason: "The proposed edit changes an arithmetic operator or exponent. The original wording has been preserved." };
   }
   const notationPattern = /[α-ωΑ-ΩπμλθΔ∑∫√∞±×÷≤≥≈≠∝°µ²³⁰¹⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g;
   if (JSON.stringify(occurrences(source, notationPattern).sort()) !== JSON.stringify(occurrences(improved, notationPattern).sort())) {
