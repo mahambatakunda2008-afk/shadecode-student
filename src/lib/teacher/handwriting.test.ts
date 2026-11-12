@@ -199,6 +199,15 @@ describe("handwriting correction notation safeguards", () => {
     expect(findHandwritingNotationWarnings("The voltgae is here", "The voltage is here.")).toEqual([]);
   });
 
+  it("flags arithmetic operator substitutions inside expressions", () => {
+    expect(findHandwritingNotationWarnings("x + 2 = 5", "x − 2 = 5")).toContain("scientific symbols");
+    expect(findHandwritingNotationWarnings("a × b", "a + b")).toContain("scientific symbols");
+  });
+
+  it("flags superscript and subscript loss while leaving prose hyphens alone", () => {
+    expect(findHandwritingNotationWarnings("x² + H₂O", "x2 + H2O")).toContain("scientific symbols");
+    expect(findHandwritingNotationWarnings("well-written notes", "well written notes")).toEqual([]);
+  });
   it("requires review when corrected OCR changes protected notation even at high confidence", () => {
     const result = normalizeHandwritingRecognition({
       transcript: "The value is 0.5 V",
