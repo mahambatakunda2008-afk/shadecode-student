@@ -47,7 +47,7 @@ data class NativePendingSyncEntity(
     val payload: String,
     val createdAt: Long = System.currentTimeMillis(),
     val accountId: String? = null,
-    val operationId: String = UUID.randomUUID().toString(),
+    @androidx.room.ColumnInfo(defaultValue = "''") val operationId: String = UUID.randomUUID().toString(),
 )
 
 @androidx.room.Dao
