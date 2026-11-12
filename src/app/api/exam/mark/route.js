@@ -150,32 +150,8 @@ export async function POST(req) {
     const userId = user.id;
     if (!subject || !questions || !answers) return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 
-    let markingData = null;
-    const deterministicPaper = questions.length > 0 && questions.every((q) => String(q.id).startsWith("fallback_"));
-
-    if (deterministicPaper) {
-      markingData = markDeterministic(questions, answers);
-    } else {
-      const qaText = questions.map((q, i) => {
-        const answer = answers.find((a) => a.questionId === q.id);
-        return `\nQ${i + 1} [${q.type}, ${q.marks} marks, topic: ${q.topic}]\nQuestion: ${q.question}\nOptions: ${q.options ? q.options.join(", ") : "N/A"}\nStudent answer: ${answer?.answer || "(no answer)"}\nTime spent: ${answer?.timeSpent || 0}s\n`;
-      }).join("\n");
-      const prompt = `You are an expert ${subject} examiner.\n\nMark this exam carefully.\n\nReturn ONLY valid JSON:\n{\n  "results": [{"questionId": 1, "score": 0, "maxScore": 1, "correct": false, "feedback": "short explanation", "modelAnswer": "correct answer", "topic": "topic"}],\n  "weakAreas": [],\n  "strongAreas": [],\n  "cortexInsight": "neutral analytical summary of performance"\n}\n\nRules:\n- MCQ: full or zero marks only\n- Structured: partial credit allowed\n- Keep feedback short and factual\n- weakAreas = topics < 50%\n- strongAreas = topics > 80%\n\nEXAM DATA:\n${qaText}`;
-
-      for (let attempt = 1; attempt <= 2 && !markingData; attempt++) {
-        const text = await executeCortexText(prompt, 3000, { operation: "exam.mark", userId, feature: "exam_sim", subfeature: "mark_exam", maxChainMs: 20000, perProviderMaxMs: 7000 });
-        if (!text) continue;
-        markingData = normalizeMarkingData(repairAndParseJSON(text, isMarkingShape), questions);
-      }
-      if (!markingData) markingData = markDeterministic(questions, answers);
-    }
-
-    const { totalScore, maxScore, percentage, grade } = calculateExamScore(questions, markingData.results);
-    const examId = crypto.randomUUID();
     const submissionPayload = { subject, difficulty, questions, answers, timeTaken };
     const submissionHash = createHash("sha256").update(JSON.stringify(submissionPayload)).digest("hex");
-    const submissionResult = { ...markingData, totalScore, maxScore, percentage, grade, timeTaken };
-
     // A stable attempt ID is claimed before any Cortex or mastery side effects.
     // A retry receives the original server-marked result instead of replaying them.
     let submissionService = null;
@@ -210,6 +186,31 @@ export async function POST(req) {
       }
       submissionClaimToken = claim.claim_token;
     }
+
+    let markingData = null;
+    const deterministicPaper = questions.length > 0 && questions.every((q) => String(q.id).startsWith("fallback_"));
+
+    if (deterministicPaper) {
+      markingData = markDeterministic(questions, answers);
+    } else {
+      const qaText = questions.map((q, i) => {
+        const answer = answers.find((a) => a.questionId === q.id);
+        return `\nQ${i + 1} [${q.type}, ${q.marks} marks, topic: ${q.topic}]\nQuestion: ${q.question}\nOptions: ${q.options ? q.options.join(", ") : "N/A"}\nStudent answer: ${answer?.answer || "(no answer)"}\nTime spent: ${answer?.timeSpent || 0}s\n`;
+      }).join("\n");
+      const prompt = `You are an expert ${subject} examiner.\n\nMark this exam carefully.\n\nReturn ONLY valid JSON:\n{\n  "results": [{"questionId": 1, "score": 0, "maxScore": 1, "correct": false, "feedback": "short explanation", "modelAnswer": "correct answer", "topic": "topic"}],\n  "weakAreas": [],\n  "strongAreas": [],\n  "cortexInsight": "neutral analytical summary of performance"\n}\n\nRules:\n- MCQ: full or zero marks only\n- Structured: partial credit allowed\n- Keep feedback short and factual\n- weakAreas = topics < 50%\n- strongAreas = topics > 80%\n\nEXAM DATA:\n${qaText}`;
+
+      for (let attempt = 1; attempt <= 2 && !markingData; attempt++) {
+        const text = await executeCortexText(prompt, 3000, { operation: "exam.mark", userId, feature: "exam_sim", subfeature: "mark_exam", maxChainMs: 20000, perProviderMaxMs: 7000 });
+        if (!text) continue;
+        markingData = normalizeMarkingData(repairAndParseJSON(text, isMarkingShape), questions);
+      }
+      if (!markingData) markingData = markDeterministic(questions, answers);
+    }
+
+    const { totalScore, maxScore, percentage, grade } = calculateExamScore(questions, markingData.results);
+    const examId = crypto.randomUUID();
+    const submissionResult = { ...markingData, totalScore, maxScore, percentage, grade, timeTaken };
+
 
     try {
       await updateCortexFromExam({ userId, subject, percentage, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas });
