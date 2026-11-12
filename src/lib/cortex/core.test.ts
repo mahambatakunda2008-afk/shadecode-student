@@ -107,6 +107,25 @@ describe("CortexCore learning requests", () => {
     expect(trackExamResult).not.toHaveBeenCalled();
   });
 
+  it("does not persist a score when no marking guide is available", async () => {
+    const result = await CortexCore({
+      userId: "learner-1",
+      type: "practice",
+      payload: {
+        topic: "Photosynthesis",
+        answer: "A long response that has not been checked against a marking guide.",
+      },
+    });
+
+    expect(result.nextAction).toBe("review_with_marking_guide");
+    expect(updateMemory).toHaveBeenCalledWith("learner-1", {
+      lastTopic: "Photosynthesis",
+    });
+    expect(updateMemory).not.toHaveBeenCalledWith("learner-1", expect.objectContaining({
+      lastPracticeScore: expect.any(Number),
+    }));
+  });
+
   it("stores only bounded text feedback", async () => {
     await CortexCore({
       userId: "learner-1",
