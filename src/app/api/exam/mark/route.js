@@ -235,15 +235,29 @@ export async function POST(req) {
 
     try {
       const svc = createSupabaseServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
-      const { data: existingMemory } = await svc.from("cortex_memory").select("exam_scores").eq("user_id", userId).maybeSingle();
-      const priorScores = Array.isArray(existingMemory?.exam_scores) ? existingMemory.exam_scores : [];
       const scoreIdentity = attemptId?.trim() ? `attempt:${attemptId.trim()}` : `exam:${examId}`;
-      const dedupedScores = priorScores.filter((score) => score?.submissionIdentity !== scoreIdentity);
-      const newScores = [...dedupedScores, { examId, submissionIdentity: scoreIdentity, subject, score: totalScore, totalMarks: maxScore, percentage, grade, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas, date: new Date().toISOString() }];
-      const avgScore = Math.round(newScores.reduce((sum, s) => sum + (s.percentage ?? s.score ?? 0), 0) / newScores.length);
-      const { error: memoryError } = await svc.from("cortex_memory").upsert({ user_id: userId, exam_scores: newScores, average_exam_score: avgScore }, { onConflict: "user_id" });
-      if (memoryError) console.error("[exam/mark] Failed to persist exam_scores:", memoryError.message);
-    } catch (memErr) { console.error("[exam/mark] cortex_memory update threw:", memErr); }
+      const scoreRecord = {
+        examId,
+        submissionIdentity: scoreIdentity,
+        subject,
+        score: totalScore,
+        totalMarks: maxScore,
+        percentage,
+        grade,
+        weakAreas: markingData.weakAreas,
+        strongAreas: markingData.strongAreas,
+        date: new Date().toISOString(),
+      };
+      const { error: memoryError } = await svc.rpc("record_exam_score", {
+        p_user_id: userId,
+        p_score: scoreRecord,
+      });
+      if (memoryError) {
+        console.error("[exam/mark] Atomic Cortex exam memory update failed:", memoryError.message);
+      }
+    } catch (memErr) {
+      console.error("[exam/mark] Atomic Cortex exam memory update threw:", memErr);
+    }
 
     try {
       const svc2 = createSupabaseServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
