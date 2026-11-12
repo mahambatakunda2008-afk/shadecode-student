@@ -165,6 +165,9 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
     };
   });
   const evidenceCount = topics.reduce((count, item) => count + item.attempts, 0);
+  const mistakeEvents = mistakeEventsResult.data ?? [];
+  const repeatedTopicErrors = deriveRepeatedTopicErrors(mistakeEvents);
+  const recurringMistakes = deriveRecurringMistakes(mistakeEvents);
 
   return {
     schemaVersion: 1,
@@ -201,11 +204,11 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       items: topics,
     },
     mistakes: {
-      state: (mistakeEventsResult.data ?? []).length > 0 ? "available" : "insufficient_evidence",
+      state: repeatedTopicErrors.length > 0 || recurringMistakes.length > 0 ? "available" : "insufficient_evidence",
       source: "cortex_events",
-      inspectedEventCount: (mistakeEventsResult.data ?? []).length,
-      repeatedTopicErrors: deriveRepeatedTopicErrors(mistakeEventsResult.data ?? []),
-      recurringMistakes: deriveRecurringMistakes(mistakeEventsResult.data ?? []),
+      inspectedEventCount: mistakeEvents.length,
+      repeatedTopicErrors,
+      recurringMistakes,
     },
   };
 }
