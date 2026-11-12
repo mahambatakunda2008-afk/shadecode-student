@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
 import { updateCortexFromExam } from "@/lib/cortex";
-import { emitExamCompleted } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -119,21 +118,25 @@ async function processOutbox(req: Request) {
         }
       }
 
-      await emitExamCompleted(
-        job.user_id,
-        {
+      const { error: analyticsError } = await svc.rpc("record_exam_completion_analytics", {
+        p_user_id: job.user_id,
+        p_event_id: payload.eventId,
+        p_attempt_id: job.attempt_id,
+        p_subject: payload.subject,
+        p_percentage: payload.percentage,
+        p_time_spent: Math.max(0, Math.floor(payload.timeTaken)),
+        p_metadata: {
           examId: payload.examId,
-          subject: payload.subject,
-          topic: payload.difficulty,
-          score: payload.percentage,
-          totalMarks: payload.maxScore,
+          difficulty: payload.difficulty ?? null,
+          score: payload.score,
+          maxScore: payload.maxScore,
           grade: payload.grade,
           weakAreas: payload.weakAreas ?? [],
           strongAreas: payload.strongAreas ?? [],
-          timeSpent: payload.timeTaken,
+          topicCount: payload.topicScores?.length ?? 0,
         },
-        "exam",
-      );
+      });
+      if (analyticsError) throw new Error(`Exam analytics persistence: ${analyticsError.message}`);
 
       const { data: finished, error: finishError } = await svc.rpc("finish_exam_completion_outbox", {
         p_id: job.id,
