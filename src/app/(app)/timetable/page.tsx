@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import { localSubjects } from "@/lib/local-first/subjects";
+import { localFirstStore } from "@/lib/local-first/store";
 import { acknowledgeTimetableSync, hasPendingTimetableSync, hydrateTimetableFromServer, readLocalTimetable, saveLocalTimetable } from "@/lib/local-first/timetable";
 
 interface TimetableSlot {
@@ -97,7 +98,7 @@ export default function Timetable() {
         if (subjectsData) {
           setUserSubjects(subjectsData);
           for (const subject of subjectsData) {
-            try { await localSubjects.save({ id: subject.id, userId: user.id, name: subject.name }); } catch {}
+            await localFirstStore.hydrate({ id: subject.id, entity: "subject", userId: user.id, payload: { id: subject.id, userId: user.id, name: subject.name, lastUpdated: new Date().toISOString(), synced: true }, updatedAt: Date.now(), deviceId: "server", version: 0, syncVersion: 0 });
           }
         }
         if (timetableData && timetableData.length > 0) {
