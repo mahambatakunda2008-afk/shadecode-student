@@ -137,6 +137,8 @@ export default function ExamSimulationClient() {
         score: question.score,
         maxScore: question.maxScore,
         percentage: question.maxScore > 0 ? Math.round((question.score / question.maxScore) * 100) : 0,
+        mistakeId: question.mistakeId ?? null,
+        responseSeconds: question.timeSpent ?? null,
       });
     }
     void examCompletedEvent(examInstanceId, eventSubject, eventTopic, {
