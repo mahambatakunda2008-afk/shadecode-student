@@ -339,7 +339,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const selectionRef = useRef<{ x: number; y: number; width: number; height: number; image: ImageData } | null>(null);
   const selectionModeRef = useRef<"new" | "move" | null>(null);
   const frameRef = useRef<number | null>(null);
-  const vectorObjectsRef = useRef<DiagramObject[]>([]);\n  const vectorHistoryRef = useRef<DiagramObject[][]>([[]]);
+  const vectorObjectsRef = useRef<DiagramObject[]>([]);
+  const vectorHistoryRef = useRef<DiagramObject[][]>([[]]);
   const vectorDragRef = useRef<{ id: string; origin: Point; object: DiagramObject } | null>(null);
   const [vectorObjects, setVectorObjects] = useState<DiagramObject[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
