@@ -109,6 +109,10 @@ Do not replace the existing stores or introduce a second mastery model.
 
 This is the first integration slice, not the complete student model. It does not yet connect every product workflow, objective progress, preferences, misconception taxonomy, or a calibrated forgetting model.
 
+## Separate privacy finding
+
+The live policy audit also found a broad `profiles` SELECT policy named `Public leaderboard read` with `USING (true)` for the `public` role. The table includes learner curriculum and study-profile fields beyond typical leaderboard display data. The new resolver filters by the authenticated user's ID, but that does not narrow the existing table-wide public policy for other callers. This is tracked separately in issue #574. Do not change the production policy until leaderboard dependencies are mapped and a narrow replacement is tested.
+
 ## Verification still outstanding
 
 This is a source-level audit only. The following have not been established by this document:
