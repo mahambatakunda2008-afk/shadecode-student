@@ -807,7 +807,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       const result = await response.json().catch(() => ({}));
       if (!response.ok || typeof result.improvedText !== "string" || !result.improvedText.trim()) throw new Error(result.error ?? "Text improvement is unavailable.");
       const current = vectorObjectsRef.current.find(object => object.id === selected.id);
-      if (!current || current.type !== "text") return;
+      if (selectedObjectId !== selected.id || !current || current.type !== "text") return;
       setObjectLabelDraft(result.improvedText);
       setStatus(result.preservedOriginal === true ? (result.reason ?? "Original text preserved because the suggested edit was unsafe.") : result.changed ? "Selected text improved. Review it, then apply the edit." : "Selected text checked. No changes were needed.");
     } catch (error) {
