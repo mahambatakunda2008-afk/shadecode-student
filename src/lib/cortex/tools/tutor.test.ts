@@ -160,6 +160,7 @@ describe("Cortex tutor learner continuity", () => {
     });
 
     expect(response).not.toContain("recorded learning attempts");
+    expect(response).not.toContain("latest recorded practice score");
   });
 
   it("does not leak evidence across subjects within the same syllabus", async () => {
