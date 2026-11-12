@@ -11,6 +11,12 @@ describe("teacher text improvement safeguards", () => {
   it("preserves repeated values and scientific notation", () => {
     expect(validateTeacherTextImprovement("Set 2, 2 and 3e-4.", "Set 2, 2 and 3e-5.").valid).toBe(false);
   });
+  it("preserves equations, variable relationships and mathematical notation", () => {
+    expect(validateTeacherTextImprovement("The equation is F = ma and α = 30°.", "The equation is F = ma and β = 30°.").valid).toBe(false);
+    expect(validateTeacherTextImprovement("Use v = u + at.", "Use v = u - at.").valid).toBe(false);
+    expect(validateTeacherTextImprovement("The result is x² + y² = z².", "The result is x³ + y² = z².").valid).toBe(false);
+    expect(validateTeacherTextImprovement("The equation is F = ma.", "The equation is F = ma.")).toMatchObject({ valid: true });
+  });
   it("rejects edits that alter inline code or URLs", () => {
     expect(validateTeacherTextImprovement("Use `x + 2` at https://example.com/a.", "Use `x + 3` at https://example.com/a.").valid).toBe(false);
     expect(validateTeacherTextImprovement("Visit https://example.com/a.", "Visit https://example.com/b.").valid).toBe(false);
