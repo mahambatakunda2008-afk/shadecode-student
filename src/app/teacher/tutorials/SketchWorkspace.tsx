@@ -723,8 +723,13 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       const recognized = recognizeShape(points);
       if (recognized) {
         ctx.putImageData(snapshotRef.current, 0, 0);
-        drawShape(ctx, recognized.from, recognized.to, recognized.tool, recognized.control, recognized.vertices, recognized.segments);
-        setStatus(`Auto-corrected your stroke into a clean ${recognized.tool}.`);
+        const id=`auto-${Date.now()}`,left=Math.min(recognized.from.x,recognized.to.x),top=Math.min(recognized.from.y,recognized.to.y),width=Math.abs(recognized.to.x-recognized.from.x),height=Math.abs(recognized.to.y-recognized.from.y);let object:DiagramObject|null=null;
+        if(recognized.tool==="line"||recognized.tool==="arrow")object={id,type:recognized.tool,from:recognized.from,to:recognized.to,style:{...defaultStyle}};
+        else if(recognized.tool==="rectangle"||recognized.tool==="ellipse"||recognized.tool==="triangle")object={id,type:recognized.tool,x:left,y:top,width,height,style:{...defaultStyle}};
+        else if(recognized.tool==="polygon"&&recognized.vertices)object={id,type:"polygon",points:recognized.vertices,style:{...defaultStyle}};
+        else if(recognized.tool==="curve")object={id,type:"curve",segments:recognized.segments??[{from:recognized.from,control:recognized.control??recognized.from,to:recognized.to}],style:{...defaultStyle}};
+        if(object){commitVectorObjects([...vectorObjectsRef.current,object]);setSelectedObjectId(id);}
+        setStatus(`Auto-corrected your stroke into an editable ${recognized.tool}.`);
       } else {
         ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
         smoothPath(ctx, points);
