@@ -84,6 +84,36 @@ function learnerContinuityNote(
     );
   }
 
+  const repeatedErrors = context.studentContext.mistakes.repeatedTopicErrors.find((item) =>
+    item.topicId.trim().toLocaleLowerCase() === normalizedTopic &&
+    subjectKeys.includes(item.subjectKey.trim().toLocaleLowerCase())
+  );
+  if (repeatedErrors) {
+    notes.push(
+      `Your syllabus-scoped records show ${repeatedErrors.incorrectResponses} incorrect responses across ${repeatedErrors.distinctAttempts} separate attempts on this topic. I'll focus on the reasoning steps that need another look.`
+    );
+  }
+
+  const recurringMistake = context.studentContext.mistakes.recurringMistakes.find((item) =>
+    item.topicId.trim().toLocaleLowerCase() === normalizedTopic &&
+    subjectKeys.includes(item.subjectKey.trim().toLocaleLowerCase())
+  );
+  if (recurringMistake) {
+    notes.push(
+      `A diagnosed error pattern has recurred across ${recurringMistake.distinctAttempts} separate attempts, so I'll pay particular attention to that step without assuming the same cause explains every answer.`
+    );
+  }
+
+  const retrieval = context.studentContext.spacedRetrieval.topics.find((item) =>
+    item.topicId.trim().toLocaleLowerCase() === normalizedTopic &&
+    subjectKeys.includes(item.subjectKey.trim().toLocaleLowerCase())
+  );
+  if (retrieval) {
+    notes.push(
+      `You've retrieved this topic across ${retrieval.distinctAttempts} separate attempts over ${retrieval.observedSpanDays} days. That's useful study history, not a guarantee of mastery.`
+    );
+  }
+
   return notes.length ? ` ${notes.join(" ")}` : "";
 }
 
