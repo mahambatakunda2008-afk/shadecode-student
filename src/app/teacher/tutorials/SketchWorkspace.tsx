@@ -910,7 +910,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       </div>
       {handwritingUncertainty.length > 0 && (() => {
         const ranges = findHandwritingReviewRanges(handwritingText, handwritingUncertainty);
-        if (!ranges.length) return null;
+        const unmatchedCount = handwritingUncertainty.length - ranges.length;
+        if (!ranges.length) return <div role="alert" className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-2 text-xs"><strong>Manual character check required.</strong> The uncertain glyphs could not be safely matched to a unique position in this transcription. Use the character choices below only when their location is clear, or edit the text directly against the original handwriting.</div>;
         const pieces: ReactNode[] = [];
         let cursor = 0;
         for (const range of ranges) {
@@ -919,12 +920,13 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
           cursor = range.end;
         }
         if (cursor < handwritingText.length) pieces.push(handwritingText.slice(cursor));
-        return <div className="space-y-1 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2 text-xs"><strong>Uncertain characters highlighted below</strong><p className="whitespace-pre-wrap break-words leading-6">{pieces}</p></div>;
+        return <div className="space-y-1 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2 text-xs"><strong>Uncertain characters highlighted below</strong><p className="whitespace-pre-wrap break-words leading-6">{pieces}</p>{unmatchedCount > 0 && <p role="alert" className="font-medium text-amber-900">Also: {unmatchedCount} uncertain reading(s) could not be highlighted at a unique position. Check the character list below manually.</p>}</div>;
       })()}
       <textarea value={handwritingText} onChange={event => setHandwritingText(event.target.value)} maxLength={12000} rows={6} spellCheck autoCorrect="off" autoCapitalize="off" className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" aria-label="Review and edit recognised handwriting. Amber highlights mark uncertain characters." />
       {handwritingRawText && handwritingRawText !== handwritingText && <details className="rounded-lg bg-[var(--surface)] p-2 text-xs"><summary className="cursor-pointer font-medium">Compare original character reading</summary><p className="mt-2 whitespace-pre-wrap">{handwritingRawText}</p></details>}
       {handwritingMathExpressions.length > 0 && <section className="space-y-2 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] p-3">
         <strong className="text-xs">Extracted mathematical notation</strong>
+        {handwritingMathExpressions.some(expression => expression.confidence === null || expression.confidence < 0.9 || expression.uncertainTokens.length > 0) && <p role="alert" className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs font-medium">Mathematical notation needs checking. Compare each operator, sign, digit, exponent and variable with the original before placing it on the canvas.</p>}
         <p className="text-xs text-[var(--muted-foreground)]">LaTeX is provided as an editable mathematical representation. Check every sign, digit and exponent against the handwriting.</p>
         {handwritingMathExpressions.map((expression, index) => <div key={index} className="space-y-1 border-t border-[var(--card-border)] pt-2">
           <p className="text-xs">Original: <span className="font-mono">{expression.sourceText}</span></p>
