@@ -122,22 +122,29 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
   const memory = memoryResult.data;
   const profileState: EvidenceState = academicProfile || memory ? "available" : "insufficient_evidence";
   const topicRows = topicsResult.data ?? [];
-  const topics: StudentTopicEvidence[] = topicRows.map((row) => ({
-    topicId: row.topic,
-    subjectKey: row.subject,
-    syllabusId: row.syllabus_id,
-    curriculumTopicKey: row.curriculum_topic_key,
-    masteryScore: typeof row.mastery_score === "number" ? row.mastery_score : null,
-    attempts: Math.max(0, Number(row.attempts) || 0),
-    retention: typeof row.retention === "number" ? row.retention : null,
-    confidence: typeof row.confidence === "number" ? row.confidence : null,
-    stability: typeof row.stability === "number" ? row.stability : null,
-    errorRate: typeof row.error_rate === "number" ? row.error_rate : null,
-    uncertainty: typeof row.uncertainty === "number" ? row.uncertainty : null,
-    lastObservedAt: row.last_attempted,
-    evidenceState: Number(row.attempts) > 0 ? "available" : "insufficient_evidence",
-    source: "topic_mastery",
-  }));
+  const topics: StudentTopicEvidence[] = topicRows.map((row) => {
+    const attempts = Math.max(0, Number(row.attempts) || 0);
+    const hasEvidence = attempts > 0;
+    return {
+      topicId: row.topic,
+      subjectKey: row.subject,
+      syllabusId: row.syllabus_id,
+      curriculumTopicKey: row.curriculum_topic_key,
+      // topic_mastery may contain default placeholder values before any attempt.
+      // Never expose those placeholders as measured student mastery.
+      masteryScore: hasEvidence && typeof row.mastery_score === "number" ? row.mastery_score : null,
+      attempts,
+      retention: hasEvidence && typeof row.retention === "number" ? row.retention : null,
+      confidence: hasEvidence && typeof row.confidence === "number" ? row.confidence : null,
+      stability: hasEvidence && typeof row.stability === "number" ? row.stability : null,
+      errorRate: hasEvidence && typeof row.error_rate === "number" ? row.error_rate : null,
+      uncertainty: hasEvidence && typeof row.uncertainty === "number" ? row.uncertainty : null,
+      lastObservedAt: hasEvidence ? row.last_attempted : null,
+      evidenceState: hasEvidence ? "available" : "insufficient_evidence",
+      source: "topic_mastery",
+    };
+  });
+  const evidenceCount = topics.reduce((count, item) => count + item.attempts, 0);
 
   return {
     schemaVersion: 1,
@@ -168,9 +175,9 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       averageExamScore: memory?.average_exam_score ?? null,
     },
     topics: {
-      state: topics.length > 0 ? "available" : "insufficient_evidence",
+      state: evidenceCount > 0 ? "available" : "insufficient_evidence",
       source: "topic_mastery",
-      evidenceCount: topics.reduce((count, item) => count + item.attempts, 0),
+      evidenceCount,
       items: topics,
     },
   };
