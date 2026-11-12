@@ -53,9 +53,11 @@ function learnerContinuityNote(
   if (!context.studentContext || subjectKeys.length === 0) return "";
 
   const normalizedTopic = topic.trim().toLocaleLowerCase();
+  const activeSyllabusId = context.curriculum?.identity.syllabusId;
   const evidence = context.studentContext.topics.items.find((item) =>
     item.topicId.trim().toLocaleLowerCase() === normalizedTopic &&
     subjectKeys.includes(item.subjectKey.trim().toLocaleLowerCase()) &&
+    (!activeSyllabusId || item.syllabusId === activeSyllabusId) &&
     item.attempts > 0
   );
   if (!evidence) return "";
