@@ -17,6 +17,7 @@ import LessonDiagram from "@/components/learn/LessonDiagram";
 import TeacherTutorials from "@/components/learn/TeacherTutorials";
 import { downloadManager } from "@/lib/offline/downloadManager";
 import { offlineStorage } from "@/lib/offline/storage";
+import { localFirstStore } from "@/lib/local-first/store";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { useLessonNarration } from "@/hooks/useLessonNarration";
 import { trackEvent } from "@/lib/traction/client";
@@ -199,6 +200,18 @@ export default function LessonDetailPage() {
   const restoredScrollRef = useRef(false);
   const narration = useLessonNarration(lesson?.blocks ?? []);
 
+  const applyPendingLocalProgress = async (base: Lesson, userId: string): Promise<Lesson> => {
+    if (!userId) return base;
+    const [progress, operations] = await Promise.all([
+      offlineStorage.getProgress(base.id, userId),
+      localFirstStore.listPendingOperations(userId),
+    ]);
+    const hasPending = operations.some(operation => operation.entity === "progress" && operation.entityId === base.id);
+    return hasPending && progress
+      ? { ...base, progress: progress.progress, completed: progress.completed }
+      : base;
+  };
+
   const loadLesson = async (token: string) => {
     setLoading(true); setError(null);
     try {
@@ -206,12 +219,13 @@ export default function LessonDetailPage() {
       if (!r.ok) { let msg = "Couldn't load this lesson."; try { const b = await r.json(); msg = b?.error || msg; } catch {} throw new Error(msg); }
       const d = await r.json();
       if (!d.lesson) throw new Error("Lesson content not found.");
-      setLesson(d.lesson); setAccessToken(token);
-      void offlineStorage.saveLesson({ ...d.lesson, downloadedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(), size: JSON.stringify(d.lesson).length }).catch(() => undefined);
+      const lessonWithLocalProgress = await applyPendingLocalProgress(d.lesson, currentUser);
+      setLesson(lessonWithLocalProgress); setAccessToken(token);
+      void offlineStorage.saveLesson({ ...lessonWithLocalProgress, downloadedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(), size: JSON.stringify(lessonWithLocalProgress).length }).catch(() => undefined);
     } catch (err) {
       try {
         const cached = await offlineStorage.getLesson(lessonId);
-        if (cached) { setLesson({ ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt }); return; }
+        if (cached) { const cachedLesson: Lesson = { ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt }; setLesson(currentUser ? await applyPendingLocalProgress(cachedLesson, currentUser) : cachedLesson); return; }
       } catch {}
       setError(err instanceof Error ? err.message : "Couldn't load this lesson.");
     } finally { setLoading(false); }
@@ -276,14 +290,50 @@ export default function LessonDetailPage() {
   }
 
   async function markComplete() {
-    if (!lesson || !accessToken || completing || lesson.completed) return;
+    if (!lesson || !currentUser || completing || lesson.completed) return;
     setCompleting(true);
+    const completedAt = new Date().toISOString();
     try {
-      const r = await fetch("/api/learn", { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ lessonId: lesson.id, progress: 100 }) });
-      if (!r.ok) throw new Error();
-      setLesson(x => x ? { ...x, progress: 100, completed: true } : x); setShowToast(true); checkNewAchievements();
+      // The local-first operation is the durable record of the student's action.
+      await offlineStorage.saveProgress({
+        lessonId: lesson.id,
+        userId: currentUser,
+        completed: true,
+        progress: 100,
+        lastUpdated: completedAt,
+        synced: false,
+      });
+      const completedLesson = { ...lesson, progress: 100, completed: true, updated_at: completedAt };
+      setLesson(completedLesson);
+      await offlineStorage.saveLesson({
+        ...completedLesson,
+        downloadedAt: new Date().toISOString(),
+        lastSyncedAt: lesson.updated_at ?? completedAt,
+        size: JSON.stringify(completedLesson).length,
+      });
+
+      if (navigator.onLine && accessToken) {
+        const r = await fetch("/api/learn", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ lessonId: lesson.id, progress: 100 }),
+        });
+        if (!r.ok) throw new Error("Cloud acknowledgement is pending");
+        await localFirstStore.acknowledgeProgress(currentUser, lesson.id);
+        setShowToast(true);
+        checkNewAchievements();
+      } else {
+        setShowToast(true);
+        // Progress remains queued locally and will be sent through /api/sync on reconnect.
+      }
       setTimeout(() => setShowToast(false), 3500);
-    } catch {} finally { setCompleting(false); }
+    } catch (error) {
+      console.error("[Lesson] completion saved locally; remote acknowledgement pending:", error);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
+    } finally {
+      setCompleting(false);
+    }
   }
 
   async function handleDownload() {
