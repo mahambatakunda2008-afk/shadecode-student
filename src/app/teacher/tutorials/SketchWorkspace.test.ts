@@ -153,7 +153,9 @@ describe("teacher sketch auto-correction", () => {
     const fit = fitQuadraticCurve(points);
     expect(fit).not.toBeNull();
     expect(fit!.rmsError).toBeGreaterThan(12);
-    expect(recognizeShape(points)?.tool).not.toBe("curve");
+    const recognized = recognizeShape(points);
+    expect(recognized?.tool).toBe("curve");
+    expect(recognized?.segments?.length).toBeGreaterThan(1);
   });
 
   it("does not turn a short accidental mark into a diagram shape", () => {
