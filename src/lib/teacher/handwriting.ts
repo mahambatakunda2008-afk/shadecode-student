@@ -61,7 +61,7 @@ export function findHandwritingNotationWarnings(transcript: string, correctedTex
   const checks: Array<[HandwritingNotationWarning, RegExp]> = [
     ["numbers", /(?<![A-Za-z0-9_])[+−-]?\d+(?:[.,]\d+)?(?:[eE][+-]?\d+)?(?![A-Za-z0-9_])/g],
     ["equations", /\b[A-Za-z][A-Za-z0-9_]*(?:\s*(?:[+−×÷*/^]|\s-\s)\s*[A-Za-z0-9_α-ωΑ-Ωπμλθ√∞.()]+)*\s*(?:=|≈|≠|≤|≥|<|>)\s*[A-Za-z0-9_α-ωΑ-Ωπμλθ√∞.+\-*/^()]+/g],
-    ["fractions", /(?<![A-Za-z0-9_])\d+\s*\/\s*\d+(?![A-Za-z0-9_])/g],
+    ["fractions", /(?<![A-Za-z0-9_])[+−-]?\d+\s*\/\s*\d+(?![A-Za-z0-9_])|[¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]/g],
     ["units", /(?<=\d)\s*(?:mmHg|cmH2O|km|cm|mm|µm|μm|nm|kg|mg|µg|g|mol|mmol|kPa|MPa|Pa|mL|L|m3|cm3|m³|cm³|m²|cm²|ms|min|h|s|mA|A|mV|V|kW|W|kJ|J|kN|N|MHz|kHz|Hz|°C|K)\b/g],
     ["chemical formulae", /\b[A-Z][a-z]?\d*(?:[A-Z][a-z]?\d*)+\b/g],
     ["scientific symbols", /[α-ωΑ-ΩπμλθΔ∑∫√∞±×÷≤≥≈≠∝°µ²³⁰¹⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g],
@@ -75,7 +75,8 @@ export function findHandwritingNotationWarnings(transcript: string, correctedTex
       original.sort((a, b) => a.index - b.index);
       corrected.sort((a, b) => a.index - b.index);
     }
-    return JSON.stringify(original.map(item => item.token)) !== JSON.stringify(corrected.map(item => item.token));
+    const tokens = (items: typeof original) => items.map(item => label === "fractions" ? item.token.replace(/\s+/g, "") : item.token);
+    return JSON.stringify(tokens(original)) !== JSON.stringify(tokens(corrected));
   }).map(([label]) => label);
 }
 
