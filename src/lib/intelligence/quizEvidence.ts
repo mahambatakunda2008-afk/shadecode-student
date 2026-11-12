@@ -1,4 +1,5 @@
 import type { LearningEventInput } from "./emitLearningEvent";
+import { normalizeLearningContext } from "./learningContextKey";
 
 export type QuizQuestionEvidence = {
   questionId: string | number;
@@ -33,6 +34,7 @@ export function buildQuizQuestionEvidence(
   results: QuizQuestionEvidence[],
   context: { subject?: string; topicId?: string } = {},
 ): LearningEventInput[] {
+  const normalizedContext = normalizeLearningContext(context.subject, context.topicId);
   return results.map((result, index) => {
     const score = Number.isFinite(result.score) ? result.score! : result.correct ? 100 : 0;
     const maxScore = Number.isFinite(result.maxScore) && result.maxScore! > 0 ? result.maxScore! : 100;
@@ -44,8 +46,7 @@ export function buildQuizQuestionEvidence(
       source: "learn-quiz",
       sourceEventId: `question-attempt:${quizAttemptId}:${String(result.questionId)}`,
       type: "question.attempted",
-      subjectId: context.subject,
-      topicId: context.topicId,
+      ...normalizedContext,
       entityId: String(result.questionId),
       attemptId: quizAttemptId,
       metadata: {
