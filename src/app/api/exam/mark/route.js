@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
-import { updateCortexFromExam } from "@/lib/cortex";
-import { emitExamCompleted } from "@/lib/events";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
