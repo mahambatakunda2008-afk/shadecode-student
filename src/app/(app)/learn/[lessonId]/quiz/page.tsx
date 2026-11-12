@@ -59,6 +59,8 @@ export default function QuizPage() {
   const [confirmed,   setConfirmed]   = useState(false);
   const [token,       setToken]       = useState<string | null>(null);
   const [lessonTitle, setLessonTitle] = useState("");
+  const [lessonSubject, setLessonSubject] = useState("");
+  const [lessonTopic, setLessonTopic] = useState("");
   const [errMsg,      setErrMsg]      = useState("");
 
   useEffect(() => {
@@ -71,7 +73,13 @@ export default function QuizPage() {
       // fetch lesson title
       try {
         const r = await fetch(`/api/learn?lessonId=${lessonId}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
-        if (r.ok) { const d = await r.json(); setLessonTitle(d.lesson?.title ?? ""); }
+        if (r.ok) {
+          const d = await r.json();
+          const lesson = d.lesson ?? {};
+          setLessonTitle(lesson.title ?? "");
+          setLessonSubject(typeof lesson.subject === "string" && lesson.subject !== "Unknown subject" ? lesson.subject : "");
+          setLessonTopic(typeof lesson.topic === "string" ? lesson.topic : "");
+        }
       } catch {}
 
       // generate quiz
@@ -103,7 +111,10 @@ export default function QuizPage() {
       percentage: selected === q.correctIndex ? 100 : 0,
       questionIndex: current,
     };
-    const [event] = buildQuizQuestionEvidence(quizAttemptIdRef.current, lessonId, [result]);
+    const [event] = buildQuizQuestionEvidence(quizAttemptIdRef.current, lessonId, [result], {
+      subject: lessonSubject || undefined,
+      topicId: lessonTopic || undefined,
+    });
     if (event) void emitLearningEvent(event);
   }
 
