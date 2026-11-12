@@ -14,6 +14,16 @@ describe("Cortex deterministic answer scoring", () => {
     });
   });
 
+  it("collapses repeated spaces and line breaks before exact comparison", async () => {
+    const result = await scoreAnswer({
+      answer: "cellular\\n\\nrespiration",
+      correctAnswer: "Cellular respiration",
+    });
+
+    expect(result.score).toBe(100);
+    expect(result.needsReview).toBe(false);
+  });
+
   it("does not infer correctness from a long answer", async () => {
     const result = await scoreAnswer({
       answer: "This is a long explanation that could still be completely incorrect.",
