@@ -102,7 +102,7 @@ fun NativeLessonReader(
     var saved by remember { mutableStateOf(false) }
 
     LaunchedEffect(lesson.id) {
-        val cached = withContext(Dispatchers.IO) { database.progress().get(lesson.id) }
+        val cached = withContext(Dispatchers.IO) { database.progress().get(session.userId, lesson.id) }
         if (cached != null) {
             progress = cached.progress.coerceIn(0f, 1f)
             current = if (blocks.isEmpty()) 0 else ((progress * blocks.size).toInt()).coerceIn(0, blocks.lastIndex)
@@ -118,6 +118,7 @@ fun NativeLessonReader(
             withContext(Dispatchers.IO) {
                 database.progress().save(
                     NativeLessonProgressEntity(
+                        accountId = session.userId,
                         lessonId = lesson.id,
                         subjectId = lesson.subjectId,
                         progress = normalized,
