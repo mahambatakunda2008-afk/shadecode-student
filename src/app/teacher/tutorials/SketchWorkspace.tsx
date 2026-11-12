@@ -626,20 +626,6 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       const textToPlace = textResult.text;
       if (!textToPlace) return;
       const textObject:DiagramObject={id:`text-${Date.now()}`,type:"text",x:point.x,y:point.y,text:textToPlace,fontSize,style:{...defaultStyle}};commitVectorObjects([...vectorObjectsRef.current,textObject]);setSelectedObjectId(textObject.id);setStatus("Text added as an editable object.");return;
-      ctx.fillStyle = INK; ctx.font = `600 ${fontSize}px Arial, sans-serif`;
-      ctx.textBaseline = "alphabetic";
-      const words = textToPlace.split(/\s+/);
-      let line = "", y = point.y;
-      const maxWidth = Math.max(100, WIDTH - point.x - 24);
-      for (const word of words) {
-        const test = line ? line + " " + word : word;
-        if (ctx.measureText(test).width > maxWidth && line) { ctx.fillText(line, point.x, y); line = word; y += fontSize * 1.3; }
-        else line = test;
-      }
-      if (line) ctx.fillText(line, point.x, y);
-      pushHistory(ctx);
-      setStatus(textResult.improved ? "Improved text placed with clean typography." : textResult.checked ? "Text checked and placed with clean typography." : autoImproveText ? "Original text placed. AI improvement was unavailable." : "Text placed with clean typography.");
-      return;
     }
     event.currentTarget.setPointerCapture(event.pointerId);
     drawingRef.current = true; startRef.current = point; pointsRef.current = [point];
@@ -653,7 +639,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   function move(event: PointerEvent<HTMLCanvasElement>) {
     if (!drawingRef.current) return;
     const point = pointFromEvent(event);
-    if(vectorPointDragRef.current){const drag=vectorPointDragRef.current,dx=point.x-drag.origin.x,dy=point.y-drag.origin.y;const next=vectorObjectsRef.current.map(object=>{if(object.id!==drag.id)return object;if(drag.kind==="polygon"&&object.type==="polygon")return {...object,points:object.points.map((vertex,index)=>index===drag.index?{x:vertex.x+dx,y:vertex.y+dy}:vertex)};if(drag.kind==="curve"&&object.type==="curve")return {...object,segments:object.segments.map((segment,index)=>index===drag.index?{...segment,control:{x:segment.control.x+dx,y:segment.control.y+dy}}:segment)};return object;});vectorObjectsRef.current=next;setVectorObjects(next);return;}
+    if(vectorPointDragRef.current){const drag=vectorPointDragRef.current,dx=point.x-drag.origin.x,dy=point.y-drag.origin.y;const next=vectorObjectsRef.current.map(object=>{if(object.id!==drag.id)return object;const base=drag.object;if(drag.kind==="polygon"&&base.type==="polygon")return {...base,points:base.points.map((vertex,index)=>index===drag.index?{x:vertex.x+dx,y:vertex.y+dy}:vertex)};if(drag.kind==="curve"&&base.type==="curve")return {...base,segments:base.segments.map((segment,index)=>index===drag.index?{...segment,control:{x:segment.control.x+dx,y:segment.control.y+dy}}:segment)};return object;});vectorObjectsRef.current=next;setVectorObjects(next);return;}
     if(vectorResizeRef.current){const resize=vectorResizeRef.current,dx=point.x-resize.origin.x,dy=point.y-resize.origin.y;const next=vectorObjectsRef.current.map(object=>object.id===resize.id?resizeDiagramObject(resize.object,{...resize.bounds,width:Math.max(12,Math.min(WIDTH-resize.bounds.x,resize.bounds.width+dx)),height:Math.max(12,Math.min(HEIGHT-resize.bounds.y,resize.bounds.height+dy))}):object);vectorObjectsRef.current=next;setVectorObjects(next);return;}
     if(vectorDragRef.current){const drag=vectorDragRef.current,dx=point.x-drag.origin.x,dy=point.y-drag.origin.y;const next=vectorObjectsRef.current.map(object=>object.id===drag.id?moveDiagramObjectWithinCanvas(drag.object,dx,dy):object);vectorObjectsRef.current=next;setVectorObjects(next);return;}
     pointsRef.current.push(point);
