@@ -26,12 +26,13 @@ describe("verified Cortex practice events", () => {
   const validInput = {
     userId: "learner-1",
     accessToken: "learner-access-token",
+    subjectId: "biology",
     score: 100,
     syllabusId: "cambridge-9700",
     payload: {
       attemptId: "attempt-1",
       questionId: "question-1",
-      subjectId: "biology-id",
+      subjectId: "untrusted-subject",
       topicId: "photosynthesis",
       answer: "student's submitted answer",
       correctAnswer: "reference answer",
@@ -63,7 +64,7 @@ describe("verified Cortex practice events", () => {
       userId: "learner-1",
       attemptId: "attempt-1",
       entityId: "question-1",
-      subjectId: "biology-id",
+      subjectId: "biology",
       topicId: "photosynthesis",
       syllabusId: "cambridge-9700",
       metadata: {
