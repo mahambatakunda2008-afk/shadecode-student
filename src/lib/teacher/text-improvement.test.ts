@@ -17,6 +17,11 @@ describe("teacher text improvement safeguards", () => {
     expect(validateTeacherTextImprovement("The result is x² + y² = z².", "The result is x³ + y² = z².").valid).toBe(false);
     expect(validateTeacherTextImprovement("The equation is F = ma.", "The equation is F = ma.")).toMatchObject({ valid: true });
   });
+  it("preserves measurement units and chemical formulae", () => {
+    expect(validateTeacherTextImprovement("The sample is 2 cm long.", "The sample is 2 mm long.").valid).toBe(false);
+    expect(validateTeacherTextImprovement("Add 10 g of NaCl to H2O.", "Add 10 kg of NaCl to H2O.").valid).toBe(false);
+    expect(validateTeacherTextImprovement("Add 10 g of NaCl to H2O.", "Add 10 g of NaCl to H2O.")).toMatchObject({ valid: true });
+  });
   it("rejects edits that alter inline code or URLs", () => {
     expect(validateTeacherTextImprovement("Use `x + 2` at https://example.com/a.", "Use `x + 3` at https://example.com/a.").valid).toBe(false);
     expect(validateTeacherTextImprovement("Visit https://example.com/a.", "Visit https://example.com/b.").valid).toBe(false);
