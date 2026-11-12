@@ -212,14 +212,14 @@ export default function LessonDetailPage() {
       : base;
   };
 
-  const loadLesson = async (token: string) => {
+  const loadLesson = async (token: string, userId = currentUser) => {
     setLoading(true); setError(null);
     try {
       const r = await fetch(`/api/learn?lessonId=${lessonId}`, { headers: { Authorization: `Bearer ${token}` } });
       if (!r.ok) { let msg = "Couldn't load this lesson."; try { const b = await r.json(); msg = b?.error || msg; } catch {} throw new Error(msg); }
       const d = await r.json();
       if (!d.lesson) throw new Error("Lesson content not found.");
-      const lessonWithLocalProgress = await applyPendingLocalProgress(d.lesson, currentUser);
+      const lessonWithLocalProgress = await applyPendingLocalProgress(d.lesson, userId);
       setLesson(lessonWithLocalProgress); setAccessToken(token);
       void offlineStorage.saveLesson({ ...lessonWithLocalProgress, downloadedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(), size: JSON.stringify(lessonWithLocalProgress).length }).catch(() => undefined);
     } catch (err) {
@@ -236,7 +236,7 @@ export default function LessonDetailPage() {
       const sb = createClient();
       try {
         const { data } = await sb.auth.getSession();
-        if (data?.session) { setCurrentUser(data.session.user.id); await loadLesson(data.session.access_token); return; }
+        if (data?.session) { setCurrentUser(data.session.user.id); await loadLesson(data.session.access_token, data.session.user.id); return; }
       } catch {}
       try {
         const cached = await offlineStorage.getLesson(lessonId);
