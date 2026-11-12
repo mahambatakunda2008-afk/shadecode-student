@@ -43,7 +43,7 @@ begin
     raise exception 'Retry must leave exactly one score entry; found %', v_matches;
   end if;
 
-  select (item->>'percentage')::numeric into v_percentage
+  select (entry->>'percentage')::numeric into v_percentage
   from jsonb_array_elements(v_result->'exam_scores') as scores(entry)
   where entry->>'submissionIdentity' = v_identity;
 
