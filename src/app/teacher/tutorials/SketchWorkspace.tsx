@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent, type ReactNode } from "react";
 import { applyHandwritingAlternative, findHandwritingReviewRanges, shouldUseHandwritingRetry, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
+import { getDiagramObjectBounds, hitTestDiagramObject, moveDiagramObjectWithinCanvas, type DiagramObject, type DiagramStyle } from "./diagram-objects";
 
 type Tool = "select" | "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "polygon" | "curve" | "label";
 export type Point = { x: number; y: number };
@@ -338,6 +339,13 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const selectionRef = useRef<{ x: number; y: number; width: number; height: number; image: ImageData } | null>(null);
   const selectionModeRef = useRef<"new" | "move" | null>(null);
   const frameRef = useRef<number | null>(null);
+  const vectorObjectsRef = useRef<DiagramObject[]>([]);
+  const vectorDragRef = useRef<{ id: string; origin: Point; object: DiagramObject } | null>(null);
+  const [vectorObjects, setVectorObjects] = useState<DiagramObject[]>([]);
+  const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
+  const [objectLabelDraft, setObjectLabelDraft] = useState("");
+  const defaultStyle: DiagramStyle = { stroke: INK, fill: "none", strokeWidth: 4 };
+  const commitVectorObjects = (next: DiagramObject[]) => { vectorObjectsRef.current = next; setVectorObjects(next); };
   const [tool, setTool] = useState<Tool>("pen");
   const [label, setLabel] = useState("");
   const [fontSize, setFontSize] = useState(28);
@@ -818,7 +826,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     </div>}
     <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={autoFix} onChange={event => setAutoFix(event.target.checked)} />Auto-fix freehand lines and shapes</label>
     <div className="overflow-hidden rounded-xl border border-[var(--card-border)] bg-white">
-      <canvas ref={canvasRef} onPointerDown={begin} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish} onPointerLeave={finish} className="block h-auto w-full touch-none" style={{ aspectRatio: "12 / 7", cursor: tool === "label" ? "text" : tool === "select" ? "move" : "crosshair" }} aria-label="Drawing canvas. Select and move rectangular regions, draw freehand strokes and shapes, and correct handwriting." />
+      <div className="relative"><canvas ref={canvasRef} onPointerDown={begin} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish} onPointerLeave={finish} className="block h-auto w-full touch-none" style={{ aspectRatio: "12 / 7", cursor: tool === "label" ? "text" : tool === "select" ? "move" : "crosshair" }} aria-label="Drawing canvas. Select and move rectangular regions, draw freehand strokes and shapes, and correct handwriting." />
     </div>
     <p className="text-xs text-[var(--muted-foreground)]" aria-live="polite">{status}</p>
     <div className="flex flex-wrap justify-end gap-2">
