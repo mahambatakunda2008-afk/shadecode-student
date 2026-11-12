@@ -82,7 +82,20 @@ export default function CortexReviewSuggestions() {
               </span>
               <button
                 type="button"
-                onClick={() => router.push(`/learn?subject=${encodeURIComponent(item.subjectKey)}&topic=${encodeURIComponent(item.topicId)}`)}
+                onClick={() => {
+                  const reviewSessionId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+                    ? crypto.randomUUID()
+                    : `review-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                  try {
+                    sessionStorage.setItem("shadecode:cortex:active-review:v1", JSON.stringify({
+                      reviewSessionId,
+                      subjectKey: item.subjectKey,
+                      topicId: item.topicId,
+                      startedAt: new Date().toISOString(),
+                    }));
+                  } catch {}
+                  router.push(`/learn?subject=${encodeURIComponent(item.subjectKey)}&topic=${encodeURIComponent(item.topicId)}`);
+                }}
                 className="h-9 shrink-0 rounded-lg bg-[var(--primary)] px-3 text-xs font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
               >
                 Practise
