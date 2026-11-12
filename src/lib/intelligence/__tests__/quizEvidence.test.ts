@@ -15,7 +15,7 @@ describe("quiz evidence builders", () => {
       type: "question.attempted",
       entityId: "q1",
       attemptId: "attempt-1",
-      subjectId: "Physics",
+      subjectId: "physics",
       topicId: "waves",
     });
     expect(events[0].metadata).toMatchObject({ lessonId: "lesson-7", subject: "Physics", correct: true, percentage: 100 });
