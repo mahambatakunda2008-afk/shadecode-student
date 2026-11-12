@@ -48,11 +48,21 @@ describe("canonical learning event → observation adapter", () => {
     ).toBeNull();
   });
 
-  it("treats completed learning work as positive evidence by default", () => {
+  it("does not infer correctness from completion alone", () => {
     const observation = learningEventToObservation({
       ...baseEvent,
       kind: "lesson_completed",
       metadata: {},
+    });
+
+    expect(observation).toBeNull();
+  });
+
+  it("accepts explicit correctness on completed learning work", () => {
+    const observation = learningEventToObservation({
+      ...baseEvent,
+      kind: "lesson_completed",
+      metadata: { correct: true },
     });
 
     expect(observation?.correct).toBe(true);
