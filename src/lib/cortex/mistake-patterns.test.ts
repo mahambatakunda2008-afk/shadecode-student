@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveRepeatedTopicErrors } from "./mistake-patterns";
+import { deriveRecurringMistakes, deriveRepeatedTopicErrors } from "./mistake-patterns";
 
 const event = (attemptId: string, correct: boolean, topicId = "Differentiation", subjectId = "Mathematics") => ({
   type: "question_attempted",
@@ -43,5 +43,34 @@ describe("deriveRepeatedTopicErrors", () => {
       type: "question_attempted",
       data: { attemptId: "exam-1", subjectId: "Mathematics", topicId: "Functions", metadata: {} },
     }])).toEqual([]);
+  });
+});
+
+describe("deriveRecurringMistakes", () => {
+  it("requires the same diagnosed mistake ID across distinct attempts", () => {
+    const diagnosed = (attemptId: string, mistakeId: string) => ({
+      type: "question_attempted",
+      data: {
+        attemptId,
+        subjectId: "Mathematics",
+        topicId: "Differentiation",
+        occurredAt: "2026-11-12T10:00:00.000Z",
+        metadata: { correct: false, mistakeId },
+      },
+    });
+    expect(deriveRecurringMistakes([
+      diagnosed("exam-1", "chain-rule-omitted-inner-derivative"),
+      diagnosed("exam-1", "chain-rule-omitted-inner-derivative"),
+      diagnosed("exam-2", "chain-rule-omitted-inner-derivative"),
+      diagnosed("exam-3", "sign-error"),
+    ])).toEqual([{
+      subjectKey: "Mathematics",
+      topicId: "Differentiation",
+      mistakeId: "chain-rule-omitted-inner-derivative",
+      incorrectResponses: 3,
+      distinctAttempts: 2,
+      lastObservedAt: "2026-11-12T10:00:00.000Z",
+      evidenceState: "recurring_mistake",
+    }]);
   });
 });
