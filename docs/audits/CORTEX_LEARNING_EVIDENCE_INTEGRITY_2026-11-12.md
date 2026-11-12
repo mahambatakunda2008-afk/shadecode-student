@@ -56,6 +56,8 @@ GitHub Actions CI is configured in `.github/workflows/ci.yml` to run typecheck, 
 
 The production build for the code above completed and the deployment is READY. A real authenticated learner attempt has not yet been submitted end-to-end, so runtime event insertion and subsequent retrieval remain unverified.
 
+After that deployment, four follow-up commits (`ffe1c45`, `a0ac191`, `5deb171`, `7117dc7`) hardened subject attribution: the event writer now takes `subjectId` from the server-resolved curriculum identity rather than trusting the request payload, and regression coverage checks that boundary. These commits are on `main` but are **not deployed**: Vercel again rejected their builds with the free-plan `build-rate-limit` status. Production therefore remains on `eeeb544` until the limit resets and the newer source builds successfully.
+
 ## Additional event-pipeline findings
 
 A production schema/data inspection found why existing event history has not been enough to drive reliable longitudinal patterns:
