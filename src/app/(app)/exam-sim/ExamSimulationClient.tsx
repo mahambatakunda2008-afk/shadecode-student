@@ -10,6 +10,7 @@ import { trackEvent } from "@/lib/traction/client";
 import { createClient } from "@/lib/supabase/client";
 import { matchAllowedSubject, isGeneralSubject } from "@/lib/academic/subjectContract";
 import type { ExamQuestion, ExamResults } from "@/lib/exam/types";
+import { resolveExamLearningContext } from "@/lib/exam/learningContext";
 import { clearPendingChallenge } from "@/lib/challenge/pending";
 import { isValidGeneratedPaper } from "@/lib/exam/paperValidation";
 import { defaultExamLevelIndex } from "@/lib/exam/defaultLevel";
@@ -113,8 +114,9 @@ export default function ExamSimulationClient() {
   }, [examInstanceId, safeCount, subject, subjectReady, topic]);
 
   const handleFinished = (result: ExamResults) => {
-    const eventSubject = result.subject?.trim() || subject || undefined;
-    const eventTopic = result.topic?.trim() || topic || undefined;
+    const learningContext = resolveExamLearningContext(result, { subject, topic });
+    const eventSubject = learningContext.subject;
+    const eventTopic = learningContext.topic;
     if (challengeId && marking === "server") {
       // Verified battle: the server already marked and recorded this attempt and told us who won.
       if (typeof result.won === "boolean") { setBattle({ won: result.won, percentage: Math.round(result.percentage), verified: true }); clearPendingChallenge(); }
