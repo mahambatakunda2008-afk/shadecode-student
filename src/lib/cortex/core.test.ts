@@ -123,7 +123,7 @@ describe("CortexCore learning requests", () => {
       userId: "learner-1",
       accessToken: "learner-access-token",
       type: "practice",
-      curriculum: { identity: { syllabusId: "cambridge-9700" } } as any,
+      curriculum: { identity: { syllabusId: "cambridge-9700", subjectId: "biology" } } as any,
       payload: {
         attemptId: "attempt-1",
         questionId: "question-1",
@@ -139,6 +139,7 @@ describe("CortexCore learning requests", () => {
       userId: "learner-1",
       accessToken: "learner-access-token",
       payload: expect.objectContaining({ attemptId: "attempt-1" }),
+      subjectId: "biology",
       score: 100,
       syllabusId: "cambridge-9700",
     });
