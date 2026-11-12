@@ -348,7 +348,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [objectLabelDraft, setObjectLabelDraft] = useState("");
   const defaultStyle: DiagramStyle = { stroke: INK, fill: "none", strokeWidth: 4 };
-  const commitVectorObjects = (next: DiagramObject[]) => { vectorHistoryRef.current = [...vectorHistoryRef.current.slice(-24), vectorObjectsRef.current.map(object => ({ ...object }))]; vectorObjectsRef.current = next; setVectorObjects(next); setCanUndo(true); };
+  const commitVectorObjects = (next: DiagramObject[]) => { vectorHistoryRef.current = [...vectorHistoryRef.current.slice(-24), next.map(object => ({ ...object }))]; vectorObjectsRef.current = next; setVectorObjects(next); setCanUndo(vectorHistoryRef.current.length > 1); };
   const [tool, setTool] = useState<Tool>("pen");
   const [label, setLabel] = useState("");
   const [fontSize, setFontSize] = useState(28);
@@ -603,7 +603,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const point = pointFromEvent(event);
     if (tool === "select") {
       const selectedVector = vectorObjectsRef.current.find(object => object.id === selectedObjectId);
-      if (selectedVector?.type === "polygon") { const index=selectedVector.points.findIndex(vertex=>distance(point,vertex)<=16); if(index>=0){vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];vectorPointDragRef.current={id:selectedVector.id,kind:"polygon",index,origin:point,object:selectedVector};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
+      if (selectedVector?.type === "polygon") { const index=selectedVector.points.findIndex(vertex=>distance(point,vertex)<=16); if(index>=0){vectorPointDragRef.current={id:selectedVector.id,kind:"polygon",index,origin:point,object:selectedVector};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
       if (selectedVector?.type === "curve") { const index=selectedVector.segments.findIndex(segment=>distance(point,segment.control)<=16); if(index>=0){vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];vectorPointDragRef.current={id:selectedVector.id,kind:"curve",index,origin:point,object:selectedVector};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
       if (selectedVector) { const bounds=getDiagramObjectBounds(selectedVector), handle={x:bounds.x+bounds.width,y:bounds.y+bounds.height}; if(distance(point,handle)<=18){vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];vectorResizeRef.current={id:selectedVector.id,origin:point,object:selectedVector,bounds};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
       const hit=[...vectorObjectsRef.current].reverse().find(object=>hitTestDiagramObject(object,point,14));
@@ -688,9 +688,9 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     if (frameRef.current !== null) { cancelAnimationFrame(frameRef.current); frameRef.current = null; }
     const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
     if(!canvas||!ctx)return;
-    if(vectorPointDragRef.current){vectorPointDragRef.current=null;setCanUndo(true);setStatus("Diagram control point adjusted.");return;}
-    if(vectorResizeRef.current){vectorResizeRef.current=null;setCanUndo(true);setStatus("Object resized. It remains independently editable.");return;}
-    if(vectorDragRef.current){vectorDragRef.current=null;setCanUndo(true);setStatus("Object moved. It remains independently editable.");return;}
+    if(vectorPointDragRef.current){vectorPointDragRef.current=null;vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];setCanUndo(true);setStatus("Diagram control point adjusted.");return;}
+    if(vectorResizeRef.current){vectorResizeRef.current=null;vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];setCanUndo(true);setStatus("Object resized. It remains independently editable.");return;}
+    if(vectorDragRef.current){vectorDragRef.current=null;vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];setCanUndo(true);setStatus("Object moved. It remains independently editable.");return;}
     if(!snapshotRef.current)return;
     const points = pointsRef.current;
     ctx.putImageData(snapshotRef.current, 0, 0);
