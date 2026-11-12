@@ -197,9 +197,48 @@ export default function LessonDetailPage() {
   const [showToast, setShowToast] = useState(false);
   const [completionSynced, setCompletionSynced] = useState(false);
   const [understanding, setUnderstanding] = useState<"explain" | "apply" | "review" | null>(null);
+  const [personalNotes, setPersonalNotes] = useState("");
+  const [notesReady, setNotesReady] = useState(false);
+  const [notesSavedAt, setNotesSavedAt] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState(0);
   const restoredScrollRef = useRef(false);
   const narration = useLessonNarration(lesson?.blocks ?? []);
+
+  const notesRecordId = (userId: string) => `lesson-notes:${userId}:${lessonId}`;
+
+  useEffect(() => {
+    let cancelled = false;
+    setNotesReady(false);
+    setPersonalNotes("");
+    setNotesSavedAt(null);
+    if (!currentUser || !lessonId) return;
+    void localFirstStore.get<{ content: string; savedAt: string }>(notesRecordId(currentUser))
+      .then(record => {
+        if (!cancelled && record?.userId === currentUser && !record.deletedAt) {
+          setPersonalNotes(typeof record.payload?.content === "string" ? record.payload.content : "");
+          setNotesSavedAt(record.payload?.savedAt ?? null);
+        }
+      })
+      .catch(error => console.error("[LessonNotes] Could not restore local notes:", error))
+      .finally(() => { if (!cancelled) setNotesReady(true); });
+    return () => { cancelled = true; };
+  }, [currentUser, lessonId]);
+
+  useEffect(() => {
+    if (!currentUser || !lesson || !notesReady) return;
+    const timeout = window.setTimeout(() => {
+      const savedAt = new Date().toISOString();
+      void localFirstStore.upsert({
+        id: notesRecordId(currentUser),
+        entity: "study_state",
+        entityId: lessonId,
+        userId: currentUser,
+        payload: { content: personalNotes, savedAt },
+      }).then(() => setNotesSavedAt(savedAt))
+        .catch(error => console.error("[LessonNotes] Local save failed:", error));
+    }, 450);
+    return () => window.clearTimeout(timeout);
+  }, [currentUser, lesson, lessonId, notesReady, personalNotes]);
 
   const applyPendingLocalProgress = async (base: Lesson, userId: string): Promise<Lesson> => {
     if (!userId) return base;
@@ -433,6 +472,25 @@ export default function LessonDetailPage() {
           <div className="lesson-content">
             <div className="lesson-reading-meta"><Clock size={12} />{readingMinutes} min read<span className="lesson-reading-dot" />{coreBlocks.length} sections<span className="lesson-reading-dot" />{progressLabel}</div>
             {blocks.map((block, i) => FLOW.has(block.type) ? <LessonUnit key={i} id={`lesson-section-${i}`} block={block} number={++unitNumber} /> : <AsideUnit key={i} block={block} />)}
+
+          <section aria-labelledby="personal-notes-title" style={{ margin: "24px 0", padding: 18, border: "1px solid var(--border-subtle)", borderRadius: 16, background: "var(--surface)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 10 }}>
+              <div>
+                <h2 id="personal-notes-title" style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>My lesson notes</h2>
+                <p style={{ margin: "4px 0 0", color: "var(--muted-foreground)", fontSize: 12 }}>Private to this account on this device. Notes save automatically, including offline.</p>
+              </div>
+              <span role="status" style={{ color: "var(--muted-foreground)", fontSize: 11, whiteSpace: "nowrap" }}>{!notesReady ? "Loading…" : notesSavedAt ? "Saved on device" : "Ready"}</span>
+            </div>
+            <textarea
+              aria-label="Personal notes for this lesson"
+              value={personalNotes}
+              onChange={event => setPersonalNotes(event.target.value)}
+              disabled={!notesReady}
+              placeholder="Write your own explanation, examples, questions, or reminders…"
+              rows={5}
+              style={{ display: "block", width: "100%", resize: "vertical", boxSizing: "border-box", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--background)", color: "var(--foreground)", font: "inherit", fontSize: 13, lineHeight: 1.6 }}
+            />
+          </section>
 
           <section className="lesson-loop" aria-labelledby="learning-check-title">
             <div className="lesson-loop-head">
