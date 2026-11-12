@@ -26,18 +26,37 @@ function VideoBlock({ block }: { block: TutorialBlock }) {
 
 function GraphBlock({ block }: { block: TutorialBlock }) {
   const raw = block.data?.points;
-  const points = Array.isArray(raw) ? raw.filter((p): p is { x: number; y: number; label?: string } => !!p && typeof p === "object" && Number.isFinite((p as {x:number}).x) && Number.isFinite((p as {y:number}).y)) : [];
+  const points = Array.isArray(raw) ? raw.filter((p): p is { x: number; y: number; label?: string } => !!p && typeof p === "object" && Number.isFinite((p as {x:number}).x) && Number.isFinite((p as {y:number}).y)).slice(0, 100) : [];
   if (points.length < 2) return <pre className="overflow-auto rounded-xl bg-[var(--surface-2)] p-3 text-xs">{JSON.stringify(block.data, null, 2)}</pre>;
   const xs = points.map(p => p.x), ys = points.map(p => p.y);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-  const x = (v: number) => 24 + (v - minX) / (maxX - minX || 1) * 352;
-  const y = (v: number) => 176 - (v - minY) / (maxY - minY || 1) * 152;
-  return <svg viewBox="0 0 400 200" role="img" aria-label={block.title || "Teacher graph"} className="w-full rounded-xl bg-[var(--surface-2)] p-2"><path d="M24 12V176H380" stroke="currentColor" opacity=".5" fill="none" /><polyline points={points.map(p => `${x(p.x)},${y(p.y)}`).join(" ")} stroke="var(--primary)" strokeWidth="3" fill="none" />{points.map((p,i)=><circle key={i} cx={x(p.x)} cy={y(p.y)} r="4" fill="var(--primary)" />)}</svg>;
+  const xLabel = typeof block.data?.xLabel === "string" ? block.data.xLabel.slice(0, 80) : "X";
+  const yLabel = typeof block.data?.yLabel === "string" ? block.data.yLabel.slice(0, 80) : "Y";
+  const x = (v: number) => 34 + (v - minX) / (maxX - minX || 1) * 332;
+  const y = (v: number) => 166 - (v - minY) / (maxY - minY || 1) * 132;
+  const format = (value: number) => Number(value.toPrecision(4)).toString();
+  return <svg viewBox="0 0 400 210" role="img" aria-label={`${block.title || "Teacher graph"}. Horizontal axis: ${xLabel}. Vertical axis: ${yLabel}.`} className="w-full rounded-xl bg-[var(--surface-2)] p-2">
+    {[0, 1, 2, 3, 4].map(i => {
+      const px = 34 + i * 83, py = 166 - i * 33;
+      const xv = minX + (maxX - minX) * i / 4, yv = minY + (maxY - minY) * i / 4;
+      return <g key={i} fill="currentColor" opacity=".72" fontSize="9">
+        <line x1={px} y1="34" x2={px} y2="166" stroke="currentColor" opacity=".12" />
+        <line x1="34" y1={py} x2="366" y2={py} stroke="currentColor" opacity=".12" />
+        <text x={px} y="180" textAnchor="middle">{format(xv)}</text>
+        <text x="28" y={py + 3} textAnchor="end">{format(yv)}</text>
+      </g>;
+    })}
+    <path d="M34 34V166H366" stroke="currentColor" opacity=".65" fill="none" />
+    <polyline points={points.map(p => `${x(p.x)},${y(p.y)}`).join(" ")} stroke="var(--primary)" strokeWidth="3" fill="none" />
+    {points.map((p,i)=><circle key={i} cx={x(p.x)} cy={y(p.y)} r="4" fill="var(--primary)" />)}
+    <text x="200" y="204" textAnchor="middle" fontSize="10" fill="currentColor">{xLabel}</text>
+    <text x="9" y="100" textAnchor="middle" fontSize="10" fill="currentColor" transform="rotate(-90 9 100)">{yLabel}</text>
+  </svg>;
 }
 
 function TableBlock({ block }: { block: TutorialBlock }) {
-  const headers = Array.isArray(block.data?.headers) ? block.data?.headers as unknown[] : [];
-  const rows = Array.isArray(block.data?.rows) ? block.data?.rows as unknown[][] : [];
+  const headers = Array.isArray(block.data?.headers) ? (block.data.headers as unknown[]).slice(0, 20) : [];
+  const rows = Array.isArray(block.data?.rows) ? (block.data.rows as unknown[]).filter(Array.isArray).slice(0, 100) as unknown[][] : [];
   if (!headers.length) return <pre className="overflow-auto rounded-xl bg-[var(--surface-2)] p-3 text-xs">{JSON.stringify(block.data, null, 2)}</pre>;
   return <div className="overflow-x-auto rounded-xl border border-[var(--card-border)]"><table className="w-full border-collapse text-left text-sm"><thead className="bg-[var(--surface-2)]"><tr>{headers.map((h,i)=><th key={i} className="p-3 font-semibold">{String(h)}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i} className="border-t border-[var(--card-border)]">{headers.map((_,j)=><td key={j} className="p-3">{String(row?.[j] ?? "")}</td>)}</tr>)}</tbody></table></div>;
 }
