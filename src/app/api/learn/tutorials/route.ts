@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (!admin) return NextResponse.json({ error: "Published tutorials are temporarily unavailable.", tutorials: [], retryable: true }, { status: 503 });
     const { data, error } = await admin
       .from("teacher_tutorials")
-      .select("id,title,subject,topic,summary,version,published_at,updated_at")
+      .select("id,title,subject,topic,summary,version,published_at,updated_at,verified_at")
       .eq("status", "published")
       .order("published_at", { ascending: false })
       .limit(200);

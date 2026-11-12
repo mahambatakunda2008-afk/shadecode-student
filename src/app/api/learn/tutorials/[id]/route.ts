@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, { params }: Context) {
 
     const { data, error } = await admin
       .from("teacher_tutorials")
-      .select("id,title,subject,topic,summary,blocks,version,published_at")
+      .select("id,title,subject,topic,summary,blocks,version,published_at,verified_at")
       .eq("id", id)
       .eq("status", "published")
       .maybeSingle();
@@ -54,7 +54,14 @@ export async function GET(request: NextRequest, { params }: Context) {
       return block;
     }));
 
-    return NextResponse.json({ tutorial: { ...data, blocks } }, { headers: { "Cache-Control": "private, no-store" } });
+    const { count: verifiedReviews } = await admin
+      .from("teacher_tutorial_reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("tutorial_id", id)
+      .eq("tutorial_version", data.version)
+      .eq("verdict", "verified");
+
+    return NextResponse.json({ tutorial: { ...data, verified_reviews: verifiedReviews ?? 0, blocks } }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("[learn/tutorials/id]", error);
     return NextResponse.json({ error: "Tutorial could not be loaded.", retryable: true }, { status: 503 });

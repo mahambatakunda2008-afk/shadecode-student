@@ -1,12 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, ChevronDown, ChevronUp, ExternalLink, Image as ImageIcon, Loader2, Play, Video } from "lucide-react";
 import { offlineStorage } from "@/lib/offline/storage";
+import TeacherVerifiedBadge from "@/components/learn/TeacherVerifiedBadge";
 
-type TutorialSummary = { id: string; title: string; subject: string; topic: string | null; summary: string | null; published_at: string | null };
+type TutorialSummary = { id: string; title: string; subject: string; topic: string | null; summary: string | null; published_at: string | null; verified_at?: string | null };
 type TutorialBlock = { id: string; type: string; title?: string; content?: string; caption?: string; alt?: string; transcript?: string; provider?: "youtube" | "drive"; providerId?: string; data?: Record<string, unknown>; mediaUrl?: string | null; mediaBlob?: Blob };
-type Tutorial = TutorialSummary & { blocks: TutorialBlock[]; version: number };
+export type Tutorial = TutorialSummary & { blocks: TutorialBlock[]; version: number; verified_reviews?: number };
+export type { TutorialSummary, TutorialBlock };
 
 function VideoBlock({ block }: { block: TutorialBlock }) {
   const [started, setStarted] = useState(false);
@@ -60,6 +63,19 @@ function Block({ block }: { block: TutorialBlock }) {
   if (block.type === "graph") return <section className="rounded-2xl border border-[var(--card-border)] p-4"><h3 className="mb-3 font-semibold">{block.title || "Graph"}</h3><GraphBlock block={block} />{block.caption && <p className="mt-2 text-sm text-[var(--muted-foreground)]">{block.caption}</p>}</section>;
   if (block.type === "table") return <section className="rounded-2xl border border-[var(--card-border)] p-4"><h3 className="mb-3 font-semibold">{block.title || "Data table"}</h3><TableBlock block={block} /></section>;
   return <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4"><h3 className="mb-2 font-semibold">{block.title || "Teacher explanation"}</h3><div className="whitespace-pre-wrap text-sm leading-7 text-[var(--muted-foreground)]">{block.content}</div></section>;
+}
+
+export function TutorialArticle({ tutorial, className = "", headingLevel = 2 }: { tutorial: Tutorial; className?: string; headingLevel?: 1 | 2 }) {
+  const Heading = headingLevel === 1 ? "h1" : "h2";
+  return <article className={`space-y-4 ${className}`}>
+    <div>
+      <p className="text-xs font-bold uppercase tracking-wider text-[var(--primary)]">{tutorial.subject}{tutorial.topic ? ` · ${tutorial.topic}` : ""}</p>
+      <Heading className="mt-1 text-xl font-bold">{tutorial.title}</Heading>
+      <div className="mt-2"><TeacherVerifiedBadge detail verifiedAt={tutorial.verified_at} reviewCount={tutorial.verified_reviews} /></div>
+      {tutorial.summary && <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{tutorial.summary}</p>}
+    </div>
+    {tutorial.blocks.map(block => <Block key={block.id} block={block} />)}
+  </article>;
 }
 
 export default function TeacherTutorials({ subject }: { subject: string }) {
@@ -118,14 +134,15 @@ export default function TeacherTutorials({ subject }: { subject: string }) {
   if (!items.length && !error) return null;
   return <section className="mt-8 rounded-3xl border border-[var(--card-border)] bg-[var(--surface-raised)] p-4 sm:p-6" aria-label={title}>
     <button type="button" onClick={() => setExpanded(v => !v)} className="flex w-full items-center justify-between gap-3 text-left">
-      <span className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><BookOpen size={20}/></span><span><strong className="block text-base">Teacher tutorials</strong><span className="text-xs text-[var(--muted-foreground)]">{subject} · reviewed classroom resources</span></span></span>
+      <span className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><BookOpen size={20}/></span><span><strong className="block text-base">Teacher tutorials</strong><span className="text-xs text-[var(--muted-foreground)]">{subject} · checked by teachers</span></span></span>
       {expanded ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}
     </button>
     {expanded && <div className="mt-4 space-y-3">
       {error && <p role="status" className="text-sm text-amber-600">{error}</p>}
-      {items.map(item=><button key={item.id} type="button" onClick={() => void openTutorial(item.id)} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 text-left hover:border-[var(--primary)]"><span className="min-w-0"><strong className="block truncate text-sm">{item.title}</strong><span className="mt-1 block text-xs text-[var(--muted-foreground)]">{item.topic || item.subject}{item.summary ? ` · ${item.summary}` : ""}</span></span><ExternalLink size={16} className="shrink-0 text-[var(--muted-foreground)]"/></button>)}
+      {items.map(item=><button key={item.id} type="button" onClick={() => void openTutorial(item.id)} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 text-left hover:border-[var(--primary)]"><span className="min-w-0"><strong className="block truncate text-sm">{item.title}</strong><span className="mt-1.5 block"><TeacherVerifiedBadge compact verifiedAt={item.verified_at} /></span><span className="mt-1 block text-xs text-[var(--muted-foreground)]">{item.topic || item.subject}{item.summary ? ` · ${item.summary}` : ""}</span></span><ExternalLink size={16} className="shrink-0 text-[var(--muted-foreground)]"/></button>)}
+      <Link href="/learn/tutorials" className="block text-center text-xs font-semibold text-[var(--primary)]">Browse all teacher tutorials →</Link>
       {busy && <p className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]"><Loader2 size={16} className="animate-spin"/>Opening tutorial…</p>}
-      {selected && <article className="mt-4 space-y-4 border-t border-[var(--card-border)] pt-5"><div><p className="text-xs font-bold uppercase tracking-wider text-[var(--primary)]">{selected.subject}{selected.topic ? ` · ${selected.topic}` : ""}</p><h2 className="mt-1 text-xl font-bold">{selected.title}</h2>{selected.summary && <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{selected.summary}</p>}</div>{selected.blocks.map(block=><Block key={block.id} block={block}/>)}</article>}
+      {selected && <TutorialArticle tutorial={selected} className="mt-4 border-t border-[var(--card-border)] pt-5" />}
     </div>}
   </section>;
 }
