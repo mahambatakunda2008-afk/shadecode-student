@@ -3,6 +3,7 @@ import "server-only";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { deriveRecurringMistakes, deriveRepeatedTopicErrors, type RecurringMistake, type RepeatedTopicError } from "./mistake-patterns";
+import { deriveSpacedRetrievalEvidence, type SpacedRetrievalEvidence } from "./spaced-retrieval";
 
 export type EvidenceState = "available" | "insufficient_evidence" | "unavailable";
 
@@ -63,6 +64,13 @@ export interface CortexStudentContext {
     inspectedEventCount: number;
     repeatedTopicErrors: RepeatedTopicError[];
     recurringMistakes: RecurringMistake[];
+  };
+  spacedRetrieval: {
+    state: EvidenceState;
+    source: "cortex_events";
+    inspectedEventCount: number;
+    topics: SpacedRetrievalEvidence[];
+    interpretation: "descriptive_only";
   };
 }
 
@@ -168,6 +176,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
   const mistakeEvents = mistakeEventsResult.data ?? [];
   const repeatedTopicErrors = deriveRepeatedTopicErrors(mistakeEvents);
   const recurringMistakes = deriveRecurringMistakes(mistakeEvents);
+  const spacedRetrieval = deriveSpacedRetrievalEvidence(mistakeEvents);
 
   return {
     schemaVersion: 1,
@@ -209,6 +218,13 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       inspectedEventCount: mistakeEvents.length,
       repeatedTopicErrors,
       recurringMistakes,
+    },
+    spacedRetrieval: {
+      state: spacedRetrieval.length > 0 ? "available" : "insufficient_evidence",
+      source: "cortex_events",
+      inspectedEventCount: mistakeEvents.length,
+      topics: spacedRetrieval,
+      interpretation: "descriptive_only",
     },
   };
 }
