@@ -102,9 +102,12 @@ Do not replace the existing stores or introduce a second mastery model.
 
 - Added a server-only `resolveAuthenticatedCortexStudentContext()` resolver. It accepts no user ID and derives identity from `supabase.auth.getUser()`.
 - Added `GET /api/cortex/student-context`, supporting browser cookie sessions and native bearer tokens, with private/no-store caching and 401/503 failure semantics.
-- The resolver reads only the authenticated learner's `cortex_memory` and `topic_mastery` rows. Missing rows are represented as `insufficient_evidence`; read failures throw rather than masquerading as empty learner history.
+- The resolver reads the authenticated learner's `profiles`, `cortex_memory`, `topic_mastery`, and recent `cortex_events` rows. Missing rows are represented as `insufficient_evidence`; read failures throw rather than masquerading as empty learner history.
+- Recent canonical `question_attempted` events are analysed for repeated topic-level errors. A pattern requires incorrect responses across at least two distinct attempt IDs; several wrong questions in one exam do not count as a recurring weakness.
+- Event-derived patterns require explicit subject, topic, attempt ID, and `metadata.correct === false`. Older unscoped events are ignored for cross-session pattern claims. The system does not label a specific misconception without a stable, validated mistake identifier.
 - Cortex Learn now forwards the already-authenticated bearer token to the resolver, loads the same durable context, and passes it to the deterministic tutor. If the read is unavailable, tutoring continues without continuity claims.
-- The tutor only references recorded attempts when the topic key, subject key and exact verified syllabus ID match. It does not expose a mastery percentage or claim a misconception from this limited evidence.
+- The tutor only references recorded topic attempts when the topic key, subject key and exact verified syllabus ID match. It does not expose a mastery percentage or claim a misconception from this limited evidence.
+- The student-context API now also exposes repeated topic-level error evidence from canonical events. This is an evidence layer, not yet a complete misconception diagnosis or a calibrated forgetting model. Event history is currently bounded to the 500 most recent question attempts per context read.
 - Added focused tests for matching topic/subject, cross-subject isolation, and absent evidence.
 
 This is the first integration slice, not the complete student model. It does not yet connect every product workflow, objective progress, preferences, misconception taxonomy, or a calibrated forgetting model.
