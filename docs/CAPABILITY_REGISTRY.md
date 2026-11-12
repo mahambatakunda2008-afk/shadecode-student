@@ -39,6 +39,7 @@ Do not delete or avoid a capability merely because it is not ready for the defau
 | Local learning state reducer | Cortex | ✓ | ✓ | ✓ | 🔵 | Invisible |
 | Shared mastery score transition | Cortex | ✓ | ✓ | ✓ | 🔵 | Invisible |
 | Rich learning-state dimensions | Cortex | ✓ | ✓ | ✓ | 🔵 | Progressive |
+| Authenticated learner-context resolver | Cortex/Data | ✓ | ✓ | ✓ | 🟣 | Invisible |
 | Durable richer mastery projection | Cortex/Data | ✓ | ✓ | ✓ | 🟣 | Progressive |
 | Knowledge graph | Cortex | ✓ | ✓ | ✓ | ⚪ | Invisible |
 | Concept prerequisites | Cortex | ✓ | ✓ | ✓ | ⚪ | Invisible |
