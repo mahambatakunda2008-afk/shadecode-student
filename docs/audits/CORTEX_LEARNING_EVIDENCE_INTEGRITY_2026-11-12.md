@@ -18,15 +18,16 @@ Date: 2026-11-12
 
 - `20261112173852_add_cortex_learning_context_fields.sql`
 - `20261112174149_separate_cortex_weak_topics_from_subjects.sql`
-- `20261112175000_add_last_practice_subject_context.sql`
-- `20261112175500_add_last_practice_syllabus_context.sql`
+- `20261112182321_add_last_practice_subject_context.sql`
+- `20261112182406_add_last_practice_syllabus_context.sql`
 
-Both migrations were applied to the connected production Supabase project and the resulting columns were verified through `information_schema.columns`.
+All four migrations were applied to the connected production Supabase project and the resulting columns were verified through `information_schema.columns`.
 
 ## Regression coverage added
 
 - Tutoring requests do not create completed study sessions or streaks.
-- Practice scores do not update formal exam averages.
+- Practice scores do not update formal exam averages or erase existing topic weaknesses when no weakness evidence was produced.
+- Practice memory clears stale subject and syllabus attribution when a verified context is unavailable.
 - Ungraded practice does not persist a fabricated score.
 - Feedback is stored only as bounded text.
 - Persistent memory reads and writes keep weak subjects, weak topics, practice scores, and exam averages separate.
