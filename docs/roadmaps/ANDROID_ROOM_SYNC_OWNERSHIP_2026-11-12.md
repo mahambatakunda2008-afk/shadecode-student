@@ -34,3 +34,22 @@ Date: 2026-11-12
 - Lesson progress uses the account-scoped durable queue: `54152fc16e03a0cd85e0065bd3ba384e76b32fff`
 - Room schema default alignment: `32004041699fa797d83b0402da31bef2c5a69b21`
 - WorkManager scheduling after enqueue: `a783051ce4dc90248d11a259d13ccfc626c4a589`
+
+
+## Follow-up: isolate cached lesson progress (Room v4)
+
+- Advanced Room from v3 to v4.
+- Changed `lesson_progress` to a composite primary key of `accountId + lessonId`.
+- Updated progress reads and writes to always include the authenticated `session.userId`.
+- Added migration 3→4. Existing progress rows are retained under the empty, unassigned account namespace. They are not exposed to any signed-in account because normal reads require an exact account ID.
+- The lesson and subject tables remain shared curriculum caches, not learner-owned records. They contain lesson/subject content; learner progress is now separately account-scoped.
+- Task snapshots, timetable snapshots, profile snapshots, and the Preferences-based pending-operation queue were already keyed by account ID in `NativeStore`; this follow-up did not rewrite them.
+
+### Additional commit
+
+- Room v4 account-scoped lesson progress: `6861c7c92927af96498ca05d3440e04ef818c4ac`
+- Reader account-scoped progress access: `fcff32e8fa77498493d0f14d5aa66271d9a749a2`
+
+### Remaining migration caveat
+
+Legacy lesson-progress rows are preserved but held in the unassigned namespace. An explicit recovery/export path is still needed if the original owner must reclaim that progress. No automatic assignment is safe because the old database did not store the account ID.
