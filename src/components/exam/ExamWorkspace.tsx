@@ -326,13 +326,19 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
             weak_areas: markingData.weakAreas ?? [],
             time_taken: totalRef.current - secondsRef.current
           };
-          const { data: saved } = resultIdentity
-            ? await supabase.from("exam_results").upsert(resultPayload, { onConflict: "user_id,attempt_id" }).select("id").single()
-            : await supabase.from("exam_results").insert(resultPayload).select("id").single();
-          // Keep the sat questions so this result can later be turned into a fair battle.
+          const { data: inserted, error: insertError } = await supabase.from("exam_results").insert(resultPayload).select("id").single();
+          let saved = inserted;
+          const createdNewResult = !insertError && Boolean(inserted?.id);
+          if (insertError?.code === "23505" && resultIdentity) {
+            const { data: existingResult } = await supabase.from("exam_results").select("id").eq("user_id", userId).eq("attempt_id", resultIdentity).maybeSingle();
+            saved = existingResult;
+          }
+          // Preserve question snapshots only on first creation, never duplicate them on a retry.
           const frozen = sanitizeQuestions(questions);
           if (saved?.id) setSavedResultId(saved.id);
-          if (saved?.id && frozen && !serverMarkChallengeId) await supabase.from("exam_result_questions").insert({ result_id: saved.id, user_id: userId, questions: frozen });
+          if (createdNewResult && saved?.id && frozen && !serverMarkChallengeId) {
+            await supabase.from("exam_result_questions").insert({ result_id: saved.id, user_id: userId, questions: frozen });
+          }
         } catch {}
       }
       if (workId.current && userId && !serverMarkChallengeId) {
