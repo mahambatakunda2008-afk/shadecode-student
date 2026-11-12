@@ -54,9 +54,10 @@ export type HandwritingNotationWarning = "numbers" | "equations" | "units" | "ch
 /** Detect protected notation changed by the OCR correction pass. A change is a review flag, never an automatic rejection. */
 export function findHandwritingNotationWarnings(transcript: string, correctedText: string): HandwritingNotationWarning[] {
   if (!transcript || !correctedText || transcript === correctedText) return [];
-  const occurrences = (value: string, pattern: RegExp) => [...value.matchAll(pattern)].map(match => match[0]).sort();
+  const occurrences = (value: string, pattern: RegExp) => [...value.matchAll(pattern)]
+    .map(match => ({ index: match.index ?? 0, token: match[0] }));
   // Arithmetic operators are protected only between mathematical operands, not prose punctuation.
-  const arithmeticOperators = /[A-Za-zΑ-Ωα-ω0-9)]\s*(?:[+−×÷*/^]|\s-\s)\s*[A-Za-zΑ-Ωα-ω0-9]/g;
+  const arithmeticOperators = /[A-Za-zΑ-Ωα-ω0-9)]\\s*(?:[+−×÷*/^]|\\s-\\s)\\s*[A-Za-zΑ-Ωα-ω0-9]/g;
   const checks: Array<[HandwritingNotationWarning, RegExp]> = [
     ["numbers", /\b\d+(?:[.,]\d+)?(?:[eE][+-]?\d+)?\b/g],
     ["equations", /\b[A-Za-z][A-Za-z0-9_]*\s*(?:=|≈|≠|≤|≥|<|>)\s*[A-Za-z0-9_α-ωΑ-Ωπμλθ√∞.+\-*/^()]+/g],
@@ -70,10 +71,10 @@ export function findHandwritingNotationWarnings(transcript: string, correctedTex
     if (label === "scientific symbols") {
       original.push(...occurrences(transcript, arithmeticOperators));
       corrected.push(...occurrences(correctedText, arithmeticOperators));
-      original.sort();
-      corrected.sort();
+      original.sort((a, b) => a.index - b.index);
+      corrected.sort((a, b) => a.index - b.index);
     }
-    return JSON.stringify(original) !== JSON.stringify(corrected);
+    return JSON.stringify(original.map(item => item.token)) !== JSON.stringify(corrected.map(item => item.token));
   }).map(([label]) => label);
 }
 
