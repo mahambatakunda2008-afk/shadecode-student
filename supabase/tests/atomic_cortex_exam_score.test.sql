@@ -36,16 +36,16 @@ begin
   ));
 
   select count(*) into v_matches
-  from jsonb_array_elements(v_result->'exam_scores') as item
-  where item->>'submissionIdentity' = v_identity;
+  from jsonb_array_elements(v_result->'exam_scores') as scores(entry)
+  where entry->>'submissionIdentity' = v_identity;
 
   if v_matches <> 1 then
     raise exception 'Retry must leave exactly one score entry; found %', v_matches;
   end if;
 
   select (item->>'percentage')::numeric into v_percentage
-  from jsonb_array_elements(v_result->'exam_scores') as item
-  where item->>'submissionIdentity' = v_identity;
+  from jsonb_array_elements(v_result->'exam_scores') as scores(entry)
+  where entry->>'submissionIdentity' = v_identity;
 
   if v_percentage <> 90 then
     raise exception 'Retry must replace the prior score; expected 90, got %', v_percentage;
