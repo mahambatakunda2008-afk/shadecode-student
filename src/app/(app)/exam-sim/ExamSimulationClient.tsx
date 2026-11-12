@@ -113,6 +113,8 @@ export default function ExamSimulationClient() {
   }, [examInstanceId, safeCount, subject, subjectReady, topic]);
 
   const handleFinished = (result: ExamResults) => {
+    const eventSubject = result.subject?.trim() || subject || undefined;
+    const eventTopic = result.topic?.trim() || topic || undefined;
     if (challengeId && marking === "server") {
       // Verified battle: the server already marked and recorded this attempt and told us who won.
       if (typeof result.won === "boolean") { setBattle({ won: result.won, percentage: Math.round(result.percentage), verified: true }); clearPendingChallenge(); }
@@ -128,14 +130,14 @@ export default function ExamSimulationClient() {
         .catch(() => undefined);
     }
     for (const question of result.results) {
-      void questionAttemptedEvent(examInstanceId, question.questionId, subject || undefined, question.topic || topic || undefined, {
+      void questionAttemptedEvent(examInstanceId, question.questionId, eventSubject, question.topic || eventTopic, {
         correct: question.correct,
         score: question.score,
         maxScore: question.maxScore,
         percentage: question.maxScore > 0 ? Math.round((question.score / question.maxScore) * 100) : 0,
       });
     }
-    void examCompletedEvent(examInstanceId, subject || undefined, topic || undefined, {
+    void examCompletedEvent(examInstanceId, eventSubject, eventTopic, {
       percentage: result.percentage,
       totalScore: result.totalScore,
       maxScore: result.maxScore,
