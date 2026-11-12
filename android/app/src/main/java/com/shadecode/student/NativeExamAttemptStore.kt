@@ -7,7 +7,7 @@ import java.util.UUID
 /** Durable, account-isolated device-local recovery for unfinished exam attempts. */
 object NativeExamAttemptStore {
     data class SavedAttempt(
-        val subject: String, val paperJson: String, val questionsJson: String,
+        val attemptId: String, val subject: String, val paperJson: String, val questionsJson: String,
         val answersJson: String, val secondsLeft: Int, val taking: Boolean,
         val savedAt: Long, val deadlineMillis: Long,
     )
@@ -17,7 +17,7 @@ object NativeExamAttemptStore {
     private fun legacyKey(userId: String) = "attempt_" + userId
 
     private fun NativeExamAttemptEntity.toSavedAttempt() = SavedAttempt(
-        subject, paperJson, questionsJson, answersJson, secondsLeft, taking, savedAt, deadlineMillis,
+        attemptId, subject, paperJson, questionsJson, answersJson, secondsLeft, taking, savedAt, deadlineMillis,
     )
 
     /** Imports the matching account's old snapshot, deleting it only after Room commits it. */
@@ -48,7 +48,7 @@ object NativeExamAttemptStore {
     }
 
     suspend fun write(
-        context: Context, userId: String, subject: String, paperJson: String,
+        context: Context, userId: String, attemptId: String, subject: String, paperJson: String,
         questionsJson: String, answersJson: String, secondsLeft: Int,
         taking: Boolean, deadlineMillis: Long,
     ) {
@@ -58,7 +58,7 @@ object NativeExamAttemptStore {
         dao.save(
             NativeExamAttemptEntity(
                 accountId = userId,
-                attemptId = previous?.attemptId ?: UUID.randomUUID().toString(),
+                attemptId = attemptId.ifBlank { previous?.attemptId ?: UUID.randomUUID().toString() },
                 subject = subject, paperJson = paperJson, questionsJson = questionsJson,
                 answersJson = answersJson, secondsLeft = secondsLeft.coerceAtLeast(0),
                 taking = taking, savedAt = System.currentTimeMillis(),
