@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent, type ReactNode } from "react";
 import { applyHandwritingAlternative, findHandwritingReviewRanges, shouldUseHandwritingRetry, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
 
 type Tool = "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "polygon" | "curve" | "label";
@@ -728,7 +728,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       {handwritingUncertainty.length > 0 && (() => {
         const ranges = findHandwritingReviewRanges(handwritingText, handwritingUncertainty);
         if (!ranges.length) return null;
-        const pieces: React.ReactNode[] = [];
+        const pieces: ReactNode[] = [];
         let cursor = 0;
         for (const range of ranges) {
           if (range.start > cursor) pieces.push(handwritingText.slice(cursor, range.start));
