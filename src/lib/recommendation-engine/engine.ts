@@ -18,11 +18,12 @@ import {
   WeakAreaInput,
 } from "./types";
 import { getSubjectPriority, getMaxSubjectPriority } from "@/lib/careers/mapping";
+import { getRecommendationCacheVersion } from "@/lib/recommendation-cache/version";
 
 const CACHE_TTL = 600; // 10 minutes
 
 export class RecommendationEngine {
-  private cache: Map<string, { data: RecommendationEngineOutput; expiresAt: number }> = new Map();
+  private cache: Map<string, { data: RecommendationEngineOutput; expiresAt: number; version: number }> = new Map();
 
   /**
    * Generate recommendations based on input data
@@ -31,7 +32,8 @@ export class RecommendationEngine {
     try {
       // Check cache
       const cacheKey = this.getCacheKey(input);
-      const cached = this.getFromCache(cacheKey);
+      const cacheVersion = await getRecommendationCacheVersion(input.userId);
+      const cached = cacheVersion === null ? null : this.getFromCache(cacheKey, cacheVersion);
       if (cached) {
         return cached;
       }
@@ -60,7 +62,7 @@ export class RecommendationEngine {
       };
 
       // Cache the result
-      this.setCache(cacheKey, output);
+      if (cacheVersion !== null) this.setCache(cacheKey, output, cacheVersion);
 
       return output;
     } catch (error) {
@@ -676,11 +678,11 @@ export class RecommendationEngine {
   /**
    * Get from cache
    */
-  private getFromCache(cacheKey: string): RecommendationEngineOutput | null {
+  private getFromCache(cacheKey: string, version: number): RecommendationEngineOutput | null {
     const cached = this.cache.get(cacheKey);
     if (!cached) return null;
 
-    if (Date.now() > cached.expiresAt) {
+    if (Date.now() > cached.expiresAt || cached.version !== version) {
       this.cache.delete(cacheKey);
       return null;
     }
@@ -691,9 +693,10 @@ export class RecommendationEngine {
   /**
    * Set cache
    */
-  private setCache(cacheKey: string, data: RecommendationEngineOutput): void {
+  private setCache(cacheKey: string, data: RecommendationEngineOutput, version: number): void {
     this.cache.set(cacheKey, {
       data,
+      version,
       expiresAt: Date.now() + CACHE_TTL * 1000,
     });
   }
