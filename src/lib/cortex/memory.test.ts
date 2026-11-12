@@ -18,6 +18,8 @@ const row = {
   last_topic: "Cell structure",
   last_practice_score: 75,
   last_practice_topic: "Photosynthesis",
+  last_practice_subject: "Biology",
+  last_practice_syllabus_id: "cambridge-9700",
   last_feedback: "More worked examples, please.",
   average_exam_score: 82,
 };
@@ -56,6 +58,8 @@ describe("persistent Cortex memory mapping", () => {
     expect(memory.weakTopics).toEqual(["Photosynthesis"]);
     expect(memory.lastPracticeScore).toBe(75);
     expect(memory.lastPracticeTopic).toBe("Photosynthesis");
+    expect(memory.lastPracticeSubject).toBe("Biology");
+    expect(memory.lastPracticeSyllabusId).toBe("cambridge-9700");
     expect(memory.averageExamScore).toBe(82);
     expect(memory.lastTopic).toBe("Cell structure");
     expect(memory.feedback).toBe("More worked examples, please.");
