@@ -257,3 +257,16 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 - This makes exam analytics ingestion durable and idempotent. It does not yet make all analytics aggregations or recommendation-cache invalidation globally durable. Recommendation caches remain in-memory with bounded TTLs (10 minutes in the recommendation engine and 15 minutes in the student-intelligence engine); a cross-instance cache-version mechanism remains future work.
 - Legacy exam requests without stable attempt IDs still use the compatibility synchronous path.
 - GitHub Actions and Vercel checks for the newest commits must be checked before deployment claims. No full app build, deployed worker run, or end-to-end exam submission has been verified for this increment.
+
+
+## 2026-11-12 implementation update: cross-instance recommendation cache invalidation
+
+- Added and applied migration `20261112250000_durable_recommendation_cache_versions.sql`.
+- Added `recommendation_cache_versions`, an owner-readable version row per student, plus a service-role-only invalidation event ledger.
+- Added service-only RPC `invalidate_recommendation_cache(user_id,event_id)`. It atomically increments the student's cache generation once per deterministic exam event ID. Outbox retries return the existing generation instead of incrementing repeatedly.
+- The exam outbox worker now bumps the durable generation after Cortex memory, mastery, and analytics persistence, before acknowledging the job.
+- Both `RecommendationEngine` and `IntelligenceEngine` now read the shared generation before serving their process-local caches. Cache entries are accepted only when their stored generation matches the database. If the version cannot be read (for example, offline), the engines bypass the process-local cache and recompute rather than serving potentially stale recommendations; they do not cache the result while the version is unavailable.
+- Added and executed `supabase/tests/durable_recommendation_cache_versions.test.sql`. It verifies first invalidation, duplicate event suppression, and increment for a distinct event. The transaction rolled back.
+- This is cross-instance cache invalidation by version check, not a distributed cache. Existing process-local entries remain allocated until expiry or replacement, but they are no longer served after a version change. Version lookup adds a small database read before cache use.
+- Other event types (lesson completion, quiz completion, study session finish) still rely on existing in-process invalidation unless their own durable event/outbox path calls the shared invalidation RPC. This increment specifically closes the exam-completion path.
+- GitHub Actions and Vercel statuses must be checked for the latest commit. No full app build, browser integration test, offline test, or deployed exam workflow has been verified for this increment.
