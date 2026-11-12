@@ -110,13 +110,14 @@ export type QuadraticCurveFit = { control: Point; rmsError: number; maxError: nu
 export function fitQuadraticCurve(points: Point[]): QuadraticCurveFit | null {
   if (points.length < 5) return null;
   const first = points[0], last = points[points.length - 1];
-  const cumulative = [0];
-  for (let i = 1; i < points.length; i++) cumulative.push(cumulative[i - 1] + distance(points[i - 1], points[i]));
-  const total = cumulative[cumulative.length - 1];
-  if (total < 1) return null;
+  const chordX = last.x - first.x, chordY = last.y - first.y;
+  const chordSquared = chordX * chordX + chordY * chordY;
+  if (chordSquared < 1) return null;
+  // Chord projection avoids arc-length bias when pointer sampling speed changes.
+  const parameter = (point: Point) => Math.max(0, Math.min(1, ((point.x-first.x)*chordX+(point.y-first.y)*chordY)/chordSquared));
   let denominator = 0, controlX = 0, controlY = 0;
   for (let i = 1; i < points.length - 1; i++) {
-    const t = cumulative[i] / total;
+    const t = parameter(points[i]);
     const u = 1 - t;
     const coefficient = 2 * u * t;
     const baseX = u * u * first.x + t * t * last.x;
@@ -129,7 +130,7 @@ export function fitQuadraticCurve(points: Point[]): QuadraticCurveFit | null {
   const control = { x: controlX / denominator, y: controlY / denominator };
   let squaredError = 0, maxError = 0;
   for (let i = 1; i < points.length - 1; i++) {
-    const t = cumulative[i] / total, u = 1 - t;
+    const t = parameter(points[i]), u = 1 - t;
     const predicted = {
       x: u * u * first.x + 2 * u * t * control.x + t * t * last.x,
       y: u * u * first.y + 2 * u * t * control.y + t * t * last.y,
@@ -157,12 +158,12 @@ export function fitQuadraticSegments(points: Point[], maxSegments = 3): Quadrati
     const fit = fitQuadraticCurve(slice);
     if (!fit) return null;
     const first = slice[0], last = slice[slice.length - 1];
-    const cumulative = [0];
-    for (let i = 1; i < slice.length; i++) cumulative.push(cumulative[i - 1] + distance(slice[i - 1], slice[i]));
-    const total = cumulative[cumulative.length - 1];
+    const chordX = last.x - first.x, chordY = last.y - first.y;
+    const chordSquared = Math.max(chordX * chordX + chordY * chordY, 1);
     let peakError = 0, split = -1;
     for (let i = 2; i < slice.length - 2; i++) {
-      const t = cumulative[i] / Math.max(total, 1), u = 1 - t;
+      const sample = slice[i];
+      const t = Math.max(0, Math.min(1, ((sample.x-first.x)*chordX+(sample.y-first.y)*chordY)/chordSquared)), u = 1 - t;
       const predicted = { x: u*u*first.x + 2*u*t*fit.control.x + t*t*last.x, y: u*u*first.y + 2*u*t*fit.control.y + t*t*last.y };
       const error = distance(slice[i], predicted);
       if (error > peakError) { peakError = error; split = start + i; }
