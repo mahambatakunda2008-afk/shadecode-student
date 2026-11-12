@@ -26,7 +26,7 @@ import { trackEvent } from "@/lib/traction/client";
 
 export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string };
 export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
-export type ExamResults = { totalScore: number; maxScore: number; percentage: number; grade: string; weakAreas: string[]; strongAreas: string[]; cortexInsight: string; results: ExamResult[]; timeTaken: number };
+export type ExamResults = { subject?: string; topic?: string; totalScore: number; maxScore: number; percentage: number; grade: string; weakAreas: string[]; strongAreas: string[]; cortexInsight: string; results: ExamResult[]; timeTaken: number };
 type Answer = { questionId: number; answer: string; timeSpent: number };
 type Props = { initialSubject?: string; initialTopic?: string; initialDifficulty?: number; initialQuestionCount?: number; onExit?: () => void; onFinished?: (result: ExamResults) => void; frozenQuestions?: ExamQuestion[]; serverMarkChallengeId?: string };
 
@@ -303,7 +303,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         };
       }
 
-      setResults(markingData);
+      const completedResult: ExamResults = { ...markingData, subject: subject.trim(), topic: topic.trim() };
+      setResults(completedResult);
       // Learning loop: record each question's outcome (and any diagnosed mistake). Battles are recorded by the server.
       if (userId && !serverMarkChallengeId) sendLearningSignals(signalsFromMarkedPaper(questions as ExamQuestion[], markingData.results ?? []));
       if (userId) {
@@ -335,7 +336,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       }
       removeLocalExamSnapshot(userId);
       setMode("results");
-      onFinished?.(markingData);
+      onFinished?.(completedResult);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Marking failed. Your work is still saved.");
       setMode("exam");
