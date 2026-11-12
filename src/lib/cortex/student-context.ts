@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type EvidenceState = "available" | "insufficient_evidence" | "unavailable";
@@ -65,9 +66,20 @@ export interface CortexStudentContext {
  * learner's records. Query failures throw; an absent row is represented as
  * insufficient evidence rather than being confused with a database outage.
  */
-export async function resolveAuthenticatedCortexStudentContext(): Promise<CortexStudentContext> {
-  const supabase = await createSupabaseServerClient();
-  const { data: authData, error: authError } = await supabase.auth.getUser();
+export async function resolveAuthenticatedCortexStudentContext(accessToken?: string): Promise<CortexStudentContext> {
+  const supabase = accessToken
+    ? createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          auth: { autoRefreshToken: false, persistSession: false },
+          global: { headers: { Authorization: `Bearer ${accessToken}` } },
+        },
+      )
+    : await createSupabaseServerClient();
+  const { data: authData, error: authError } = accessToken
+    ? await supabase.auth.getUser(accessToken)
+    : await supabase.auth.getUser();
 
   if (authError || !authData.user) {
     throw new Error("UNAUTHENTICATED");
