@@ -16,7 +16,7 @@ describe("Cortex deterministic answer scoring", () => {
 
   it("collapses repeated spaces and line breaks before exact comparison", async () => {
     const result = await scoreAnswer({
-      answer: "cellular\\n\\nrespiration",
+      answer: "cellular\n\nrespiration",
       correctAnswer: "Cellular respiration",
     });
 
