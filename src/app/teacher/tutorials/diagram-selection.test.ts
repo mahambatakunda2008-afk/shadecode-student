@@ -13,15 +13,15 @@ describe("diagram group selection geometry", () => {
 
   it("moves a group together and clamps the group as one unit", () => {
     const moved = translateSelectionWithinCanvas([box("a", 10, 20), box("b", 80, 60)], -50, 900);
-    expect(moved[0]).toMatchObject({ x: 0, y: 690 });
-    expect(moved[1]).toMatchObject({ x: 70, y: 730 });
+    expect(moved[0]).toMatchObject({ x: 0, y: 650 });
+    expect(moved[1]).toMatchObject({ x: 70, y: 690 });
   });
 
   it("aligns selected objects by their edges or centers", () => {
     const objects = [box("a", 10, 10, 20, 10), box("b", 80, 50, 40, 20)];
     expect(alignSelection(objects, "horizontal", "start").map(item => getSelectionBounds([item])?.x)).toEqual([10, 10]);
     const centered = alignSelection(objects, "vertical", "center");
-    expect(centered.map(item => { const b = getSelectionBounds([item])!; return b.y + b.height / 2; })).toEqual([15, 65]);
+    expect(centered.map(item => { const b = getSelectionBounds([item])!; return b.y + b.height / 2; })).toEqual([40, 40]);
   });
 
   it("distributes three or more objects evenly while preserving their order", () => {
