@@ -168,3 +168,14 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 - After marking, ExamWorkspace marks the matching local `exam_attempt` record as `submitted` when available, retaining its answers and submission timestamp in the user-scoped local store.
 - Important boundary: this does not yet make every server side effect idempotent. The mark route still performs other Cortex/event/memory work outside a single atomic submission ledger, and the client still inserts into `exam_results` without a confirmed unique attempt key. No schema change was made because the table definition and deployed migration state were not verified in this pass.
 - This is source-level only. No clean build, database migration, airplane-mode, or device lifecycle test has been completed.
+
+
+## 2026-11-12 implementation update: recoverable exam submission ledger
+
+- Added `exam_submission_ledger`, uniquely keyed by `(user_id, attempt_id)`, storing a payload hash and the authoritative server-marked result.
+- The claim RPC returns the completed result for a replay, rejects a changed payload under the same attempt identity, and allows a processing claim to be reclaimed after three minutes.
+- Reclaimed claims receive a rotated lease token. Finalization requires the current token, fencing off a worker whose lease expired while it was still running.
+- The route claims before Cortex/event/memory/mastery projection side effects and finalizes the result after those operations. Existing mastery projection event identity remains stable. Cortex memory exam-score entries now carry a submission identity and replace an earlier entry with the same identity when replayed.
+- ExamWorkspace now writes `attempt_id` with the result row. A unique index is added to `exam_results(user_id, attempt_id)` only if that legacy table exists. On a duplicate insert, the client retrieves the existing result instead of attempting an UPDATE, avoiding a dependency on an UPDATE RLS policy; question snapshots are only inserted on first result creation.
+- Important remaining boundary: Cortex event emitters are not yet backed by a transactional outbox, and memory read/modify/write can still race across truly concurrent workers. This is not a blanket exactly-once guarantee for every downstream side effect. Older clients that omit `attemptId` continue on the legacy path.
+- Migration application, schema/RLS verification, clean build, automated retry/concurrency tests, and real-device/airplane-mode tests remain outstanding. Vercel deployment checks have previously been blocked by the account's build-rate limit, not by a confirmed compiler error.
