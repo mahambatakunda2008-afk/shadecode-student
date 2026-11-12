@@ -199,6 +199,7 @@ export default function LessonDetailPage() {
   const [understanding, setUnderstanding] = useState<"explain" | "apply" | "review" | null>(null);
   const [personalNotes, setPersonalNotes] = useState("");
   const [notesReady, setNotesReady] = useState(false);
+  const [notesOwner, setNotesOwner] = useState("");
   const [notesSavedAt, setNotesSavedAt] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState(0);
   const restoredScrollRef = useRef(false);
@@ -209,6 +210,7 @@ export default function LessonDetailPage() {
   useEffect(() => {
     let cancelled = false;
     setNotesReady(false);
+    setNotesOwner("");
     setPersonalNotes("");
     setNotesSavedAt(null);
     if (!currentUser || !lessonId) return;
@@ -220,12 +222,12 @@ export default function LessonDetailPage() {
         }
       })
       .catch(error => console.error("[LessonNotes] Could not restore local notes:", error))
-      .finally(() => { if (!cancelled) setNotesReady(true); });
+      .finally(() => { if (!cancelled) { setNotesOwner(currentUser); setNotesReady(true); } });
     return () => { cancelled = true; };
   }, [currentUser, lessonId]);
 
   useEffect(() => {
-    if (!currentUser || !lesson || !notesReady) return;
+    if (!currentUser || !lesson || !notesReady || notesOwner !== currentUser) return;
     const timeout = window.setTimeout(() => {
       const savedAt = new Date().toISOString();
       void localFirstStore.upsert({
@@ -238,7 +240,7 @@ export default function LessonDetailPage() {
         .catch(error => console.error("[LessonNotes] Local save failed:", error));
     }, 450);
     return () => window.clearTimeout(timeout);
-  }, [currentUser, lesson, lessonId, notesReady, personalNotes]);
+  }, [currentUser, lesson, lessonId, notesReady, notesOwner, personalNotes]);
 
   const applyPendingLocalProgress = async (base: Lesson, userId: string): Promise<Lesson> => {
     if (!userId) return base;
