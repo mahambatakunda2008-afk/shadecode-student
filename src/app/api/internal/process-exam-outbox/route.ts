@@ -18,6 +18,7 @@ type OutboxPayload = {
   weakAreas: string[];
   strongAreas: string[];
   timeTaken: number;
+  topicScores: Array<{ topic: string; percentage: number }>;
 };
 
 function serviceClient() {
@@ -93,6 +94,30 @@ async function processOutbox(req: Request) {
         },
       });
       if (memoryError) throw new Error(`Cortex score memory: ${memoryError.message}`);
+
+      for (const topicScore of payload.topicScores ?? []) {
+        if (
+          !topicScore ||
+          typeof topicScore.topic !== "string" ||
+          !topicScore.topic.trim() ||
+          !Number.isFinite(topicScore.percentage) ||
+          topicScore.percentage < 0 ||
+          topicScore.percentage > 100
+        ) {
+          throw new Error("Exam topic mastery payload failed validation");
+        }
+        const { data: projected, error: projectionError } = await svc.rpc("project_exam_topic_mastery", {
+          p_user_id: job.user_id,
+          p_attempt_id: job.attempt_id,
+          p_subject: payload.subject,
+          p_topic: topicScore.topic,
+          p_percentage: topicScore.percentage,
+          p_observed_at: new Date().toISOString(),
+        });
+        if (projectionError) {
+          throw new Error(`Topic mastery projection (${topicScore.topic}): ${projectionError.message}`);
+        }
+      }
 
       await emitExamCompleted(
         job.user_id,
