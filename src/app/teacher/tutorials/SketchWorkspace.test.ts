@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fitQuadraticCurve, recognizeShape, type Point } from "./SketchWorkspace";
+import { fitQuadraticCurve, fitQuadraticSegments, recognizeShape, type Point } from "./SketchWorkspace";
 
 describe("teacher sketch auto-correction", () => {
   it("snaps a clean straight freehand stroke to a line", () => {
@@ -125,6 +125,24 @@ describe("teacher sketch auto-correction", () => {
     expect(fit!.control.y).toBeCloseTo(180, 0);
     expect(fit!.rmsError).toBeLessThan(1);
     expect(recognizeShape(points)?.tool).toBe("curve");
+  });
+
+  it("fits an S-shaped stroke as multiple smooth quadratic segments", () => {
+    const points: Point[] = Array.from({ length: 81 }, (_, index) => {
+      const t = index / 80;
+      return { x: 80 + 300 * t, y: 130 + 65 * Math.sin(2 * Math.PI * t) };
+    });
+    const segments = fitQuadraticSegments(points, 3);
+    expect(segments).not.toBeNull();
+    expect(segments!.length).toBeGreaterThan(1);
+    expect(segments!.length).toBeLessThanOrEqual(3);
+    expect(segments![0].from).toEqual(points[0]);
+    expect(segments![segments!.length - 1].to).toEqual(points[points.length - 1]);
+    for (let index = 1; index < segments!.length; index++) {
+      expect(segments![index].from).toEqual(segments![index - 1].to);
+    }
+    expect(recognizeShape(points)?.tool).toBe("curve");
+    expect(recognizeShape(points)?.segments?.length).toBeGreaterThan(1);
   });
 
   it("does not force an S-shaped stroke into a single quadratic curve", () => {
