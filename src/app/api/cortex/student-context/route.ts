@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const authorization = request.headers.get("authorization") ?? "";
-    const accessToken = authorization.match(/^Bearer\\s+(.+)$/i)?.[1];
+    const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
     const context = await resolveAuthenticatedCortexStudentContext(accessToken);
     return NextResponse.json(context, {
       headers: { "Cache-Control": "private, no-store, max-age=0" },
