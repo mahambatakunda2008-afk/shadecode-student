@@ -371,7 +371,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     }
     LaunchedEffect(session.accessToken) {
         subjects = withContext(Dispatchers.IO) { database.subjects().all() }
-        profile = withContext(Dispatchers.IO) { sessionStore.readProfile() }
+        profile = withContext(Dispatchers.IO) { sessionStore.readProfile(session.userId) }
         try {
             val loaded = withContext(Dispatchers.IO) { api.loadProfile(session) }
             profile = loaded
