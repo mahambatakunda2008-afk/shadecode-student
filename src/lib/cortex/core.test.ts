@@ -137,4 +137,17 @@ describe("CortexCore learning requests", () => {
       feedback: "Use more worked examples.",
     });
   });
+
+  it("caps feedback before persisting it", async () => {
+    const feedback = "x".repeat(700);
+    await CortexCore({
+      userId: "learner-1",
+      type: "feedback",
+      payload: { feedback },
+    });
+
+    expect(updateMemory).toHaveBeenCalledWith("learner-1", {
+      feedback: "x".repeat(500),
+    });
+  });
 });
