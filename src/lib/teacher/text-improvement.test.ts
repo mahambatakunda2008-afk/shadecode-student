@@ -22,6 +22,14 @@ describe("teacher text improvement safeguards", () => {
     expect(validateTeacherTextImprovement("Add 10 g of NaCl to H2O.", "Add 10 kg of NaCl to H2O.").valid).toBe(false);
     expect(validateTeacherTextImprovement("Add 10 g of NaCl to H2O.", "Add 10 g of NaCl to H2O.")).toMatchObject({ valid: true });
   });
+  it("preserves arithmetic operators and exponent notation outside equations", () => {
+    expect(validateTeacherTextImprovement("Multiply a × b.", "Multiply a + b.").valid).toBe(false);
+    expect(validateTeacherTextImprovement("Use x^2 for the square.", "Use x^3 for the square.").valid).toBe(false);
+    expect(validateTeacherTextImprovement("Use 1/2 of the solution.", "Use 1/3 of the solution.").valid).toBe(false);
+  });
+  it("preserves the order of numeric values in scientific and tabular text", () => {
+    expect(validateTeacherTextImprovement("Matrix row: 2, 5, 8.", "Matrix row: 8, 5, 2.").valid).toBe(false);
+  });
   it("rejects edits that alter inline code or URLs", () => {
     expect(validateTeacherTextImprovement("Use `x + 2` at https://example.com/a.", "Use `x + 3` at https://example.com/a.").valid).toBe(false);
     expect(validateTeacherTextImprovement("Visit https://example.com/a.", "Visit https://example.com/b.").valid).toBe(false);
