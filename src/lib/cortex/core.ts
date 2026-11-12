@@ -5,6 +5,7 @@ import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
 import type { SystemCurriculumContext } from "@/lib/curriculum/system-curriculum-context";
 import { trackExamResult, generateRecommendation } from "./memoryTracker";
+import { recordVerifiedPracticeAttempt } from "./events";
 
 export type CortexInput = {
   userId: string;
@@ -172,6 +173,23 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       } else if (practiceTopic) {
         // Preserve study continuity without recording an unverified score.
         await updateMemory(input.userId, { lastTopic: practiceTopic });
+      }
+
+      // Only a verified exact-reference match can become positive retrieval
+      // evidence. Scope it to the authenticated learner and resolved syllabus.
+      if (result.score === 100 && input.accessToken && input.curriculum?.identity.syllabusId) {
+        try {
+          await recordVerifiedPracticeAttempt({
+            userId: input.userId,
+            accessToken: input.accessToken,
+            payload: practicePayload,
+            score: result.score,
+            syllabusId: input.curriculum.identity.syllabusId,
+          });
+        } catch (error) {
+          // Event telemetry must never make a practice response fail.
+          console.error("[cortex] verified practice event could not be recorded:", error);
+        }
       }
 
       const recommendation = await generateRecommendation(input.userId);
