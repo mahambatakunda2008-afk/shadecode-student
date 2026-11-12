@@ -144,9 +144,9 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
         subjectName,
       });
 
-      // A tutoring request is not proof that a study session was completed.
-      // Streaks and study-time totals are updated by verified completion events
-      // from the learning workflows, not by opening or requesting an explanation.
+      // Remember the topic for continuity, but do not treat opening an
+      // explanation as a completed session or streak event.
+      await updateMemory(input.userId, { lastTopic: topic });
       const recommendation = await generateRecommendation(input.userId);
 
       return {
@@ -159,8 +159,10 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
 
     case "practice": {
       const result = await scoreAnswer(asRecord(input.payload) as ScoreAnswerInput);
+      const practiceTopic = asString(asRecord(input.payload).topic);
       await updateMemory(input.userId, {
-        lastScore: result.score,
+        lastPracticeScore: result.score,
+        ...(practiceTopic ? { lastPracticeTopic: practiceTopic } : {}),
         weakTopics: result.weakTopics,
       });
 
@@ -196,7 +198,13 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
     }
 
     case "feedback": {
-      await updateMemory(input.userId, { feedback: input.payload });
+      const feedbackPayload = asRecord(input.payload);
+      const feedbackText = typeof input.payload === "string"
+        ? input.payload.trim()
+        : asString(feedbackPayload.feedback) ?? asString(feedbackPayload.message);
+      if (feedbackText) {
+        await updateMemory(input.userId, { feedback: feedbackText.slice(0, 500) });
+      }
       return {
         response: "Got it. I'm adjusting your learning path.",
         nextAction: "continue_learning",
