@@ -344,24 +344,49 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       let blob = await prepareHandwritingImage(canvas);
       if (blob.size > 3 * 1024 * 1024) blob = originalBlob;
       if (blob.size > 3 * 1024 * 1024) throw new Error("This canvas is too large to analyse. Clear unused space or split the writing into sections.");
-      const base64 = await new Promise<string>((resolve, reject) => {
+      const encodeImage = (imageBlob: Blob) => new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
-          const result = String(reader.result ?? "");
-          const comma = result.indexOf(",");
+          const dataUrl = String(reader.result ?? "");
+          const comma = dataUrl.indexOf(",");
           if (comma < 0) reject(new Error("Could not prepare the handwriting image."));
-          else resolve(result.slice(comma + 1));
+          else resolve(dataUrl.slice(comma + 1));
         };
         reader.onerror = () => reject(new Error("Could not read the handwriting image."));
-        reader.readAsDataURL(blob);
+        reader.readAsDataURL(imageBlob);
       });
-      const response = await fetch("/api/teacher/tutorials/recognize-handwriting", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64, mimeType: "image/png", mode: recognitionMode }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error ?? "Handwriting recognition is unavailable.");
+      const requestRecognition = async (imageBlob: Blob) => {
+        const image = await encodeImage(imageBlob);
+        const response = await fetch("/api/teacher/tutorials/recognize-handwriting", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image, mimeType: "image/png", mode: recognitionMode }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error ?? "Handwriting recognition is unavailable.");
+        return payload;
+      };
+      let result = await requestRecognition(blob);
+      const firstConfidence = typeof result.confidence === "number" ? result.confidence : 0;
+      const firstUncertaintyCount = Array.isArray(result.uncertainCharacters) ? result.uncertainCharacters.length : 0;
+      // Contrast enhancement can occasionally erase faint pencil strokes or tiny
+      // mathematical marks. When the first pass is weak, retry the untouched canvas
+      // and keep whichever transcription has the stronger confidence/uncertainty score.
+      if ((firstConfidence < 0.82 || firstUncertaintyCount > 0) && originalBlob.size <= 3 * 1024 * 1024 && blob !== originalBlob) {
+        setStatus("Checking an untouched copy too, to avoid losing faint strokes or mathematical symbols…");
+        try {
+          const originalResult = await requestRecognition(originalBlob);
+          const originalText = typeof originalResult.correctedText === "string" ? originalResult.correctedText.trim() : "";
+          const currentText = typeof result.correctedText === "string" ? result.correctedText.trim() : "";
+          const originalUncertainty = Array.isArray(originalResult.uncertainCharacters) ? originalResult.uncertainCharacters.length : 0;
+          const originalConfidence = typeof originalResult.confidence === "number" ? originalResult.confidence : 0;
+          const currentScore = firstConfidence - firstUncertaintyCount * 0.035;
+          const originalScore = originalConfidence - originalUncertainty * 0.035;
+          if (originalText && (!currentText || originalScore > currentScore)) result = originalResult;
+        } catch {
+          // The prepared-image result remains usable if the optional second pass fails.
+        }
+      }
       const corrected = typeof result.correctedText === "string" ? result.correctedText.trim() : "";
       if (!corrected) throw new Error("No readable handwriting was found. Try darker, larger writing with more spacing.");
       setHandwritingRawText(typeof result.transcript === "string" ? result.transcript : corrected);
