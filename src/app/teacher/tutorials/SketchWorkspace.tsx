@@ -687,6 +687,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
           const image = ctx.getImageData(x, y, width, height);
           selectionRef.current = { x, y, width, height, image };
           ctx.fillStyle = "#ffffff"; ctx.fillRect(x, y, width, height);
+          ctx.putImageData(image, x, y);
           setStatus("Region selected. Drag inside it to move its contents. The selection outline is only a temporary preview.");
         } else setStatus("Selection is too small. Drag a larger rectangle.");
       }
