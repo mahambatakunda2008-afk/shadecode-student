@@ -98,6 +98,17 @@ Do not replace the existing stores or introduce a second mastery model.
 - Preserve local/offline learning history and make AI-provider outages non-fatal to saved progress.
 - No production schema/data changes until RLS, migration replay, tests and authenticated end-to-end flows are verified.
 
+## Implementation added on the audit branch
+
+- Added a server-only `resolveAuthenticatedCortexStudentContext()` resolver. It accepts no user ID and derives identity from `supabase.auth.getUser()`.
+- Added `GET /api/cortex/student-context`, with private/no-store caching and 401/503 failure semantics.
+- The resolver reads only the authenticated learner's `cortex_memory` and `topic_mastery` rows. Missing rows are represented as `insufficient_evidence`; read failures throw rather than masquerading as empty learner history.
+- Cortex Learn now attempts to load the same durable context and passes it to the deterministic tutor. If the read is unavailable, tutoring continues without continuity claims.
+- The tutor only references recorded attempts when both the topic key and subject key match. It does not expose a mastery percentage or claim a misconception from this limited evidence.
+- Added focused tests for matching topic/subject, cross-subject isolation, and absent evidence.
+
+This is the first integration slice, not the complete student model. It does not yet connect every product workflow, objective progress, preferences, misconception taxonomy, or a calibrated forgetting model.
+
 ## Verification still outstanding
 
 This is a source-level audit only. The following have not been established by this document:
