@@ -31,6 +31,9 @@ export interface StudentProfileMemory {
   totalStudySessions: number | null;
   totalLessonsCompleted: number | null;
   averageExamScore: number | null;
+  lastTopic: string | null;
+  lastPracticeScore: number | null;
+  lastPracticeTopic: string | null;
 }
 
 export interface StudentTopicEvidence {
@@ -123,7 +126,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       .maybeSingle(),
     supabase
       .from("cortex_memory")
-      .select("current_streak, frequently_studied_subjects, strong_subjects, weak_subjects, total_study_sessions, total_lessons_completed, average_exam_score, updated_at")
+      .select("current_streak, frequently_studied_subjects, strong_subjects, weak_subjects, total_study_sessions, total_lessons_completed, average_exam_score, last_topic, last_practice_score, last_practice_topic, updated_at")
       .eq("user_id", userId)
       .maybeSingle(),
     supabase
@@ -224,6 +227,9 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       totalStudySessions: memory?.total_study_sessions ?? null,
       totalLessonsCompleted: memory?.total_lessons_completed ?? null,
       averageExamScore: memory?.average_exam_score ?? null,
+      lastTopic: memory?.last_topic ?? null,
+      lastPracticeScore: memory?.last_practice_score ?? null,
+      lastPracticeTopic: memory?.last_practice_topic ?? null,
     },
     topics: {
       state: evidenceCount > 0 ? "available" : "insufficient_evidence",
