@@ -11,10 +11,30 @@ import { createClient } from "@/lib/supabase/client";
 import { matchAllowedSubject, isGeneralSubject } from "@/lib/academic/subjectContract";
 import type { ExamQuestion, ExamResults } from "@/lib/exam/types";
 import { resolveExamLearningContext } from "@/lib/exam/learningContext";
+import { normalizeLearningContext } from "@/lib/intelligence/learningContextKey";
 import { clearPendingChallenge } from "@/lib/challenge/pending";
 import { isValidGeneratedPaper } from "@/lib/exam/paperValidation";
 import { defaultExamLevelIndex } from "@/lib/exam/defaultLevel";
 import { useUser } from "@/contexts/UserContext";
+
+
+function activeReviewSessionId(subject?: string, topic?: string): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = window.sessionStorage.getItem("shadecode:cortex:active-review:v1");
+    if (!raw) return undefined;
+    const review = JSON.parse(raw) as { reviewSessionId?: unknown; subjectKey?: unknown; topicId?: unknown };
+    const context = normalizeLearningContext(subject, topic);
+    if (
+      typeof review.reviewSessionId === "string" &&
+      review.reviewSessionId.length > 0 &&
+      review.reviewSessionId.length <= 100 &&
+      review.subjectKey === context.subjectId &&
+      review.topicId === context.topicId
+    ) return review.reviewSessionId;
+    return undefined;
+  } catch { return undefined; }
+}
 
 function decode(value: string | null) {
   if (!value) return "";
@@ -131,14 +151,18 @@ export default function ExamSimulationClient() {
         .then((data: { won?: boolean } | null) => { if (data && typeof data.won === "boolean") { setBattle({ won: data.won, percentage: result.percentage, verified: false }); clearPendingChallenge(); } })
         .catch(() => undefined);
     }
+    const reviewSessionId = activeReviewSessionId(eventSubject, eventTopic);
     for (const question of result.results) {
-      void questionAttemptedEvent(examInstanceId, question.questionId, eventSubject, question.topic || eventTopic, {
+      const questionTopic = question.topic || eventTopic;
+      const questionMatchesReview = reviewSessionId && normalizeLearningContext(eventSubject, questionTopic).topicId === normalizeLearningContext(eventSubject, eventTopic).topicId;
+      void questionAttemptedEvent(examInstanceId, question.questionId, eventSubject, questionTopic, {
         correct: question.correct,
         score: question.score,
         maxScore: question.maxScore,
         percentage: question.maxScore > 0 ? Math.round((question.score / question.maxScore) * 100) : 0,
         mistakeId: question.mistakeId ?? null,
         responseSeconds: question.timeSpent ?? null,
+        ...(questionMatchesReview ? { reviewSessionId, reviewSource: "cortex_suggestion" } : {}),
       });
     }
     void examCompletedEvent(examInstanceId, eventSubject, eventTopic, {
@@ -148,7 +172,11 @@ export default function ExamSimulationClient() {
       timeTaken: result.timeTaken,
       questionCount: result.results.length,
       aggregateOnly: true,
+      ...(reviewSessionId ? { reviewSessionId, reviewSource: "cortex_suggestion" } : {}),
     });
+    if (reviewSessionId) {
+      try { window.sessionStorage.removeItem("shadecode:cortex:active-review:v1"); } catch {}
+    }
     void trackEvent("exam_completed", { examId: examInstanceId, subject: subject || null, topic: topic || null, percentage: result.percentage, questionCount: result.results.length });
   };
 
