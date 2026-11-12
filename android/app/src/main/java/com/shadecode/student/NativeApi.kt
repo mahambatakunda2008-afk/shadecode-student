@@ -298,8 +298,9 @@ class NativeApi {
         return JSONObject(requestApp("POST", "/api/native/exam-sim/generate", body.toString(), session.accessToken))
     }
 
-    fun markNativeExam(session: NativeSession, subject: String, subjectId: String?, questions: JSONArray, answers: JSONObject): JSONObject {
-        val body = JSONObject().put("subject", subject).put("questions", questions).put("answers", answers)
+    fun markNativeExam(session: NativeSession, subject: String, subjectId: String?, questions: JSONArray, answers: JSONObject, attemptId: String): JSONObject {
+        require(attemptId.isNotBlank()) { "A saved exam attempt ID is required before submission." }
+        val body = JSONObject().put("subject", subject).put("questions", questions).put("answers", answers).put("attemptId", attemptId)
         if (!subjectId.isNullOrBlank()) body.put("subjectId", subjectId)
         return JSONObject(requestApp("POST", "/api/native/exam-sim/mark", body.toString(), session.accessToken))
     }
