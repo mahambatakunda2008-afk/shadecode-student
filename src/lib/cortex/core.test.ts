@@ -61,7 +61,7 @@ describe("CortexCore learning requests", () => {
     vi.clearAllMocks();
     vi.mocked(getMemory).mockResolvedValue(memory);
     vi.mocked(updateMemory).mockResolvedValue(memory);
-    vi.mocked(resolveAuthenticatedCortexStudentContext).mockResolvedValue(null);
+    vi.mocked(resolveAuthenticatedCortexStudentContext).mockRejectedValue(new Error("No session context in this unit test."));
     vi.mocked(generateTutoringResponse).mockResolvedValue("A tutoring response.");
     vi.mocked(getCurriculumState).mockResolvedValue(null);
     vi.mocked(generateRecommendation).mockResolvedValue("Continue with your next topic.");
