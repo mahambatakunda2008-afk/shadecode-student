@@ -104,7 +104,7 @@ Do not replace the existing stores or introduce a second mastery model.
 - Added `GET /api/cortex/student-context`, with private/no-store caching and 401/503 failure semantics.
 - The resolver reads only the authenticated learner's `cortex_memory` and `topic_mastery` rows. Missing rows are represented as `insufficient_evidence`; read failures throw rather than masquerading as empty learner history.
 - Cortex Learn now attempts to load the same durable context and passes it to the deterministic tutor. If the read is unavailable, tutoring continues without continuity claims.
-- The tutor only references recorded attempts when both the topic key and subject key match. It does not expose a mastery percentage or claim a misconception from this limited evidence.
+- The tutor only references recorded attempts when the topic key, subject key and exact verified syllabus ID match. It does not expose a mastery percentage or claim a misconception from this limited evidence.
 - Added focused tests for matching topic/subject, cross-subject isolation, and absent evidence.
 
 This is the first integration slice, not the complete student model. It does not yet connect every product workflow, objective progress, preferences, misconception taxonomy, or a calibrated forgetting model.
@@ -115,7 +115,7 @@ This is a source-level audit only. The following have not been established by th
 
 - Live database schema, constraints, row counts or current production RLS behavior.
 - End-to-end access to all learner stores under real student sessions.
-- Whether every module emits the canonical events required for reliable concept-level evidence.
+- Whether every module emits the canonical events required for reliable concept-level evidence. The live database currently reports five topic_mastery rows and two cortex_memory rows; these counts are operational snapshots, not coverage or quality guarantees.
 - Whether objective progress can be mapped to topic mastery without ambiguity.
 - Offline replay and cross-device continuity under real device/network conditions.
 - Full CI, build and browser acceptance for any new implementation.
