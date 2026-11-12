@@ -682,6 +682,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     if(vectorDragRef.current){vectorDragRef.current=null;recordUndoSnapshot();setStatus("Object moved. It remains independently editable.");return;}
     if(!snapshotRef.current)return;
     const points = pointsRef.current;
+    let vectorActionCommitted = false;
     ctx.putImageData(snapshotRef.current, 0, 0);
     if (tool === "select") {
       const from = startRef.current, to = points[points.length - 1];
@@ -712,7 +713,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     }
     if (["line", "arrow", "rectangle", "ellipse", "triangle", "curve"].includes(tool)) {
       const from = startRef.current, to = points[points.length - 1];
-      if(from&&to){const id=`shape-${Date.now()}`,left=Math.min(from.x,to.x),top=Math.min(from.y,to.y),width=Math.abs(to.x-from.x),height=Math.abs(to.y-from.y);let object:DiagramObject|null=null;if(tool==="line"||tool==="arrow")object={id,type:tool,from,to,style:{...defaultStyle}};else if(tool==="rectangle"||tool==="ellipse"||tool==="triangle")object={id,type:tool,x:left,y:top,width,height,style:{...defaultStyle}};else if(tool==="curve"){const fit=fitQuadraticCurve(points);object={id,type:"curve",segments:[{from,control:fit?.control??{x:(from.x+to.x)/2,y:(from.y+to.y)/2-30},to}],style:{...defaultStyle}};}if(object){commitVectorObjects([...vectorObjectsRef.current,object]);setSelectedObjectId(id);}}
+      if(from&&to){const id=`shape-${Date.now()}`,left=Math.min(from.x,to.x),top=Math.min(from.y,to.y),width=Math.abs(to.x-from.x),height=Math.abs(to.y-from.y);let object:DiagramObject|null=null;if(tool==="line"||tool==="arrow")object={id,type:tool,from,to,style:{...defaultStyle}};else if(tool==="rectangle"||tool==="ellipse"||tool==="triangle")object={id,type:tool,x:left,y:top,width,height,style:{...defaultStyle}};else if(tool==="curve"){const fit=fitQuadraticCurve(points);object={id,type:"curve",segments:[{from,control:fit?.control??{x:(from.x+to.x)/2,y:(from.y+to.y)/2-30},to}],style:{...defaultStyle}};}if(object){commitVectorObjects([...vectorObjectsRef.current,object]);setSelectedObjectId(id);vectorActionCommitted=true;}}
       setStatus("Shape created as an editable vector object.");
     } else if (tool === "pen" && autoFix) {
       const recognized = recognizeShape(points);
@@ -723,7 +724,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         else if(recognized.tool==="rectangle"||recognized.tool==="ellipse"||recognized.tool==="triangle")object={id,type:recognized.tool,x:left,y:top,width,height,style:{...defaultStyle}};
         else if(recognized.tool==="polygon"&&recognized.vertices)object={id,type:"polygon",points:recognized.vertices,style:{...defaultStyle}};
         else if(recognized.tool==="curve")object={id,type:"curve",segments:recognized.segments??[{from:recognized.from,control:recognized.control??recognized.from,to:recognized.to}],style:{...defaultStyle}};
-        if(object){commitVectorObjects([...vectorObjectsRef.current,object]);setSelectedObjectId(id);}
+        if(object){commitVectorObjects([...vectorObjectsRef.current,object]);setSelectedObjectId(id);vectorActionCommitted=true;}
         setStatus(`Auto-corrected your stroke into an editable ${recognized.tool}.`);
       } else {
         ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
@@ -735,7 +736,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       ctx.lineWidth = tool === "eraser" ? 30 : 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
       smoothPath(ctx, points);
     }
-    pushHistory(ctx);
+    if(!vectorActionCommitted)pushHistory(ctx);
     const completedTool = tool;
     startRef.current = null; pointsRef.current = []; snapshotRef.current = null;
     if (completedTool === "pen") scheduleLiveHandwritingRecognition();
