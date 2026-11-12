@@ -30,6 +30,7 @@ import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
 import {
   generateRecommendation,
+  trackExamResult,
   trackStudySession,
   updateStreak,
 } from "./memoryTracker";
@@ -81,8 +82,40 @@ describe("CortexCore learning requests", () => {
 
     expect(trackStudySession).not.toHaveBeenCalled();
     expect(updateStreak).not.toHaveBeenCalled();
-    expect(updateMemory).not.toHaveBeenCalledWith("learner-1", {
+    expect(updateMemory).toHaveBeenCalledWith("learner-1", {
       lastTopic: "Photosynthesis",
+    });
+  });
+
+  it("persists practice scores separately from formal exam averages", async () => {
+    await CortexCore({
+      userId: "learner-1",
+      type: "practice",
+      payload: {
+        topic: "Quadratic equations",
+        answer: "x = 2",
+        correctAnswer: "x = 2",
+      },
+    });
+
+    expect(updateMemory).toHaveBeenCalledWith("learner-1", {
+      lastPracticeScore: 100,
+      lastPracticeTopic: "Quadratic equations",
+      weakTopics: [],
+    });
+    expect(trackStudySession).not.toHaveBeenCalled();
+    expect(trackExamResult).not.toHaveBeenCalled();
+  });
+
+  it("stores only bounded text feedback", async () => {
+    await CortexCore({
+      userId: "learner-1",
+      type: "feedback",
+      payload: { feedback: "Use more worked examples." },
+    });
+
+    expect(updateMemory).toHaveBeenCalledWith("learner-1", {
+      feedback: "Use more worked examples.",
     });
   });
 });
