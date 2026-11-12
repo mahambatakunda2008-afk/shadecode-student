@@ -57,7 +57,8 @@ function insidePolygon(p: DiagramPoint, pts: DiagramPoint[]): boolean {
 }
 export function hitTestDiagramObject(o: DiagramObject, p: DiagramPoint, tolerance=10): boolean {
   const b=getDiagramObjectBounds(o);
-  if(p.x<b.x-tolerance||p.x>b.x+b.width+tolerance||p.y<b.y-tolerance||p.y>b.y+b.height+tolerance)return false;
+  const hitTolerance=o.type==="arrow"?tolerance+20:tolerance;
+  if(p.x<b.x-hitTolerance||p.x>b.x+b.width+hitTolerance||p.y<b.y-hitTolerance||p.y>b.y+b.height+hitTolerance)return false;
   switch(o.type){
     case "line": return distanceToSegment(p,o.from,o.to)<=tolerance;
     case "arrow": { const angle=Math.atan2(o.to.y-o.from.y,o.to.x-o.from.x),size=18,a={x:o.to.x-size*Math.cos(angle-Math.PI/6),y:o.to.y-size*Math.sin(angle-Math.PI/6)},c={x:o.to.x-size*Math.cos(angle+Math.PI/6),y:o.to.y-size*Math.sin(angle+Math.PI/6)}; return distanceToSegment(p,o.from,o.to)<=tolerance||distanceToSegment(p,a,o.to)<=tolerance||distanceToSegment(p,o.to,c)<=tolerance; }
