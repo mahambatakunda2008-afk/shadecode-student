@@ -2,7 +2,7 @@ import "server-only";
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { deriveRepeatedTopicErrors, type RepeatedTopicError } from "./mistake-patterns";
+import { deriveRecurringMistakes, deriveRepeatedTopicErrors, type RecurringMistake, type RepeatedTopicError } from "./mistake-patterns";
 
 export type EvidenceState = "available" | "insufficient_evidence" | "unavailable";
 
@@ -62,6 +62,7 @@ export interface CortexStudentContext {
     source: "cortex_events";
     inspectedEventCount: number;
     repeatedTopicErrors: RepeatedTopicError[];
+    recurringMistakes: RecurringMistake[];
   };
 }
 
@@ -204,6 +205,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       source: "cortex_events",
       inspectedEventCount: (mistakeEventsResult.data ?? []).length,
       repeatedTopicErrors: deriveRepeatedTopicErrors(mistakeEventsResult.data ?? []),
+      recurringMistakes: deriveRecurringMistakes(mistakeEventsResult.data ?? []),
     },
   };
 }
