@@ -100,7 +100,7 @@ export interface CortexStudentContext {
  * identity for RLS-scoped reads. Query failures throw; absent rows are
  * represented as insufficient evidence rather than database outages.
  */
-export async function resolveAuthenticatedCortexStudentContext(accessToken?: string): Promise<CortexStudentContext> {
+export async function resolveAuthenticatedCortexStudentContext(accessToken?: string, syllabusId?: string | null): Promise<CortexStudentContext> {
   const supabase = accessToken
     ? createSupabaseClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -120,6 +120,19 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
   }
 
   const userId = authData.user.id;
+  const mistakeEventsQuery = supabase
+    .from("cortex_events")
+    .select("type, data, created_at")
+    .eq("user_id", userId)
+    .in("type", ["question_attempted", "quiz_completed", "exam_completed", "activity_completed"])
+    .order("created_at", { ascending: false });
+  // Event-derived learning patterns must never mix activity from another
+  // syllabus. Legacy events without a verified syllabus are intentionally
+  // excluded until their source pipelines can attach that context.
+  const scopedMistakeEventsQuery = syllabusId
+    ? mistakeEventsQuery.eq("data->>syllabusId", syllabusId).limit(500)
+    : mistakeEventsQuery.limit(0);
+
   const [academicProfileResult, memoryResult, topicsResult, mistakeEventsResult] = await Promise.all([
     supabase
       .from("profiles")
@@ -137,13 +150,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       .eq("user_id", userId)
       .order("last_attempted", { ascending: false })
       .limit(200),
-    supabase
-      .from("cortex_events")
-      .select("type, data, created_at")
-      .eq("user_id", userId)
-      .in("type", ["question_attempted", "quiz_completed", "exam_completed", "activity_completed"])
-      .order("created_at", { ascending: false })
-      .limit(500),
+    scopedMistakeEventsQuery,
   ]);
 
   if (academicProfileResult.error) {
