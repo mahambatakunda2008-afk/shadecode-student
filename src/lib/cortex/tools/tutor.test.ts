@@ -171,7 +171,7 @@ describe("Cortex tutor learner continuity", () => {
     const response = await generateTutoringResponse("chain-rule", {
       studentContext: eventContext,
       subjectName: "Mathematics",
-      curriculum: { identity: { syllabusId: "cambridge-9702" } } as any,
+      curriculum: { identity: { syllabusId: "cambridge-9702" }, knowledge: { items: [] }, required: [], assessment: [] } as any,
     });
 
     expect(response).toContain("3 incorrect responses across 2 separate attempts");
