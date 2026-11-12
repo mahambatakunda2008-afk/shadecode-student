@@ -218,6 +218,8 @@ describe("handwriting correction notation safeguards", () => {
   it("flags changed standalone fractions even when no equation is present", () => {
     expect(findHandwritingNotationWarnings("The ratio is 1/2", "The ratio is 1/3")).toContain("fractions");
     expect(findHandwritingNotationWarnings("The ratio is 1 / 2", "The ratio is 1/2")).toEqual([]);
+    expect(findHandwritingNotationWarnings("The ratio is ½", "The ratio is ⅓")).toContain("fractions");
+    expect(findHandwritingNotationWarnings("The ratio is ½", "The ratio is 1/2")).toContain("fractions");
   });
 
   it("flags a changed unary sign on a standalone negative value", () => {
