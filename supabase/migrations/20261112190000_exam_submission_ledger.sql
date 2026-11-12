@@ -24,7 +24,8 @@ alter table public.exam_submission_ledger enable row level security;
 drop policy if exists "students read their exam submission ledger" on public.exam_submission_ledger;
 create policy "students read their exam submission ledger"
   on public.exam_submission_ledger for select
-  using (auth.uid() = user_id);
+  to authenticated
+  using ((select auth.uid()) = user_id);
 
 create or replace function public.claim_exam_submission(
   p_user_id uuid,
@@ -33,7 +34,7 @@ create or replace function public.claim_exam_submission(
 )
 returns table(state text, saved_result jsonb, claim_token uuid)
 language plpgsql
-security definer
+security invoker
 set search_path = public
 as $$
 declare
@@ -87,7 +88,7 @@ create or replace function public.complete_exam_submission(
 )
 returns boolean
 language plpgsql
-security definer
+security invoker
 set search_path = public
 as $$
 declare
@@ -119,6 +120,7 @@ grant execute on function public.claim_exam_submission(uuid, text, text) to serv
 grant execute on function public.complete_exam_submission(uuid, text, text, uuid, jsonb) to service_role;
 
 grant select on public.exam_submission_ledger to authenticated;
+grant all on public.exam_submission_ledger to service_role;
 
 
 -- Stable identity for visible exam results. Historical rows retain NULL identities.
