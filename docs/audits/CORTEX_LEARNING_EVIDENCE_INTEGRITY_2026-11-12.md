@@ -56,6 +56,17 @@ GitHub Actions CI is configured in `.github/workflows/ci.yml` to run typecheck, 
 
 The production build for the code above completed and the deployment is READY. A real authenticated learner attempt has not yet been submitted end-to-end, so runtime event insertion and subsequent retrieval remain unverified.
 
+## Additional event-pipeline findings
+
+A production schema/data inspection found why existing event history has not been enough to drive reliable longitudinal patterns:
+
+- The current `exam-sim` source has 75 `question_attempted` events. They carry topic IDs, but their `subjectId` values are null and they have no syllabus attribution.
+- The current `learn-quiz` source has 10 `question_attempted` events without usable subject, topic, or syllabus attribution.
+- The existing generic event normalizer accepts subject/topic identifiers but has no first-class syllabus field. The UI event helpers also describe normalized subject/topic labels as grouping keys, not verified syllabus identifiers.
+- The live `topic_mastery` table has a nullable `syllabus_id`, but its unique key is still `(user_id, subject, topic)`. The generic `projectLearningEvent` projection also reads and upserts by user, subject, and topic without scoping by syllabus.
+
+This means simply routing the new events through the generic mastery projector would risk merging two syllabuses into one topic row. The new verified-practice writer therefore persists the syllabus-scoped event directly through the authenticated canonical RPC and leaves the existing mastery projection untouched. This is deliberate, not an incomplete fallback.
+
 ## Remaining follow-up
 
 - Attach verified syllabus IDs to the existing exam-simulation and Learn-quiz event writers so their historical evidence can safely participate in syllabus-scoped memory.
