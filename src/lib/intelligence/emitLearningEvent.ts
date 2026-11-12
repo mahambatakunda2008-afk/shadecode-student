@@ -1,6 +1,7 @@
 import type { LearningEventKind } from "./learningEvents";
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 import { getRememberedUserId } from "@/lib/local-first/identity";
+import { normalizeLearningContext } from "./learningContextKey";
 
 type LearningMetadata = Record<string, string | number | boolean | null>;
 export type LearningEventInput = {
@@ -189,7 +190,8 @@ export function examStartedEvent(examId: string, subject?: string, topic?: strin
 }
 
 export function questionAttemptedEvent(examId: string, questionId: string | number, subject?: string, topic?: string, metadata?: LearningMetadata) {
-  return emitLearningEvent({ source: "exam-sim", sourceEventId: `question-attempt:${examId}:${questionId}`, subjectId: subject, topicId: topic, entityId: String(questionId), attemptId: examId, type: "question.attempted", metadata });
+  const context = normalizeLearningContext(subject, topic);
+  return emitLearningEvent({ source: "exam-sim", sourceEventId: `question-attempt:${examId}:${questionId}`, ...context, entityId: String(questionId), attemptId: examId, type: "question.attempted", metadata });
 }
 
 export function examCompletedEvent(examId: string, subject?: string, topic?: string, metadata?: LearningMetadata) {
