@@ -160,13 +160,28 @@ export function fitQuadraticSegments(points: Point[], maxSegments = 3): Quadrati
     const first = slice[0], last = slice[slice.length - 1];
     const chordX = last.x - first.x, chordY = last.y - first.y;
     const chordSquared = Math.max(chordX * chordX + chordY * chordY, 1);
-    let peakError = 0, split = -1;
-    for (let i = 2; i < slice.length - 2; i++) {
+    let peakError = 0, peakIndex = -1;
+    const signedResiduals: number[] = [];
+    for (let i = 0; i < slice.length; i++) {
       const sample = slice[i];
       const t = Math.max(0, Math.min(1, ((sample.x-first.x)*chordX+(sample.y-first.y)*chordY)/chordSquared)), u = 1 - t;
       const predicted = { x: u*u*first.x + 2*u*t*fit.control.x + t*t*last.x, y: u*u*first.y + 2*u*t*fit.control.y + t*t*last.y };
-      const error = distance(slice[i], predicted);
-      if (error > peakError) { peakError = error; split = start + i; }
+      const crossTrack = (chordX * (sample.y - predicted.y) - chordY * (sample.x - predicted.x)) / Math.sqrt(chordSquared);
+      signedResiduals.push(crossTrack);
+      const error = Math.abs(crossTrack);
+      if (i >= 2 && i <= slice.length - 3 && error > peakError) { peakError = error; peakIndex = i; }
+    }
+    let split = peakIndex < 0 ? -1 : start + peakIndex;
+    // For an S-curve, split at the inflection after the largest lobe rather
+    // than at its peak. This gives each half a stable, single-bend fit.
+    if (peakIndex >= 0) {
+      const peakSign = Math.sign(signedResiduals[peakIndex]);
+      for (let i = peakIndex + 1; i <= slice.length - 3; i++) {
+        if (Math.sign(signedResiduals[i]) !== 0 && Math.sign(signedResiduals[i]) !== peakSign) {
+          split = start + i;
+          break;
+        }
+      }
     }
     const acceptable = fit.bend >= 5 && fit.rmsError <= Math.max(4.5, fit.bend * 0.13)
       && fit.maxError <= Math.max(12, fit.bend * 0.32);
