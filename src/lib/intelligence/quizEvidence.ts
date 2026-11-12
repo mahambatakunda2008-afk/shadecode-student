@@ -67,11 +67,12 @@ export function buildQuizQuestionEvidence(
  * Builds one aggregate completion event. It is explicitly aggregate-only so
  * the quiz result cannot double-count the question-level evidence above.
  */
-export function buildQuizCompletionEvidence(input: QuizCompletionEvidence & { reviewSessionId?: string }): LearningEventInput {
+export function buildQuizCompletionEvidence(input: QuizCompletionEvidence & { reviewSessionId?: string; subject?: string; topicId?: string }): LearningEventInput {
   return {
     source: "learn-quiz",
     sourceEventId: `quiz-complete:${input.quizAttemptId}`,
     type: "quiz.completed",
+    ...normalizeLearningContext(input.subject, input.topicId),
     entityId: input.lessonId,
     attemptId: input.quizAttemptId,
     metadata: {
