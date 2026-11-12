@@ -157,8 +157,13 @@ export default function QuizPage() {
         questionCount: questions.length,
         correctCount: finalCorrectCount,
         reviewSessionId: reviewSessionIdRef.current,
+        subject: lessonSubject || undefined,
+        topicId: lessonTopic || undefined,
       });
       void emitLearningEvent(completion);
+      if (reviewSessionIdRef.current) {
+        try { sessionStorage.removeItem("shadecode:cortex:active-review:v1"); } catch {}
+      }
       setPhase("results");
     }
   }
