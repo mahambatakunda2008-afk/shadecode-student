@@ -427,7 +427,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [handwritingText, setHandwritingText] = useState("");
   const [handwritingRawText, setHandwritingRawText] = useState("");
   const [handwritingUncertainty, setHandwritingUncertainty] = useState<UncertainHandwritingCharacter[]>([]);
-  const [handwritingConfidence, setHandwritingConfidence] = useState<number | null>(null);\n  const [handwritingNotationWarnings, setHandwritingNotationWarnings] = useState<string[]>([]);
+  const [handwritingConfidence, setHandwritingConfidence] = useState<number | null>(null);
+  const [handwritingNotationWarnings, setHandwritingNotationWarnings] = useState<string[]>([]);
   const [handwritingMathExpressions, setHandwritingMathExpressions] = useState<Array<{ sourceText: string; latex: string; confidence: number | null; uncertainTokens: string[] }>>([]);
   const [status, setStatus] = useState("Auto-fix is on. Strokes smooth as you draw; shapes snap when you lift the pointer.");
 
@@ -550,7 +551,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         context: item.context || "",
         reason: item.reason || "",
       })));
-      setHandwritingConfidence(typeof result.confidence === "number" ? result.confidence : null);\n      setHandwritingNotationWarnings(Array.isArray(result.notationWarnings) ? result.notationWarnings.filter((value: unknown): value is string => typeof value === "string").slice(0, 5) : []);
+      setHandwritingConfidence(typeof result.confidence === "number" ? result.confidence : null);
+      setHandwritingNotationWarnings(Array.isArray(result.notationWarnings) ? result.notationWarnings.filter((value: unknown): value is string => typeof value === "string").slice(0, 5) : []);
       setHandwritingMathExpressions(Array.isArray(result.mathExpressions) ? result.mathExpressions.filter((item: unknown): item is { sourceText: string; latex: string; confidence: number | null; uncertainTokens: string[] } => {
         if (!item || typeof item !== "object") return false;
         const expression = item as Record<string, unknown>;
