@@ -7,7 +7,7 @@ export type ShadecodeFeatureName =
   | "leaderboard" | "code-lab" | "past-papers" | "insights" | "profile" | "settings"
   | "tasks" | "assessments" | "courses" | "study" | "study-plan" | "progress"
   | "achievements" | "share" | "whatsapp" | "virtual-lab" | "workmate" | "projects"
-  | "studyspace";
+  | "studyspace" | "tutorials";
 
 type Props = {
   icon?: LucideIcon;
@@ -90,6 +90,7 @@ function Glyph({ feature, Icon, active, gradient, className }: {
     case "workmate": return svg(<><rect {...p} x="4" y="6.5" width="16" height="13" rx="2" /><path {...p} d="M9 6.5V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v1.5M4 11.5h16M10 11.5v2h4v-2" /></>);
     case "projects": return svg(<><path {...p} d="M4 6.5h6l1.7 2H20v10.7H4z" /><path {...p} d="M8 13h8M8 16h5" /></>);
     case "studyspace": return svg(<><path {...p} d="M4 5.5h16v13H4z" /><path {...p} d="M8 5.5v13M4 9.5h4M4 13h4M4 16.5h4M12 9h5M12 12.5h5M12 16h3" /></>);
+    case "tutorials": return svg(<><rect {...p} x="3.5" y="5" width="17" height="11.5" rx="2.2" /><path {...p} d="m10.4 8.4 4.2 2.4-4.2 2.4z" /><path {...p} d="M8 19.5h8" /></>);
     case "settings": return svg(<><path {...p} d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle {...p} cx="12" cy="12" r="3" /></>);
     default: return Icon ? <Icon aria-hidden="true" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)} stroke="currentColor" strokeWidth={active ? 2.35 : 2} /> : null;
   }

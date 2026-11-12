@@ -100,3 +100,16 @@ describe("Comp Lab visibility across learner experiences", () => {
     ).toContain("/comp-lab");
   });
 });
+
+describe("teacher tutorials navigation", () => {
+  it("lights up Tutorials, not Learn, on tutorial pages, and still lights up Learn elsewhere", async () => {
+    const { isRouteActive, NAV_ITEMS, SIDEBAR_GROUPS } = await import("./navigation");
+    expect(isRouteActive("/learn/tutorials", NAV_ITEMS.teacherTutorials.href)).toBe(true);
+    expect(isRouteActive("/learn/tutorials/abc", NAV_ITEMS.teacherTutorials.href)).toBe(true);
+    expect(isRouteActive("/learn/tutorials", NAV_ITEMS.learn.href)).toBe(false);
+    expect(isRouteActive("/learn/tutorials/abc", NAV_ITEMS.learn.href)).toBe(false);
+    expect(isRouteActive("/learn", NAV_ITEMS.learn.href)).toBe(true);
+    expect(isRouteActive("/learn/some-lesson-id", NAV_ITEMS.learn.href)).toBe(true);
+    expect(SIDEBAR_GROUPS.flatMap((g) => g.items.map((i) => i.href))).toContain("/learn/tutorials");
+  });
+});

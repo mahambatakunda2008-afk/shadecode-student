@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
+import { lessonReviewId } from '@/lib/teacher/reviewItems'
+import { loadReviewStatus } from '@/lib/teacher/loadReviewStatus'
+import { NOT_VERIFIED } from '@/lib/teacher/reviewStatus'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +37,10 @@ export async function GET(request: NextRequest) {
     const { data: vote } = user
       ? await supabase.from('lesson_votes').select('helpful').eq('lesson_id', id).eq('user_id', user.id).maybeSingle()
       : { data: null }
-    return NextResponse.json({ lesson: data, myVote: vote ? (vote.helpful ? 'up' : 'down') : null })
+    // Verified only if a teacher reviewed this exact wording; editing the lesson makes earlier reviews stale.
+    const reviewId = lessonReviewId({ id: data.id, title: data.title, topic: data.topic, subject: data.subject, blocks: data.blocks })
+    const teacherReview = (await loadReviewStatus([reviewId])).get(reviewId) ?? NOT_VERIFIED
+    return NextResponse.json({ lesson: data, myVote: vote ? (vote.helpful ? 'up' : 'down') : null, teacherReview })
   } catch (error) {
     console.error('[library/lesson]', error)
     return NextResponse.json({ error: 'Could not load that lesson', retryable: true }, { status: 500 })

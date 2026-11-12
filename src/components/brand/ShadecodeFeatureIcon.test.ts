@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ShadecodeFeatureIcon, type ShadecodeFeatureName } from "./ShadecodeFeatureIcon";
 
-const FEATURES: ShadecodeFeatureName[] = ["home","learn","exam-sim","math-checker","focus","timetable","leaderboard","code-lab","past-papers","insights","profile","settings","tasks","assessments","courses","study","study-plan","progress","achievements","share","whatsapp","virtual-lab","workmate","projects","studyspace"];
+const FEATURES: ShadecodeFeatureName[] = ["home","learn","exam-sim","math-checker","focus","timetable","leaderboard","code-lab","past-papers","insights","profile","settings","tasks","assessments","courses","study","study-plan","progress","achievements","share","whatsapp","virtual-lab","workmate","projects","studyspace","tutorials"];
 const render = (feature: ShadecodeFeatureName, active = false) =>
   renderToStaticMarkup(createElement(ShadecodeFeatureIcon, { feature, tile: false, active }));
 

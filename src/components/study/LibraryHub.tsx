@@ -1,5 +1,6 @@
 "use client";
 
+import TeacherVerifiedBadge from "@/components/learn/TeacherVerifiedBadge";
 import { useCallback, useState } from "react";
 import { ArrowLeft, Loader2, Search, ThumbsDown, ThumbsUp } from "lucide-react";
 import { renderMath } from "@/lib/exam/mathText";
@@ -21,6 +22,7 @@ export default function LibraryHub({ subjects }: { subjects: LearnerSubject[] })
   const [asked, setAsked] = useState("");
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [myVote, setMyVote] = useState<"up" | "down" | null>(null);
+  const [teacherReview, setTeacherReview] = useState<{ verified: boolean; reviewers: number } | null>(null);
   const [opening, setOpening] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -46,10 +48,11 @@ export default function LibraryHub({ subjects }: { subjects: LearnerSubject[] })
     setNotice(null);
     try {
       const response = await fetch(`/api/library/lesson?id=${encodeURIComponent(id)}`);
-      const data = (await response.json()) as { lesson?: Lesson; myVote?: "up" | "down" | null };
+      const data = (await response.json()) as { lesson?: Lesson; myVote?: "up" | "down" | null; teacherReview?: { verified: boolean; reviewers: number } };
       if (!response.ok || !data.lesson) throw new Error("open failed");
       setLesson(data.lesson);
       setMyVote(data.myVote ?? null);
+      setTeacherReview(data.teacherReview ?? null);
     } catch {
       setNotice("Couldn't open that lesson. Please try again.");
     } finally {
@@ -79,6 +82,9 @@ export default function LibraryHub({ subjects }: { subjects: LearnerSubject[] })
         </button>
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">{lesson.title}</h1>
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">{[lesson.subject, lesson.difficulty].filter(Boolean).join(" · ")}</p>
+        {teacherReview?.verified && (
+          <div className="mt-2"><TeacherVerifiedBadge detail detailText={teacherReview.reviewers === 1 ? "Reviewed by a teacher" : `Reviewed by ${teacherReview.reviewers} teachers`} /></div>
+        )}
 
         <div className="mt-6 grid gap-3">
           {lesson.blocks.map((block, index) => (

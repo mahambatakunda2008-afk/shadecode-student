@@ -31,6 +31,7 @@ import {
   FlaskConical,
   LayoutDashboard,
   FileCheck2,
+  MonitorPlay,
 } from "lucide-react";
 import type { AcademicExperience } from "@/lib/academic/experience";
 import type { ShadecodeFeatureName } from "@/components/brand/ShadecodeFeatureIcon";
@@ -59,6 +60,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   examSim: { href: "/exam-sim", label: "Exam Sim", icon: ClipboardCheck, feature: "exam-sim" },
   mathChecker: { href: "/math-checker", label: "Math Checker", icon: Calculator, feature: "math-checker" },
   learn: { href: "/learn", label: "Learn", icon: BookOpen, feature: "learn" },
+  teacherTutorials: { href: "/learn/tutorials", label: "Tutorials", icon: MonitorPlay, feature: "tutorials" },
   compLab: { href: "/comp-lab", label: "Comp Lab", icon: Code2, feature: "code-lab" },
   curriculum: { href: "/curriculum", label: "Courses", icon: BookOpen, feature: "courses" },
   workmate: { href: "/workmate", label: "Workmate", icon: BriefcaseBusiness, feature: "workmate" },
@@ -134,6 +136,7 @@ export function getExperienceNavGroups(
       items: [
         NAV_ITEMS.dashboard,
         NAV_ITEMS.learn,
+        NAV_ITEMS.teacherTutorials,
         NAV_ITEMS.curriculum,
         NAV_ITEMS.study,
         NAV_ITEMS.studyPlan,
@@ -252,6 +255,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
     group: "Tools",
     items: [
       NAV_ITEMS.learn,
+      NAV_ITEMS.teacherTutorials,
       NAV_ITEMS.curriculum,
       NAV_ITEMS.projects,
       NAV_ITEMS.workmate,
@@ -277,6 +281,7 @@ export const BOTTOM_PRIMARY: NavItem[] = [
 ];
 
 export const BOTTOM_MORE: NavItem[] = [
+  NAV_ITEMS.teacherTutorials,
   NAV_ITEMS.curriculum,
   NAV_ITEMS.timetable,
   NAV_ITEMS.studyPlan,
@@ -300,5 +305,7 @@ export const BOTTOM_MORE: NavItem[] = [
 
 export function isRouteActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
+  // Teacher tutorials live under /learn but are their own destination, so "Learn" must not also light up.
+  if (href === "/learn" && (pathname === "/learn/tutorials" || pathname.startsWith("/learn/tutorials/"))) return false;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
