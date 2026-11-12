@@ -31,9 +31,10 @@ data class NativeLessonEntity(
     val updatedAt: Long = System.currentTimeMillis(),
 )
 
-@Entity(tableName = "lesson_progress")
+@Entity(tableName = "lesson_progress", primaryKeys = ["accountId", "lessonId"])
 data class NativeLessonProgressEntity(
-    @PrimaryKey val lessonId: String,
+    val accountId: String,
+    val lessonId: String,
     val subjectId: String,
     val progress: Float,
     val completed: Boolean,
@@ -74,8 +75,8 @@ interface NativeLessonDao {
 
 @androidx.room.Dao
 interface NativeProgressDao {
-    @androidx.room.Query("SELECT * FROM lesson_progress WHERE lessonId = :lessonId LIMIT 1")
-    suspend fun get(lessonId: String): NativeLessonProgressEntity?
+    @androidx.room.Query("SELECT * FROM lesson_progress WHERE accountId = :accountId AND lessonId = :lessonId LIMIT 1")
+    suspend fun get(accountId: String, lessonId: String): NativeLessonProgressEntity?
     @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     suspend fun save(progress: NativeLessonProgressEntity)
 }
@@ -92,7 +93,7 @@ interface NativeSyncDao {
 
 @Database(
     entities = [NativeSubjectEntity::class, NativeLessonEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class NativeDatabase : RoomDatabase() {
@@ -131,6 +132,32 @@ abstract class NativeDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS lesson_progress_new (
+                        accountId TEXT NOT NULL,
+                        lessonId TEXT NOT NULL,
+                        subjectId TEXT NOT NULL,
+                        progress REAL NOT NULL,
+                        completed INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(accountId, lessonId)
+                    )
+                """.trimIndent())
+                // Old progress has no recorded owner. Keep it isolated under an
+                // explicit unassigned namespace rather than exposing it to any login.
+                db.execSQL("""
+                    INSERT INTO lesson_progress_new
+                    (accountId, lessonId, subjectId, progress, completed, updatedAt)
+                    SELECT '', lessonId, subjectId, progress, completed, updatedAt
+                    FROM lesson_progress
+                """.trimIndent())
+                db.execSQL("DROP TABLE lesson_progress")
+                db.execSQL("ALTER TABLE lesson_progress_new RENAME TO lesson_progress")
+            }
+        }
+
         @Volatile private var instance: NativeDatabase? = null
         @Volatile private var applicationContext: Context? = null
 
@@ -143,7 +170,7 @@ abstract class NativeDatabase : RoomDatabase() {
             )
                 // Version 1 already contains subjects, lesson_progress and pending_sync.
                 // Add the lesson cache without wiping offline progress or queued work.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
                 .also { instance = it }
         }
