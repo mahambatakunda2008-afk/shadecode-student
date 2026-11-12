@@ -99,6 +99,50 @@ function recognizeFreehandArrow(points: Point[]): { tool: "arrow"; from: Point; 
   return null;
 }
 
+
+export type QuadraticCurveFit = { control: Point; rmsError: number; maxError: number; bend: number };
+
+/** Least-squares quadratic Bézier fit using arc-length parameterisation. */
+export function fitQuadraticCurve(points: Point[]): QuadraticCurveFit | null {
+  if (points.length < 5) return null;
+  const first = points[0], last = points[points.length - 1];
+  const cumulative = [0];
+  for (let i = 1; i < points.length; i++) cumulative.push(cumulative[i - 1] + distance(points[i - 1], points[i]));
+  const total = cumulative[cumulative.length - 1];
+  if (total < 1) return null;
+  let denominator = 0, controlX = 0, controlY = 0;
+  for (let i = 1; i < points.length - 1; i++) {
+    const t = cumulative[i] / total;
+    const u = 1 - t;
+    const coefficient = 2 * u * t;
+    const baseX = u * u * first.x + t * t * last.x;
+    const baseY = u * u * first.y + t * t * last.y;
+    controlX += coefficient * (points[i].x - baseX);
+    controlY += coefficient * (points[i].y - baseY);
+    denominator += coefficient * coefficient;
+  }
+  if (denominator < 1e-6) return null;
+  const control = { x: controlX / denominator, y: controlY / denominator };
+  let squaredError = 0, maxError = 0;
+  for (let i = 1; i < points.length - 1; i++) {
+    const t = cumulative[i] / total, u = 1 - t;
+    const predicted = {
+      x: u * u * first.x + 2 * u * t * control.x + t * t * last.x,
+      y: u * u * first.y + 2 * u * t * control.y + t * t * last.y,
+    };
+    const error = distance(points[i], predicted);
+    squaredError += error * error;
+    maxError = Math.max(maxError, error);
+  }
+  const count = Math.max(1, points.length - 2);
+  const rmsError = Math.sqrt(squaredError / count);
+  const dx = last.x - first.x, dy = last.y - first.y;
+  const chordLength = Math.max(Math.hypot(dx, dy), 1);
+  const bend = Math.abs((control.x - (first.x + last.x) / 2) * (-dy / chordLength)
+    + (control.y - (first.y + last.y) / 2) * (dx / chordLength));
+  return { control, rmsError, maxError, bend };
+}
+
 export type RecognizedShape = { tool: Tool; from: Point; to: Point; control?: Point; vertices?: Point[] };
 
 export function recognizeShape(points: Point[]): RecognizedShape | null {
@@ -117,24 +161,14 @@ export function recognizeShape(points: Point[]): RecognizedShape | null {
   if (!closed) {
     const arrow = recognizeFreehandArrow(points);
     if (arrow) return arrow;
-    // Fit a quadratic curve to the strongest perpendicular deviation from the chord.
-    // This preserves the direction and bend the teacher actually drew.
-    const dx = last.x - first.x, dy = last.y - first.y;
-    const length = Math.max(Math.hypot(dx, dy), 1);
-    const normal = { x: -dy / length, y: dx / length };
-    let strongest = 0;
-    for (const point of points.slice(1, -1)) {
-      const deviation = (point.x - first.x) * normal.x + (point.y - first.y) * normal.y;
-      if (Math.abs(deviation) > Math.abs(strongest)) strongest = deviation;
-    }
-    if (Math.abs(strongest) >= 12 && pathLength / Math.max(direct, 1) < 1.8) {
-      const midpoint = { x: (first.x + last.x) / 2, y: (first.y + last.y) / 2 };
-      return {
-        tool: "curve",
-        from: first,
-        to: last,
-        control: { x: midpoint.x + normal.x * strongest * 2, y: midpoint.y + normal.y * strongest * 2 },
-      };
+    // Fit the complete stroke rather than trusting one noisy extreme point.
+    // Arc-length parameterisation keeps uneven finger/stylus sampling from
+    // pulling the fitted curve toward a slow section of the stroke.
+    const fit = fitQuadraticCurve(points);
+    const curveComplexity = pathLength / Math.max(direct, 1);
+    if (fit && fit.bend >= 10 && fit.rmsError <= Math.max(7, fit.bend * 0.16)
+      && fit.maxError <= Math.max(18, fit.bend * 0.42) && curveComplexity < 1.9) {
+      return { tool: "curve", from: first, to: last, control: fit.control };
     }
     return null;
   }
