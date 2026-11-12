@@ -138,6 +138,14 @@ async function processOutbox(req: Request) {
       });
       if (analyticsError) throw new Error(`Exam analytics persistence: ${analyticsError.message}`);
 
+      const { error: invalidationError } = await svc.rpc("invalidate_recommendation_cache", {
+        p_user_id: job.user_id,
+        p_event_id: payload.eventId,
+      });
+      if (invalidationError) {
+        throw new Error(`Recommendation cache invalidation: ${invalidationError.message}`);
+      }
+
       const { data: finished, error: finishError } = await svc.rpc("finish_exam_completion_outbox", {
         p_id: job.id,
         p_claim_token: job.claim_token,
