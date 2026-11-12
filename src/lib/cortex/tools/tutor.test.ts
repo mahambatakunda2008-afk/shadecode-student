@@ -63,6 +63,11 @@ const context: CortexStudentContext = {
     topics: [],
     interpretation: "descriptive_only",
   },
+  reviewActivity: {
+    state: "insufficient_evidence",
+    source: "cortex_events",
+    sessions: [],
+  },
   reviewSuggestions: {
     state: "insufficient_evidence",
     source: "cortex_events",
