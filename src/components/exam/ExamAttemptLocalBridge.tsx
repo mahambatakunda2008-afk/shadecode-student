@@ -95,7 +95,7 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
 
   useEffect(() => {
     let alive = true;
-    void createClient().auth.getUser().then(({ data }) => { if (alive) setUserId(data.user?.id ?? null); }).finally(() => { if (alive) setAuthReady(true); });
+    void createClient().auth.getSession().then(({ data }) => { if (alive) setUserId(data.session?.user?.id ?? null); }).finally(() => { if (alive) setAuthReady(true); });
     return () => { alive = false; };
   }, []);
 
