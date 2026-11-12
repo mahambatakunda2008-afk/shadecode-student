@@ -231,3 +231,17 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 
 
 - Follow-up hardening: added an explicit `service_role`-only ALL policy to the outbox table in migration `20261112220000_exam_completion_outbox_service_role_policy.sql`, then applied it. The outbox remains inaccessible to `anon` and `authenticated`.
+
+
+## 2026-11-12 implementation update: durable topic-mastery projection
+
+- Added and applied migration `20261112230000_atomic_exam_topic_mastery_projection.sql`.
+- Added `exam_mastery_projection_ledger`, uniquely keyed by user, attempt, subject, and topic. It prevents an outbox retry from applying the same mastery observation twice.
+- Added service-role-only RPC `project_exam_topic_mastery`. It serializes updates per student/subject/topic using a transaction-scoped advisory lock, locks existing mastery rows, applies the same 70/30 EMA mastery transition and richer learning-state updates, then writes the topic projection.
+- The exam-mark route no longer updates `topic_mastery` synchronously. It calculates per-topic percentages and includes them in the completion event committed with the result.
+- The outbox worker now projects each topic through the idempotent RPC before acknowledging the event. A retry after partial completion safely skips topics already recorded in the projection ledger and continues unfinished topics.
+- Added and executed `supabase/tests/atomic_exam_topic_mastery_projection.test.sql` against the active Supabase project. It verifies first projection, duplicate-attempt suppression, and a second distinct attempt updating the EMA (60 then 100 yields 72) with attempt/exposure counters incremented once. Test transaction rolled back.
+- Verified service_role can execute the RPC, authenticated cannot, and authenticated cannot read the projection ledger.
+- Legacy exam requests without a stable attempt ID retain their compatibility synchronous event/memory path; they do not get the transactional mastery outbox guarantee.
+- The outbox worker still emits the unified event pipeline after the durable Cortex and mastery projections. That pipeline's secondary analytics/cache handlers are not yet all independently durable or exactly-once.
+- GitHub Actions runs for the latest commits were still in progress when checked. Vercel build/deployment remains unverified due the previously reported build-rate-limit failure. No full TypeScript build, application test suite, real concurrent stress test, or end-to-end deployed exam test has passed for this change.
