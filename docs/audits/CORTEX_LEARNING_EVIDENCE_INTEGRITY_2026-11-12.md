@@ -96,3 +96,34 @@ Commits:
 - `d9965062c292a3c170e44421db78db730d19368d`
 
 Verification: GitHub Actions CI was queued for the latest commit at the time of this update. No local Vitest run, browser offline/online replay test, or live database projection-failure simulation has been performed. The Vercel status remains a build-rate-limit failure and is not evidence of a TypeScript or application-build failure.
+
+
+## Follow-up: atomic canonical mastery projection
+
+A deeper concurrency audit found a second, more fundamental issue in the generic learning projector. It used a client-side read/modify/upsert sequence after inserting a projection marker. Two different learning events for the same learner/topic could read the same previous mastery and then overwrite one another. The marker prevented replay of the same event, but it did not prevent lost updates between distinct events.
+
+Implemented directly on `main` and applied to the connected Supabase project:
+
+- Added `public.canonical_learning_projection_ledger`, keyed by `(user_id,event_id)`, with RLS enabled and access restricted to `service_role`.
+- Added `project_canonical_learning_observation(...)`, a database function that validates evidence, obtains a transaction-scoped advisory lock for the learner/subject/topic, inserts the idempotency ledger row, reads the latest topic state under row lock, and updates the mastery state in the same transaction.
+- Moved the generic canonical projector from client-side read/modify/upsert to this atomic RPC. The shared 70/30 mastery transition and supporting state updates are retained.
+- The RPC is not executable by `anon` or `authenticated`; only `service_role` can call it.
+- The migration backfills any existing marker-based projections into the new ledger before switching the application path. The live backfill found zero existing markers, so no historical markers needed migration.
+- Added a database regression script covering first projection, duplicate replay, and a second distinct observation.
+- Aligned the repository migration filename to the version actually recorded by the connected database: `20261112190256_atomic_canonical_learning_projection.sql`.
+
+Commits:
+- `191e362a03ebd8fb61e33dced0d6a59d90ea9e0f` — application uses atomic projection RPC.
+- `9db56fddbb9ce25e46f94eff785e06bc7cbc99b6` — migration file.
+- `54f9ae654ca24303ce266e83ce3cbf585a78a878` — migration backfill protection.
+- `b267093704f1669613853b0fde74e5bf509088ec` and `af0642611d0179d3bc22c38b804f4f401d2e9f45` — align migration filename to applied version.
+- `02f020d2db12e3bd03d9fc14c299cc368109c1bb` — database regression test.
+
+Live verification against the connected Supabase project:
+- The migration is recorded as `20261112190256 / atomic_canonical_learning_projection`.
+- A transaction-scoped regression verified first application, duplicate suppression, and a second distinct observation producing attempts=2, exposure=2, mastery=72; the test writes were rolled back.
+- Two distinct observations were then submitted through separate concurrent SQL calls for the same learner/topic. The resulting row showed attempts=2, exposure=2, mastery=62 (80 followed by 20 under the 70/30 transition), proving both updates were retained rather than one overwriting the other. The temporary test row and ledger entries were deleted afterward.
+- Function privilege checks confirmed service_role can execute and anon/authenticated cannot.
+- Security Advisor returned the same unrelated pre-existing findings recorded earlier; no new warning was reported for the projection ledger/function.
+
+Still unverified: a full authenticated browser event replay through the Next.js route, TypeScript/Vitest CI completion, and offline/online device replay. The Vercel status continues to report a build-rate-limit failure, not a source compilation result.
