@@ -14,8 +14,8 @@ Date: 2026-11-12
 
 ## Database migrations
 
-- `20261112170000_add_cortex_learning_context_fields.sql`
-- `20261112174500_separate_cortex_weak_topics_from_subjects.sql`
+- `20261112173852_add_cortex_learning_context_fields.sql`
+- `20261112174149_separate_cortex_weak_topics_from_subjects.sql`
 
 Both migrations were applied to the connected production Supabase project and the resulting columns were verified through `information_schema.columns`.
 
