@@ -1,8 +1,9 @@
 /**
- * /lib/cortex/tools/scoring.ts
- *
  * Deterministic answer scoring used by CortexCore's "practice" intent.
- * No external dependencies — keeps /api/cortex functional without AI keys.
+ *
+ * This scorer deliberately grades only exact, normalized matches. It does not
+ * infer correctness from answer length or treat different wording as wrong.
+ * Free-response answers require a marking guide or human/AI rubric grader.
  */
 
 export interface ScoreAnswerInput {
@@ -14,9 +15,15 @@ export interface ScoreAnswerInput {
 }
 
 export interface ScoreAnswerResult {
-  score: number;
+  /** Null means the answer could not be graded reliably. */
+  score: number | null;
   feedback: string;
   weakTopics: string[];
+  needsReview: boolean;
+}
+
+function normalizeExactAnswer(value: string): string {
+  return value.trim().replace(/\\s+/g, " ").toLocaleLowerCase();
 }
 
 export async function scoreAnswer(
@@ -25,28 +32,38 @@ export async function scoreAnswer(
   const answer = String(payload.answer ?? "").trim();
   const expected = String(payload.correctAnswer ?? payload.expected ?? "").trim();
 
-  let score: number;
-  if (expected) {
-    score =
-      answer && answer.toLowerCase() === expected.toLowerCase()
-        ? 100
-        : answer
-          ? 40
-          : 0;
-  } else {
-    // No reference answer — fall back to an effort/length heuristic.
-    score = answer.length >= 40 ? 80 : answer.length >= 10 ? 60 : answer ? 40 : 0;
+  if (!expected) {
+    return {
+      score: null,
+      feedback: "I can't reliably grade this response without a marking guide. Your answer has been saved for review.",
+      weakTopics: [],
+      needsReview: true,
+    };
+  }
+
+  if (!answer) {
+    return {
+      score: null,
+      feedback: "No answer was provided. Add a marking guide or worked solution to assess this response reliably.",
+      weakTopics: [],
+      needsReview: true,
+    };
+  }
+
+  if (normalizeExactAnswer(answer) === normalizeExactAnswer(expected)) {
+    return {
+      score: 100,
+      feedback: "The answer matches the supplied reference answer.",
+      weakTopics: [],
+      needsReview: false,
+    };
   }
 
   const topic = typeof payload.topic === "string" ? payload.topic.trim() : "";
-  const weakTopics = score < 60 && topic ? [topic] : [];
-
-  const feedback =
-    score >= 80
-      ? "Strong answer — the core concept is understood."
-      : score >= 50
-        ? "Partial understanding — review the key steps and try again."
-        : "Needs work — revisit this topic before moving on.";
-
-  return { score, feedback, weakTopics };
+  return {
+    score: null,
+    feedback: "This answer differs from the reference wording. It may still be correct; a marking guide or human review is needed.",
+    weakTopics: [],
+    needsReview: true,
+  };
 }
