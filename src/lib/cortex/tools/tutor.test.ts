@@ -129,10 +129,39 @@ describe("Cortex tutor learner continuity", () => {
     expect(response).not.toContain("recorded learning attempts");
   });
 
-  it("does not leak evidence across subjects", async () => {
+  it("does not leak evidence across subjects within the same syllabus", async () => {
     const response = await generateTutoringResponse("chain-rule", {
       studentContext: context,
       subjectName: "Physics",
+      curriculum: {
+        identity: {
+          boardId: "cambridge",
+          qualificationId: "alevel",
+          level: "A Level",
+          syllabusId: "cambridge-9702",
+          syllabusVersion: "2025-2027",
+          subjectId: "physics",
+        },
+        objectives: [],
+        knowledge: {
+          identity: {
+            boardId: "cambridge",
+            qualificationId: "alevel",
+            level: "A Level",
+            syllabusId: "cambridge-9702",
+            syllabusVersion: "2025-2027",
+            subjectId: "physics",
+          },
+          items: [],
+          verifiedOnly: true,
+        },
+        required: [],
+        supporting: [],
+        assessment: [],
+        practical: [],
+        terminology: [],
+        provenanceWarnings: [],
+      },
     });
 
     expect(response).not.toContain("recorded learning attempts");
