@@ -137,6 +137,7 @@ fun NativeLessonReader(
                 // The durable account-scoped queue is the single write path. The
                 // worker sends it when connectivity is available, avoiding a second
                 // immediate request racing the queued retry.
+                NativeSyncWorker.schedule(context)
             }
             saved = true
         }
