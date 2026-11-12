@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LearningEventInbox, canonicalEventId, normalizeLearningEvent } from "./learningEvents";
+import { LearningEventInbox, canonicalEventId, isLearningEventDeliveryComplete, normalizeLearningEvent } from "./learningEvents";
 
 describe("canonical learning events", () => {
   const base = {
@@ -42,6 +42,28 @@ describe("canonical learning events", () => {
 
   it("rejects malformed timestamps instead of silently converting them to epoch time", () => {
     expect(normalizeLearningEvent({ ...base, occurredAt: "not-a-date" }).status).toBe("unsupported");
+  });
+
+
+  it("keeps a persisted event queued while its mastery projection is pending", () => {
+    expect(isLearningEventDeliveryComplete(true, {
+      accepted: true,
+      persisted: true,
+      projectionPending: true,
+    })).toBe(false);
+  });
+
+  it("acknowledges a persisted event when no mastery projection is pending", () => {
+    expect(isLearningEventDeliveryComplete(true, {
+      accepted: true,
+      persisted: true,
+      projection: { projected: false, reason: "no-topic-observation" },
+    })).toBe(true);
+  });
+
+  it("does not acknowledge a successful HTTP response without persistence confirmation", () => {
+    expect(isLearningEventDeliveryComplete(true, { accepted: true })).toBe(false);
+    expect(isLearningEventDeliveryComplete(false, { persisted: true })).toBe(false);
   });
 
   it("does not accept a replay twice", () => {
