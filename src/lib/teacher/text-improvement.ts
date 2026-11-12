@@ -25,5 +25,13 @@ export function validateTeacherTextImprovement(original: string, candidate: stri
   if (JSON.stringify(occurrences(source, protectedPattern).sort()) !== JSON.stringify(occurrences(improved, protectedPattern).sort())) {
     return { valid: false, reason: "The proposed edit changes code or a link. The original wording has been preserved." };
   }
+  const equationPattern = /\b[A-Za-z][A-Za-z0-9_]*\s*(?:=|≈|≠|≤|≥|<|>)\s*[A-Za-z0-9_α-ωΑ-Ωπμλθ√∞.+\-*/^()]+/g;
+  if (JSON.stringify(occurrences(source, equationPattern).sort()) !== JSON.stringify(occurrences(improved, equationPattern).sort())) {
+    return { valid: false, reason: "The proposed edit changes an equation or variable relationship. The original wording has been preserved." };
+  }
+  const notationPattern = /[α-ωΑ-ΩπμλθΔ∑∫√∞±×÷≤≥≈≠∝°µ²³⁰¹⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g;
+  if (JSON.stringify(occurrences(source, notationPattern).sort()) !== JSON.stringify(occurrences(improved, notationPattern).sort())) {
+    return { valid: false, reason: "The proposed edit changes scientific or mathematical notation. The original wording has been preserved." };
+  }
   return { valid: true, text: improved };
 }
