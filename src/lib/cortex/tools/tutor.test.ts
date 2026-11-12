@@ -27,6 +27,9 @@ const context: CortexStudentContext = {
     totalStudySessions: 8,
     totalLessonsCompleted: 12,
     averageExamScore: null,
+    lastTopic: null,
+    lastPracticeScore: null,
+    lastPracticeTopic: null,
   },
   topics: {
     state: "available",
