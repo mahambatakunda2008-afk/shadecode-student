@@ -624,9 +624,9 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const point = pointFromEvent(event);
     if (tool === "select") {
       const selectedVector = vectorObjectsRef.current.find(object => object.id === selectedObjectId);
-      if (selectedVector?.type === "polygon") { const index=selectedVector.points.findIndex(vertex=>distance(point,vertex)<=16); if(index>=0){vectorPointDragRef.current={id:selectedVector.id,kind:"polygon",index,origin:point,object:selectedVector};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
-      if (selectedVector?.type === "curve") { const index=selectedVector.segments.findIndex(segment=>distance(point,segment.control)<=16); if(index>=0){vectorPointDragRef.current={id:selectedVector.id,kind:"curve",index,origin:point,object:selectedVector};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
-      if (selectedVector) { const bounds=getDiagramObjectBounds(selectedVector), handle={x:bounds.x+bounds.width,y:bounds.y+bounds.height}; if(distance(point,handle)<=18){vectorResizeRef.current={id:selectedVector.id,origin:point,object:selectedVector,bounds};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
+      if (selectedObjectIds.length<=1 && selectedVector?.type === "polygon") { const index=selectedVector.points.findIndex(vertex=>distance(point,vertex)<=16); if(index>=0){vectorPointDragRef.current={id:selectedVector.id,kind:"polygon",index,origin:point,object:selectedVector};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
+      if (selectedObjectIds.length<=1 && selectedVector?.type === "curve") { const index=selectedVector.segments.findIndex(segment=>distance(point,segment.control)<=16); if(index>=0){vectorPointDragRef.current={id:selectedVector.id,kind:"curve",index,origin:point,object:selectedVector};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
+      if (selectedObjectIds.length<=1 && selectedVector) { const bounds=getDiagramObjectBounds(selectedVector), handle={x:bounds.x+bounds.width,y:bounds.y+bounds.height}; if(distance(point,handle)<=18){vectorResizeRef.current={id:selectedVector.id,origin:point,object:selectedVector,bounds};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
       const hit=[...vectorObjectsRef.current].reverse().find(object=>hitTestDiagramObject(object,point,14));
       if(hit){
         const currentIds=selectedObjectIds;
@@ -635,7 +635,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
           setSelectedObjectIds(nextIds);setSelectedObjectId(hit.id);
           const group=vectorObjectsRef.current.filter(object=>nextIds.includes(object.id));
           if(nextIds.length>1){vectorGroupDragRef.current={ids:nextIds,origin:point,objects:group};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;}
-          if(nextIds.length===1){setObjectLabelDraft(hit.type==="text"?hit.text:"");}
+          if(nextIds.length===1){setObjectLabelDraft(hit.type==="text"?hit.text:"");}else if(nextIds.length===0){setSelectedObjectId(null);setObjectLabelDraft("");}
           return;
         }
         const ids=currentIds.includes(hit.id)?currentIds:[hit.id];
@@ -661,7 +661,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         : { text: label.trim(), improved: false, checked: false };
       const textToPlace = textResult.text;
       if (!textToPlace) return;
-      const textObject:DiagramObject={id:`text-${Date.now()}`,type:"text",x:point.x,y:point.y,text:textToPlace,fontSize,style:{...defaultStyle}};commitVectorObjects([...vectorObjectsRef.current,textObject]);setSelectedObjectId(textObject.id);setObjectLabelDraft("");setStatus("Text added as an editable object.");return;
+      const textObject:DiagramObject={id:`text-${Date.now()}`,type:"text",x:point.x,y:point.y,text:textToPlace,fontSize,style:{...defaultStyle}};commitVectorObjects([...vectorObjectsRef.current,textObject]);setSelectedObjectId(textObject.id);setSelectedObjectIds([textObject.id]);setObjectLabelDraft("");setStatus("Text added as an editable object.");return;
     }
     event.currentTarget.setPointerCapture(event.pointerId);
     drawingRef.current = true; startRef.current = point; pointsRef.current = [point];
@@ -748,7 +748,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     }
     if (["line", "arrow", "rectangle", "ellipse", "triangle", "curve"].includes(tool)) {
       const from = startRef.current, to = points[points.length - 1];
-      if(from&&to){const id=`shape-${Date.now()}`,left=Math.min(from.x,to.x),top=Math.min(from.y,to.y),width=Math.abs(to.x-from.x),height=Math.abs(to.y-from.y);let object:DiagramObject|null=null;if(tool==="line"||tool==="arrow")object={id,type:tool,from,to,style:{...defaultStyle}};else if(tool==="rectangle"||tool==="ellipse"||tool==="triangle")object={id,type:tool,x:left,y:top,width,height,style:{...defaultStyle}};else if(tool==="curve"){const fit=fitQuadraticCurve(points);object={id,type:"curve",segments:[{from,control:fit?.control??{x:(from.x+to.x)/2,y:(from.y+to.y)/2-30},to}],style:{...defaultStyle}};}if(object){commitVectorObjects([...vectorObjectsRef.current,object]);setSelectedObjectId(id);vectorActionCommitted=true;}}
+      if(from&&to){const id=`shape-${Date.now()}`,left=Math.min(from.x,to.x),top=Math.min(from.y,to.y),width=Math.abs(to.x-from.x),height=Math.abs(to.y-from.y);let object:DiagramObject|null=null;if(tool==="line"||tool==="arrow")object={id,type:tool,from,to,style:{...defaultStyle}};else if(tool==="rectangle"||tool==="ellipse"||tool==="triangle")object={id,type:tool,x:left,y:top,width,height,style:{...defaultStyle}};else if(tool==="curve"){const fit=fitQuadraticCurve(points);object={id,type:"curve",segments:[{from,control:fit?.control??{x:(from.x+to.x)/2,y:(from.y+to.y)/2-30},to}],style:{...defaultStyle}};}if(object){commitVectorObjects([...vectorObjectsRef.current,object]);setSelectedObjectId(id);setSelectedObjectIds([id]);vectorActionCommitted=true;}}
       setStatus("Shape created as an editable vector object.");
     } else if (tool === "pen" && autoFix) {
       const recognized = recognizeShape(points);
@@ -759,7 +759,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         else if(recognized.tool==="rectangle"||recognized.tool==="ellipse"||recognized.tool==="triangle")object={id,type:recognized.tool,x:left,y:top,width,height,style:{...defaultStyle}};
         else if(recognized.tool==="polygon"&&recognized.vertices)object={id,type:"polygon",points:recognized.vertices,style:{...defaultStyle}};
         else if(recognized.tool==="curve")object={id,type:"curve",segments:recognized.segments??[{from:recognized.from,control:recognized.control??recognized.from,to:recognized.to}],style:{...defaultStyle}};
-        if(object){commitVectorObjects([...vectorObjectsRef.current,object]);setSelectedObjectId(id);vectorActionCommitted=true;}
+        if(object){commitVectorObjects([...vectorObjectsRef.current,object]);setSelectedObjectId(id);setSelectedObjectIds([id]);vectorActionCommitted=true;}
         setStatus(`Auto-corrected your stroke into an editable ${recognized.tool}.`);
       } else {
         ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
@@ -781,7 +781,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     if(undoTimelineRef.current.length<=1)return;
     undoTimelineRef.current=undoTimelineRef.current.slice(0,-1);
     const previous=undoTimelineRef.current[undoTimelineRef.current.length-1],canvas=canvasRef.current,ctx=canvas?.getContext("2d");
-    if(!ctx)return;ctx.putImageData(previous.raster,0,0);vectorObjectsRef.current=previous.vector;setVectorObjects(previous.vector);setSelectedObjectId(null);setCanUndo(undoTimelineRef.current.length>1);setStatus("Last canvas or diagram-object action undone.");
+    if(!ctx)return;ctx.putImageData(previous.raster,0,0);vectorObjectsRef.current=previous.vector;setVectorObjects(previous.vector);setSelectedObjectId(null);setSelectedObjectIds([]);setCanUndo(undoTimelineRef.current.length>1);setStatus("Last canvas or diagram-object action undone.");
   }
 
   function clear() {
@@ -798,7 +798,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   function distributeSelected(axis:SelectionAxis){const selected=vectorObjectsRef.current.filter(object=>selectedObjectIds.includes(object.id));if(selected.length<3)return;updateSelection(translateSelectionWithinCanvas(distributeSelection(selected,axis),0,0),`Selected objects evenly distributed (${axis}).`);}
   function handleCanvasKeyDown(event: KeyboardEvent<HTMLCanvasElement>) { if(!selectedObjectId)return; const ids=selectedObjectIds.length?selectedObjectIds:[selectedObjectId]; const selected=vectorObjectsRef.current.find(object=>object.id===selectedObjectId); if(!selected)return; if(event.key==="Delete"||event.key==="Backspace"){event.preventDefault();removeSelectedObject();return;} if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="d"){event.preventDefault();duplicateSelectedObject();return;} const step=event.shiftKey?10:1; const delta:Record<string,{x:number;y:number}>={ArrowLeft:{x:-step,y:0},ArrowRight:{x:step,y:0},ArrowUp:{x:0,y:-step},ArrowDown:{x:0,y:step}}; const movement=delta[event.key]; if(movement){event.preventDefault();const objects=vectorObjectsRef.current.filter(object=>ids.includes(object.id));const moved=translateSelectionWithinCanvas(objects,movement.x,movement.y);const byId=new Map(moved.map(object=>[object.id,object]));commitVectorObjects(vectorObjectsRef.current.map(object=>byId.get(object.id)??object));} }
   function moveSelectedLayer(direction: -1 | 1) { const index=vectorObjectsRef.current.findIndex(object=>object.id===selectedObjectId); const target=index+direction; if(index<0||target<0||target>=vectorObjectsRef.current.length)return; const next=[...vectorObjectsRef.current]; [next[index],next[target]]=[next[target],next[index]]; commitVectorObjects(next); }
-  function duplicateSelectedObject() { const object=vectorObjectsRef.current.find(item=>item.id===selectedObjectId); if(!object)return; const moved=moveDiagramObjectWithinCanvas(object,24,24); const duplicate={...moved,id:`copy-${Date.now()}`} as DiagramObject; commitVectorObjects([...vectorObjectsRef.current,duplicate]); setSelectedObjectId(duplicate.id); }
+  function duplicateSelectedObject() { const object=vectorObjectsRef.current.find(item=>item.id===selectedObjectId); if(!object)return; const moved=moveDiagramObjectWithinCanvas(object,24,24); const duplicate={...moved,id:`copy-${Date.now()}`} as DiagramObject; commitVectorObjects([...vectorObjectsRef.current,duplicate]); setSelectedObjectId(duplicate.id);setSelectedObjectIds([duplicate.id]); }
   function save() {
     const canvas=canvasRef.current; if(!canvas)return;
     if(!vectorObjectsRef.current.length){canvas.toBlob(blob=>{if(blob)onSave(new File([blob],"teacher-sketch.png",{type:"image/png"}));},"image/png");return;}
