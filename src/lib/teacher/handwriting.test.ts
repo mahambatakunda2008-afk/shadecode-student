@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeHandwritingRecognition, parseHandwritingRecognition } from "./handwriting";
+import { normalizeHandwritingRecognition, parseHandwritingRecognition, shouldUseHandwritingRetry } from "./handwriting";
 
 describe("handwriting OCR response parsing", () => {
   it("parses a strict JSON response", () => {
@@ -115,5 +115,40 @@ describe("handwriting image payload validation", () => {
     expect(validateHandwritingImageData("iVBORw0KGgo=", "image/jpeg").valid).toBe(false);
     expect(validateHandwritingImageData("A".repeat(4_194_304), "image/png").valid).toBe(false);
     expect(validateHandwritingImageData("AAAA", "image/png").valid).toBe(false);
+  });
+});
+
+
+describe("handwriting OCR retry selection", () => {
+  it("prefers a clearer untouched-image result when its adjusted score is higher", () => {
+    expect(shouldUseHandwritingRetry(
+      { text: "voltage", confidence: 0.78, uncertainCount: 2 },
+      { text: "voltage", confidence: 0.91, uncertainCount: 0 },
+    )).toBe(true);
+  });
+
+  it("does not replace a better first result with a lower-confidence retry", () => {
+    expect(shouldUseHandwritingRetry(
+      { text: "x = 10", confidence: 0.96, uncertainCount: 0 },
+      { text: "x = 1O", confidence: 0.92, uncertainCount: 1 },
+    )).toBe(false);
+  });
+
+  it("uses a retry when the first pass has no usable transcription", () => {
+    expect(shouldUseHandwritingRetry(
+      { text: "", confidence: 1, uncertainCount: 0 },
+      { text: "E = mc²", confidence: 0.5, uncertainCount: 3 },
+    )).toBe(true);
+  });
+
+  it("rejects empty retry text and treats invalid confidence as zero", () => {
+    expect(shouldUseHandwritingRetry(
+      { text: "original", confidence: 0.2, uncertainCount: 0 },
+      { text: "  ", confidence: 1, uncertainCount: 0 },
+    )).toBe(false);
+    expect(shouldUseHandwritingRetry(
+      { text: "original", confidence: Number.NaN, uncertainCount: 0 },
+      { text: "retry", confidence: null, uncertainCount: 0 },
+    )).toBe(false);
   });
 });
