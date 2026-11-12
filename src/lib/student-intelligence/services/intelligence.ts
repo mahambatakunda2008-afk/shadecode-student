@@ -19,11 +19,12 @@ import {
   ServiceResponse,
 } from "../types";
 import { getRecommendationsFromEngine } from "./intelligence-integration";
+import { getRecommendationCacheVersion } from "@/lib/recommendation-cache/version";
 
 const CACHE_TTL = 900; // 15 minutes
 
 export class IntelligenceEngine {
-  private cache: Map<string, { data: StudentIntelligenceData; expiresAt: number }> = new Map();
+  private cache: Map<string, { data: StudentIntelligenceData; expiresAt: number; version: number }> = new Map();
 
   /**
    * Get complete intelligence data for a user
@@ -31,7 +32,8 @@ export class IntelligenceEngine {
   async getIntelligence(userId: string): Promise<ServiceResponse<StudentIntelligenceData>> {
     try {
       // Check cache
-      const cached = this.getFromCache(userId);
+      const cacheVersion = await getRecommendationCacheVersion(userId);
+      const cached = cacheVersion === null ? null : this.getFromCache(userId, cacheVersion);
       if (cached) {
         return {
           success: true,
@@ -58,7 +60,7 @@ export class IntelligenceEngine {
       };
 
       // Cache the result
-      this.setCache(userId, intelligence);
+      if (cacheVersion !== null) this.setCache(userId, intelligence, cacheVersion);
 
       return {
         success: true,
@@ -315,11 +317,11 @@ export class IntelligenceEngine {
   /**
    * Get from cache
    */
-  private getFromCache(userId: string): StudentIntelligenceData | null {
+  private getFromCache(userId: string, version: number): StudentIntelligenceData | null {
     const cached = this.cache.get(userId);
     if (!cached) return null;
 
-    if (Date.now() > cached.expiresAt) {
+    if (Date.now() > cached.expiresAt || cached.version !== version) {
       this.cache.delete(userId);
       return null;
     }
@@ -330,9 +332,10 @@ export class IntelligenceEngine {
   /**
    * Set cache
    */
-  private setCache(userId: string, data: StudentIntelligenceData): void {
+  private setCache(userId: string, data: StudentIntelligenceData, version: number): void {
     this.cache.set(userId, {
       data,
+      version,
       expiresAt: Date.now() + CACHE_TTL * 1000,
     });
   }
