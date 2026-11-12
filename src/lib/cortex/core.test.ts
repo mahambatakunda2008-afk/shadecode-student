@@ -103,6 +103,7 @@ describe("CortexCore learning requests", () => {
       lastPracticeScore: 100,
       lastPracticeTopic: "Quadratic equations",
       lastPracticeSubject: "Mathematics",
+      lastPracticeSyllabusId: null,
     });
     expect(updateMemory).not.toHaveBeenCalledWith("learner-1", expect.objectContaining({
       weakTopics: [],
