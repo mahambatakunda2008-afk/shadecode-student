@@ -24,7 +24,7 @@ const context: CortexStudentContext = {
     evidenceCount: 4,
     items: [{
       topicId: "chain-rule",
-      subjectId: "Mathematics",
+      subjectKey: "Mathematics",
       masteryScore: 61,
       attempts: 4,
       retention: 55,
