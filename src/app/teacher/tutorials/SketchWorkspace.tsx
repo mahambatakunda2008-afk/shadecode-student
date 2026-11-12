@@ -742,7 +742,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   }
 
   const tools: { id: Tool; name: string }[] = [
-    { id: "pen", name: "Pen" }, { id: "eraser", name: "Eraser" }, { id: "line", name: "Line" },
+    { id: "select", name: "Select / move" }, { id: "pen", name: "Pen" }, { id: "eraser", name: "Eraser" }, { id: "line", name: "Line" },
     { id: "arrow", name: "Arrow" }, { id: "rectangle", name: "Rectangle" }, { id: "ellipse", name: "Ellipse" },
     { id: "triangle", name: "Triangle" }, { id: "curve", name: "Curve" }, { id: "label", name: "Text" },
   ];
