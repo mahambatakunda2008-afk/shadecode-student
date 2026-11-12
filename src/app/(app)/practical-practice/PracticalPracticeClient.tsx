@@ -24,7 +24,7 @@ import {
 
 type Question = { id: string; marks: number; prompt: string; answer: string[]; data?: { columns: string[]; rows: (string | number)[][] } };
 type Task = { id: string; paper: "Paper 3" | "Paper 5"; title: string; format: string; skills: string[]; scenario: string; questions: Question[]; markingGuide?: { totalPracticeMarks: number; principle: string } };
-type PracticeSet = PracticalPracticeSet & { title: string; assessmentNotice: string; tasks: Task[] };
+type PracticeSet = PracticalPracticeSet & { title: string; subject: string; assessmentNotice: string; tasks: Task[] };
 
 const set = practiceData as PracticeSet;
 const STORAGE_KEY = `shadecode:practical-attempt:${set.id}`;
