@@ -371,7 +371,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const canvas = canvasRef.current;
     if (!canvas) return;
     historyRef.current = [...historyRef.current.slice(-24), ctx.getImageData(0, 0, canvas.width, canvas.height)];
-    recordUndoSnapshot();
+    undoTimelineRef.current = [...undoTimelineRef.current.slice(-24), { raster: ctx.getImageData(0, 0, canvas.width, canvas.height), vector: vectorObjectsRef.current.map(object => ({ ...object })) }];
+    setCanUndo(undoTimelineRef.current.length > 1);
   }, []);
 
   useEffect(() => {
