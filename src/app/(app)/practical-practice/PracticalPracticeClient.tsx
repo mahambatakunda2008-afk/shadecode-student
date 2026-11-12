@@ -350,7 +350,7 @@ export default function PracticalPracticeClient() {
   const updateRating = (taskId: string, skill: string, rating: PracticeSkillRating) => {
     setAttempt((current) => ratePracticalSkill(set, current, taskId, skill, rating));
   };
-  const revealQuestionGuidance = (task: Task, question: Question) => {
+  const revealQuestionGuidance = (task: { id: string; title: string; paper: "Paper 3" | "Paper 5"; questions: Array<{ id: string }> }, question: { id: string }) => {
     const key = task.id + "::" + question.id;
     const answer = attempt.answers[key]?.trim() ?? "";
     if (answer) {
@@ -371,7 +371,7 @@ export default function PracticalPracticeClient() {
       } catch { /* Practical work remains available if session storage is unavailable. */ }
 
       const eventContext = normalizeLearningContext(set.subject, task.title);
-      const reviewMetadata = reviewSessionId ? { reviewSessionId, reviewSource: "cortex_suggestion" } : {};
+      const reviewMetadata = reviewSessionId ? { reviewSessionId, reviewSource: "cortex_suggestion" } as const : null;
       void emitLearningEvent({
         source: "biology-practical",
         sourceEventId: "practical-question:" + set.id + ":" + attempt.startedAt + ":" + task.id + ":" + question.id,
@@ -384,7 +384,7 @@ export default function PracticalPracticeClient() {
           selfAssessment: true,
           paper: task.paper,
           answerLength: answer.length,
-          ...reviewMetadata,
+          ...(reviewMetadata ?? {}),
         },
       });
 
