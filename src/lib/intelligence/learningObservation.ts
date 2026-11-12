@@ -10,6 +10,10 @@ import type { LearningEvent } from "./learningEvents";
  * producer marks them `aggregateOnly`. Child attempts already carry the
  * evidence used for mastery, so reducing the aggregate again would double-
  * count the same learning session.
+ *
+ * Crucially, an absent correctness value is not a wrong answer (nor proof of
+ * success). Events without explicit correctness are retained in the canonical
+ * event stream but excluded from mastery projection until they carry evidence.
  */
 export function learningEventToObservation(
   event: LearningEvent,
@@ -18,6 +22,8 @@ export function learningEventToObservation(
   if (event.metadata.aggregateOnly === true) return null;
 
   const correct = readBoolean(event.metadata.correct);
+  if (correct === undefined) return null;
+
   const evidenceScore = readNumber(event.metadata.evidenceScore ?? event.metadata.percentage);
   const confidence = readNumber(event.metadata.confidence);
   const responseSeconds = readNumber(event.metadata.responseSeconds);
@@ -25,35 +31,15 @@ export function learningEventToObservation(
 
   switch (event.kind) {
     case "question_attempted":
-      return {
-        topicId: event.topicId,
-        correct: correct ?? false,
-        evidenceScore,
-        confidence,
-        responseSeconds,
-        difficulty,
-        observedAt: event.occurredAt,
-      };
-
     case "lesson_completed":
     case "activity_completed":
     case "quiz_completed":
     case "exam_completed":
     case "project_stage_completed":
-      return {
-        topicId: event.topicId,
-        correct: correct ?? true,
-        evidenceScore,
-        confidence,
-        responseSeconds,
-        difficulty,
-        observedAt: event.occurredAt,
-      };
-
     case "mistake_reviewed":
       return {
         topicId: event.topicId,
-        correct: true,
+        correct,
         evidenceScore,
         confidence,
         responseSeconds,
@@ -77,7 +63,7 @@ function readNumber(value: string | number | boolean | null | undefined): number
 
 function readBoolean(value: string | number | boolean | null | undefined): boolean | undefined {
   if (typeof value === "boolean") return value;
-  if (typeof value === "number") return value !== 0;
+  if (typeof value === "number" && (value === 0 || value === 1)) return value === 1;
   if (typeof value === "string") {
     if (value.toLowerCase() === "true") return true;
     if (value.toLowerCase() === "false") return false;
