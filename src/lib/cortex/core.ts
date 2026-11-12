@@ -13,6 +13,8 @@ import {
 
 export type CortexInput = {
   userId: string;
+  /** Verified by Supabase Auth before being used for RLS-scoped learner reads. */
+  accessToken?: string;
   type: "learn" | "practice" | "exam" | "feedback";
   payload: unknown;
   /** Exact verified curriculum context resolved by the API gateway. */
@@ -139,7 +141,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       const subjectName = asString(payload.subjectName);
       let studentContext = null;
       try {
-        studentContext = await resolveAuthenticatedCortexStudentContext();
+        studentContext = await resolveAuthenticatedCortexStudentContext(input.accessToken);
       } catch (error) {
         // Saved progress remains usable even if the learner-context read is temporarily unavailable.
         console.error("[cortex] learner context unavailable; continuing without cross-session topic evidence:", error);
