@@ -4,12 +4,7 @@ import { scoreAnswer, type ScoreAnswerInput } from "./tools/scoring";
 import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
 import type { SystemCurriculumContext } from "@/lib/curriculum/system-curriculum-context";
-import {
-  trackStudySession,
-  trackExamResult,
-  updateStreak,
-  generateRecommendation,
-} from "./memoryTracker";
+import { trackExamResult, generateRecommendation } from "./memoryTracker";
 
 export type CortexInput = {
   userId: string;
@@ -153,18 +148,9 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
         subjectName,
       });
 
-      await updateStreak(input.userId, true);
-      if (subjectId && subjectName) {
-        await trackStudySession({
-          userId: input.userId,
-          subjectId,
-          subjectName,
-          durationMinutes: asPositiveNumber(payload.durationMinutes, 15),
-          completedAt: new Date().toISOString(),
-        });
-      }
-
-      await updateMemory(input.userId, { lastTopic: topic });
+      // A tutoring request is not proof that a study session was completed.
+      // Streaks and study-time totals are updated by verified completion events
+      // from the learning workflows, not by opening or requesting an explanation.
       const recommendation = await generateRecommendation(input.userId);
 
       return {
