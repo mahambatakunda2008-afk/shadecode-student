@@ -347,13 +347,13 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [vectorObjects, setVectorObjects] = useState<DiagramObject[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [objectLabelDraft, setObjectLabelDraft] = useState("");
+  const [canUndo, setCanUndo] = useState(false);
   const defaultStyle: DiagramStyle = { stroke: INK, fill: "none", strokeWidth: 4 };
   const recordUndoSnapshot = () => { const canvas=canvasRef.current,ctx=canvas?.getContext("2d"); if(!canvas||!ctx)return; undoTimelineRef.current=[...undoTimelineRef.current.slice(-24),{raster:ctx.getImageData(0,0,WIDTH,HEIGHT),vector:vectorObjectsRef.current.map(object=>({...object}))}]; setCanUndo(undoTimelineRef.current.length>1); };
   const commitVectorObjects = (next: DiagramObject[]) => { vectorObjectsRef.current = next; setVectorObjects(next); recordUndoSnapshot(); };
   const [tool, setTool] = useState<Tool>("pen");
   const [label, setLabel] = useState("");
   const [fontSize, setFontSize] = useState(28);
-  const [canUndo, setCanUndo] = useState(false);
   const [autoFix, setAutoFix] = useState(true);
   const [autoImproveText, setAutoImproveText] = useState(true);
   const [improvingText, setImprovingText] = useState(false);
