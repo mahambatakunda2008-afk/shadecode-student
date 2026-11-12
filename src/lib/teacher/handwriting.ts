@@ -121,7 +121,7 @@ export function normalizeHandwritingRecognition(payload: RecognitionPayload): Ha
     confidence,
     uncertainCharacters,
     mathExpressions,
-    requiresReview: uncertainCharacters.length > 0 || notationWarnings.length > 0 || mathExpressions.some(item => item.uncertainTokens.length > 0 || item.confidence === null || item.confidence < 0.9) || confidence === null || confidence < 0.9,
+    requiresReview: !transcript || uncertainCharacters.length > 0 || notationWarnings.length > 0 || mathExpressions.some(item => item.uncertainTokens.length > 0 || item.confidence === null || item.confidence < 0.9) || confidence === null || confidence < 0.9,
     notationWarnings,
   };
 }
