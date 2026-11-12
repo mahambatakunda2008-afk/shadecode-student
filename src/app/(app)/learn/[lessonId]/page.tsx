@@ -225,7 +225,7 @@ export default function LessonDetailPage() {
     } catch (err) {
       try {
         const cached = await offlineStorage.getLesson(lessonId);
-        if (cached) { const cachedLesson: Lesson = { ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt }; setLesson(currentUser ? await applyPendingLocalProgress(cachedLesson, currentUser) : cachedLesson); return; }
+        if (cached) { const cachedLesson: Lesson = { ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt }; setLesson(userId ? await applyPendingLocalProgress(cachedLesson, userId) : cachedLesson); return; }
       } catch {}
       setError(err instanceof Error ? err.message : "Couldn't load this lesson.");
     } finally { setLoading(false); }
