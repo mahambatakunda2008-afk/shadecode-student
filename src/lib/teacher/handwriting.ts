@@ -55,11 +55,14 @@ export function normalizeHandwritingRecognition(payload: RecognitionPayload): Ha
     ? payload.uncertainCharacters.slice(0, 100).map((entry: unknown): UncertainHandwritingCharacter => {
         const item = entry && typeof entry === "object" ? entry as Record<string, unknown> : {};
         return {
-          seen: typeof item.seen === "string" ? item.seen.slice(0, 80) : "",
-          chosen: typeof item.chosen === "string" ? item.chosen.slice(0, 80) : "",
-          alternatives: Array.isArray(item.alternatives) ? item.alternatives.filter((value): value is string => typeof value === "string").slice(0, 5) : [],
-          context: typeof item.context === "string" ? item.context.slice(0, 160) : "",
-          reason: typeof item.reason === "string" ? item.reason.slice(0, 240) : "",
+          seen: typeof item.seen === "string" ? item.seen.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 80) : "",
+          chosen: typeof item.chosen === "string" ? item.chosen.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 80) : "",
+          alternatives: Array.isArray(item.alternatives)
+            ? [...new Set(item.alternatives.filter((value): value is string => typeof value === "string").map(value => value.replace(/[\u0000-\u001f\u007f]/g, "").trim()).filter(value => value.length > 0 && value.length <= 24))]
+                .filter(value => value !== (typeof item.chosen === "string" ? item.chosen.trim() : "")).slice(0, 5)
+            : [],
+          context: typeof item.context === "string" ? item.context.replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 160) : "",
+          reason: typeof item.reason === "string" ? item.reason.replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 240) : "",
         };
       })
     : [];
@@ -136,6 +139,8 @@ export function applyHandwritingAlternative(
   item: UncertainHandwritingCharacter,
   alternative: string,
 ): string | null {
+  const safeAlternative = alternative.replace(/[\u0000-\u001f\u007f]/g, "").trim();
+  if (!safeAlternative || safeAlternative.length > 24 || !item.alternatives.includes(safeAlternative)) return null;
   const candidates = [item.chosen, "[unclear]", item.seen].filter((value, index, all) => value.trim() && all.indexOf(value) === index);
   const context = item.context.trim();
   if (context) {
@@ -146,7 +151,7 @@ export function applyHandwritingAlternative(
         const tokenIndex = contextText.indexOf(candidate);
         if (tokenIndex >= 0 && contextText.indexOf(candidate, tokenIndex + candidate.length) < 0) {
           const start = contextIndex + tokenIndex;
-          return text.slice(0, start) + alternative + text.slice(start + candidate.length);
+          return text.slice(0, start) + safeAlternative + text.slice(start + candidate.length);
         }
       }
     }
@@ -154,7 +159,7 @@ export function applyHandwritingAlternative(
   for (const candidate of candidates) {
     const index = text.indexOf(candidate);
     if (index >= 0 && text.indexOf(candidate, index + candidate.length) < 0) {
-      return text.slice(0, index) + alternative + text.slice(index + candidate.length);
+      return text.slice(0, index) + safeAlternative + text.slice(index + candidate.length);
     }
   }
   return null;
