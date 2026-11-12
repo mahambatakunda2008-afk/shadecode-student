@@ -24,6 +24,7 @@ export default function CortexReviewSuggestions() {
   const router = useRouter();
   const [state, setState] = useState<LoadState>("loading");
   const [items, setItems] = useState<EvidenceBasedReviewSuggestion[]>([]);
+  const [reviewActivity, setReviewActivity] = useState<Array<{ subjectKey: string; topicId: string; answeredQuestionCount: number; state: "practised" | "completed" }>>([]);
 
   useEffect(() => {
     let active = true;
@@ -32,9 +33,10 @@ export default function CortexReviewSuggestions() {
         if (!response.ok) throw new Error("context unavailable");
         return response.json();
       })
-      .then((context: { reviewSuggestions?: { items?: EvidenceBasedReviewSuggestion[] } }) => {
+      .then((context: { reviewSuggestions?: { items?: EvidenceBasedReviewSuggestion[] }; reviewActivity?: { sessions?: Array<{ subjectKey: string; topicId: string; answeredQuestionCount: number; state: "practised" | "completed" }> } }) => {
         if (!active) return;
         setItems(Array.isArray(context.reviewSuggestions?.items) ? context.reviewSuggestions.items : []);
+        setReviewActivity(Array.isArray(context.reviewActivity?.sessions) ? context.reviewActivity.sessions : []);
         setState("ready");
       })
       .catch(() => {
@@ -62,6 +64,7 @@ export default function CortexReviewSuggestions() {
       <ul className="grid gap-2">
         {items.slice(0, 5).map((item) => {
           const lastPractised = formatLastPractised(item.lastObservedAt);
+          const latestActivity = reviewActivity.find((activity) => activity.subjectKey === item.subjectKey.toLocaleLowerCase() && activity.topicId === item.topicId.toLocaleLowerCase());
           const subject = SUBJECT_LABEL[item.subjectKey] ?? item.subjectKey;
           const reason = item.reason === "repeated_errors"
             ? `Incorrect answers across ${item.distinctAttempts} separate attempts`
@@ -73,6 +76,7 @@ export default function CortexReviewSuggestions() {
                 <p className="text-xs font-medium text-[var(--muted-foreground)]">{subject}</p>
                 <p className="mt-0.5 truncate text-sm font-semibold text-[var(--foreground)]">{item.topicId}</p>
                 <p className="mt-1 text-xs text-[var(--muted-foreground)]">{reason}{lastPractised ? ` · Last practised ${lastPractised}` : ""}</p>
+                {latestActivity && <p className="mt-1 text-xs font-medium text-[var(--success)]">{latestActivity.state === "completed" ? "Review quiz completed" : "Practice recorded"} · {latestActivity.answeredQuestionCount} questions answered</p>}
                 {item.observedMedianIntervalDays !== null && (
                   <p className="mt-1 text-xs text-[var(--muted-foreground)]">Observed practice interval: median {item.observedMedianIntervalDays} days</p>
                 )}
