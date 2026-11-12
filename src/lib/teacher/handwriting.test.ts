@@ -203,6 +203,11 @@ describe("handwriting correction notation safeguards", () => {
     expect(findHandwritingNotationWarnings("The voltgae is here", "The voltage is here.")).toEqual([]);
   });
 
+  it("flags a changed unary sign on a standalone negative value", () => {
+    expect(findHandwritingNotationWarnings("The measured charge was -5", "The measured charge was 5")).toContain("numbers");
+    expect(findHandwritingNotationWarnings("The measured charge was +5", "The measured charge was -5")).toContain("numbers");
+  });
+
   it("flags arithmetic operator substitutions inside expressions", () => {
     expect(findHandwritingNotationWarnings("x + 2 = 5", "x − 2 = 5")).toContain("scientific symbols");
     expect(findHandwritingNotationWarnings("a × b", "a + b")).toContain("scientific symbols");
