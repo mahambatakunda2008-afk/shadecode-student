@@ -127,14 +127,16 @@ fun NativeLessonReader(
                 database.sync().enqueue(
                     NativePendingSyncEntity(
                         operation = "lesson_progress",
+                        accountId = session.userId,
                         payload = JSONObject()
                             .put("lessonId", lesson.id)
                             .put("progress", normalized)
                             .toString(),
                     ),
                 )
-                NativeSyncWorker.schedule(context)
-                runCatching { api.updateLessonProgress(session, lesson.id, normalized) }
+                // The durable account-scoped queue is the single write path. The
+                // worker sends it when connectivity is available, avoiding a second
+                // immediate request racing the queued retry.
             }
             saved = true
         }
