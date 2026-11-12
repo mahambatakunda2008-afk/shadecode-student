@@ -98,7 +98,7 @@ Do not replace the existing stores or introduce a second mastery model.
 - Preserve local/offline learning history and make AI-provider outages non-fatal to saved progress.
 - No production schema/data changes until RLS, migration replay, tests and authenticated end-to-end flows are verified.
 
-## Implementation added on the audit branch
+## Implementation committed to main
 
 - Added a server-only `resolveAuthenticatedCortexStudentContext()` resolver. It accepts no user ID and derives identity from `supabase.auth.getUser()`.
 - Added `GET /api/cortex/student-context`, supporting browser cookie sessions and native bearer tokens, with private/no-store caching and 401/503 failure semantics.
@@ -108,6 +108,8 @@ Do not replace the existing stores or introduce a second mastery model.
 - Event-derived patterns require explicit subject, topic, attempt ID, and `metadata.correct === false`. Older unscoped events are ignored for cross-session pattern claims.
 - Cortex Learn now forwards the already-authenticated bearer token to the resolver, loads the same durable context, and passes it to the deterministic tutor. If the read is unavailable, tutoring continues without continuity claims.
 - The tutor only references recorded topic attempts when the topic key, subject key and exact verified syllabus ID match. It does not expose a mastery percentage or claim a misconception from this limited evidence.
+- The context now also exposes descriptive spaced-retrieval evidence from canonical question attempts. It requires at least three distinct attempt IDs across at least a two-day observed span, keeps subject/topic groups separate, and reports observed intervals and their median only.
+- This is deliberately descriptive, not a forgetting prediction: it does not estimate retention probability, decay rate, or a due date. The output is explicitly marked `descriptive_only` until real learner outcomes support calibration.
 - The student-context API now also exposes repeated topic-level error evidence from canonical events. This is an evidence layer, not yet a complete misconception diagnosis or a calibrated forgetting model. Event history is currently bounded to the 500 most recent question attempts per context read.
 - Added focused tests for matching topic/subject, cross-subject isolation, and absent evidence.
 
