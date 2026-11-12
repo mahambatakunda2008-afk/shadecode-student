@@ -18,7 +18,7 @@ export function getDiagramObjectBounds(o: DiagramObject): DiagramBounds {
   else if (o.type === "rectangle" || o.type === "ellipse" || o.type === "triangle") return { x: o.x, y: o.y, width: o.width, height: o.height };
   else if (o.type === "text") return { x: o.x, y: o.y - o.fontSize, width: Math.max(o.fontSize, o.text.length * o.fontSize * .62), height: o.fontSize * 1.4 };
   else if (o.type === "polygon") pts = o.points;
-  else pts = o.segments.flatMap(s => [s.from, s.control, s.to]);
+  else pts = (o as Extract<DiagramObject, { type: "curve" }>).segments.flatMap((s: { from: DiagramPoint; control: DiagramPoint; to: DiagramPoint }) => [s.from, s.control, s.to]);
   const xs = pts.map(p => p.x), ys = pts.map(p => p.y), x = Math.min(...xs), y = Math.min(...ys);
   return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
 }
