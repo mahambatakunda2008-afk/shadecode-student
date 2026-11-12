@@ -8,6 +8,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import java.util.UUID
 
 @Entity(tableName = "subjects")
 data class NativeSubjectEntity(
@@ -45,6 +46,8 @@ data class NativePendingSyncEntity(
     val operation: String,
     val payload: String,
     val createdAt: Long = System.currentTimeMillis(),
+    val accountId: String? = null,
+    val operationId: String = UUID.randomUUID().toString(),
 )
 
 @androidx.room.Dao
@@ -79,8 +82,8 @@ interface NativeProgressDao {
 
 @androidx.room.Dao
 interface NativeSyncDao {
-    @androidx.room.Query("SELECT * FROM pending_sync ORDER BY createdAt ASC")
-    suspend fun pending(): List<NativePendingSyncEntity>
+    @androidx.room.Query("SELECT * FROM pending_sync WHERE accountId = :accountId ORDER BY createdAt ASC, id ASC")
+    suspend fun pendingForAccount(accountId: String): List<NativePendingSyncEntity>
     @androidx.room.Insert
     suspend fun enqueue(item: NativePendingSyncEntity)
     @androidx.room.Delete
@@ -89,7 +92,7 @@ interface NativeSyncDao {
 
 @Database(
     entities = [NativeSubjectEntity::class, NativeLessonEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class NativeDatabase : RoomDatabase() {
@@ -120,6 +123,14 @@ abstract class NativeDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE pending_sync ADD COLUMN accountId TEXT")
+                db.execSQL("ALTER TABLE pending_sync ADD COLUMN operationId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("UPDATE pending_sync SET operationId = 'legacy-' || id WHERE operationId = ''")
+            }
+        }
+
         @Volatile private var instance: NativeDatabase? = null
         @Volatile private var applicationContext: Context? = null
 
@@ -132,7 +143,7 @@ abstract class NativeDatabase : RoomDatabase() {
             )
                 // Version 1 already contains subjects, lesson_progress and pending_sync.
                 // Add the lesson cache without wiping offline progress or queued work.
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
                 .also { instance = it }
         }
