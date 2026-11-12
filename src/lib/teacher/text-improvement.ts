@@ -1,6 +1,6 @@
 /**
  * Reject editorial output that invents or alters protected source data.
- * Language may be improved; numeric values, code and links must remain intact.
+ * Language may be improved; numbers, equations, notation, code and links must remain intact.
  */
 function occurrences(value: string, pattern: RegExp): string[] {
   return [...value.matchAll(pattern)].map(match => match[0]);
