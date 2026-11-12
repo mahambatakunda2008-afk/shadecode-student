@@ -172,6 +172,42 @@ export async function POST(req) {
 
     const { totalScore, maxScore, percentage, grade } = calculateExamScore(questions, markingData.results);
     const examId = crypto.randomUUID();
+    const submissionPayload = { subject, difficulty, questions, answers, timeTaken };
+    const submissionHash = createHash("sha256").update(JSON.stringify(submissionPayload)).digest("hex");
+    const submissionResult = { ...markingData, totalScore, maxScore, percentage, grade, timeTaken };
+
+    // A stable attempt ID is claimed before any Cortex or mastery side effects.
+    // A retry receives the original server-marked result instead of replaying them.
+    let submissionService = null;
+    if (attemptId?.trim()) {
+      submissionService = createSupabaseServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      );
+      const { data: claimRows, error: claimError } = await submissionService.rpc("claim_exam_submission", {
+        p_user_id: userId,
+        p_attempt_id: attemptId.trim(),
+        p_payload_hash: submissionHash,
+      });
+      if (claimError) {
+        console.error("[exam/mark] Submission claim failed:", claimError.message);
+        return NextResponse.json({ error: "Your result could not be safely recorded. Your answers are still saved. Please retry." }, { status: 503 });
+      }
+      const claim = Array.isArray(claimRows) ? claimRows[0] : claimRows;
+      if (claim?.state === "completed" && claim.saved_result) {
+        return NextResponse.json(claim.saved_result, { headers: { "X-Exam-Submission-Replayed": "true" } });
+      }
+      if (claim?.state === "processing") {
+        return NextResponse.json({ error: "This exam is already being submitted. Retry shortly; your attempt is saved." }, { status: 409 });
+      }
+      if (claim?.state === "payload_conflict") {
+        return NextResponse.json({ error: "This attempt ID was already used with different answers. Restore the original attempt before retrying." }, { status: 409 });
+      }
+      if (claim?.state !== "claimed") {
+        return NextResponse.json({ error: "The exam submission could not be claimed safely. Please retry." }, { status: 503 });
+      }
+    }
 
     try {
       await updateCortexFromExam({ userId, subject, percentage, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas });
@@ -241,7 +277,20 @@ export async function POST(req) {
       }
     } catch (masteryErr) { console.error("[exam/mark] topic_mastery update threw:", masteryErr); }
 
-    return NextResponse.json({ ...markingData, totalScore, maxScore, percentage, grade, timeTaken });
+    if (submissionService && attemptId?.trim()) {
+      const { data: finalized, error: finalizeError } = await submissionService.rpc("complete_exam_submission", {
+        p_user_id: userId,
+        p_attempt_id: attemptId.trim(),
+        p_payload_hash: submissionHash,
+        p_result: submissionResult,
+      });
+      if (finalizeError || finalized !== true) {
+        console.error("[exam/mark] Submission result finalization failed:", finalizeError?.message || "No row finalized");
+        return NextResponse.json({ error: "Your paper was marked, but the result could not be finalized safely. Retry this same attempt to recover it." }, { status: 503 });
+      }
+    }
+
+    return NextResponse.json(submissionResult);
   } catch (err) {
     console.error("Marking error:", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Server error" }, { status: 500 });
