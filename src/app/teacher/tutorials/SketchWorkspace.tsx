@@ -107,7 +107,7 @@ function recognizeFreehandArrow(points: Point[]): { tool: "arrow"; from: Point; 
 
 export type QuadraticCurveFit = { control: Point; rmsError: number; maxError: number; bend: number };
 
-/** Least-squares quadratic Bézier fit using arc-length parameterisation. */
+/** Least-squares quadratic Bézier fit using endpoint-chord projection. */
 export function fitQuadraticCurve(points: Point[]): QuadraticCurveFit | null {
   if (points.length < 5) return null;
   const first = points[0], last = points[points.length - 1];
