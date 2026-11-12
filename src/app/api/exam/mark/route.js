@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
+import { updateCortexFromExam } from "@/lib/cortex";
+import { emitExamCompleted } from "@/lib/events";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
@@ -292,6 +294,54 @@ export async function POST(req) {
       if (finalizeError || finalized !== true) {
         console.error("[exam/mark] Submission result finalization failed:", finalizeError?.message || "No row finalized");
         return NextResponse.json({ error: "Your paper was marked, but the result could not be finalized safely. Retry this same attempt to recover it." }, { status: 503 });
+      }
+    }
+
+    if (!submissionService || !attemptId?.trim()) {
+      // Legacy callers without a stable attempt ID cannot use the durable
+      // per-attempt outbox. Preserve their existing synchronous side effects.
+      try {
+        await updateCortexFromExam({
+          userId,
+          subject,
+          score: totalScore,
+          maxScore,
+          eventId: buildExamCortexEventId(userId, attemptId, { subject, difficulty, questions, answers, timeTaken }),
+        });
+        const svc = createSupabaseServiceClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY,
+          { auth: { autoRefreshToken: false, persistSession: false } },
+        );
+        const { error: memoryError } = await svc.rpc("record_exam_score", {
+          p_user_id: userId,
+          p_score: {
+            examId,
+            submissionIdentity: `exam:${examId}`,
+            subject,
+            score: totalScore,
+            totalMarks: maxScore,
+            percentage,
+            grade,
+            weakAreas: markingData.weakAreas,
+            strongAreas: markingData.strongAreas,
+            date: new Date().toISOString(),
+          },
+        });
+        if (memoryError) throw memoryError;
+        await emitExamCompleted(userId, {
+          examId,
+          subject,
+          topic: difficulty,
+          score: percentage,
+          totalMarks: maxScore,
+          grade,
+          weakAreas: markingData.weakAreas,
+          strongAreas: markingData.strongAreas,
+          timeSpent: timeTaken,
+        }, "exam");
+      } catch (legacyEventError) {
+        console.error("[exam/mark] Legacy completion side effects failed:", legacyEventError);
       }
     }
 
