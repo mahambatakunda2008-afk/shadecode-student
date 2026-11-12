@@ -140,3 +140,13 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 - Offline completion remains locally saved and visibly labelled "sync pending". The existing reconnect listener calls the canonical offline sync pipeline.
 - XP is deliberately not claimed as earned while offline. The current completion award is coupled to the online PATCH route; an idempotent deferred reward ledger is still required before offline completion can safely grant XP.
 - This is a source implementation only. It has not passed a clean-install airplane-mode test or native Android, Tauri, or iOS lifecycle verification.
+
+
+## 2026-11-12 implementation update: private lesson notes
+
+- The lesson reader now exposes a personal notes area.
+- Notes are stored as a user-scoped `study_state` record in the canonical IndexedDB local-first store. They are not written to the lesson content table or sent to the cloud.
+- Notes restore on lesson reopen and save automatically after a short debounce. Account changes are guarded so one account's notes are never written under another account's identity.
+- The notes status says "Saved on device"; it does not imply cloud backup or cross-device sync.
+- Notes currently remain device-local. Export/backup and cross-device sync are separate future work.
+- Source implementation is committed; no clean build, airplane-mode, force-close, or native-platform lifecycle test has yet been completed.
