@@ -10,6 +10,7 @@ export interface ReviewSessionActivity {
   topicId: string;
   answeredQuestionCount: number;
   state: "practised" | "completed";
+  completionKind: "quiz" | "exam" | "practical" | null;
   lastObservedAt: string | null;
 }
 
@@ -25,6 +26,7 @@ export function deriveReviewSessionActivity(rows: ReviewSessionEventRecord[]): R
     topicId: string;
     questionIds: Set<string>;
     completed: boolean;
+    completionKind: "quiz" | "exam" | "practical" | null;
     lastObservedAt: string | null;
   }>();
 
@@ -47,6 +49,7 @@ export function deriveReviewSessionActivity(rows: ReviewSessionEventRecord[]): R
       topicId,
       questionIds: new Set<string>(),
       completed: false,
+      completionKind: null,
       lastObservedAt: null,
     };
     if (existing.subjectKey !== subjectKey || existing.topicId !== topicId) continue;
@@ -57,6 +60,7 @@ export function deriveReviewSessionActivity(rows: ReviewSessionEventRecord[]): R
       }
     } else {
       existing.completed = true;
+      existing.completionKind = row.type === "quiz_completed" ? "quiz" : row.type === "exam_completed" ? "exam" : "practical";
     }
 
     const timestamp = typeof data.occurredAt === "string" ? data.occurredAt
@@ -76,6 +80,7 @@ export function deriveReviewSessionActivity(rows: ReviewSessionEventRecord[]): R
       topicId: item.topicId,
       answeredQuestionCount: item.questionIds.size,
       state: item.completed ? "completed" as const : "practised" as const,
+      completionKind: item.completionKind,
       lastObservedAt: item.lastObservedAt,
     }))
     .sort((a, b) => (b.lastObservedAt ? Date.parse(b.lastObservedAt) : 0) - (a.lastObservedAt ? Date.parse(a.lastObservedAt) : 0));
