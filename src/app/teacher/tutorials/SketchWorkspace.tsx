@@ -687,8 +687,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
           const image = ctx.getImageData(x, y, width, height);
           selectionRef.current = { x, y, width, height, image };
           ctx.fillStyle = "#ffffff"; ctx.fillRect(x, y, width, height);
-          ctx.save(); ctx.strokeStyle = "#0891b2"; ctx.lineWidth = 2; ctx.setLineDash([8, 5]); ctx.strokeRect(x, y, width, height); ctx.restore();
-          setStatus("Region selected. Drag inside it to move its contents.");
+          setStatus("Region selected. Drag inside it to move its contents. The selection outline is only a temporary preview.");
         } else setStatus("Selection is too small. Drag a larger rectangle.");
       }
       pushHistory(ctx);
