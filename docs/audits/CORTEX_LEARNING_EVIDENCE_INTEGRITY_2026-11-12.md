@@ -37,7 +37,7 @@ All four migrations were applied to the connected production Supabase project an
 
 The previously deployed commit `50f57fd109c789e04112b3621b57ef63386451d0` is production READY.
 
-The first deployment attempt for the new Cortex changes reached TypeScript checking and exposed two compile errors: the newly required `weakSubjects` field broke two legacy `CortexUserMemory` fixtures, and the tutor test fixture did not yet include the expanded student-memory fields. These were corrected by making the legacy field backward-compatible and completing the tutor fixture.
+The first deployment attempt for the new Cortex changes reached TypeScript checking and exposed three diagnostics across three fixtures: the newly required `weakSubjects` field broke two legacy `CortexUserMemory` objects, and the tutor test fixture did not yet include the expanded student-memory fields. These were corrected by making the legacy field backward-compatible and completing the tutor fixture.
 
 A subsequent deployment could not be created because the Vercel account reached its free daily deployment API limit (100 deployments; retry window reported as 24 hours). Therefore the latest changes are **not yet verified in production**.
 
