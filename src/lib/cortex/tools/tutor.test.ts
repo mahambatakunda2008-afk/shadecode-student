@@ -56,6 +56,35 @@ describe("Cortex tutor learner continuity", () => {
     const response = await generateTutoringResponse("chain-rule", {
       studentContext: context,
       subjectName: "Mathematics",
+      curriculum: {
+        identity: {
+          boardId: "cambridge",
+          qualificationId: "alevel",
+          level: "A Level",
+          syllabusId: "cambridge-9702",
+          syllabusVersion: "2025-2027",
+          subjectId: "mathematics",
+        },
+        objectives: [],
+        knowledge: {
+          identity: {
+            boardId: "cambridge",
+            qualificationId: "alevel",
+            level: "A Level",
+            syllabusId: "cambridge-9702",
+            syllabusVersion: "2025-2027",
+            subjectId: "mathematics",
+          },
+          items: [],
+          verifiedOnly: true,
+        },
+        required: [],
+        supporting: [],
+        assessment: [],
+        practical: [],
+        terminology: [],
+        provenanceWarnings: [],
+      },
     });
 
     expect(response).toContain("4 recorded learning attempts");
