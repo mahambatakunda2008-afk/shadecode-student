@@ -171,8 +171,11 @@ export async function POST(req: Request) {
       validatedUserId,
       requestedCurriculumSubjectId(validatedPayload),
     );
+    const authorization = req.headers.get("authorization") ?? "";
+    const accessToken = authorization.match(/^Bearer\\s+(.+)$/i)?.[1];
     return Response.json(await CortexCore({
       userId: validatedUserId,
+      accessToken,
       type: validatedType as any,
       payload: validatedPayload,
       curriculum: curriculum.context ?? null,
