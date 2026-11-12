@@ -10,6 +10,16 @@ export interface StudentProfileMemory {
   observedAt: string | null;
   level: number | null;
   streak: number | null;
+  subjects: string[];
+  studyLevel: string | null;
+  educationStage: string | null;
+  curriculumDeclaration: {
+    board: string | null;
+    qualification: string | null;
+    syllabusCode: string | null;
+    syllabusYear: string | null;
+    verified: false;
+  } | null;
   frequentlyStudiedSubjects: string[];
   strongSubjects: string[];
   weakSubjects: string[];
@@ -21,6 +31,8 @@ export interface StudentProfileMemory {
 export interface StudentTopicEvidence {
   topicId: string;
   subjectKey: string;
+  syllabusId: string | null;
+  curriculumTopicKey: string | null;
   masteryScore: number | null;
   attempts: number;
   retention: number | null;
@@ -62,35 +74,47 @@ export async function resolveAuthenticatedCortexStudentContext(): Promise<Cortex
   }
 
   const userId = authData.user.id;
-  const [profileResult, topicsResult] = await Promise.all([
+  const [academicProfileResult, memoryResult, topicsResult] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("level, subjects, study_level, education_stage, curriculum_board, qualification, syllabus_code, syllabus_year, created_at")
+      .eq("id", userId)
+      .maybeSingle(),
     supabase
       .from("cortex_memory")
-      .select("level, current_streak, frequently_studied_subjects, strong_subjects, weak_subjects, total_study_sessions, total_lessons_completed, average_exam_score, updated_at")
+      .select("current_streak, frequently_studied_subjects, strong_subjects, weak_subjects, total_study_sessions, total_lessons_completed, average_exam_score, updated_at")
       .eq("user_id", userId)
       .maybeSingle(),
     supabase
       .from("topic_mastery")
-      .select("topic, subject, mastery_score, attempts, retention, confidence, stability, error_rate, uncertainty, last_attempted")
+      .select("topic, subject, syllabus_id, curriculum_topic_key, mastery_score, attempts, retention, confidence, stability, error_rate, uncertainty, last_attempted")
       .eq("user_id", userId)
       .order("last_attempted", { ascending: false })
       .limit(200),
   ]);
 
-  if (profileResult.error) {
-    console.error("[cortex student context] profile read failed:", profileResult.error);
+  if (academicProfileResult.error) {
+    console.error("[cortex student context] academic profile read failed:", academicProfileResult.error);
     throw new Error("STUDENT_CONTEXT_PROFILE_UNAVAILABLE");
+  }
+  if (memoryResult.error) {
+    console.error("[cortex student context] durable memory read failed:", memoryResult.error);
+    throw new Error("STUDENT_CONTEXT_MEMORY_UNAVAILABLE");
   }
   if (topicsResult.error) {
     console.error("[cortex student context] topic evidence read failed:", topicsResult.error);
     throw new Error("STUDENT_CONTEXT_TOPICS_UNAVAILABLE");
   }
 
-  const profile = profileResult.data;
-  const profileState: EvidenceState = profile ? "available" : "insufficient_evidence";
+  const academicProfile = academicProfileResult.data;
+  const memory = memoryResult.data;
+  const profileState: EvidenceState = academicProfile || memory ? "available" : "insufficient_evidence";
   const topicRows = topicsResult.data ?? [];
   const topics: StudentTopicEvidence[] = topicRows.map((row) => ({
     topicId: row.topic,
     subjectKey: row.subject,
+    syllabusId: row.syllabus_id,
+    curriculumTopicKey: row.curriculum_topic_key,
     masteryScore: typeof row.mastery_score === "number" ? row.mastery_score : null,
     attempts: Math.max(0, Number(row.attempts) || 0),
     retention: typeof row.retention === "number" ? row.retention : null,
@@ -109,15 +133,27 @@ export async function resolveAuthenticatedCortexStudentContext(): Promise<Cortex
     profile: {
       state: profileState,
       source: "cortex_memory",
-      observedAt: profile?.updated_at ?? null,
-      level: profile?.level ?? null,
-      streak: profile?.current_streak ?? null,
-      frequentlyStudiedSubjects: profile?.frequently_studied_subjects ?? [],
-      strongSubjects: profile?.strong_subjects ?? [],
-      weakSubjects: profile?.weak_subjects ?? [],
-      totalStudySessions: profile?.total_study_sessions ?? null,
-      totalLessonsCompleted: profile?.total_lessons_completed ?? null,
-      averageExamScore: profile?.average_exam_score ?? null,
+      observedAt: memory?.updated_at ?? academicProfile?.created_at ?? null,
+      level: academicProfile?.level ?? null,
+      streak: memory?.current_streak ?? null,
+      subjects: academicProfile?.subjects ?? [],
+      studyLevel: academicProfile?.study_level ?? null,
+      educationStage: academicProfile?.education_stage ?? null,
+      curriculumDeclaration: academicProfile
+        ? {
+            board: academicProfile.curriculum_board ?? null,
+            qualification: academicProfile.qualification ?? null,
+            syllabusCode: academicProfile.syllabus_code ?? null,
+            syllabusYear: academicProfile.syllabus_year ?? null,
+            verified: false,
+          }
+        : null,
+      frequentlyStudiedSubjects: memory?.frequently_studied_subjects ?? [],
+      strongSubjects: memory?.strong_subjects ?? [],
+      weakSubjects: memory?.weak_subjects ?? [],
+      totalStudySessions: memory?.total_study_sessions ?? null,
+      totalLessonsCompleted: memory?.total_lessons_completed ?? null,
+      averageExamScore: memory?.average_exam_score ?? null,
     },
     topics: {
       state: topics.length > 0 ? "available" : "insufficient_evidence",
