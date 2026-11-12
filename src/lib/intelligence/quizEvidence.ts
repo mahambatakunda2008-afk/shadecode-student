@@ -31,6 +31,7 @@ export function buildQuizQuestionEvidence(
   quizAttemptId: string,
   lessonId: string,
   results: QuizQuestionEvidence[],
+  context: { subject?: string; topicId?: string } = {},
 ): LearningEventInput[] {
   return results.map((result, index) => {
     const score = Number.isFinite(result.score) ? result.score! : result.correct ? 100 : 0;
@@ -43,10 +44,13 @@ export function buildQuizQuestionEvidence(
       source: "learn-quiz",
       sourceEventId: `question-attempt:${quizAttemptId}:${String(result.questionId)}`,
       type: "question.attempted",
+      subjectId: context.subject,
+      topicId: context.topicId,
       entityId: String(result.questionId),
       attemptId: quizAttemptId,
       metadata: {
         lessonId,
+        ...(context.subject ? { subject: context.subject } : {}),
         correct: result.correct,
         score,
         maxScore,
