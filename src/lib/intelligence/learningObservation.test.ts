@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { learningEventToObservation } from "./learningObservation";
+import { normalizeLearningEvent } from "./learningEvents";
+import { buildQuizQuestionEvidence } from "./quizEvidence";
 import type { LearningEvent } from "./learningEvents";
 
 function event(
@@ -58,5 +60,22 @@ describe("learningEventToObservation", () => {
   it("does not project events without a curriculum topic", () => {
     const withoutTopic = { ...event("question_attempted", { correct: true }), topicId: undefined };
     expect(learningEventToObservation(withoutTopic)).toBeNull();
+  });
+
+  it("carries quiz subject and topic context through normalization into mastery evidence", () => {
+    const [quizInput] = buildQuizQuestionEvidence("quiz-attempt-1", "lesson-1", [
+      { questionId: "question-1", correct: false },
+    ], { subject: "Physics", topicId: "waves" });
+    const normalized = normalizeLearningEvent({
+      userId: "learner-1",
+      ...quizInput,
+    });
+
+    expect(normalized.status).toBe("accepted");
+    if (normalized.status !== "accepted") return;
+    expect(learningEventToObservation(normalized.event)).toMatchObject({
+      topicId: "waves",
+      correct: false,
+    });
   });
 });
