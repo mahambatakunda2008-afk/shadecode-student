@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findHandwritingReviewRanges, normalizeHandwritingRecognition, parseHandwritingRecognition, shouldUseHandwritingRetry } from "./handwriting";
+import { findHandwritingNotationWarnings, findHandwritingReviewRanges, normalizeHandwritingRecognition, parseHandwritingRecognition, shouldUseHandwritingRetry } from "./handwriting";
 
 describe("handwriting OCR response parsing", () => {
   it("parses a strict JSON response", () => {
@@ -185,5 +185,28 @@ describe("inline handwriting uncertainty highlighting", () => {
       { seen: "I", chosen: "1", alternatives: ["I"], context: "A1B", reason: "same location" },
     ]);
     expect(ranges).toHaveLength(1);
+  });
+});
+
+describe("handwriting correction notation safeguards", () => {
+  it("flags changed numbers, equations, units, formulae and scientific symbols", () => {
+    expect(findHandwritingNotationWarnings("x = 10 cm, H2O, ΔT", "x = 1O mm, H₂O, DT")).toEqual([
+      "numbers", "equations", "units", "chemical formulae", "scientific symbols",
+    ]);
+  });
+
+  it("does not flag ordinary spelling and punctuation improvements", () => {
+    expect(findHandwritingNotationWarnings("The voltgae is here", "The voltage is here.")).toEqual([]);
+  });
+
+  it("requires review when corrected OCR changes protected notation even at high confidence", () => {
+    const result = normalizeHandwritingRecognition({
+      transcript: "The value is 0.5 V",
+      correctedText: "The value is 0.6 V",
+      confidence: 0.99,
+      uncertainCharacters: [],
+    });
+    expect(result.notationWarnings).toContain("numbers");
+    expect(result.requiresReview).toBe(true);
   });
 });
