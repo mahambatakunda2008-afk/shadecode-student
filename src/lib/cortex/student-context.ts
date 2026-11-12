@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { deriveRecurringMistakes, deriveRepeatedTopicErrors, type RecurringMistake, type RepeatedTopicError } from "./mistake-patterns";
 import { deriveSpacedRetrievalEvidence, type SpacedRetrievalEvidence } from "./spaced-retrieval";
 import { deriveEvidenceBasedReviewSuggestions, type EvidenceBasedReviewSuggestion } from "./review-suggestions";
+import { deriveReviewSessionActivity, type ReviewSessionActivity } from "./review-session-activity";
 
 export type EvidenceState = "available" | "insufficient_evidence" | "unavailable";
 
@@ -73,6 +74,11 @@ export interface CortexStudentContext {
     topics: SpacedRetrievalEvidence[];
     interpretation: "descriptive_only";
   };
+  reviewActivity: {
+    state: EvidenceState;
+    source: "cortex_events";
+    sessions: ReviewSessionActivity[];
+  };
   reviewSuggestions: {
     state: EvidenceState;
     source: "cortex_events";
@@ -130,7 +136,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       .from("cortex_events")
       .select("type, data, created_at")
       .eq("user_id", userId)
-      .eq("type", "question_attempted")
+      .in("type", ["question_attempted", "quiz_completed"])
       .order("created_at", { ascending: false })
       .limit(500),
   ]);
@@ -182,6 +188,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
   const evidenceCount = topics.reduce((count, item) => count + item.attempts, 0);
   const mistakeEvents = mistakeEventsResult.data ?? [];
   const repeatedTopicErrors = deriveRepeatedTopicErrors(mistakeEvents);
+  const reviewActivity = deriveReviewSessionActivity(mistakeEvents);
   const recurringMistakes = deriveRecurringMistakes(mistakeEvents);
   const spacedRetrieval = deriveSpacedRetrievalEvidence(mistakeEvents);
   const reviewSuggestions = deriveEvidenceBasedReviewSuggestions({
@@ -237,6 +244,11 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       inspectedEventCount: mistakeEvents.length,
       topics: spacedRetrieval,
       interpretation: "descriptive_only",
+    },
+    reviewActivity: {
+      state: reviewActivity.length > 0 ? "available" : "insufficient_evidence",
+      source: "cortex_events",
+      sessions: reviewActivity,
     },
     reviewSuggestions: {
       state: reviewSuggestions.length > 0 ? "available" : "insufficient_evidence",
