@@ -56,15 +56,35 @@ function learnerContinuityNote(
   const activeSyllabusId = context.curriculum?.identity.syllabusId;
   if (!activeSyllabusId) return "";
 
+  const notes: string[] = [];
+  const profile = context.studentContext.profile;
+  const practiceMatches =
+    profile.lastPracticeTopic?.trim().toLocaleLowerCase() === normalizedTopic &&
+    Boolean(profile.lastPracticeSubject?.trim()) &&
+    subjectKeys.includes(profile.lastPracticeSubject!.trim().toLocaleLowerCase()) &&
+    profile.lastPracticeSyllabusId === activeSyllabusId &&
+    typeof profile.lastPracticeScore === "number" &&
+    Number.isFinite(profile.lastPracticeScore);
+
+  if (practiceMatches) {
+    notes.push(
+      `Your latest recorded practice score for this topic in this subject and syllabus was ${profile.lastPracticeScore}%. Treat it as one result, not proof of mastery.`
+    );
+  }
+
   const evidence = context.studentContext.topics.items.find((item) =>
     item.topicId.trim().toLocaleLowerCase() === normalizedTopic &&
     subjectKeys.includes(item.subjectKey.trim().toLocaleLowerCase()) &&
     item.syllabusId === activeSyllabusId &&
     item.attempts > 0
   );
-  if (!evidence) return "";
+  if (evidence) {
+    notes.push(
+      `I have ${evidence.attempts} recorded learning attempts for this topic in this subject, so I'll build on that history rather than assume this is your first encounter.`
+    );
+  }
 
-  return ` I have ${evidence.attempts} recorded learning attempts for this topic in this subject, so I'll build on that history rather than assume this is your first encounter.`;
+  return notes.length ? ` ${notes.join(" ")}` : "";
 }
 
 export async function generateTutoringResponse(
