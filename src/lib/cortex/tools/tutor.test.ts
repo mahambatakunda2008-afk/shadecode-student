@@ -7,7 +7,7 @@ const context: CortexStudentContext = {
   generatedAt: "2026-11-12T12:00:00.000Z",
   profile: {
     state: "available",
-    source: "cortex_memory",
+    source: "profiles+cortex_memory",
     observedAt: "2026-11-12T11:00:00.000Z",
     level: 3,
     streak: 2,
