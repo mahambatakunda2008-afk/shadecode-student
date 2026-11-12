@@ -6,16 +6,20 @@ Date: 2026-11-12
 
 - A tutoring request records the current topic for continuity but does not increment study sessions, study time, or streaks.
 - Practice scores are stored separately from formal examination averages.
-- Recent topic, practice score, practice topic, and short text feedback have dedicated `cortex_memory` fields.
+- Recent topic, practice score, practice topic, practice subject, verified syllabus identity, and short text feedback have dedicated `cortex_memory` fields.
 - Topic weaknesses and subject weaknesses have separate storage fields.
 - The deterministic Cortex practice scorer no longer infers correctness from answer length.
 - Exact normalized reference-answer matches can be scored. Answers that cannot be reliably graded return a null score and request a marking guide or review.
-- The authenticated student context now includes the most recent topic and verifiable practice-score context.
+- The authenticated student context now includes the most recent topic and verifiable practice-score context, scoped by subject and verified syllabus.
+- Tutoring continuity uses the latest practice result only when topic, subject, and active syllabus all match. It explicitly avoids treating one exact-answer match as proof of mastery.
+- Answer normalization now collapses actual whitespace; ungraded free-response answers are not described as saved for review.
 
 ## Database migrations
 
 - `20261112173852_add_cortex_learning_context_fields.sql`
 - `20261112174149_separate_cortex_weak_topics_from_subjects.sql`
+- `20261112175000_add_last_practice_subject_context.sql`
+- `20261112175500_add_last_practice_syllabus_context.sql`
 
 Both migrations were applied to the connected production Supabase project and the resulting columns were verified through `information_schema.columns`.
 
