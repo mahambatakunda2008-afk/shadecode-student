@@ -21,6 +21,12 @@ export interface EvidenceBasedReviewSuggestion {
  * This is not a forgetting model: it never assigns a due date, retention
  * probability, or claim that a topic is overdue.
  */
+function latestObservedAt(...values: Array<string | null | undefined>): string | null {
+  return values
+    .filter((value): value is string => Boolean(value) && Number.isFinite(Date.parse(value)))
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null;
+}
+
 export function deriveEvidenceBasedReviewSuggestions(input: {
   repeatedTopicErrors: RepeatedTopicError[];
   recurringMistakes: RecurringMistake[];
@@ -50,7 +56,7 @@ export function deriveEvidenceBasedReviewSuggestions(input: {
       reason: "repeated_errors",
       distinctAttempts: Math.max(item.distinctAttempts, mistake?.distinctAttempts ?? 0),
       incorrectResponses: item.incorrectResponses,
-      lastObservedAt: item.lastObservedAt ?? mistake?.lastObservedAt ?? null,
+      lastObservedAt: latestObservedAt(item.lastObservedAt, mistake?.lastObservedAt),
       observedMedianIntervalDays: null,
       evidenceState: "evidence_backed_suggestion",
     });
