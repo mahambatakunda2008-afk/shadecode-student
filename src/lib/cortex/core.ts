@@ -159,11 +159,14 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
 
     case "practice": {
       const result = await scoreAnswer(asRecord(input.payload) as ScoreAnswerInput);
-      const practiceTopic = asString(asRecord(input.payload).topic);
+      const practicePayload = asRecord(input.payload);
+      const practiceTopic = asString(practicePayload.topic);
+      const practiceSubject = asString(practicePayload.subjectName) ?? asString(practicePayload.subject);
       if (result.score !== null) {
         await updateMemory(input.userId, {
           lastPracticeScore: result.score,
           ...(practiceTopic ? { lastPracticeTopic: practiceTopic } : {}),
+          ...(practiceSubject ? { lastPracticeSubject: practiceSubject } : {}),
           weakTopics: result.weakTopics,
         });
       } else if (practiceTopic) {
