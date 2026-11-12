@@ -43,7 +43,7 @@ function drawArrow(ctx: CanvasRenderingContext2D, from: Point, to: Point) {
   ctx.stroke();
 }
 
-function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: Tool, control?: Point, vertices?: Point[]) {
+function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: Tool, control?: Point, vertices?: Point[], segments?: QuadraticCurveSegment[]) {
   ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
   const left = Math.min(from.x, to.x), top = Math.min(from.y, to.y);
   const w = Math.abs(to.x - from.x), h = Math.abs(to.y - from.y);
@@ -62,7 +62,10 @@ function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: 
     const midpoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
     const controlPoint = control ?? { x: midpoint.x, y: midpoint.y - bend };
     ctx.beginPath(); ctx.moveTo(from.x, from.y);
-    ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, to.x, to.y); ctx.stroke();
+    if (segments && segments.length > 0) {
+      for (const segment of segments) ctx.quadraticCurveTo(segment.control.x, segment.control.y, segment.to.x, segment.to.y);
+    } else ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, to.x, to.y);
+    ctx.stroke();
   }
 }
 
@@ -143,7 +146,39 @@ export function fitQuadraticCurve(points: Point[]): QuadraticCurveFit | null {
   return { control, rmsError, maxError, bend };
 }
 
-export type RecognizedShape = { tool: Tool; from: Point; to: Point; control?: Point; vertices?: Point[] };
+export type QuadraticCurveSegment = { from: Point; control: Point; to: Point };
+
+/** Split complex open strokes into a small chain of fitted quadratic Bézier segments. */
+export function fitQuadraticSegments(points: Point[], maxSegments = 3): QuadraticCurveSegment[] | null {
+  if (points.length < 7 || maxSegments < 1) return null;
+  const fitRange = (start: number, end: number, depth: number): QuadraticCurveSegment[] | null => {
+    const slice = points.slice(start, end + 1);
+    const fit = fitQuadraticCurve(slice);
+    if (!fit) return null;
+    const first = slice[0], last = slice[slice.length - 1];
+    const cumulative = [0];
+    for (let i = 1; i < slice.length; i++) cumulative.push(cumulative[i - 1] + distance(slice[i - 1], slice[i]));
+    const total = cumulative[cumulative.length - 1];
+    let peakError = 0, split = -1;
+    for (let i = 2; i < slice.length - 2; i++) {
+      const t = cumulative[i] / Math.max(total, 1), u = 1 - t;
+      const predicted = { x: u*u*first.x + 2*u*t*fit.control.x + t*t*last.x, y: u*u*first.y + 2*u*t*fit.control.y + t*t*last.y };
+      const error = distance(slice[i], predicted);
+      if (error > peakError) { peakError = error; split = start + i; }
+    }
+    const acceptable = fit.bend >= 5 && fit.rmsError <= Math.max(4.5, fit.bend * 0.13)
+      && fit.maxError <= Math.max(12, fit.bend * 0.32);
+    if (acceptable) return [{ from: first, control: fit.control, to: last }];
+    if (depth >= 2 || split < start + 4 || split > end - 4) return null;
+    const left = fitRange(start, split, depth + 1);
+    const right = fitRange(split, end, depth + 1);
+    return left && right ? [...left, ...right] : null;
+  };
+  const result = fitRange(0, points.length - 1, 0);
+  return result && result.length >= 1 && result.length <= maxSegments ? result : null;
+}
+
+export type RecognizedShape = { tool: Tool; from: Point; to: Point; control?: Point; vertices?: Point[]; segments?: QuadraticCurveSegment[] };
 
 export function recognizeShape(points: Point[]): RecognizedShape | null {
   if (points.length < 8) return null;
@@ -165,10 +200,14 @@ export function recognizeShape(points: Point[]): RecognizedShape | null {
     // Arc-length parameterisation keeps uneven finger/stylus sampling from
     // pulling the fitted curve toward a slow section of the stroke.
     const fit = fitQuadraticCurve(points);
+    const segments = fitQuadraticSegments(points, 3);
     const curveComplexity = pathLength / Math.max(direct, 1);
+    if (segments && segments.length > 1 && curveComplexity < 2.4) {
+      return { tool: "curve", from: first, to: last, control: segments[0].control, segments };
+    }
     if (fit && fit.bend >= 10 && fit.rmsError <= Math.max(7, fit.bend * 0.16)
       && fit.maxError <= Math.max(18, fit.bend * 0.42) && curveComplexity < 1.9) {
-      return { tool: "curve", from: first, to: last, control: fit.control };
+      return { tool: "curve", from: first, to: last, control: fit.control, segments: [{ from: first, control: fit.control, to: last }] };
     }
     return null;
   }
@@ -534,7 +573,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     if (tool === "pen" && autoFix) {
       const recognized = recognizeShape(points);
       if (recognized) {
-        drawShape(ctx, recognized.from, recognized.to, recognized.tool, recognized.control, recognized.vertices);
+        drawShape(ctx, recognized.from, recognized.to, recognized.tool, recognized.control, recognized.vertices, recognized.segments);
         return;
       }
     }
