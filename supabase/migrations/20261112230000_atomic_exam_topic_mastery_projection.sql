@@ -65,6 +65,14 @@ begin
   v_exists := found;
   v_correct := p_percentage >= 50;
 
+  -- Serialize even the first observation, where no topic_mastery row exists yet.
+  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text || ':' || trim(p_subject) || ':' || trim(p_topic), 0));
+  select * into v_existing
+  from public.topic_mastery
+  where user_id=p_user_id and subject=trim(p_subject) and topic=trim(p_topic)
+  for update;
+  v_exists := found;
+
   if not v_exists then
     v_previous_mastery := null;
     v_mastery := round(p_percentage);
