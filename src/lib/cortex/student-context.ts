@@ -61,10 +61,10 @@ export interface CortexStudentContext {
 /**
  * Resolve the current authenticated learner's durable Cortex context.
  *
- * This function intentionally accepts no user ID. Identity comes only from
- * the server-side Supabase session, preventing callers from selecting another
- * learner's records. Query failures throw; an absent row is represented as
- * insufficient evidence rather than being confused with a database outage.
+ * This function accepts no user ID. It verifies either the current server
+ * session or a supplied bearer token with Supabase Auth, then uses that same
+ * identity for RLS-scoped reads. Query failures throw; absent rows are
+ * represented as insufficient evidence rather than database outages.
  */
 export async function resolveAuthenticatedCortexStudentContext(accessToken?: string): Promise<CortexStudentContext> {
   const supabase = accessToken
