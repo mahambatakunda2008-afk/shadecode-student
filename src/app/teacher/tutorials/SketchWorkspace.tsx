@@ -341,6 +341,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const frameRef = useRef<number | null>(null);
   const vectorObjectsRef = useRef<DiagramObject[]>([]);
   const vectorHistoryRef = useRef<DiagramObject[][]>([[]]);
+  const undoTimelineRef = useRef<Array<"raster" | "vector">>([]);
   const vectorDragRef = useRef<{ id: string; origin: Point; object: DiagramObject } | null>(null);
   const vectorResizeRef = useRef<{ id: string; origin: Point; object: DiagramObject; bounds: ReturnType<typeof getDiagramObjectBounds> } | null>(null);
   const vectorPointDragRef = useRef<{ id: string; kind: "polygon" | "curve"; index: number; origin: Point; object: DiagramObject } | null>(null);
@@ -348,7 +349,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [objectLabelDraft, setObjectLabelDraft] = useState("");
   const defaultStyle: DiagramStyle = { stroke: INK, fill: "none", strokeWidth: 4 };
-  const commitVectorObjects = (next: DiagramObject[]) => { vectorHistoryRef.current = [...vectorHistoryRef.current.slice(-24), next.map(object => ({ ...object }))]; vectorObjectsRef.current = next; setVectorObjects(next); setCanUndo(vectorHistoryRef.current.length > 1); };
+  const commitVectorObjects = (next: DiagramObject[]) => { vectorHistoryRef.current = [...vectorHistoryRef.current.slice(-24), next.map(object => ({ ...object }))]; undoTimelineRef.current = [...undoTimelineRef.current.slice(-48), "vector"]; vectorObjectsRef.current = next; setVectorObjects(next); setCanUndo(true); };
   const [tool, setTool] = useState<Tool>("pen");
   const [label, setLabel] = useState("");
   const [fontSize, setFontSize] = useState(28);
@@ -370,7 +371,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const canvas = canvasRef.current;
     if (!canvas) return;
     historyRef.current = [...historyRef.current.slice(-24), ctx.getImageData(0, 0, canvas.width, canvas.height)];
-    setCanUndo(historyRef.current.length > 1);
+    undoTimelineRef.current = [...undoTimelineRef.current.slice(-48), "raster"];
+    setCanUndo(true);
   }, []);
 
   useEffect(() => {
@@ -674,9 +676,9 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     if (frameRef.current !== null) { cancelAnimationFrame(frameRef.current); frameRef.current = null; }
     const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
     if(!canvas||!ctx)return;
-    if(vectorPointDragRef.current){vectorPointDragRef.current=null;vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];setCanUndo(true);setStatus("Diagram control point adjusted.");return;}
-    if(vectorResizeRef.current){vectorResizeRef.current=null;vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];setCanUndo(true);setStatus("Object resized. It remains independently editable.");return;}
-    if(vectorDragRef.current){vectorDragRef.current=null;vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];setCanUndo(true);setStatus("Object moved. It remains independently editable.");return;}
+    if(vectorPointDragRef.current){vectorPointDragRef.current=null;vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];undoTimelineRef.current=[...undoTimelineRef.current.slice(-48),"vector"];setCanUndo(true);setStatus("Diagram control point adjusted.");return;}
+    if(vectorResizeRef.current){vectorResizeRef.current=null;vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];undoTimelineRef.current=[...undoTimelineRef.current.slice(-48),"vector"];setCanUndo(true);setStatus("Object resized. It remains independently editable.");return;}
+    if(vectorDragRef.current){vectorDragRef.current=null;vectorHistoryRef.current=[...vectorHistoryRef.current.slice(-24),vectorObjectsRef.current.map(object=>({...object}))];undoTimelineRef.current=[...undoTimelineRef.current.slice(-48),"vector"];setCanUndo(true);setStatus("Object moved. It remains independently editable.");return;}
     if(!snapshotRef.current)return;
     const points = pointsRef.current;
     ctx.putImageData(snapshotRef.current, 0, 0);
@@ -739,12 +741,11 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   }
 
   function undo() {
-    if(vectorHistoryRef.current.length>1){vectorHistoryRef.current=vectorHistoryRef.current.slice(0,-1);const previous=vectorHistoryRef.current[vectorHistoryRef.current.length-1];vectorObjectsRef.current=previous;setVectorObjects(previous);setSelectedObjectId(null);setCanUndo(vectorHistoryRef.current.length>1||historyRef.current.length>1);setStatus("Last vector-object action undone.");return;}
-    const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx || historyRef.current.length < 2) return;
-    historyRef.current = historyRef.current.slice(0, -1);
-    ctx.putImageData(historyRef.current[historyRef.current.length - 1], 0, 0);
-    setCanUndo(historyRef.current.length > 1); setStatus("Last action undone.");
+    const action=undoTimelineRef.current.pop(); if(!action)return;
+    if(action==="vector"&&vectorHistoryRef.current.length>1){vectorHistoryRef.current=vectorHistoryRef.current.slice(0,-1);const previous=vectorHistoryRef.current[vectorHistoryRef.current.length-1];vectorObjectsRef.current=previous;setVectorObjects(previous);setSelectedObjectId(null);setCanUndo(undoTimelineRef.current.length>0);setStatus("Last diagram-object action undone.");return;}
+    const canvas=canvasRef.current,ctx=canvas?.getContext("2d");
+    if(action==="raster"&&canvas&&ctx&&historyRef.current.length>1){historyRef.current=historyRef.current.slice(0,-1);ctx.putImageData(historyRef.current[historyRef.current.length-1],0,0);setCanUndo(undoTimelineRef.current.length>0);setStatus("Last canvas action undone.");return;}
+    setCanUndo(undoTimelineRef.current.length>0);
   }
 
   function clear() {
