@@ -24,7 +24,7 @@ export default function CortexReviewSuggestions() {
   const router = useRouter();
   const [state, setState] = useState<LoadState>("loading");
   const [items, setItems] = useState<EvidenceBasedReviewSuggestion[]>([]);
-  const [reviewActivity, setReviewActivity] = useState<Array<{ subjectKey: string; topicId: string; answeredQuestionCount: number; state: "practised" | "completed" }>>([]);
+  const [reviewActivity, setReviewActivity] = useState<Array<{ subjectKey: string; topicId: string; answeredQuestionCount: number; state: "practised" | "completed"; completionKind: "quiz" | "exam" | "practical" | null }>>([]);
 
   useEffect(() => {
     let active = true;
@@ -76,7 +76,7 @@ export default function CortexReviewSuggestions() {
                 <p className="text-xs font-medium text-[var(--muted-foreground)]">{subject}</p>
                 <p className="mt-0.5 truncate text-sm font-semibold text-[var(--foreground)]">{item.topicId}</p>
                 <p className="mt-1 text-xs text-[var(--muted-foreground)]">{reason}{lastPractised ? ` · Last practised ${lastPractised}` : ""}</p>
-                {latestActivity && <p className="mt-1 text-xs font-medium text-[var(--success)]">{latestActivity.state === "completed" ? "Review quiz completed" : "Practice recorded"} · {latestActivity.answeredQuestionCount} questions answered</p>}
+                {latestActivity && <p className="mt-1 text-xs font-medium text-[var(--success)]">{latestActivity.state === "completed" ? (latestActivity.completionKind === "exam" ? "Exam simulation completed" : latestActivity.completionKind === "practical" ? "Practical task completed" : "Review quiz completed") : "Practice recorded"} · {latestActivity.answeredQuestionCount} questions answered</p>}
                 {item.observedMedianIntervalDays !== null && (
                   <p className="mt-1 text-xs text-[var(--muted-foreground)]">Observed practice interval: median {item.observedMedianIntervalDays} days</p>
                 )}
