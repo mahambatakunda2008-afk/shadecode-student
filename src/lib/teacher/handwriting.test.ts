@@ -195,6 +195,10 @@ describe("handwriting correction notation safeguards", () => {
     ]);
   });
 
+  it("flags reordered numeric and scientific tokens even when the same tokens remain", () => {
+    expect(findHandwritingNotationWarnings("Read values 2 and 5", "Read values 5 and 2")).toContain("numbers");
+    expect(findHandwritingNotationWarnings("x + y = 3", "y + x = 3")).toContain("equations");
+  });
   it("does not flag ordinary spelling and punctuation improvements", () => {
     expect(findHandwritingNotationWarnings("The voltgae is here", "The voltage is here.")).toEqual([]);
   });
