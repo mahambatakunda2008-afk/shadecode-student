@@ -95,6 +95,20 @@ describe("handwriting character alternatives", () => {
       seen: "0/O", chosen: "0", alternatives: ["O"], context: "", reason: "ambiguous",
     }, "O")).toBeNull();
   });
+  it("only applies an alternative explicitly returned by OCR", async () => {
+    const { applyHandwritingAlternative } = await import("./handwriting");
+    expect(applyHandwritingAlternative("value = 0", {
+      seen: "0/O", chosen: "0", alternatives: ["O"], context: "value = 0", reason: "ambiguous glyph",
+    }, "8")).toBeNull();
+  });
+
+  it("removes control characters and duplicate or oversized OCR alternatives", () => {
+    const result = normalizeHandwritingRecognition({
+      transcript: "x",
+      uncertainCharacters: [{ seen: "0\n/O", chosen: "0", alternatives: ["O", "O", " ", "X".repeat(25), "I"], context: "x = 0\n", reason: "ambiguous\u0001" }],
+    });
+    expect(result.uncertainCharacters[0]).toMatchObject({ seen: "0/O", chosen: "0", alternatives: ["O", "I"], context: "x = 0", reason: "ambiguous" });
+  });
 });
 
 
