@@ -59,7 +59,6 @@ export async function scoreAnswer(
     };
   }
 
-  const topic = typeof payload.topic === "string" ? payload.topic.trim() : "";
   return {
     score: null,
     feedback: "This answer differs from the reference wording. It may still be correct; a marking guide or human review is needed.",
