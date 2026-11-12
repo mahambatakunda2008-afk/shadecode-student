@@ -427,7 +427,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [handwritingText, setHandwritingText] = useState("");
   const [handwritingRawText, setHandwritingRawText] = useState("");
   const [handwritingUncertainty, setHandwritingUncertainty] = useState<UncertainHandwritingCharacter[]>([]);
-  const [handwritingConfidence, setHandwritingConfidence] = useState<number | null>(null);
+  const [handwritingConfidence, setHandwritingConfidence] = useState<number | null>(null);\n  const [handwritingNotationWarnings, setHandwritingNotationWarnings] = useState<string[]>([]);
   const [handwritingMathExpressions, setHandwritingMathExpressions] = useState<Array<{ sourceText: string; latex: string; confidence: number | null; uncertainTokens: string[] }>>([]);
   const [status, setStatus] = useState("Auto-fix is on. Strokes smooth as you draw; shapes snap when you lift the pointer.");
 
@@ -550,7 +550,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         context: item.context || "",
         reason: item.reason || "",
       })));
-      setHandwritingConfidence(typeof result.confidence === "number" ? result.confidence : null);
+      setHandwritingConfidence(typeof result.confidence === "number" ? result.confidence : null);\n      setHandwritingNotationWarnings(Array.isArray(result.notationWarnings) ? result.notationWarnings.filter((value: unknown): value is string => typeof value === "string").slice(0, 5) : []);
       setHandwritingMathExpressions(Array.isArray(result.mathExpressions) ? result.mathExpressions.filter((item: unknown): item is { sourceText: string; latex: string; confidence: number | null; uncertainTokens: string[] } => {
         if (!item || typeof item !== "object") return false;
         const expression = item as Record<string, unknown>;
@@ -908,7 +908,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         <h4 className="text-sm font-semibold">Recognised and corrected handwriting</h4>
         <span className="text-xs text-[var(--muted-foreground)]">{handwritingConfidence === null ? "Confidence not supplied" : `${Math.round(handwritingConfidence * 100)}% confidence`}</span>
       </div>
-      {handwritingUncertainty.length > 0 && (() => {
+      {handwritingNotationWarnings.length > 0 && <div role="alert" className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-xs"><strong>Correction changed protected notation.</strong> The corrected reading differs from the raw OCR in: {handwritingNotationWarnings.join(", ")}. Compare the original handwriting and verify every affected value before using this transcription.</div>}\n      {handwritingUncertainty.length > 0 && (() => {
         const ranges = findHandwritingReviewRanges(handwritingText, handwritingUncertainty);
         const unmatchedCount = handwritingUncertainty.length - ranges.length;
         if (!ranges.length) return <div role="alert" className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-2 text-xs"><strong>Manual character check required.</strong> The uncertain glyphs could not be safely matched to a unique position in this transcription. Use the character choices below only when their location is clear, or edit the text directly against the original handwriting.</div>;
