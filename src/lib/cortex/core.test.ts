@@ -93,6 +93,7 @@ describe("CortexCore learning requests", () => {
       type: "practice",
       payload: {
         topic: "Quadratic equations",
+        subjectName: "Mathematics",
         answer: "x = 2",
         correctAnswer: "x = 2",
       },
@@ -101,6 +102,7 @@ describe("CortexCore learning requests", () => {
     expect(updateMemory).toHaveBeenCalledWith("learner-1", {
       lastPracticeScore: 100,
       lastPracticeTopic: "Quadratic equations",
+      lastPracticeSubject: "Mathematics",
       weakTopics: [],
     });
     expect(trackStudySession).not.toHaveBeenCalled();
