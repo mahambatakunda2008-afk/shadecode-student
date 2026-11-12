@@ -37,6 +37,7 @@ describe("deriveReviewSessionActivity", () => {
     ])).toEqual([expect.objectContaining({
       answeredQuestionCount: 1,
       state: "completed",
+      completionKind: "quiz",
     })]);
   });
 
@@ -45,14 +46,14 @@ describe("deriveReviewSessionActivity", () => {
       row("question_attempted", "q1"),
       row("question_attempted", "q2"),
       row("exam_completed", "exam-1"),
-    ])).toEqual([expect.objectContaining({ answeredQuestionCount: 2, state: "completed" })]);
+    ])).toEqual([expect.objectContaining({ answeredQuestionCount: 2, state: "completed", completionKind: "exam" })]);
   });
 
   it("marks a practical review completed after answered questions and task completion", () => {
     expect(deriveReviewSessionActivity([
       row("question_attempted", "q1"),
       row("activity_completed", "P3-01"),
-    ])).toEqual([expect.objectContaining({ answeredQuestionCount: 1, state: "completed" })]);
+    ])).toEqual([expect.objectContaining({ answeredQuestionCount: 1, state: "completed", completionKind: "practical" })]);
   });
 
   it("ignores events without the Cortex suggestion attribution", () => {
