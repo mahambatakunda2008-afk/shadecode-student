@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent } from "react";
-import { applyHandwritingAlternative, shouldUseHandwritingRetry, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
+import { applyHandwritingAlternative, findHandwritingReviewRanges, shouldUseHandwritingRetry, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
 
 type Tool = "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "polygon" | "curve" | "label";
 export type Point = { x: number; y: number };
@@ -725,7 +725,20 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         <h4 className="text-sm font-semibold">Recognised and corrected handwriting</h4>
         <span className="text-xs text-[var(--muted-foreground)]">{handwritingConfidence === null ? "Confidence not supplied" : `${Math.round(handwritingConfidence * 100)}% confidence`}</span>
       </div>
-      <textarea value={handwritingText} onChange={event => setHandwritingText(event.target.value)} maxLength={12000} rows={6} spellCheck autoCorrect="on" className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" aria-label="Review and edit recognised handwriting" />
+      {handwritingUncertainty.length > 0 && (() => {
+        const ranges = findHandwritingReviewRanges(handwritingText, handwritingUncertainty);
+        if (!ranges.length) return null;
+        const pieces: React.ReactNode[] = [];
+        let cursor = 0;
+        for (const range of ranges) {
+          if (range.start > cursor) pieces.push(handwritingText.slice(cursor, range.start));
+          pieces.push(<mark key={range.start} className="rounded bg-amber-300/70 px-0.5 text-slate-950" title={`OCR uncertainty: ${range.seen} read as ${range.chosen}`}>{handwritingText.slice(range.start, range.end)}</mark>);
+          cursor = range.end;
+        }
+        if (cursor < handwritingText.length) pieces.push(handwritingText.slice(cursor));
+        return <div className="space-y-1 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2 text-xs"><strong>Uncertain characters highlighted below</strong><p className="whitespace-pre-wrap break-words leading-6">{pieces}</p></div>;
+      })()}
+      <textarea value={handwritingText} onChange={event => setHandwritingText(event.target.value)} maxLength={12000} rows={6} spellCheck autoCorrect="off" autoCapitalize="off" className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" aria-label="Review and edit recognised handwriting. Amber highlights mark uncertain characters." />
       {handwritingRawText && handwritingRawText !== handwritingText && <details className="rounded-lg bg-[var(--surface)] p-2 text-xs"><summary className="cursor-pointer font-medium">Compare original character reading</summary><p className="mt-2 whitespace-pre-wrap">{handwritingRawText}</p></details>}
       {handwritingMathExpressions.length > 0 && <section className="space-y-2 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] p-3">
         <strong className="text-xs">Extracted mathematical notation</strong>
