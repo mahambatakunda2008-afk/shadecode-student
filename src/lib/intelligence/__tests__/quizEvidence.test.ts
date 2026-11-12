@@ -30,6 +30,14 @@ describe("quiz evidence builders", () => {
     expect(first[0].sourceEventId).toBe("question-attempt:attempt-1:q1");
   });
 
+  it("carries review attribution through question and completion events", () => {
+    const [question] = buildQuizQuestionEvidence("attempt-review", "lesson-7", [{ questionId: "q1", correct: true }], { subject: "Physics", topicId: "Waves", reviewSessionId: "review-1" });
+    const completion = buildQuizCompletionEvidence({ quizAttemptId: "attempt-review", lessonId: "lesson-7", percentage: 100, questionCount: 1, correctCount: 1, subject: "Physics", topicId: "Waves", reviewSessionId: "review-1" });
+    expect(question.metadata).toMatchObject({ reviewSessionId: "review-1", reviewSource: "cortex_suggestion" });
+    expect(completion).toMatchObject({ subjectId: "physics", topicId: "waves" });
+    expect(completion.metadata).toMatchObject({ reviewSessionId: "review-1", reviewSource: "cortex_suggestion" });
+  });
+
   it("creates an aggregate-only completion event", () => {
     const event = buildQuizCompletionEvidence({
       quizAttemptId: "attempt-1",
