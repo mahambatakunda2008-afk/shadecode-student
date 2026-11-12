@@ -29,7 +29,7 @@ export function deriveReviewSessionActivity(rows: ReviewSessionEventRecord[]): R
   }>();
 
   for (const row of rows) {
-    if (row.type !== "question_attempted" && row.type !== "quiz_completed") continue;
+    if (row.type !== "question_attempted" && row.type !== "quiz_completed" && row.type !== "exam_completed") continue;
     if (!row.data || typeof row.data !== "object" || Array.isArray(row.data)) continue;
     const data = row.data as Record<string, unknown>;
     const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata)
