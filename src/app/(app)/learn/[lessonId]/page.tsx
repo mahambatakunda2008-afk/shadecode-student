@@ -195,6 +195,7 @@ export default function LessonDetailPage() {
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showToast, setShowToast] = useState(false);
+  const [completionSynced, setCompletionSynced] = useState(false);
   const [understanding, setUnderstanding] = useState<"explain" | "apply" | "review" | null>(null);
   const [activeSection, setActiveSection] = useState(0);
   const restoredScrollRef = useRef(false);
@@ -312,6 +313,7 @@ export default function LessonDetailPage() {
         size: JSON.stringify(completedLesson).length,
       });
 
+      setCompletionSynced(false);
       if (navigator.onLine && accessToken) {
         const r = await fetch("/api/learn", {
           method: "PATCH",
@@ -320,6 +322,7 @@ export default function LessonDetailPage() {
         });
         if (!r.ok) throw new Error("Cloud acknowledgement is pending");
         await localFirstStore.acknowledgeProgress(currentUser, lesson.id);
+        setCompletionSynced(true);
         setShowToast(true);
         checkNewAchievements();
       } else {
@@ -395,7 +398,7 @@ export default function LessonDetailPage() {
         @media(max-width:820px){.lesson-layout{grid-template-columns:1fr;gap:8px}.lesson-toc{position:static;padding:10px 12px;margin-bottom:18px}.lesson-toc-label{padding-bottom:7px}.lesson-toc-list{flex-direction:row;overflow-x:auto;padding-bottom:2px}.lesson-toc-item{min-width:140px;max-width:210px;border:1px solid var(--border-subtle);background:var(--surface);grid-template-columns:20px minmax(0,1fr)}}\n        @media(max-width:640px){.lesson-shell{padding:20px 13px 55px}.lesson-hero-inner{padding:20px 18px}.lesson-title{font-size:25px}.lesson-loop-options{grid-template-columns:1fr}.lesson-actions{grid-template-columns:repeat(2,1fr)}.lesson-action:last-child{grid-column:auto}.lesson-aside{margin-left:4px}.unit-body{font-size:14px}.lesson-steps li{padding-left:43px}}
       `}</style>
 
-      {showToast && <div className="lesson-toast" role="status"><CheckCircle2 size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />{lesson.completed ? "Lesson complete. XP earned." : "Lesson saved for offline use."}</div>}
+      {showToast && <div className="lesson-toast" role="status"><CheckCircle2 size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />{lesson.completed ? (completionSynced ? "Lesson complete. Progress synced." : "Lesson complete. Saved on this device; sync pending.") : "Lesson saved for offline use."}</div>}
       <div className="lesson-shell">
         <Link href="/learn" className="lesson-back"><ArrowLeft size={16} />Back to Learn</Link>
 
