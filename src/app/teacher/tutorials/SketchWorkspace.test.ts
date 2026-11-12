@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { recognizeShape, type Point } from "./SketchWorkspace";
+import { fitQuadraticCurve, recognizeShape, type Point } from "./SketchWorkspace";
 
 describe("teacher sketch auto-correction", () => {
   it("snaps a clean straight freehand stroke to a line", () => {
@@ -108,6 +108,34 @@ describe("teacher sketch auto-correction", () => {
     const result = recognizeShape(points);
     expect(result?.tool).toBe("polygon");
     expect(result?.vertices).toHaveLength(6);
+  });
+
+
+  it("fits the whole quadratic stroke despite uneven sampling", () => {
+    const points: Point[] = Array.from({ length: 37 }, (_, index) => {
+      const t = Math.pow(index / 36, 1.45);
+      return {
+        x: 80 + 240 * t,
+        y: 90 + 1.2 * (1 - t) * t * 150,
+      };
+    });
+    const fit = fitQuadraticCurve(points);
+    expect(fit).not.toBeNull();
+    expect(fit!.control.x).toBeCloseTo(200, 0);
+    expect(fit!.control.y).toBeCloseTo(180, 0);
+    expect(fit!.rmsError).toBeLessThan(1);
+    expect(recognizeShape(points)?.tool).toBe("curve");
+  });
+
+  it("does not force an S-shaped stroke into a single quadratic curve", () => {
+    const points: Point[] = Array.from({ length: 61 }, (_, index) => {
+      const t = index / 60;
+      return { x: 80 + 300 * t, y: 130 + 65 * Math.sin(2 * Math.PI * t) };
+    });
+    const fit = fitQuadraticCurve(points);
+    expect(fit).not.toBeNull();
+    expect(fit!.rmsError).toBeGreaterThan(12);
+    expect(recognizeShape(points)?.tool).not.toBe("curve");
   });
 
   it("does not turn a short accidental mark into a diagram shape", () => {
