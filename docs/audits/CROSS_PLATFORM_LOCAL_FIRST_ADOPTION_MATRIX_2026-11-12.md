@@ -199,3 +199,15 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 - GitHub Actions CI has been triggered by the latest push. At the time of this update it is queued; no passing build/typecheck/lint/test result is claimed yet.
 
 - Additional privilege-path verification ran the claim, completion, and replay sequence under `SET LOCAL ROLE service_role` inside a transaction, then rolled it back. This confirms the exact role used by the server-side service client can execute the RPCs and write the ledger without granting function execution to browser roles.
+
+
+## 2026-11-12 implementation update: atomic Cortex exam memory
+
+- Added and applied `record_exam_score(uuid, jsonb)` in migration `20261112200000_atomic_cortex_exam_score.sql`.
+- The exam-mark route no longer reads `cortex_memory.exam_scores` into application memory and writes the whole array back. It now calls the database RPC.
+- The RPC performs an atomic `INSERT ... ON CONFLICT (user_id) DO UPDATE`. PostgreSQL serializes concurrent updates to the user's Cortex memory row, then the function removes any prior score with the same `submissionIdentity`, appends the latest score, and recomputes the average within the database statement.
+- Execute is revoked from `PUBLIC`, `anon`, and `authenticated`; only `service_role` can call the RPC. The function uses invoker rights.
+- Added `supabase/tests/atomic_cortex_exam_score.test.sql`. It was executed against the connected Supabase project successfully. It verifies that retrying the same submission identity leaves exactly one entry, replaces the prior score with the latest score, and returns an average. The test runs in a transaction and rolls back its writes.
+- A separate privilege check confirmed service_role can execute the RPC while authenticated and anon cannot.
+- Concurrency safety is provided by the database's unique-key upsert row lock, but a simultaneous multi-connection stress test has not yet been run. The SQL regression test currently covers retry/idempotency, not a real concurrent race.
+- The exam event pipeline still has secondary handlers outside this atomic score-memory RPC. They are not yet moved into a transactional outbox, so the system does not claim exactly-once delivery for every analytics/recommendation side effect.
