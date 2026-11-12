@@ -215,6 +215,11 @@ describe("handwriting correction notation safeguards", () => {
     expect(findHandwritingNotationWarnings("The voltgae is here", "The voltage is here.")).toEqual([]);
   });
 
+  it("flags changed standalone fractions even when no equation is present", () => {
+    expect(findHandwritingNotationWarnings("The ratio is 1/2", "The ratio is 1/3")).toContain("fractions");
+    expect(findHandwritingNotationWarnings("The ratio is 1 / 2", "The ratio is 1/2")).toEqual([]);
+  });
+
   it("flags a changed unary sign on a standalone negative value", () => {
     expect(findHandwritingNotationWarnings("The measured charge was -5", "The measured charge was 5")).toContain("numbers");
     expect(findHandwritingNotationWarnings("The measured charge was +5", "The measured charge was -5")).toContain("numbers");
