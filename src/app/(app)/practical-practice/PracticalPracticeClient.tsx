@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { BookOpenCheck, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Download, Upload, Eye, EyeOff, FlaskConical, RotateCcw, Save, Target } from "lucide-react";
 import practiceData from "@/lib/curriculum/practice/biology-9700-practical-practice-2028-2030.json";
+import { emitLearningEvent } from "@/lib/intelligence/emitLearningEvent";
+import { normalizeLearningContext } from "@/lib/intelligence/learningContextKey";
 import { getPracticalQuestionFeedback, getPracticalQuestionSkills } from "@/lib/curriculum/practice/biology-practical-attempt";
 import {
   canAttemptPracticalSet,
@@ -347,6 +349,74 @@ export default function PracticalPracticeClient() {
   };
   const updateRating = (taskId: string, skill: string, rating: PracticeSkillRating) => {
     setAttempt((current) => ratePracticalSkill(set, current, taskId, skill, rating));
+  };
+  const revealQuestionGuidance = (task: Task, question: Question) => {
+    const key = task.id + "::" + question.id;
+    const answer = attempt.answers[key]?.trim() ?? "";
+    if (answer) {
+      let reviewSessionId: string | undefined;
+      try {
+        const raw = window.sessionStorage.getItem("shadecode:cortex:active-review:v1");
+        if (raw) {
+          const review = JSON.parse(raw) as { reviewSessionId?: unknown; subjectKey?: unknown; topicId?: unknown };
+          const context = normalizeLearningContext(set.subject, task.title);
+          if (
+            typeof review.reviewSessionId === "string" &&
+            review.reviewSessionId.length > 0 &&
+            review.reviewSessionId.length <= 100 &&
+            review.subjectKey === context.subjectId &&
+            review.topicId === context.topicId
+          ) reviewSessionId = review.reviewSessionId;
+        }
+      } catch { /* Practical work remains available if session storage is unavailable. */ }
+
+      const eventContext = normalizeLearningContext(set.subject, task.title);
+      const reviewMetadata = reviewSessionId ? { reviewSessionId, reviewSource: "cortex_suggestion" } : {};
+      void emitLearningEvent({
+        source: "biology-practical",
+        sourceEventId: "practical-question:" + set.id + ":" + attempt.startedAt + ":" + task.id + ":" + question.id,
+        type: "question.attempted",
+        ...eventContext,
+        entityId: question.id,
+        attemptId: attempt.startedAt,
+        metadata: {
+          practiceMode: "self_assessed_practical",
+          selfAssessment: true,
+          paper: task.paper,
+          answerLength: answer.length,
+          ...reviewMetadata,
+        },
+      });
+
+      const allTaskQuestionsReviewed = task.questions.every((item) => {
+        const itemKey = task.id + "::" + item.id;
+        return item.id === question.id || (
+          Boolean(attempt.answers[itemKey]?.trim()) &&
+          attempt.revealedAnswers.includes(itemKey)
+        );
+      });
+      if (allTaskQuestionsReviewed) {
+        void emitLearningEvent({
+          source: "biology-practical",
+          sourceEventId: "practical-task-complete:" + set.id + ":" + attempt.startedAt + ":" + task.id,
+          type: "activity.completed",
+          ...eventContext,
+          entityId: task.id,
+          attemptId: attempt.startedAt,
+          metadata: {
+            practiceMode: "self_assessed_practical",
+            selfAssessment: true,
+            paper: task.paper,
+            questionCount: task.questions.length,
+            ...reviewMetadata,
+          },
+        });
+        if (reviewSessionId) {
+          try { window.sessionStorage.removeItem("shadecode:cortex:active-review:v1"); } catch {}
+        }
+      }
+    }
+    setAttempt((current) => revealPracticalGuidance(set, current, task.id, question.id));
   };
   const openRecommendation = (taskId: string, questionId: string) => {
     setActiveTask(taskId);
@@ -736,7 +806,7 @@ export default function PracticalPracticeClient() {
                 })()}
                 <label className="mt-4 block"><span className="sr-only">Your answer to question {index + 1}</span><textarea value={attempt.answers[key] ?? ""} onChange={(event) => updateAnswer(task.id, question.id, event.target.value)} rows={4} placeholder="Write your answer here…" className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-3 text-sm leading-6 outline-none transition placeholder:text-[var(--muted-foreground)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15" /></label>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <button type="button" onClick={() => setAttempt((current) => revealPracticalGuidance(set, current, task.id, question.id))} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold hover:bg-[var(--surface-2)]">{revealed ? <EyeOff size={14} /> : <Eye size={14} />}{revealed ? "Guidance revealed" : "Reveal self-check points"}</button>
+                  <button type="button" onClick={() => revealQuestionGuidance(task, question)} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--card-border)] px-3 text-xs font-semibold hover:bg-[var(--surface-2)]">{revealed ? <EyeOff size={14} /> : <Eye size={14} />}{revealed ? "Guidance revealed" : "Reveal self-check points"}</button>
                   <label className="ml-auto flex items-center gap-2 text-xs text-[var(--muted-foreground)]">My marks <input type="number" min={0} max={question.marks} step={1} value={attempt.selfAwardedMarks[key] ?? ""} onChange={(event) => { const value = event.target.value; if (value === "") { setAttempt((current) => ({ ...current, selfAwardedMarks: Object.fromEntries(Object.entries(current.selfAwardedMarks).filter(([savedKey]) => savedKey !== key)) })); return; } const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0 && parsed <= question.marks) setAttempt((current) => selfAwardPracticalMarks(set, current, task.id, question.id, parsed)); }} className="h-9 w-16 rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-2 text-center text-sm font-semibold tabular-nums text-[var(--foreground)]" /></label>
                 </div>
                 {revealed && <div className="mt-4 rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-4"><p className="text-[10px] font-bold uppercase tracking-wide text-[var(--primary)]">Question-specific coaching · {getPracticalQuestionFeedback(question).categoryLabel}</p><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{getPracticalQuestionFeedback(question).improvementAdvice}</p></div>}
