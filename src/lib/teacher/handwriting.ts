@@ -75,7 +75,7 @@ export function findHandwritingNotationWarnings(transcript: string, correctedTex
       original.sort((a, b) => a.index - b.index);
       corrected.sort((a, b) => a.index - b.index);
     }
-    const tokens = (items: typeof original) => items.map(item => label === "fractions" ? item.token.replace(/\s+/g, "") : item.token);
+    const tokens = (items: typeof original) => items.map(item => label === "fractions" || label === "scientific symbols" ? item.token.replace(/\s+/g, "") : item.token);
     return JSON.stringify(tokens(original)) !== JSON.stringify(tokens(corrected));
   }).map(([label]) => label);
 }
