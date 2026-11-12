@@ -228,3 +228,6 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 - Verified RPC permissions: service_role can execute the outbox RPCs; authenticated users cannot read the outbox table or claim jobs.
 - The event worker is idempotent for durable Cortex event IDs and exam-score submission identities. The unified in-process event pipeline still has non-durable handlers and is not yet a transactional event bus. This is not a claim of exactly-once delivery for every analytics or cache side effect.
 - No full Next.js build, deployed endpoint test, real scheduled GitHub Actions execution, or end-to-end exam submission test has yet passed for this change.
+
+
+- Follow-up hardening: added an explicit `service_role`-only ALL policy to the outbox table in migration `20261112220000_exam_completion_outbox_service_role_policy.sql`, then applied it. The outbox remains inaccessible to `anon` and `authenticated`.
