@@ -32,7 +32,7 @@ export function buildQuizQuestionEvidence(
   quizAttemptId: string,
   lessonId: string,
   results: QuizQuestionEvidence[],
-  context: { subject?: string; topicId?: string } = {},
+  context: { subject?: string; topicId?: string; reviewSessionId?: string } = {},
 ): LearningEventInput[] {
   const normalizedContext = normalizeLearningContext(context.subject, context.topicId);
   return results.map((result, index) => {
@@ -57,6 +57,7 @@ export function buildQuizQuestionEvidence(
         maxScore,
         percentage,
         questionIndex: result.questionIndex ?? index,
+        ...(context.reviewSessionId ? { reviewSessionId: context.reviewSessionId, reviewSource: "cortex_suggestion" } : {}),
       },
     };
   });
@@ -66,7 +67,7 @@ export function buildQuizQuestionEvidence(
  * Builds one aggregate completion event. It is explicitly aggregate-only so
  * the quiz result cannot double-count the question-level evidence above.
  */
-export function buildQuizCompletionEvidence(input: QuizCompletionEvidence): LearningEventInput {
+export function buildQuizCompletionEvidence(input: QuizCompletionEvidence & { reviewSessionId?: string }): LearningEventInput {
   return {
     source: "learn-quiz",
     sourceEventId: `quiz-complete:${input.quizAttemptId}`,
@@ -79,6 +80,7 @@ export function buildQuizCompletionEvidence(input: QuizCompletionEvidence): Lear
       questionCount: Math.max(0, Math.trunc(input.questionCount)),
       correctCount: Math.max(0, Math.trunc(input.correctCount)),
       aggregateOnly: true,
+      ...(input.reviewSessionId ? { reviewSessionId: input.reviewSessionId, reviewSource: "cortex_suggestion" } : {}),
     },
   };
 }
