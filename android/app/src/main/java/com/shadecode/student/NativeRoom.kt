@@ -41,6 +41,20 @@ data class NativeLessonProgressEntity(
     val updatedAt: Long = System.currentTimeMillis(),
 )
 
+@Entity(tableName = "exam_attempts")
+data class NativeExamAttemptEntity(
+    @androidx.room.PrimaryKey val accountId: String,
+    val attemptId: String,
+    val subject: String,
+    val paperJson: String,
+    val questionsJson: String,
+    val answersJson: String,
+    val secondsLeft: Int,
+    val taking: Boolean,
+    val savedAt: Long,
+    val deadlineMillis: Long,
+)
+
 @Entity(tableName = "pending_sync")
 data class NativePendingSyncEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -91,9 +105,19 @@ interface NativeSyncDao {
     suspend fun delete(item: NativePendingSyncEntity)
 }
 
+@androidx.room.Dao
+interface NativeExamAttemptDao {
+    @androidx.room.Query("SELECT * FROM exam_attempts WHERE accountId = :accountId LIMIT 1")
+    suspend fun get(accountId: String): NativeExamAttemptEntity?
+    @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    suspend fun save(attempt: NativeExamAttemptEntity)
+    @androidx.room.Query("DELETE FROM exam_attempts WHERE accountId = :accountId")
+    suspend fun clear(accountId: String)
+}
+
 @Database(
-    entities = [NativeSubjectEntity::class, NativeLessonEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class],
-    version = 4,
+    entities = [NativeSubjectEntity::class, NativeLessonEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class, NativeExamAttemptEntity::class],
+    version = 5,
     exportSchema = false,
 )
 abstract class NativeDatabase : RoomDatabase() {
@@ -101,6 +125,7 @@ abstract class NativeDatabase : RoomDatabase() {
     abstract fun lessons(): NativeLessonDao
     abstract fun progress(): NativeProgressDao
     abstract fun sync(): NativeSyncDao
+    abstract fun examAttempts(): NativeExamAttemptDao
 
     companion object {
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -158,6 +183,26 @@ abstract class NativeDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS exam_attempts (
+                        accountId TEXT NOT NULL,
+                        attemptId TEXT NOT NULL,
+                        subject TEXT NOT NULL,
+                        paperJson TEXT NOT NULL,
+                        questionsJson TEXT NOT NULL,
+                        answersJson TEXT NOT NULL,
+                        secondsLeft INTEGER NOT NULL,
+                        taking INTEGER NOT NULL,
+                        savedAt INTEGER NOT NULL,
+                        deadlineMillis INTEGER NOT NULL,
+                        PRIMARY KEY(accountId)
+                    )
+                """.trimIndent())
+            }
+        }
+
         @Volatile private var instance: NativeDatabase? = null
         @Volatile private var applicationContext: Context? = null
 
@@ -170,7 +215,7 @@ abstract class NativeDatabase : RoomDatabase() {
             )
                 // Version 1 already contains subjects, lesson_progress and pending_sync.
                 // Add the lesson cache without wiping offline progress or queued work.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
                 .also { instance = it }
         }
