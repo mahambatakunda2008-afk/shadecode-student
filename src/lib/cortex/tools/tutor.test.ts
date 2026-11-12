@@ -63,6 +63,12 @@ const context: CortexStudentContext = {
     topics: [],
     interpretation: "descriptive_only",
   },
+  reviewSuggestions: {
+    state: "insufficient_evidence",
+    source: "cortex_events",
+    items: [],
+    interpretation: "evidence_backed_no_due_dates",
+  },
 };
 
 describe("Cortex tutor learner continuity", () => {
