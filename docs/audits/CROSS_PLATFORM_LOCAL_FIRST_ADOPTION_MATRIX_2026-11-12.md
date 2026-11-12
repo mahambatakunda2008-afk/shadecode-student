@@ -31,7 +31,7 @@ This matrix tracks whether each student workflow can be opened, read, changed, r
 | App shell and core routes | Partial | Partial | Device verification | Not established | Not established | Service worker warms 13 core routes and caches selected responses. Warmed pages are snapshots; lazy chunks and API data may still be missing. |
 | Curriculum catalogue | Not established | Not established | Not established | Not established | Not established | Subject availability must be distinguished from complete offline syllabus, lessons, diagrams and assessment content. |
 | Lesson content | Partial | Partial | Device verification | Not established | Not established | Selected tutorial text/assets have caching support (PR #569 context); full syllabus and all lesson assets are not proven locally available. |
-| Lesson progress | Partial | Partial | Device verification | Not established | Not established | Local-first progress helpers exist; sync route currently accepts tasks, subjects and learn_lessons only. End-to-end lesson-progress sync mapping requires verification. |
+| Lesson progress | Partial, local completion persisted | Partial, shared browser storage path | Device verification required | Device verification required | Device verification required | Lesson completion now writes to the user-scoped local-first progress operation log, restores pending local progress over stale cached/server lesson snapshots, and uses the authenticated PATCH when online. Reconnect sync uses the existing learn_lessons mutation path. XP award after offline completion is not yet guaranteed; native platform behaviour remains unverified. |
 | Cortex chat / tutoring | Online-dependent by default | Online-dependent by default | Device verification | Not established | Not established | Router uses in-memory memory then TeacherAI by default. Compact local model is opt-in, generic, and not evidence of subject-grounded offline tutoring. |
 | Persistent student memory | Not established | Not established | Not established | Not established | Not established | Current CortexMemory is an in-process array, limited to 50 entries/user. It is lost on reload/process termination and is not durable cross-device memory. |
 | Tasks | Partial | Partial | Device verification | Not established | Not established | Queue/store and sync foundations exist; verify actual ExperienceTasks reads/writes, restart recovery, server acknowledgement and conflict handling. |
@@ -130,3 +130,13 @@ This document records static source inspection and prior repository context. It 
 
 ## Immediate next implementation slice
 The first timetable slice is implemented in `src/lib/local-first/timetable.ts` and `src/app/(app)/timetable/page.tsx`. Next, add automated tests for local save, restart recovery, deferred sync, and cross-account isolation, then migrate lesson progress and notes using the same contract. This slice currently uses the browser IndexedDB adapter shared by browser-based runtimes; Android WebView, Tauri and iOS storage/lifecycle parity still require platform tests and, where necessary, native adapters.
+
+
+## 2026-11-12 implementation update: lesson completion
+
+- `src/app/(app)/learn/[lessonId]/page.tsx` now saves completion through `offlineStorage.saveProgress`, which delegates to `localFirstStore.saveProgress` and records a user-scoped operation.
+- Pending local progress takes precedence over an older downloaded lesson snapshot or stale server response when restoring the lesson.
+- Online completion continues through the authenticated `PATCH /api/learn` route; only after a successful server response is the local progress operation acknowledged.
+- Offline completion remains locally saved and visibly labelled "sync pending". The existing reconnect listener calls the canonical offline sync pipeline.
+- XP is deliberately not claimed as earned while offline. The current completion award is coupled to the online PATCH route; an idempotent deferred reward ledger is still required before offline completion can safely grant XP.
+- This is a source implementation only. It has not passed a clean-install airplane-mode test or native Android, Tauri, or iOS lifecycle verification.
