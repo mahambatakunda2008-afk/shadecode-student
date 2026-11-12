@@ -430,6 +430,7 @@ export interface CortexUserMemory {
   lastTopic?: string;
   lastPracticeScore?: number;
   lastPracticeTopic?: string;
+  lastPracticeSubject?: string;
   feedback?: string;
   
   // Extended persistent memory fields
@@ -498,6 +499,7 @@ export async function getMemory(userId: string): Promise<CortexUserMemory> {
       lastTopic: (data as any).last_topic ?? undefined,
       lastPracticeScore: (data as any).last_practice_score ?? undefined,
       lastPracticeTopic: (data as any).last_practice_topic ?? undefined,
+      lastPracticeSubject: (data as any).last_practice_subject ?? undefined,
       feedback: (data as any).last_feedback ?? undefined,
       frequentlyStudiedSubjects: (data as any).frequently_studied_subjects ?? [],
       strongSubjects: (data as any).strong_subjects ?? [],
@@ -538,6 +540,7 @@ export async function updateMemory(
     if (patch.lastTopic !== undefined) updateData.last_topic = patch.lastTopic;
     if (patch.lastPracticeScore !== undefined) updateData.last_practice_score = patch.lastPracticeScore;
     if (patch.lastPracticeTopic !== undefined) updateData.last_practice_topic = patch.lastPracticeTopic;
+    if (patch.lastPracticeSubject !== undefined) updateData.last_practice_subject = patch.lastPracticeSubject;
     if (patch.feedback !== undefined) updateData.last_feedback = patch.feedback;
     if (patch.frequentlyStudiedSubjects !== undefined) updateData.frequently_studied_subjects = patch.frequentlyStudiedSubjects;
     if (patch.strongSubjects !== undefined) updateData.strong_subjects = patch.strongSubjects;
