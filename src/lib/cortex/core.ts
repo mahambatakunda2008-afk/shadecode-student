@@ -183,6 +183,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
             userId: input.userId,
             accessToken: input.accessToken,
             payload: practicePayload,
+            subjectId: input.curriculum.identity.subjectId,
             score: result.score,
             syllabusId: input.curriculum.identity.syllabusId,
           });
