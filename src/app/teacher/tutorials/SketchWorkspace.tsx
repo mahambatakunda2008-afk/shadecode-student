@@ -610,8 +610,8 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       if (selectedVector?.type === "curve") { const index=selectedVector.segments.findIndex(segment=>distance(point,segment.control)<=16); if(index>=0){vectorPointDragRef.current={id:selectedVector.id,kind:"curve",index,origin:point,object:selectedVector};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
       if (selectedVector) { const bounds=getDiagramObjectBounds(selectedVector), handle={x:bounds.x+bounds.width,y:bounds.y+bounds.height}; if(distance(point,handle)<=18){vectorResizeRef.current={id:selectedVector.id,origin:point,object:selectedVector,bounds};drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;} }
       const hit=[...vectorObjectsRef.current].reverse().find(object=>hitTestDiagramObject(object,point,14));
-      if(hit){vectorDragRef.current={id:hit.id,origin:point,object:hit};setSelectedObjectId(hit.id);drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;}
-      setSelectedObjectId(null);
+      if(hit){vectorDragRef.current={id:hit.id,origin:point,object:hit};setSelectedObjectId(hit.id);setObjectLabelDraft(hit.type==="text"?hit.text:"");drawingRef.current=true;event.currentTarget.setPointerCapture(event.pointerId);return;}
+      setSelectedObjectId(null);setObjectLabelDraft("");
       const selected = selectionRef.current;
       const inside = selected && point.x >= selected.x && point.y >= selected.y && point.x <= selected.x + selected.width && point.y <= selected.y + selected.height;
       selectionModeRef.current = inside ? "move" : "new";
@@ -628,7 +628,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         : { text: label.trim(), improved: false, checked: false };
       const textToPlace = textResult.text;
       if (!textToPlace) return;
-      const textObject:DiagramObject={id:`text-${Date.now()}`,type:"text",x:point.x,y:point.y,text:textToPlace,fontSize,style:{...defaultStyle}};commitVectorObjects([...vectorObjectsRef.current,textObject]);setSelectedObjectId(textObject.id);setStatus("Text added as an editable object.");return;
+      const textObject:DiagramObject={id:`text-${Date.now()}`,type:"text",x:point.x,y:point.y,text:textToPlace,fontSize,style:{...defaultStyle}};commitVectorObjects([...vectorObjectsRef.current,textObject]);setSelectedObjectId(textObject.id);setObjectLabelDraft("");setStatus("Text added as an editable object.");return;
     }
     event.currentTarget.setPointerCapture(event.pointerId);
     drawingRef.current = true; startRef.current = point; pointsRef.current = [point];
