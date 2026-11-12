@@ -428,8 +428,9 @@ export interface CortexUserMemory {
   weakTopics: string[];
   weakSubjects?: string[];
   lastTopic?: string;
-  lastScore?: number;
-  feedback?: unknown;
+  lastPracticeScore?: number;
+  lastPracticeTopic?: string;
+  feedback?: string;
   
   // Extended persistent memory fields
   frequentlyStudiedSubjects?: string[];
@@ -492,9 +493,10 @@ export async function getMemory(userId: string): Promise<CortexUserMemory> {
       completedTasks: (data as any).total_lessons_completed ?? 0,
       subjects: (data as any).frequently_studied_subjects ?? [],
       weakTopics: (data as any).weak_subjects ?? [],
-      lastTopic: undefined,
-      lastScore: (data as any).average_exam_score ?? undefined,
-      feedback: undefined,
+      lastTopic: (data as any).last_topic ?? undefined,
+      lastPracticeScore: (data as any).last_practice_score ?? undefined,
+      lastPracticeTopic: (data as any).last_practice_topic ?? undefined,
+      feedback: (data as any).last_feedback ?? undefined,
       frequentlyStudiedSubjects: (data as any).frequently_studied_subjects ?? [],
       strongSubjects: (data as any).strong_subjects ?? [],
       preferredStudyHours: (data as any).preferred_study_hours ?? [],
@@ -530,6 +532,10 @@ export async function updateMemory(
     if (patch.streak !== undefined) updateData.current_streak = patch.streak;
     if (patch.subjects !== undefined) updateData.frequently_studied_subjects = patch.subjects;
     if (patch.weakTopics !== undefined) updateData.weak_subjects = patch.weakTopics;
+    if (patch.lastTopic !== undefined) updateData.last_topic = patch.lastTopic;
+    if (patch.lastPracticeScore !== undefined) updateData.last_practice_score = patch.lastPracticeScore;
+    if (patch.lastPracticeTopic !== undefined) updateData.last_practice_topic = patch.lastPracticeTopic;
+    if (patch.feedback !== undefined) updateData.last_feedback = patch.feedback;
     if (patch.frequentlyStudiedSubjects !== undefined) updateData.frequently_studied_subjects = patch.frequentlyStudiedSubjects;
     if (patch.strongSubjects !== undefined) updateData.strong_subjects = patch.strongSubjects;
     if (patch.preferredStudyHours !== undefined) updateData.preferred_study_hours = patch.preferredStudyHours;
