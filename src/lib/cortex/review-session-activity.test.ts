@@ -40,6 +40,14 @@ describe("deriveReviewSessionActivity", () => {
     })]);
   });
 
+  it("marks an exam review completed after its question attempts", () => {
+    expect(deriveReviewSessionActivity([
+      row("question_attempted", "q1"),
+      row("question_attempted", "q2"),
+      row("exam_completed", "exam-1"),
+    ])).toEqual([expect.objectContaining({ answeredQuestionCount: 2, state: "completed" })]);
+  });
+
   it("ignores events without the Cortex suggestion attribution", () => {
     expect(deriveReviewSessionActivity([
       row("question_attempted", "q1", { reviewSource: "normal_learn" }),
