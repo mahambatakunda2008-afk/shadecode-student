@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent, type ReactNode, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type ChangeEvent, type ReactNode, type KeyboardEvent } from "react";
 import { applyHandwritingAlternative, findHandwritingNotationWarnings, findHandwritingReviewRanges, shouldUseHandwritingRetry, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
 import { getDiagramObjectBounds, hitTestDiagramObject, moveDiagramObjectWithinCanvas, resizeDiagramObject, type DiagramObject, type DiagramStyle } from "./diagram-objects";
 import { alignSelection, distributeSelection, getSelectionBounds, translateSelectionWithinCanvas, type SelectionAlignment, type SelectionAxis } from "./diagram-selection";
@@ -428,7 +428,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   const [handwritingRawText, setHandwritingRawText] = useState("");
   const [handwritingUncertainty, setHandwritingUncertainty] = useState<UncertainHandwritingCharacter[]>([]);
   const [handwritingConfidence, setHandwritingConfidence] = useState<number | null>(null);
-  const [handwritingNotationWarnings, setHandwritingNotationWarnings] = useState<string[]>([]);
+  const handwritingNotationWarnings = useMemo(() => findHandwritingNotationWarnings(handwritingRawText, handwritingText), [handwritingRawText, handwritingText]);
   const [handwritingMathExpressions, setHandwritingMathExpressions] = useState<Array<{ sourceText: string; latex: string; confidence: number | null; uncertainTokens: string[] }>>([]);
   const [status, setStatus] = useState("Auto-fix is on. Strokes smooth as you draw; shapes snap when you lift the pointer.");
 
@@ -552,7 +552,6 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         reason: item.reason || "",
       })));
       setHandwritingConfidence(typeof result.confidence === "number" ? result.confidence : null);
-      setHandwritingNotationWarnings(Array.isArray(result.notationWarnings) ? result.notationWarnings.filter((value: unknown): value is string => typeof value === "string").slice(0, 5) : []);
       setHandwritingMathExpressions(Array.isArray(result.mathExpressions) ? result.mathExpressions.filter((item: unknown): item is { sourceText: string; latex: string; confidence: number | null; uncertainTokens: string[] } => {
         if (!item || typeof item !== "object") return false;
         const expression = item as Record<string, unknown>;
@@ -924,7 +923,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
         if (cursor < handwritingText.length) pieces.push(handwritingText.slice(cursor));
         return <div className="space-y-1 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2 text-xs"><strong>Uncertain characters highlighted below</strong><p className="whitespace-pre-wrap break-words leading-6">{pieces}</p>{unmatchedCount > 0 && <p role="alert" className="font-medium text-amber-900">Also: {unmatchedCount} uncertain reading(s) could not be highlighted at a unique position. Check the character list below manually.</p>}</div>;
       })()}
-      <textarea value={handwritingText} onChange={event => { const nextText = event.target.value; setHandwritingText(nextText); setHandwritingNotationWarnings(findHandwritingNotationWarnings(handwritingRawText, nextText)); }} maxLength={12000} rows={6} spellCheck autoCorrect="off" autoCapitalize="off" className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" aria-label="Review and edit recognised handwriting. Amber highlights mark uncertain characters." />
+      <textarea value={handwritingText} onChange={event => setHandwritingText(event.target.value)} maxLength={12000} rows={6} spellCheck autoCorrect="off" autoCapitalize="off" className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" aria-label="Review and edit recognised handwriting. Amber highlights mark uncertain characters." />
       {handwritingRawText && handwritingRawText !== handwritingText && <details className="rounded-lg bg-[var(--surface)] p-2 text-xs"><summary className="cursor-pointer font-medium">Compare original character reading</summary><p className="mt-2 whitespace-pre-wrap">{handwritingRawText}</p></details>}
       {handwritingMathExpressions.length > 0 && <section className="space-y-2 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] p-3">
         <strong className="text-xs">Extracted mathematical notation</strong>
