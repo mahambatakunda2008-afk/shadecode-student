@@ -742,6 +742,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
   }
 
   function undo() {
+    if(vectorHistoryRef.current.length>1){vectorHistoryRef.current=vectorHistoryRef.current.slice(0,-1);const previous=vectorHistoryRef.current[vectorHistoryRef.current.length-1];vectorObjectsRef.current=previous;setVectorObjects(previous);setSelectedObjectId(null);setCanUndo(vectorHistoryRef.current.length>1||historyRef.current.length>1);setStatus("Last vector-object action undone.");return;}
     const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
     if (!canvas || !ctx || historyRef.current.length < 2) return;
     historyRef.current = historyRef.current.slice(0, -1);
@@ -753,6 +754,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    if(vectorObjectsRef.current.length)commitVectorObjects([]);setSelectedObjectId(null);selectionRef.current=null;
     pushHistory(ctx); setStatus("Canvas cleared.");
   }
 
