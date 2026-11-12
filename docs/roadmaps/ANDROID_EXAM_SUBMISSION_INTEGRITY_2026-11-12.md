@@ -70,3 +70,15 @@ The database migrations must be applied to the target Supabase project for serve
 4. Simulate process death after the Room checkpoint but before the response.
 5. Retry the same attempt and confirm the server returns the stored report with no second marking execution.
 6. Submit a changed answer under the same attempt ID and confirm the server rejects it.
+
+## Live Supabase verification
+
+Checked the connected `shadecode-student` Supabase project after the implementation:
+
+- The production migration history includes the exam submission ledger, atomic Cortex score, completion outbox, outbox service-role policy, topic mastery projection, and durable analytics migrations.
+- `public.exam_submission_ledger` and `public.exam_completion_outbox` exist.
+- Both `claim_exam_submission(uuid,text,text)` and the six-argument `complete_exam_submission(uuid,text,text,uuid,jsonb,jsonb)` RPC exist.
+- The service role has EXECUTE on both RPCs.
+- RLS is enabled on `exam_submission_ledger`.
+
+This confirms the required database objects and privileges exist in the connected project. It does not yet prove a full live marking request/replay end-to-end.
