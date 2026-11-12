@@ -41,6 +41,18 @@ describe("handwriting OCR response parsing", () => {
     });
   });
 
+  it("requires review when corrected text exists without a literal transcript", () => {
+    expect(normalizeHandwritingRecognition({
+      correctedText: "E = mc²",
+      confidence: 0.99,
+      uncertainCharacters: [],
+    })).toMatchObject({
+      transcript: "",
+      correctedText: "E = mc²",
+      requiresReview: true,
+    });
+  });
+
   it("does not turn a non-finite confidence into a trusted score", () => {
     expect(normalizeHandwritingRecognition({ transcript: "x", correctedText: "x", confidence: Number.NaN }).confidence).toBeNull();
   });
