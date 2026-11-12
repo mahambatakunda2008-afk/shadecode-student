@@ -15,6 +15,7 @@ import { buildGuaranteedExam } from "@/lib/exam/guaranteedExam";
 import ExamSourceNotice from "./ExamSourceNotice";
 import TeacherVerifiedBadge from "@/components/learn/TeacherVerifiedBadge";
 import { markExamOffline } from "@/lib/local-first/exam-marker";
+import { getExamAttempt, saveExamAttempt } from "@/lib/local-first/exam-attempt";
 import { sanitizeQuestions } from "@/lib/challenge/questions";
 import ChallengeFriend from "./ChallengeFriend";
 import { sendLearningSignals } from "@/lib/learning/client";
@@ -276,7 +277,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
               difficulty: LEVELS[level].curriculum,
               questions,
               answers: answersRef.current,
-              timeTaken: totalRef.current - secondsRef.current
+              timeTaken: totalRef.current - secondsRef.current,
+              attemptId: workId.current ?? undefined
             })
           }, 35000);
           if (res.ok) {
@@ -327,6 +329,25 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           if (saved?.id) setSavedResultId(saved.id);
           if (saved?.id && frozen && !serverMarkChallengeId) await supabase.from("exam_result_questions").insert({ result_id: saved.id, user_id: userId, questions: frozen });
         } catch {}
+      }
+      if (workId.current && userId && !serverMarkChallengeId) {
+        try {
+          const savedAttempt = await getExamAttempt(userId, workId.current);
+          if (savedAttempt) {
+            await saveExamAttempt(userId, {
+              ...savedAttempt,
+              status: "submitted",
+              submittedAt: new Date().toISOString(),
+              answers: answersRef.current,
+              current: currentRef.current,
+              seconds: secondsRef.current,
+              totalSeconds: totalRef.current,
+              flags,
+            });
+          }
+        } catch {
+          // The completed result remains visible even if the local attempt ledger is unavailable.
+        }
       }
       if (workId.current) {
         try {
