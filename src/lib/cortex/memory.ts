@@ -429,9 +429,9 @@ export interface CortexUserMemory {
   weakSubjects?: string[];
   lastTopic?: string;
   lastPracticeScore?: number;
-  lastPracticeTopic?: string;
-  lastPracticeSubject?: string;
-  lastPracticeSyllabusId?: string;
+  lastPracticeTopic?: string | null;
+  lastPracticeSubject?: string | null;
+  lastPracticeSyllabusId?: string | null;
   feedback?: string;
   
   // Extended persistent memory fields
