@@ -35,7 +35,7 @@ export async function scoreAnswer(
   if (!expected) {
     return {
       score: null,
-      feedback: "I can't reliably grade this response without a marking guide. Your answer has been saved for review.",
+      feedback: "I can't reliably grade this response without a marking guide. No score has been recorded.",
       weakTopics: [],
       needsReview: true,
     };
@@ -61,7 +61,7 @@ export async function scoreAnswer(
 
   return {
     score: null,
-    feedback: "This answer differs from the reference wording. It may still be correct; a marking guide or human review is needed.",
+    feedback: "This answer differs from the reference wording. It may still be correct, so no score has been recorded. Use a marking guide to assess it.",
     weakTopics: [],
     needsReview: true,
   };
