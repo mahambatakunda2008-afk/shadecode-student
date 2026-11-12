@@ -180,16 +180,18 @@ export function applyHandwritingAlternative(
   const context = item.context.trim();
   if (context) {
     const contextIndex = text.indexOf(context);
-    if (contextIndex >= 0 && text.indexOf(context, contextIndex + context.length) < 0) {
-      const contextText = text.slice(contextIndex, contextIndex + context.length);
-      for (const candidate of candidates) {
-        const tokenIndex = contextText.indexOf(candidate);
-        if (tokenIndex >= 0 && contextText.indexOf(candidate, tokenIndex + candidate.length) < 0) {
-          const start = contextIndex + tokenIndex;
-          return text.slice(0, start) + safeAlternative + text.slice(start + candidate.length);
-        }
+    // Context is the OCR model's location anchor. Never fall back to a
+    // coincidentally unique token elsewhere if that anchor has gone stale.
+    if (contextIndex < 0 || text.indexOf(context, contextIndex + context.length) >= 0) return null;
+    const contextText = text.slice(contextIndex, contextIndex + context.length);
+    for (const candidate of candidates) {
+      const tokenIndex = contextText.indexOf(candidate);
+      if (tokenIndex >= 0 && contextText.indexOf(candidate, tokenIndex + candidate.length) < 0) {
+        const start = contextIndex + tokenIndex;
+        return text.slice(0, start) + safeAlternative + text.slice(start + candidate.length);
       }
     }
+    return null;
   }
   for (const candidate of candidates) {
     const index = text.indexOf(candidate);
