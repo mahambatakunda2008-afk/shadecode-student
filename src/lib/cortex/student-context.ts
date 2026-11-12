@@ -7,7 +7,7 @@ export type EvidenceState = "available" | "insufficient_evidence" | "unavailable
 
 export interface StudentProfileMemory {
   state: EvidenceState;
-  source: "cortex_memory";
+  source: "profiles+cortex_memory";
   observedAt: string | null;
   level: number | null;
   streak: number | null;
@@ -144,7 +144,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
     generatedAt: new Date().toISOString(),
     profile: {
       state: profileState,
-      source: "cortex_memory",
+      source: "profiles+cortex_memory",
       observedAt: memory?.updated_at ?? academicProfile?.created_at ?? null,
       level: academicProfile?.level ?? null,
       streak: memory?.current_streak ?? null,
