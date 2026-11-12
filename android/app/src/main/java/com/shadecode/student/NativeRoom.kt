@@ -53,6 +53,7 @@ data class NativeExamAttemptEntity(
     val taking: Boolean,
     val savedAt: Long,
     val deadlineMillis: Long,
+    @androidx.room.ColumnInfo(defaultValue = "0") val submissionPending: Boolean = false,
 )
 
 @Entity(tableName = "pending_sync")
@@ -117,7 +118,7 @@ interface NativeExamAttemptDao {
 
 @Database(
     entities = [NativeSubjectEntity::class, NativeLessonEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class, NativeExamAttemptEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class NativeDatabase : RoomDatabase() {
@@ -203,6 +204,12 @@ abstract class NativeDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE exam_attempts ADD COLUMN submissionPending INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         @Volatile private var instance: NativeDatabase? = null
         @Volatile private var applicationContext: Context? = null
 
@@ -215,7 +222,7 @@ abstract class NativeDatabase : RoomDatabase() {
             )
                 // Version 1 already contains subjects, lesson_progress and pending_sync.
                 // Add the lesson cache without wiping offline progress or queued work.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .build()
                 .also { instance = it }
         }
