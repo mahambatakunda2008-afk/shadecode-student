@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeHandwritingRecognition, parseHandwritingRecognition, shouldUseHandwritingRetry } from "./handwriting";
+import { findHandwritingReviewRanges, normalizeHandwritingRecognition, parseHandwritingRecognition, shouldUseHandwritingRetry } from "./handwriting";
 
 describe("handwriting OCR response parsing", () => {
   it("parses a strict JSON response", () => {
