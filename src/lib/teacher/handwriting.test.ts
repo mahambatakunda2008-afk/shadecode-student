@@ -114,6 +114,20 @@ describe("handwriting character alternatives", () => {
     }, "8")).toBeNull();
   });
 
+  it("does not apply a stale contextual alternative to a matching token elsewhere", async () => {
+    const { applyHandwritingAlternative } = await import("./handwriting");
+    expect(applyHandwritingAlternative("The corrected value is O, not 0.", {
+      seen: "0/O", chosen: "0", alternatives: ["O"], context: "value was 0 here", reason: "ambiguous glyph",
+    }, "O")).toBeNull();
+  });
+
+  it("refuses a contextual alternative when the original context became duplicated", async () => {
+    const { applyHandwritingAlternative } = await import("./handwriting");
+    expect(applyHandwritingAlternative("x = 0; x = 0", {
+      seen: "0/O", chosen: "0", alternatives: ["O"], context: "x = 0", reason: "ambiguous glyph",
+    }, "O")).toBeNull();
+  });
+
   it("removes control characters and duplicate or oversized OCR alternatives", () => {
     const result = normalizeHandwritingRecognition({
       transcript: "x",
