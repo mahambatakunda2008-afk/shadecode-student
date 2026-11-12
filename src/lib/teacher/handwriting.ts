@@ -55,6 +55,8 @@ export type HandwritingNotationWarning = "numbers" | "equations" | "units" | "ch
 export function findHandwritingNotationWarnings(transcript: string, correctedText: string): HandwritingNotationWarning[] {
   if (!transcript || !correctedText || transcript === correctedText) return [];
   const occurrences = (value: string, pattern: RegExp) => [...value.matchAll(pattern)].map(match => match[0]).sort();
+  // Arithmetic operators are protected only between mathematical operands, not prose punctuation.
+  const arithmeticOperators = /[A-Za-zΑ-Ωα-ω0-9)\]]\s*[+\-−×÷*/^]\s*[A-Za-zΑ-Ωα-ω0-9([]/g;
   const checks: Array<[HandwritingNotationWarning, RegExp]> = [
     ["numbers", /\b\d+(?:[.,]\d+)?(?:[eE][+-]?\d+)?\b/g],
     ["equations", /\b[A-Za-z][A-Za-z0-9_]*\s*(?:=|≈|≠|≤|≥|<|>)\s*[A-Za-z0-9_α-ωΑ-Ωπμλθ√∞.+\-*/^()]+/g],
@@ -62,7 +64,17 @@ export function findHandwritingNotationWarnings(transcript: string, correctedTex
     ["chemical formulae", /\b[A-Z][a-z]?\d*(?:[A-Z][a-z]?\d*)+\b/g],
     ["scientific symbols", /[α-ωΑ-ΩπμλθΔ∑∫√∞±×÷≤≥≈≠∝°µ²³⁰¹⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g],
   ];
-  return checks.filter(([, pattern]) => JSON.stringify(occurrences(transcript, pattern)) !== JSON.stringify(occurrences(correctedText, pattern))).map(([label]) => label);
+  return checks.filter(([label, pattern]) => {
+    const original = occurrences(transcript, pattern);
+    const corrected = occurrences(correctedText, pattern);
+    if (label === "scientific symbols") {
+      original.push(...occurrences(transcript, arithmeticOperators));
+      corrected.push(...occurrences(correctedText, arithmeticOperators));
+      original.sort();
+      corrected.sort();
+    }
+    return JSON.stringify(original) !== JSON.stringify(corrected);
+  }).map(([label]) => label);
 }
 
 export function normalizeHandwritingRecognition(payload: RecognitionPayload): HandwritingRecognition {
@@ -71,12 +83,13 @@ export function normalizeHandwritingRecognition(payload: RecognitionPayload): Ha
   const uncertainCharacters = Array.isArray(payload.uncertainCharacters)
     ? payload.uncertainCharacters.slice(0, 100).map((entry: unknown): UncertainHandwritingCharacter => {
         const item = entry && typeof entry === "object" ? entry as Record<string, unknown> : {};
+        const chosen = typeof item.chosen === "string" ? item.chosen.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 80) : "";
         return {
           seen: typeof item.seen === "string" ? item.seen.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 80) : "",
-          chosen: typeof item.chosen === "string" ? item.chosen.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 80) : "",
+          chosen,
           alternatives: Array.isArray(item.alternatives)
             ? [...new Set(item.alternatives.filter((value): value is string => typeof value === "string").map(value => value.replace(/[\u0000-\u001f\u007f]/g, "").trim()).filter(value => value.length > 0 && value.length <= 24))]
-                .filter(value => value !== (typeof item.chosen === "string" ? item.chosen.trim() : "")).slice(0, 5)
+                .filter(value => value !== chosen).slice(0, 5)
             : [],
           context: typeof item.context === "string" ? item.context.replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 160) : "",
           reason: typeof item.reason === "string" ? item.reason.replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 240) : "",
