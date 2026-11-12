@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ChangeEvent } from "react";
 import { applyHandwritingAlternative, type UncertainHandwritingCharacter } from "@/lib/teacher/handwriting";
 
-type Tool = "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "curve" | "label";
+type Tool = "pen" | "eraser" | "line" | "arrow" | "rectangle" | "ellipse" | "triangle" | "polygon" | "curve" | "label";
 export type Point = { x: number; y: number };
 type Stroke = { points: Point[]; tool: "pen" | "eraser"; color: string; width: number };
 
@@ -43,7 +43,7 @@ function drawArrow(ctx: CanvasRenderingContext2D, from: Point, to: Point) {
   ctx.stroke();
 }
 
-function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: Tool, control?: Point) {
+function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: Tool, control?: Point, vertices?: Point[]) {
   ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
   const left = Math.min(from.x, to.x), top = Math.min(from.y, to.y);
   const w = Math.abs(to.x - from.x), h = Math.abs(to.y - from.y);
@@ -52,6 +52,11 @@ function drawShape(ctx: CanvasRenderingContext2D, from: Point, to: Point, tool: 
   else if (tool === "rectangle") ctx.strokeRect(left, top, w, h);
   else if (tool === "ellipse") { ctx.beginPath(); ctx.ellipse(left + w / 2, top + h / 2, Math.max(1, w / 2), Math.max(1, h / 2), 0, 0, Math.PI * 2); ctx.stroke(); }
   else if (tool === "triangle") { ctx.beginPath(); ctx.moveTo(left + w / 2, top); ctx.lineTo(left + w, top + h); ctx.lineTo(left, top + h); ctx.closePath(); ctx.stroke(); }
+  else if (tool === "polygon" && vertices && vertices.length >= 5) {
+    ctx.beginPath(); ctx.moveTo(vertices[0].x, vertices[0].y);
+    for (const vertex of vertices.slice(1)) ctx.lineTo(vertex.x, vertex.y);
+    ctx.closePath(); ctx.stroke();
+  }
   else if (tool === "curve") {
     const bend = Math.max(24, Math.min(140, distance(from, to) * 0.22));
     const midpoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
@@ -94,7 +99,9 @@ function recognizeFreehandArrow(points: Point[]): { tool: "arrow"; from: Point; 
   return null;
 }
 
-export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: Point; control?: Point } | null {
+export type RecognizedShape = { tool: Tool; from: Point; to: Point; control?: Point; vertices?: Point[] };
+
+export function recognizeShape(points: Point[]): RecognizedShape | null {
   if (points.length < 8) return null;
   const first = points[0], last = points[points.length - 1];
   const xs = points.map(p => p.x), ys = points.map(p => p.y);
@@ -163,12 +170,30 @@ export function recognizeShape(points: Point[]): { tool: Tool; from: Point; to: 
   if (seamTurn > Math.PI) seamTurn = Math.PI * 2 - seamTurn;
   const seamCorner = closed && seamTurn > 0.72;
   const cornerCount = cornerClusters.length + (seamCorner ? 1 : 0);
-  if (closed && cornerCount >= 3 && cornerCount <= 5) {
+  if (closed && cornerCount >= 3 && cornerCount <= 8) {
     if (cornerCount === 3) return { tool: "triangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
     if (cornerCount === 4) return { tool: "rectangle", from: { x: left, y: top }, to: { x: right, y: bottom } };
-    // Do not flatten pentagons or irregular polygons into rectangles. Until
-    // polygon vertices can be preserved as editable geometry, leave these
-    // strokes untouched rather than "correcting" them into the wrong shape.
+    if (cornerCount >= 5) {
+      // Preserve actual vertices instead of forcing irregular polygons into a
+      // rectangle. Select the strongest turn in each cluster to reduce jitter.
+      const vertices = cornerClusters.map(cluster => {
+        let bestIndex = cluster[0], bestTurn = -1;
+        for (const index of cluster) {
+          const before = points[Math.max(0, index - turnWindow)];
+          const after = points[Math.min(points.length - 1, index + turnWindow)];
+          const incoming = Math.atan2(points[index].y - before.y, points[index].x - before.x);
+          const outgoing = Math.atan2(after.y - points[index].y, after.x - points[index].x);
+          let turn = Math.abs(outgoing - incoming);
+          if (turn > Math.PI) turn = Math.PI * 2 - turn;
+          if (turn > bestTurn) { bestTurn = turn; bestIndex = index; }
+        }
+        return points[bestIndex];
+      });
+      if (seamCorner) vertices.unshift({ x: (first.x + last.x) / 2, y: (first.y + last.y) / 2 });
+      if (vertices.length === cornerCount) {
+        return { tool: "polygon", from: { x: left, y: top }, to: { x: right, y: bottom }, vertices };
+      }
+    }
   }
   const circularity = (4 * Math.PI * (w * h)) / Math.max(pathLength * pathLength, 1);
   if (cornerCount < 3 && circularity > 0.48 && Math.min(w, h) / Math.max(w, h) > 0.45) return { tool: "ellipse", from: { x: left, y: top }, to: { x: right, y: bottom } };
@@ -452,7 +477,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
     if (tool === "pen" && autoFix) {
       const recognized = recognizeShape(points);
       if (recognized) {
-        drawShape(ctx, recognized.from, recognized.to, recognized.tool, recognized.control);
+        drawShape(ctx, recognized.from, recognized.to, recognized.tool, recognized.control, recognized.vertices);
         return;
       }
     }
@@ -532,7 +557,7 @@ export function SketchWorkspace({ onSave, onCancel, saving }: {
       const recognized = recognizeShape(points);
       if (recognized) {
         ctx.putImageData(snapshotRef.current, 0, 0);
-        drawShape(ctx, recognized.from, recognized.to, recognized.tool, recognized.control);
+        drawShape(ctx, recognized.from, recognized.to, recognized.tool, recognized.control, recognized.vertices);
         setStatus(`Auto-corrected your stroke into a clean ${recognized.tool}.`);
       } else {
         ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
