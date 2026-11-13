@@ -15,6 +15,8 @@ Canonical learning-event ingress now resolves the learner's configured curriculu
 - Server-side event emitters run the same resolver.
 - The canonical projector now writes the verified key into the existing topic_mastery.curriculum_topic_key field.
 - Native exam completion now maps each marked topic against the same verified topic catalogue. The stable key is carried in the durable exam completion outbox and passed to the syllabus-aware exam projector.
+- Lesson quiz completion now resolves its lesson's verified curriculum version, maps the lesson topic to exactly one verified topic record, and writes the stable key through the canonical atomic projector in the same transaction as quiz finalization and objective-level assessment progress.
+- Quiz evidence now includes the aggregate score, explicit correctness threshold, syllabus ID, topic label, and canonical topic key. The attempt UUID remains the idempotency identity. Ambiguous/unmatched lesson topics do not update topic mastery.
 - The exam projector stores the key on insert and fills a previously null key on update without overwriting an existing key.
 
 The topic label remains available for display and grouping. The curriculum key is the stable syllabus-specific reference. No new mastery table was introduced.
@@ -24,13 +26,15 @@ The topic label remains available for display and grouping. The curriculum key i
 - Fuzzy matching and model-generated mapping are intentionally excluded.
 - Existing evidence is not retroactively assigned curriculum keys.
 - Native exam completion outbox topic scores now use the same exact verified mapping. Legacy outbox payloads without a key remain valid and are not retroactively guessed.
-- Learn assessment objective-level progress remains a separate consumer integration task; it should be reconciled with canonical events rather than double-counted.
+- Lesson quiz objective-level assessment progress already uses the existing idempotent curriculum assessment writer; it now commits alongside canonical topic mastery. Other Learn interactions such as lesson viewing and completion without assessment evidence still need separate evidence policies.
 
 ## Verification
 
 - Live catalog inspection confirmed 1,708 verified curriculum knowledge records and 1,380 verified curriculum objectives.
 - The live catalog includes verified topic records with stable knowledge_key values (for example, Cambridge 0478 and 9700).
 - Added unit coverage for exact match, no fuzzy match, ambiguity, and unverified curriculum.
+- Added a SQL structural regression test for the lesson quiz completion projector bridge; it passed in a transaction/rollback.
+- Applied migration `20261113142018_unify_lesson_quiz_topic_mastery`; verified the completion function invokes the canonical projector and retains its existing authenticated-only execute policy.
 - Applied database migration 20261113141351_syllabus_aware_exam_topic_keys and verified the service-role-only RPC signature/privileges.
 - Extended the transactional SQL regression test to assert syllabus-specific key persistence; it passed against the connected project inside BEGIN/ROLLBACK.
 - Source changes committed directly to main.
