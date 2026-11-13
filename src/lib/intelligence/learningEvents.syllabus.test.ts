@@ -12,12 +12,13 @@ describe("syllabus-aware canonical learning events", () => {
   };
 
   it("carries the verified syllabus into the canonical event", () => {
-    const result = normalizeLearningEvent({ ...base, syllabusId: "9702-2025-2027" });
+    const result = normalizeLearningEvent({ ...base, syllabusId: "9702-2025-2027", curriculumTopicKey: "9702.topic.waves" });
     expect(result.status).toBe("accepted");
     if (result.status !== "accepted") return;
     expect(result.event.syllabusId).toBe("9702-2025-2027");
     expect(result.event.subjectId).toBe("9702");
     expect(result.event.topicId).toBe("waves");
+    expect(result.event.curriculumTopicKey).toBe("9702.topic.waves");
   });
 
   it("creates distinct idempotency identities for different syllabuses", () => {
