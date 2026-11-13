@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateTutoringResponse } from "./tutor";
 import type { CortexStudentContext } from "@/lib/cortex/student-context";
+import { deriveLearnerTopicState } from "@/lib/intelligence/learnerTopicState";
 
 const context: CortexStudentContext = {
   schemaVersion: 1,
@@ -58,6 +59,7 @@ const context: CortexStudentContext = {
       uncertainty: 35,
       lastObservedAt: "2026-11-11T15:00:00.000Z",
       evidenceState: "available",
+      learnerState: deriveLearnerTopicState({ attempts: 4, masteryScore: 61, errorRate: 50, recentImprovement: 5, uncertainty: 35 }),
       source: "topic_mastery",
     }],
   },
