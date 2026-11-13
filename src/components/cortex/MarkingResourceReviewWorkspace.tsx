@@ -49,6 +49,18 @@ export default function MarkingResourceReviewWorkspace() {
   const [savedResources, setSavedResources] = useState<ImportedMarkingResource[]>([]);
 
   useEffect(() => {
+    if (!user?.id) {
+      setSavedResources([]);
+      return;
+    }
+    let active = true;
+    void listImportedMarkingResources(user.id)
+      .then(items => { if (active) setSavedResources(items); })
+      .catch(() => { if (active) setSavedResources([]); });
+    return () => { active = false; };
+  }, [user?.id]);
+
+  useEffect(() => {
     if (!file) { setPreviewUrl(""); return; }
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
@@ -71,11 +83,25 @@ export default function MarkingResourceReviewWorkspace() {
         ...(attribution.trim() ? { attribution } : {}),
       });
       const saved = await saveImportedMarkingResource(user.id, resource);
+      setSavedResources(await listImportedMarkingResources(user.id));
       const result = await extractImportedMarkingResource(saved);
       setResourceId(saved.id);
       setExtraction(result);
       setCorrectedLines(result.lines.map(line => ({ ...line })));
-      setMessage("Original source saved on this device and text extraction completed. The source remains unverified.");
+      if (isImage && isBrowserLocalOcrAvailable()) {
+        try {
+          const ocr = await extractImageLocally(file);
+          setLocalOcr(ocr);
+          setCorrectedRegions(ocr.regions);
+          setMessage("Original image saved. On-device OCR completed. Review each highlighted region against the original.");
+        } catch (ocrError) {
+          setMessage(ocrError instanceof Error ? ocrError.message : "Local OCR could not run. The original image remains saved.");
+        }
+      } else if (isImage) {
+        setMessage("Original image saved. This browser does not expose local OCR. No cloud OCR was started.");
+      } else {
+        setMessage("Original source saved on this device and text extraction completed. The source remains unverified.");
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not import this resource.");
     } finally {
@@ -83,7 +109,42 @@ export default function MarkingResourceReviewWorkspace() {
     }
   }
 
-  async function reopenResource(id: string) {\n    if (!user?.id) return;\n    setBusy(true); setMessage("");\n    try {\n      const saved = await getImportedMarkingResource(user.id, id);\n      if (!saved) throw new Error("This resource is not available in this account on this device.");\n      const draft = await getMarkingResourceReviewDraft(user.id, id);\n      const restoredFile = new File([saved.fileBlob], saved.fileName, { type: saved.mimeType });\n      setFile(restoredFile); setResourceId(saved.id); setKind(saved.kind);\n      setBoardId(saved.syllabusIdentity.boardId); setQualificationId(saved.syllabusIdentity.qualificationId);\n      setLevel(saved.syllabusIdentity.level); setSubjectId(saved.syllabusIdentity.subjectId);\n      setSyllabusId(saved.syllabusIdentity.syllabusId); setSyllabusVersion(saved.syllabusIdentity.syllabusVersion);\n      setExamYear(saved.syllabusIdentity.examYear ? String(saved.syllabusIdentity.examYear) : "");\n      setPaperComponentId(saved.syllabusIdentity.paperComponentId || ""); setSourceUrl(saved.sourceUrl || ""); setAttribution(saved.attribution || "");\n      const result = draft?.extraction || await extractImportedMarkingResource(saved);\n      setExtraction(result); setCorrectedLines(draft?.correctedLines || result.lines.map(line => ({ ...line })));\n      setLocalOcr(draft?.localOcr || null); setCorrectedRegions(draft?.localOcr?.regions || []);\n      setMessage(draft ? "Saved review draft reopened from this device." : "Original resource reopened. No corrected review draft exists yet.");\n    } catch (error) {\n      setMessage(error instanceof Error ? error.message : "Could not reopen this resource.");\n    } finally { setBusy(false); }\n  }\n\n  async function saveCorrections() {
+  async function reopenResource(id: string) {
+    if (!user?.id) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const saved = await getImportedMarkingResource(user.id, id);
+      if (!saved) throw new Error("This resource is not available in this account on this device.");
+      const draft = await getMarkingResourceReviewDraft(user.id, id);
+      const restoredFile = new File([saved.fileBlob], saved.fileName, { type: saved.mimeType });
+      setFile(restoredFile);
+      setResourceId(saved.id);
+      setKind(saved.kind);
+      setBoardId(saved.syllabusIdentity.boardId);
+      setQualificationId(saved.syllabusIdentity.qualificationId);
+      setLevel(saved.syllabusIdentity.level);
+      setSubjectId(saved.syllabusIdentity.subjectId);
+      setSyllabusId(saved.syllabusIdentity.syllabusId);
+      setSyllabusVersion(saved.syllabusIdentity.syllabusVersion);
+      setExamYear(saved.syllabusIdentity.examYear ? String(saved.syllabusIdentity.examYear) : "");
+      setPaperComponentId(saved.syllabusIdentity.paperComponentId || "");
+      setSourceUrl(saved.sourceUrl || "");
+      setAttribution(saved.attribution || "");
+      const result = draft?.extraction || await extractImportedMarkingResource(saved);
+      setExtraction(result);
+      setCorrectedLines(draft?.correctedLines || result.lines.map(line => ({ ...line })));
+      setLocalOcr(draft?.localOcr || null);
+      setCorrectedRegions(draft?.localOcr?.regions || []);
+      setMessage(draft ? "Saved review draft reopened from this device." : "Original resource reopened. No corrected review draft exists yet.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not reopen this resource.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveCorrections() {
     if (!user?.id || !extraction || !resourceId) return;
     setBusy(true); setMessage("");
     try {
@@ -107,7 +168,17 @@ export default function MarkingResourceReviewWorkspace() {
       <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">Import a resource, preserve its original file, inspect extracted text against the source, and save corrections. Nothing becomes a trusted answer key automatically.</p>
     </div>
 
-    {savedResources.length > 0 && <section className="mb-5 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-5"><h2 className="mb-3 font-bold">Saved resources on this device</h2><div className="grid gap-2 sm:grid-cols-2">{savedResources.map(item => <button key={item.id} type="button" disabled={busy} onClick={() => void reopenResource(item.id)} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-[var(--card-border)] px-3 py-2 text-left text-sm hover:bg-[var(--muted)] disabled:opacity-50"><span className="min-w-0"><span className="block truncate font-semibold">{item.title}</span><span className="block truncate text-xs text-[var(--muted-foreground)]">{item.syllabusIdentity.boardId} · {item.syllabusIdentity.subjectId} · {item.syllabusIdentity.syllabusVersion}</span></span><span className="shrink-0 text-xs font-bold text-[var(--primary)]">Reopen</span></button>)}</div></section>}\n\n    <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
+    {savedResources.length > 0 && <section className="mb-5 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-5"><h2 className="mb-3 font-bold">Saved resources on this device</h2><div className="grid gap-2 sm:grid-cols-2">{savedResources.map(item => <button key={item.id} type="button" disabled={busy} onClick={() => void reopenResource(item.id)} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-[var(--card-border)] px-3 py-2 text-left text-sm hover:bg-[var(--muted)] disabled:opacity-50"><span className="min-w-0"><span className="block truncate font-semibold">{item.title}</span><span className="block truncate text-xs text-[var(--muted-foreground)]">{item.syllabusIdentity.boardId} · {item.syllabusIdentity.subjectId} · {item.syllabusIdentity.syllabusVersion}</span></span><span className="shrink-0 text-xs font-bold text-[var(--primary)]">Reopen</span></button>)}</div></section>}\n\n    {savedResources.length > 0 && <section className="mb-5 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-5">
+      <h2 className="mb-3 font-bold">Saved resources on this device</h2>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {savedResources.map(item => <button key={item.id} type="button" disabled={busy} onClick={() => void reopenResource(item.id)} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-[var(--card-border)] px-3 py-2 text-left text-sm hover:bg-[var(--muted)] disabled:opacity-50">
+          <span className="min-w-0"><span className="block truncate font-semibold">{item.title}</span><span className="block truncate text-xs text-[var(--muted-foreground)]">{item.syllabusIdentity.boardId} · {item.syllabusIdentity.subjectId} · {item.syllabusIdentity.syllabusVersion}</span></span>
+          <span className="shrink-0 text-xs font-bold text-[var(--primary)]">Reopen</span>
+        </button>)}
+      </div>
+    </section>}
+
+    <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
       <div className="mb-4 flex items-center gap-2"><FileText size={18} /><h2 className="font-bold">1. Resource and syllabus identity</h2></div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <label className="text-xs font-semibold">Resource file<input className={fieldClass} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.txt,application/pdf,image/jpeg,image/png,image/webp,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => { setFile(event.target.files?.[0] || null); setExtraction(null); setResourceId(""); }} /></label>
