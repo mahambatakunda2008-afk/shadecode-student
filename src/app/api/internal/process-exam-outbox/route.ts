@@ -9,6 +9,7 @@ type OutboxPayload = {
   eventId: string;
   examId: string;
   subject: string;
+  syllabusId?: string | null;
   difficulty?: string;
   score: number;
   maxScore: number;
@@ -112,6 +113,7 @@ async function processOutbox(req: Request) {
           p_topic: topicScore.topic,
           p_percentage: topicScore.percentage,
           p_observed_at: new Date().toISOString(),
+          p_syllabus_id: payload.syllabusId ?? null,
         });
         if (projectionError) {
           throw new Error(`Topic mastery projection (${topicScore.topic}): ${projectionError.message}`);
