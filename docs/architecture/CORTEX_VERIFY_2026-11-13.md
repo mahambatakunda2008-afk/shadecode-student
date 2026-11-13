@@ -169,7 +169,7 @@ Do not create a competing Verify page, a second attempt queue, or a duplicate do
 - A shared platform-neutral local OCR contract at `src/lib/cortex/verify/local-extraction-contract.ts` validates platform, engine/version, nullable confidence, warnings and normalized source-region geometry. Contract tests cover the no-confidence case. The browser adapter is a capability-gated first step, not a universal OCR guarantee; its tests and the full project verification suite still need execution.
 - Text-only attempts can use the existing browser-local hybrid runtime when a model is already ready. This does not prove first-launch offline availability or local image understanding.
 - Failed attempts are stored in an account-scoped queue and retried on reconnect. This is not the same as offline marking or offline help.
-- Android OCR exists as a separate local capability and is not yet integrated into the shared Verify workflow.
+- Android SNAP & EXTRACT now persists native OCR provenance with saved extracts: engine name, Android platform, nullable confidence (ML Kit does not expose a calibrated confidence score here), and normalized per-line source-region coordinates. Older saved extracts remain readable with empty provenance defaults. This is still a native extraction library, not yet the shared Mark/Help Verify artifact workflow.
 - PDF, structured equations/tables/graphs/diagrams, source-region traceability and local artifact parity across web/Android/desktop remain incomplete.
 - Current subject choices and marking behavior are not yet complete across all supported curricula and response types.
 - Desktop is currently a shell foundation; complete local workspace parity remains outstanding.
@@ -178,7 +178,7 @@ Do not create a competing Verify page, a second attempt queue, or a duplicate do
 
 1. **Product/UI alignment:** one visible Mark Mode and one visible Help Mode; remove Math Checker naming from current navigation and product copy.
 2. **Shared artifact contract:** represent source, extracted blocks, confidence, coordinates, provenance and user corrections without losing the original.
-3. **SNAP & EXTRACT integration:** web/PWA has consent-based online transcription and local artifact retention; a shared local OCR validation contract now exists. Next implement a real browser-local OCR engine, then adapt the existing Android ML Kit OCR and desktop capture/extraction to this contract.
+3. **SNAP & EXTRACT integration:** web/PWA has consent-based online transcription and local artifact retention plus a capability-gated browser-native OCR adapter. Android ML Kit OCR now persists engine/platform provenance and normalized per-line source regions in its private local extract store. Next connect Android extracts to the shared Mark/Help artifact workflow, add a broadly available bundled web OCR engine, and implement desktop capture/extraction.
 4. **Offline Mark Mode:** deterministic local marking for explicitly supported question types, downloaded rubrics/resources, honest unsupported states.
 5. **Offline Help Mode:** local help packs and optional pre-provisioned local models with device-capability checks.
 6. **Online enhancement:** consent-based cloud OCR/vision, advanced marking and explanations.
