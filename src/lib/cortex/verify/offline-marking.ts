@@ -1,3 +1,5 @@
+import { markNumeric } from "@/lib/exam/engine/numeric";
+
 /**
  * Deterministic offline marking for explicitly supported single-answer items.
  * This is deliberately narrow: it never asks a language model to invent a mark.
@@ -68,9 +70,11 @@ export function markWithOfflineRubric(
 
   let correct = false;
   if (rubric.kind === "exact-number") {
-    const candidate = Number(studentAnswer.trim().replace(/,/g, ""));
-    if (!Number.isFinite(candidate)) return null;
-    correct = Math.abs(candidate - rubric.answer) <= (rubric.tolerance ?? 0);
+    const marked = markNumeric(studentAnswer, {
+      exact: rubric.answer,
+      tolerance: rubric.tolerance ?? 0,
+    });
+    correct = marked.correct;
   } else if (rubric.kind === "multiple-choice") {
     correct = normalized(studentAnswer) === normalized(rubric.answer);
   } else {
