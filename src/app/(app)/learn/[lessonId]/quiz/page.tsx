@@ -192,10 +192,27 @@ export default function QuizPage() {
     }
   }
 
-  function restart() {
-    quizAttemptIdRef.current = "";
+  async function restart() {
     setSubmissionError("");
-    setCurrent(0); setSelected(null); setAnswers([]); setConfirmed(false); setPhase("quiz");
+    setPhase("generating");
+    setCurrent(0); setSelected(null); setAnswers([]); setConfirmed(false);
+    try {
+      const response = await fetch("/api/learn/quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ lessonId }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.questions?.length || typeof data.attemptId !== "string") {
+        throw new Error(data?.error || "Could not start a fresh quiz attempt.");
+      }
+      quizAttemptIdRef.current = data.attemptId;
+      setQuestions(data.questions);
+      setPhase("quiz");
+    } catch (error) {
+      setErrMsg(error instanceof Error ? error.message : "Could not restart this quiz.");
+      setPhase("error");
+    }
   }
 
   const q             = questions[current];
