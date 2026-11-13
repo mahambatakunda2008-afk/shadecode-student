@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     }
     const access = await resolveLearnerSubject(supabase, user.id, subject, body?.subjectId);
     if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
-    const curriculum = await resolveUserSystemCurriculum(user.id, access.subject);
+    const curriculum = await resolveUserSystemCurriculum(user.id, access.subject, token);
     const verifiedSyllabusId = curriculum.resolved.status === "resolved"
       ? curriculum.identity?.syllabusId ?? null
       : null;
