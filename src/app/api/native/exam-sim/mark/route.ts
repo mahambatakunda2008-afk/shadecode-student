@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     }
     const admin = createSupabaseAdminClient();
     if (!admin) return NextResponse.json({ error: "Secure exam submission storage is not configured." }, { status: 503 });
-    const payloadHash = createHash("sha256").update(stableJson({ subject, questions, answers })).digest("hex");
+    const payloadHash = createHash("sha256").update(stableJson({ subject, syllabusId: verifiedSyllabusId, questions, answers })).digest("hex");
     const { data: claimRows, error: claimError } = await admin.rpc("claim_exam_submission", {
       p_user_id: user.id,
       p_attempt_id: attemptId,
