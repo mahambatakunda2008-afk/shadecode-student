@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
 import { updateCortexFromExam } from "@/lib/cortex";
+import { normalizeLearningContextLabel } from "@/lib/intelligence/learningContextKey";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -109,8 +110,8 @@ async function processOutbox(req: Request) {
         const { error: projectionError } = await svc.rpc("project_exam_topic_mastery", {
           p_user_id: job.user_id,
           p_attempt_id: job.attempt_id,
-          p_subject: payload.subject,
-          p_topic: topicScore.topic,
+          p_subject: normalizeLearningContextLabel(payload.subject),
+          p_topic: normalizeLearningContextLabel(topicScore.topic),
           p_percentage: topicScore.percentage,
           p_observed_at: new Date().toISOString(),
           p_syllabus_id: payload.syllabusId ?? null,
