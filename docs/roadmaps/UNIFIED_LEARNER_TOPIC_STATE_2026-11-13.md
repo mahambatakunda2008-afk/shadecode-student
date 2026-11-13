@@ -42,6 +42,7 @@ The live `topic_mastery` schema was inspected. It has nullable `syllabus_id` and
 - `c11b5c621d26a8fd57f2b757507a222941d1956f` support bearer-authenticated curriculum resolution.
 - `0d12a518b5179cb762cd236feb17df68d6623027` keep bearer and cookie learner identity aligned.
 - `b84375828ab00c4961b455088926cd4308397413` retain syllabus identity when curriculum content coverage is gated.
+- `edd96581ae575e240e82ea026401762486bda957` ensure the topic query actually applies the syllabus partition.
 
 ## Verification
 
