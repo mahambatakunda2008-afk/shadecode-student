@@ -9,7 +9,10 @@ declare
   v_after bigint;
   v_retry bigint;
 begin
-  select id into v_user from auth.users order by created_at limit 1;
+  select user_id into v_user from public.cortex_events order by created_at desc limit 1;
+  if v_user is null then
+    select user_id into v_user from public.recommendation_cache_versions limit 1;
+  end if;
   if v_user is null then
     raise exception 'Test requires an existing auth user';
   end if;
