@@ -8,6 +8,8 @@ import { prepareMarkingResourceImport } from "@/lib/cortex/verify/marking-resour
 import { saveImportedMarkingResource } from "@/lib/cortex/verify/marking-resource-import-store";
 import { extractImportedMarkingResource, type MarkingResourceExtraction } from "@/lib/cortex/verify/marking-resource-extraction";
 import { saveMarkingResourceReviewDraft } from "@/lib/cortex/verify/marking-resource-review-store";
+import { extractImageLocally, isBrowserLocalOcrAvailable } from "@/lib/cortex/verify/web-local-extraction";
+import type { LocalVerifyExtraction } from "@/lib/cortex/verify/local-extraction-contract";
 import type { MarkingResourceKind } from "@/lib/cortex/verify/marking-resource";
 
 const fieldClass = "mt-1 w-full rounded-xl border border-[var(--card-border)] bg-[var(--background)] px-3 py-2.5 text-sm text-[var(--foreground)]";
@@ -36,6 +38,9 @@ export default function MarkingResourceReviewWorkspace() {
   const [attribution, setAttribution] = useState("");
   const [extraction, setExtraction] = useState<MarkingResourceExtraction | null>(null);
   const [correctedLines, setCorrectedLines] = useState<Array<{ page: number; line: number; text: string }>>([]);
+  const [localOcr, setLocalOcr] = useState<LocalVerifyExtraction | null>(null);
+  const [correctedRegions, setCorrectedRegions] = useState<LocalVerifyExtraction["regions"]>([]);
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -54,7 +59,7 @@ export default function MarkingResourceReviewWorkspace() {
 
   async function importAndExtract() {
     if (!user?.id || !file) return;
-    setBusy(true); setMessage(""); setExtraction(null); setCorrectedLines([]);
+    setBusy(true); setMessage(""); setExtraction(null); setCorrectedLines([]); setLocalOcr(null); setCorrectedRegions([]);
     try {
       const resource = await prepareMarkingResourceImport(user.id, {
         file, kind, boardId, qualificationId, level, subjectId, syllabusId, syllabusVersion,
@@ -80,7 +85,7 @@ export default function MarkingResourceReviewWorkspace() {
     if (!user?.id || !extraction || !resourceId) return;
     setBusy(true); setMessage("");
     try {
-      await saveMarkingResourceReviewDraft(user.id, { resourceId, extraction, correctedLines });
+      await saveMarkingResourceReviewDraft(user.id, { resourceId, extraction, correctedLines, ...(localOcr ? { localOcr: { ...localOcr, regions: correctedRegions, rawText: correctedRegions.map(region => region.text).join("\\n") } } : {}) });
       setMessage("Your review draft and corrected text were saved locally. This does not verify the source or approve a marking rubric.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save review corrections.");
@@ -129,7 +134,7 @@ export default function MarkingResourceReviewWorkspace() {
       <section className="min-w-0 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-center justify-between gap-2"><h2 className="font-bold">2. Original source evidence</h2><span className="text-xs text-[var(--muted-foreground)]">{file.name}</span></div>
         {isPdf && <iframe title="Original PDF source" src={previewUrl} className="h-[70vh] min-h-[480px] w-full rounded-xl border border-[var(--card-border)] bg-white" />}
-        {isImage && <Image src={previewUrl} alt="Original uploaded marking resource" width={1200} height={900} unoptimized className="max-h-[70vh] w-full rounded-xl border border-[var(--card-border)] object-contain" />}
+        {isImage && <div className="relative mx-auto w-full overflow-hidden rounded-xl border border-[var(--card-border)] bg-white" style={imageDimensions ? { aspectRatio: `${imageDimensions.width} / ${imageDimensions.height}` } : undefined}><Image src={previewUrl} alt="Original uploaded marking resource" width={imageDimensions?.width || 1200} height={imageDimensions?.height || 900} unoptimized onLoad={event => setImageDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} className="block h-auto max-h-[70vh] w-full object-contain" />{localOcr && correctedRegions.map((region, index) => <div key={region.id} className="pointer-events-none absolute border-2 border-cyan-500/90 bg-cyan-400/10" style={{ left: `${region.bounds.x * 100}%`, top: `${region.bounds.y * 100}%`, width: `${region.bounds.width * 100}%`, height: `${region.bounds.height * 100}%` }}><span className="absolute -top-5 left-0 rounded bg-cyan-700 px-1 text-[9px] text-white">{index + 1}</span></div>)}</div>}
         {!isPdf && !isImage && <div className="rounded-xl bg-[var(--muted)] p-5 text-sm text-[var(--muted-foreground)]">Original file is preserved in local resource storage. Browser preview is not available for this file type.</div>}
         <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5"><AlertTriangle size={15} className="mr-2 inline" />The uploaded source and your syllabus selection have not been independently authenticated. Visual interpretation still requires human review.</div>
       </section>
@@ -139,7 +144,7 @@ export default function MarkingResourceReviewWorkspace() {
         <div className="mb-4 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-[var(--muted)] px-2.5 py-1">{extraction.format.toUpperCase()}</span><span className="rounded-full bg-[var(--muted)] px-2.5 py-1">{extraction.status.replace("_", " ")}</span><span className="rounded-full bg-[var(--muted)] px-2.5 py-1">{extraction.pageCount ?? "?"} pages</span></div>
         {extraction.warnings.map((warning, index) => <p key={index} className="mb-2 rounded-lg bg-amber-500/10 p-2.5 text-xs leading-5 text-amber-700 dark:text-amber-300">{warning}</p>)}
         {extraction.markers.length > 0 && <div className="mb-4 rounded-xl bg-[var(--muted)] p-3"><p className="mb-2 text-xs font-bold">Detected navigation hints, not approved marking criteria</p><div className="flex flex-wrap gap-1.5">{extraction.markers.slice(0, 30).map((marker, index) => <span key={index} className="rounded-md border border-[var(--card-border)] bg-[var(--card)] px-2 py-1 text-[10px]">{marker.type} · p.{marker.page}</span>)}</div></div>}
-        {correctedLines.length ? <div className="max-h-[56vh] space-y-3 overflow-y-auto pr-1">{correctedLines.map((line, index) => <label key={index} className="block text-xs font-semibold"><span className="mb-1 block text-[var(--muted-foreground)]">Page {line.page} · line {line.line}</span><textarea className={fieldClass + " min-h-16 resize-y leading-5"} value={line.text} onChange={event => updateLine(index, event.target.value)} /></label>)}</div> : <p className="rounded-xl bg-[var(--muted)] p-4 text-sm text-[var(--muted-foreground)]">No text lines were extracted. Use the original page and OCR/visual review workflow.</p>}
+        {localOcr && <div className="mb-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3"><p className="mb-1 text-xs font-bold">On-device OCR · {localOcr.engine}</p><p className="mb-3 text-xs text-[var(--muted-foreground)]">No image upload was performed by this OCR step. Bounding boxes are shown on the original image. OCR confidence is {localOcr.confidence === null ? "not supplied by this browser" : `${Math.round(localOcr.confidence * 100)}%`}.</p>{correctedRegions.map((region, index) => <label key={region.id} className="mb-3 block text-xs font-semibold"><span className="mb-1 block text-[var(--muted-foreground)]">Region {index + 1} · {Math.round(region.bounds.x * 100)}%, {Math.round(region.bounds.y * 100)}%</span><textarea className={fieldClass + " min-h-14 resize-y"} value={region.text} onChange={event => updateRegion(index, event.target.value)} /></label>)}{localOcr.warnings.map((warning, index) => <p key={index} className="mt-2 text-xs leading-5 text-amber-700 dark:text-amber-300">{warning}</p>)}</div>}{correctedLines.length ? <div className="max-h-[56vh] space-y-3 overflow-y-auto pr-1">{correctedLines.map((line, index) => <label key={index} className="block text-xs font-semibold"><span className="mb-1 block text-[var(--muted-foreground)]">Page {line.page} · line {line.line}</span><textarea className={fieldClass + " min-h-16 resize-y leading-5"} value={line.text} onChange={event => updateLine(index, event.target.value)} /></label>)}</div> : <p className="rounded-xl bg-[var(--muted)] p-4 text-sm text-[var(--muted-foreground)]">No text lines were extracted. Use the original page and OCR/visual review workflow.</p>}
         <button type="button" onClick={() => void saveCorrections()} disabled={busy} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--card-border)] px-4 py-2.5 text-sm font-bold disabled:opacity-50"><Save size={16} /> Save review draft locally</button>
       </section>
     </div>}
