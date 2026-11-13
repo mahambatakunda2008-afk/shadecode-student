@@ -270,3 +270,14 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 - This is cross-instance cache invalidation by version check, not a distributed cache. Existing process-local entries remain allocated until expiry or replacement, but they are no longer served after a version change. Version lookup adds a small database read before cache use.
 - Other event types (lesson completion, quiz completion, study session finish) still rely on existing in-process invalidation unless their own durable event/outbox path calls the shared invalidation RPC. This increment specifically closes the exam-completion path.
 - GitHub Actions and Vercel statuses must be checked for the latest commit. No full app build, browser integration test, offline test, or deployed exam workflow has been verified for this increment.
+
+
+## 2026-11-13 implementation update: durable invalidation from learning events
+
+- Added and applied migration `20261113200000_invalidate_recommendations_from_learning_events.sql`.
+- Added an `AFTER INSERT` trigger on `public.cortex_events`. Relevant durable learning events now increment the student's shared recommendation-cache generation automatically, including lesson completion, quiz completion, exam completion, study-session finish, activity completion, question attempts, task completion, mistake review, project evidence, and project stage completion.
+- The trigger uses the durable Cortex event UUID as its idempotency identity in `recommendation_cache_invalidation_events`. Replaying an already-persisted event cannot increment the generation again.
+- The existing exam outbox's explicit invalidation RPC remains in place. If the Cortex event and outbox worker use the same event UUID, the shared invalidation ledger suppresses the second bump.
+- Added `supabase/tests/invalidate_recommendations_from_learning_events.test.sql`; executed successfully against the active Supabase project. It verifies a quiz completion increments the version, duplicate event insertion does not increment it again, and a lesson-view event does not increment it. Test transaction rolled back.
+- This trigger only sees events actually persisted in `cortex_events`. Learning activity that never reaches durable Cortex event storage is not magically covered. The direct quiz assessment endpoint still needs to be checked for a canonical event emission path; its own assessment persistence is separate from this trigger.
+- The invalidation is now durable for all relevant event types that enter the Cortex event store, across application instances. Full app build, Vercel deployment, and end-to-end client event delivery remain unverified.
