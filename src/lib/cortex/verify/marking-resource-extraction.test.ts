@@ -73,10 +73,16 @@ describe("marking resource extraction", () => {
     expect(result.warnings.join(" ")).toContain("OCR/vision adapter");
   });
 
-  it("does not pretend DOCX extraction is supported", async () => {
-    const source = resource("scheme.docx", "docx-bytes");
+  it("extracts readable WordprocessingML paragraphs and preserves tabs", () => {
+    const xml = `<?xml version="1.0"?><w:document xmlns:w="urn:w"><w:body><w:p><w:r><w:t>1 Explain &amp; define.</w:t></w:r></w:p><w:p><w:r><w:t>Method</w:t></w:r><w:r><w:tab/><w:t>[2 marks]</w:t></w:r></w:p></w:body></w:document>`;
+    expect(docxXmlToText(xml)).toBe("1 Explain & define.\nMethod\t[2 marks]");
+  });
+
+  it("fails safely when a DOCX is not a valid ZIP document", async () => {
+    const source = resource("scheme.docx", "not-a-docx");
     const result = await extractImportedMarkingResource(source);
-    expect(result.status).toBe("conversion_required");
+    expect(result.status).toBe("failed");
+    expect(result.warnings.join(" ")).toContain("DOCX extraction failed");
     expect(result.regions).toEqual([]);
   });
 });
