@@ -4,7 +4,7 @@ Date: 2026-11-13
 
 ## What changed
 
-Canonical learning events now carry a server-resolved syllabus identity. The browser cannot choose the syllabus partition: the authenticated event ingress resolves the learner's configured curriculum from the profile, matching the exact subject code or configured subject name. Server-side emitters use the same resolver.
+Canonical learning events now carry a server-resolved syllabus identity. The browser cannot choose the syllabus partition: the authenticated event ingress resolves the learner's configured curriculum from the profile, matching the exact subject code or configured subject name. Server-side emitters use the same resolver. Native exam submission resolves the syllabus with its bearer-authenticated client and binds that identity into the stable submission payload hash and durable completion outbox.
 
 The canonical event ID includes the syllabus only when a verified syllabus is available. This is deliberately backward-compatible: unscoped legacy event IDs retain their original hash, so pending offline events replay without becoming duplicate canonical events. Same source-event IDs in two different verified syllabuses receive distinct canonical IDs.
 
