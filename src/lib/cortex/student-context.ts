@@ -57,10 +57,28 @@ export interface StudentTopicEvidence {
   source: "topic_mastery";
 }
 
+export interface StudentObjectiveEvidence {
+  objectiveKey: string;
+  status: string;
+  masteryScore: number | null;
+  attempts: number;
+  completedLessons: number;
+  lastSeenAt: string | null;
+  masteredAt: string | null;
+  evidenceState: EvidenceState;
+}
+
 export interface CortexStudentContext {
   schemaVersion: 1;
   generatedAt: string;
   profile: StudentProfileMemory;
+  curriculumObjectives: {
+    state: EvidenceState;
+    source: "learner_curriculum_objective_progress";
+    curriculumVersionId: string | null;
+    evidenceCount: number;
+    items: StudentObjectiveEvidence[];
+  };
   topics: {
     state: EvidenceState;
     source: "topic_mastery";
@@ -102,7 +120,11 @@ export interface CortexStudentContext {
  * identity for RLS-scoped reads. Query failures throw; absent rows are
  * represented as insufficient evidence rather than database outages.
  */
-export async function resolveAuthenticatedCortexStudentContext(accessToken?: string, syllabusId?: string | null): Promise<CortexStudentContext> {
+export async function resolveAuthenticatedCortexStudentContext(
+  accessToken?: string,
+  syllabusId?: string | null,
+  curriculumIdentity?: { boardId: string; qualificationId: string; syllabusVersion: string; subjectId: string },
+): Promise<CortexStudentContext> {
   const supabase = accessToken
     ? createSupabaseClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -122,6 +144,33 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
   }
 
   const userId = authData.user.id;
+
+  // Resolve one exact verified curriculum version before reading objective
+  // progress. A missing or ambiguous version is insufficient evidence, never
+  // permission to blend objectives from another course/version.
+  const curriculumVersionResult = curriculumIdentity
+    ? await supabase.from("curriculum_versions").select("id")
+        .eq("board_id", curriculumIdentity.boardId)
+        .eq("qualification_id", curriculumIdentity.qualificationId)
+        .eq("syllabus_id", syllabusId ?? "")
+        .eq("syllabus_version", curriculumIdentity.syllabusVersion)
+        .eq("subject_id", curriculumIdentity.subjectId)
+        .eq("status", "verified")
+        .maybeSingle()
+    : { data: null, error: null };
+  if (curriculumVersionResult.error) {
+    console.error("[cortex student context] curriculum version read failed:", curriculumVersionResult.error);
+    throw new Error("STUDENT_CONTEXT_CURRICULUM_UNAVAILABLE");
+  }
+  const curriculumVersionId = curriculumVersionResult.data?.id ?? null;
+  const objectiveProgressQuery = curriculumVersionId
+    ? supabase.from("learner_curriculum_objective_progress")
+        .select("objective_key,status,mastery_score,attempts,completed_lessons,last_seen_at,mastered_at")
+        .eq("user_id", userId)
+        .eq("curriculum_version_id", curriculumVersionId)
+        .order("updated_at", { ascending: false })
+        .limit(500)
+    : Promise.resolve({ data: [], error: null });
   const mistakeEventsQuery = supabase
     .from("cortex_events")
     .select("type, data, created_at")
@@ -148,7 +197,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
     ? topicEvidenceQuery.eq("syllabus_id", syllabusId)
     : topicEvidenceQuery.is("syllabus_id", null);
 
-  const [academicProfileResult, memoryResult, topicsResult, mistakeEventsResult] = await Promise.all([
+  const [academicProfileResult, memoryResult, topicsResult, mistakeEventsResult, objectiveProgressResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("level, subjects, study_level, education_stage, curriculum_board, qualification, syllabus_code, syllabus_year, created_at")
@@ -161,6 +210,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       .maybeSingle(),
     scopedTopicEvidenceQuery,
     scopedMistakeEventsQuery,
+    objectiveProgressQuery,
   ]);
 
   if (academicProfileResult.error) {
@@ -174,6 +224,11 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
   if (topicsResult.error) {
     console.error("[cortex student context] topic evidence read failed:", topicsResult.error);
     throw new Error("STUDENT_CONTEXT_TOPICS_UNAVAILABLE");
+  }
+
+  if (objectiveProgressResult.error) {
+    console.error("[cortex student context] curriculum objective progress read failed:", objectiveProgressResult.error);
+    throw new Error("STUDENT_CONTEXT_OBJECTIVES_UNAVAILABLE");
   }
 
   if (mistakeEventsResult.error) {
@@ -217,6 +272,22 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
     };
   });
   const evidenceCount = topics.reduce((count, item) => count + item.attempts, 0);
+  const objectiveRows = objectiveProgressResult.data ?? [];
+  const curriculumObjectives: StudentObjectiveEvidence[] = objectiveRows.map((row) => {
+    const attempts = Math.max(0, Number(row.attempts) || 0);
+    const completedLessons = Math.max(0, Number(row.completed_lessons) || 0);
+    const hasEvidence = attempts > 0 || completedLessons > 0 || row.status === "mastered";
+    return {
+      objectiveKey: row.objective_key,
+      status: row.status,
+      masteryScore: hasEvidence && typeof row.mastery_score === "number" ? row.mastery_score : null,
+      attempts,
+      completedLessons,
+      lastSeenAt: row.last_seen_at,
+      masteredAt: row.mastered_at,
+      evidenceState: hasEvidence ? "available" : "insufficient_evidence",
+    };
+  });
   const mistakeEvents = mistakeEventsResult.data ?? [];
   const repeatedTopicErrors = deriveRepeatedTopicErrors(mistakeEvents);
   const reviewActivity = deriveReviewSessionActivity(mistakeEvents);
@@ -260,6 +331,13 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       lastPracticeTopic: memory?.last_practice_topic ?? null,
       lastPracticeSubject: memory?.last_practice_subject ?? null,
       lastPracticeSyllabusId: memory?.last_practice_syllabus_id ?? null,
+    },
+    curriculumObjectives: {
+      state: curriculumObjectives.length > 0 ? "available" : "insufficient_evidence",
+      source: "learner_curriculum_objective_progress",
+      curriculumVersionId,
+      evidenceCount: curriculumObjectives.reduce((count, item) => count + item.attempts + item.completedLessons, 0),
+      items: curriculumObjectives,
     },
     topics: {
       state: evidenceCount > 0 ? "available" : "insufficient_evidence",
