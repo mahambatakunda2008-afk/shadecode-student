@@ -9,6 +9,8 @@ import { isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib
 import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
 import { getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { markWithOfflineRubric, type OfflineVerifyRubric } from "@/lib/cortex/verify/offline-marking";
+import { buildOfflineVerifyRubric } from "@/lib/cortex/verify/offline-question-adapter";
+import type { ExamQuestion } from "@/lib/exam/types";
 
 export type VerifyMode = "check" | "help";
 export type HelpLevel = "hint" | "method" | "solution";
@@ -181,6 +183,8 @@ export function useCortexVerify() {
     level?: HelpLevel;
     image?: File;
     offlineRubric?: OfflineVerifyRubric;
+    /** Trusted downloaded/built-in question metadata; only numeric and keyed MC items are eligible. */
+    offlineQuestion?: ExamQuestion;
   }) => {
     setLoading(true); setError(null); setResult(null);
     try {
@@ -205,11 +209,14 @@ export function useCortexVerify() {
       }
       // Deterministic Mark Mode is allowed only when the caller supplies an explicit,
       // versioned answer key. Unsupported question types remain queued for cloud review.
-      if (attempt.mode === "check" && !attempt.imageDataUrl && options.offlineRubric) {
+      const offlineRubric = options.offlineRubric || (options.offlineQuestion
+        ? buildOfflineVerifyRubric(options.offlineQuestion)
+        : null);
+      if (attempt.mode === "check" && !attempt.imageDataUrl && offlineRubric) {
         const localResult = markWithOfflineRubric(
-          attempt.question || "",
+          attempt.question || options.offlineQuestion?.question || "",
           attempt.studentAnswer || "",
-          options.offlineRubric,
+          offlineRubric,
         );
         if (localResult) {
           const response: VerifyResult = { ...localResult, execution: "browser-local-deterministic" };
