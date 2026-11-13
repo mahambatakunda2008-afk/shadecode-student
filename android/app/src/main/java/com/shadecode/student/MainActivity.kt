@@ -1507,7 +1507,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                         activeArtifactId = saved.id
                                         artifactTitle = saved.title
                                         savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
-                                        message = "Saved privately on this device. Source images are not copied into the library."
+                                        message = "Saved privately on this device, including a private copy of the source image (maximum 8 MB)."
                                     } catch (error: Exception) {
                                         message = error.message ?: "Could not save this extract."
                                     }
@@ -1638,7 +1638,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                 Column(Modifier.fillMaxWidth().padding(18.dp)) {
                     Text("Saved extracts on this device", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(6.dp))
-                    Text("Private to this app on this device. Up to 20 recent extracts are kept; older ones are removed automatically. Source images are not stored.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text("Private to this app on this device. Up to 20 recent extracts and their source images are kept; older ones are removed automatically.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = artifactSearch,
@@ -1665,9 +1665,6 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     Text(artifact.editedText.lineSequence().firstOrNull().orEmpty().take(90).ifBlank { "Empty text extract" }, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                                 }
                                 TextButton(onClick = {
-                                    // A saved text artifact has no persisted image. Clear any image
-                                    // selected in the current session so it cannot be mistaken for
-                                    // this artifact's source or accidentally saved against it.
                                     selectedImage = null
                                     activeArtifactId = artifact.id
                                     artifactTitle = artifact.title
@@ -1676,10 +1673,18 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     extractionEngine = artifact.extractionEngine
                                     extractionRegions = artifact.extractionRegions
                                     redactionTerms = ""
-                                    message = buildString {
-                                        append("Loaded saved text. The original source image was not saved.")
-                                        artifact.extractionEngine?.let { append(" OCR engine: ").append(it).append(".") }
-                                        append(" ").append(artifact.extractionRegions.size).append(" source text regions retained.")
+                                    verifyResult = null
+                                    scope.launch {
+                                        imagePreview = withContext(Dispatchers.IO) {
+                                            extractStore.loadSourceImage(artifact.id)?.let { bytes ->
+                                                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+                                            }
+                                        }
+                                        message = buildString {
+                                            append(if (imagePreview != null) "Loaded saved extract and its private source image." else "Loaded saved text. This older extract has no saved source image.")
+                                            artifact.extractionEngine?.let { append(" OCR engine: ").append(it).append(".") }
+                                            append(" ").append(artifact.extractionRegions.size).append(" source text regions retained.")
+                                        }
                                     }
                                 }, enabled = !processing) { Text("Open") }
                                 TextButton(onClick = {
