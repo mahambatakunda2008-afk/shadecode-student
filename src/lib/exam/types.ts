@@ -1,4 +1,5 @@
 import type { NumericSpec } from "./engine/numeric";
+import type { MarkingResourceEvidence } from "@/lib/cortex/verify/marking-resource";
 
 export type ExamQuestion = {
   id: number;
@@ -10,10 +11,15 @@ export type ExamQuestion = {
   modelAnswer?: string;
   markingCriteria?: string;
   numeric?: NumericSpec;
-  /** Explicit, curated deterministic sub-marking rubric. Never generated from prose at runtime. */
+  /** Rights-cleared, reviewed resource rubric. Raw AI-generated keys are never accepted. */
+  syllabusIdentity?: MarkingResourceEvidence["syllabusIdentity"];
   offlineMarking?: {
     version: 1;
     criteria: Array<{ id: string; description: string; marks: number; acceptedAnswers: string[] }>;
+    source: MarkingResourceEvidence;
+    reviewerId: string;
+    reviewedAt: string;
+    limitations: string[];
   };
 };
 
