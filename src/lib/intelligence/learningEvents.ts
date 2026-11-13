@@ -75,8 +75,9 @@ function toHex(value: bigint): string {
 
 export function canonicalEventId(userId: string, source: string, sourceEventId: string, syllabusId?: string): string {
   // Preserve pre-syllabus event IDs for legacy/offline replay compatibility.
-  const base = `${userId}\\u0000${source}\\u0000${sourceEventId}`;
-  const input = syllabusId ? `${base}\\u0000${syllabusId}` : base;
+  const separator = String.fromCharCode(0);
+  const base = [userId, source, sourceEventId].join(separator);
+  const input = syllabusId ? `${base}${separator}${syllabusId}` : base;
   const first = hashLane(input, 14695981039346656037n);
   const second = hashLane(`shadecode:event:${input}`, 1099511628211n);
   return `le_${toHex(first)}${toHex(second)}`;
