@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { resolveAuthenticatedCortexStudentContext } from "@/lib/cortex/student-context";
 import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -9,19 +11,18 @@ export async function GET(request: Request) {
     const authorization = request.headers.get("authorization") ?? "";
     const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
     const subjectId = new URL(request.url).searchParams.get("subjectId")?.trim() || undefined;
-    const authorizationClient = await import("@/lib/supabase/server");
     const supabase = accessToken
-      ? (await import("@supabase/supabase-js")).createClient(
+      ? createSupabaseClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
           { auth: { autoRefreshToken: false, persistSession: false }, global: { headers: { Authorization: `Bearer ${accessToken}` } } },
         )
-      : await authorizationClient.createSupabaseServerClient();
+      : await createSupabaseServerClient();
     const { data: authData, error: authError } = accessToken
       ? await supabase.auth.getUser(accessToken)
       : await supabase.auth.getUser();
     if (authError || !authData.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const curriculum = await resolveUserSystemCurriculum(authData.user.id, subjectId);
+    const curriculum = await resolveUserSystemCurriculum(authData.user.id, subjectId, accessToken);
     const verifiedSyllabusId = !curriculum.blocked && curriculum.resolved.status === "resolved"
       ? curriculum.identity?.syllabusId ?? null
       : null;
