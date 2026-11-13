@@ -22,6 +22,7 @@ export type LearningEvent = {
   sourceEventId: string;
   subjectId?: string;
   syllabusId?: string;
+  curriculumTopicKey?: string;
   topicId?: string;
   entityId?: string;
   attemptId?: string;
@@ -40,6 +41,7 @@ export type SupportedSourceEvent = {
   occurredAt?: string;
   subjectId?: string;
   syllabusId?: string;
+  curriculumTopicKey?: string;
   topicId?: string;
   entityId?: string;
   attemptId?: string;
@@ -110,6 +112,7 @@ export function normalizeLearningEvent(input: SupportedSourceEvent): EventNormal
       sourceEventId,
       subjectId: input.subjectId ? normalizeLearningContextLabel(input.subjectId) : undefined,
       syllabusId: input.syllabusId,
+      curriculumTopicKey: input.curriculumTopicKey,
       topicId: input.topicId ? normalizeLearningContextLabel(input.topicId) : undefined,
       entityId: input.entityId,
       attemptId: input.attemptId,
