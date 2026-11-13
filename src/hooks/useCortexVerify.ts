@@ -6,6 +6,7 @@ import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { createClient } from "@/lib/supabase/client";
 import { runHybridJson } from "@/lib/cortex/hybridJson";
 import { isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
+import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
 
 export type VerifyMode = "check" | "help";
 export type HelpLevel = "hint" | "method" | "solution";
@@ -132,7 +133,7 @@ Be accurate and explicit about uncertainty.`;
           return !!v && typeof v === "object" &&
             (attempt.mode === "help"
               ? isValidHelpResult(v, (attempt.level || "hint") as VerifyHelpLevel)
-              : typeof v.feedback === "string" || Array.isArray(v.steps));
+              : isValidVerifyMarkResult(v));
         },
         cloud: requestCloud,
         localMaxTokens: 1400,
