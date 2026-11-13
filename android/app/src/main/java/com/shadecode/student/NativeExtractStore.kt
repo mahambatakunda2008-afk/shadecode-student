@@ -12,12 +12,24 @@ import java.util.UUID
  * Source images are deliberately not copied. A stored source URI is informational only
  * and may no longer be readable after Android revokes the picker grant.
  */
+data class NativeExtractRegion(
+    val text: String,
+    val left: Float,
+    val top: Float,
+    val right: Float,
+    val bottom: Float,
+)
+
 data class NativeExtractArtifact(
     val id: String,
     val title: String,
     val rawOcr: String,
     val editedText: String,
     val sourceUri: String?,
+    val extractionEngine: String?,
+    val extractionPlatform: String?,
+    val extractionConfidence: Float?,
+    val extractionRegions: List<NativeExtractRegion>,
     val createdAt: Long,
     val updatedAt: Long,
 )
@@ -37,7 +49,16 @@ class NativeExtractStore(context: Context) {
     }
 
     @Synchronized
-    fun save(id: String?, title: String, rawOcr: String, editedText: String, sourceUri: Uri?): NativeExtractArtifact {
+    fun save(
+        id: String?,
+        title: String,
+        rawOcr: String,
+        editedText: String,
+        sourceUri: Uri?,
+        extractionEngine: String? = null,
+        extractionConfidence: Float? = null,
+        extractionRegions: List<NativeExtractRegion> = emptyList(),
+    ): NativeExtractArtifact {
         require(rawOcr.length <= maxTextChars && editedText.length <= maxTextChars) {
             "This extract is too large to save. Copy or split the text into smaller extracts."
         }
@@ -51,6 +72,10 @@ class NativeExtractStore(context: Context) {
             rawOcr = rawOcr,
             editedText = editedText,
             sourceUri = sourceUri?.toString() ?: existing?.sourceUri,
+            extractionEngine = extractionEngine ?: existing?.extractionEngine,
+            extractionPlatform = if (extractionEngine != null) "android" else existing?.extractionPlatform,
+            extractionConfidence = if (extractionEngine != null) extractionConfidence else existing?.extractionConfidence,
+            extractionRegions = if (extractionEngine != null) extractionRegions else existing?.extractionRegions.orEmpty(),
             createdAt = existing?.createdAt ?: now,
             updatedAt = now,
         )
@@ -94,6 +119,22 @@ class NativeExtractStore(context: Context) {
             id = json.getString("id"), title = json.optString("title", "Saved extract"),
             rawOcr = json.optString("rawOcr"), editedText = json.optString("editedText"),
             sourceUri = json.optString("sourceUri").takeIf { it.isNotBlank() && it != "null" },
+            extractionEngine = json.optString("extractionEngine").takeIf { it.isNotBlank() && it != "null" },
+            extractionPlatform = json.optString("extractionPlatform").takeIf { it.isNotBlank() && it != "null" },
+            extractionConfidence = if (json.isNull("extractionConfidence")) null else json.optDouble("extractionConfidence").toFloat(),
+            extractionRegions = json.optJSONArray("extractionRegions")?.let { regions ->
+                (0 until regions.length()).mapNotNull { index ->
+                    regions.optJSONObject(index)?.let { region ->
+                        NativeExtractRegion(
+                            text = region.optString("text"),
+                            left = region.optDouble("left").toFloat(),
+                            top = region.optDouble("top").toFloat(),
+                            right = region.optDouble("right").toFloat(),
+                            bottom = region.optDouble("bottom").toFloat(),
+                        )
+                    }
+                }
+            }.orEmpty(),
             createdAt = json.optLong("createdAt"), updatedAt = json.optLong("updatedAt"),
         )
     }
