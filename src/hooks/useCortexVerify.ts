@@ -204,6 +204,7 @@ export function useCortexVerify() {
 
   const check = useCallback((options: Parameters<typeof submit>[0] & { mode: "check" }) => submit(options), [submit]);
   const help = useCallback((options: Parameters<typeof submit>[0] & { mode: "help"; level: HelpLevel }) => submit(options), [submit]);
+  const clearResult = useCallback(() => { setResult(null); setError(null); }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -228,5 +229,5 @@ export function useCortexVerify() {
     return () => { cancelled = true; window.removeEventListener("online", processQueueOnce); if (timer) window.clearTimeout(timer); };
   }, []);
 
-  return { result, loading, error, check, help };
+  return { result, loading, error, check, help, clearResult };
 }
