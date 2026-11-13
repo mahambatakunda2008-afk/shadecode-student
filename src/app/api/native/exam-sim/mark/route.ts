@@ -5,6 +5,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { generateExamFeedback } from "@/lib/cortex/markingEngine";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
+import { resolveVerifiedCurriculumTopic } from "@/lib/curriculum/topic-mapping";
 import type { ExamQuestion } from "@/lib/cortex/examGenerator";
 
 export const dynamic = "force-dynamic";
@@ -102,7 +103,14 @@ export async function POST(request: Request) {
     }
     const topicScores = [...topicTotals.entries()]
       .filter(([, totals]) => totals.maxMarks > 0)
-      .map(([topic, totals]) => ({ topic, percentage: Math.round((totals.score / totals.maxMarks) * 10000) / 100 }));
+      .map(([topic, totals]) => {
+        const mapping = resolveVerifiedCurriculumTopic(curriculum.resolved, topic);
+        return {
+          topic,
+          percentage: Math.round((totals.score / totals.maxMarks) * 10000) / 100,
+          curriculumTopicKey: mapping.status === "matched" ? mapping.curriculumTopicKey : null,
+        };
+      });
     const examId = randomUUID();
     const eventId = eventUuid(`native-exam:${user.id}:${attemptId}`);
     const result = { report };
