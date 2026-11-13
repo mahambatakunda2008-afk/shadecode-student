@@ -1,4 +1,5 @@
 import type { ImportedMarkingResource } from "./marking-resource-import";
+import { extractDocxText } from "./docx-extraction";
 
 export type MarkingResourceTextLine = {
   page: number;
@@ -217,16 +218,34 @@ export async function extractImportedMarkingResource(
   }
 
   if (extension === "docx") {
-    return result(resource, {
-      format: "docx",
-      status: "conversion_required",
-      pageCount: null,
-      lines: [],
-      regions: [],
-      markers: [],
-      warnings: ["DOCX extraction is not yet enabled. Convert to PDF or TXT, or add a vetted DOCX parser before import into the marking-review pipeline."],
-      extractionEngine: "docx-parser-not-configured",
-    });
+    try {
+      const extracted = await extractDocxText(resource.fileBlob);
+      const lines = normalizePageText(1, extracted.text);
+      return result(resource, {
+        format: "docx",
+        status: "extracted",
+        pageCount: null,
+        lines,
+        regions: [],
+        markers: identifyMarkingStructure(lines),
+        warnings: [
+          "DOCX paragraph text was extracted locally. Original Word page layout, floating objects, images, equations, comments and visual positioning are not preserved; review the source document before using this text as evidence.",
+          "DOCX text extraction does not establish copyright permissions, authenticity or marking-scheme validity.",
+        ],
+        extractionEngine: extracted.engine,
+      });
+    } catch (error) {
+      return result(resource, {
+        format: "docx",
+        status: "failed",
+        pageCount: null,
+        lines: [],
+        regions: [],
+        markers: [],
+        warnings: [error instanceof Error ? `DOCX extraction failed: ${error.message}` : "DOCX extraction failed."],
+        extractionEngine: "shadecode-docx-wordprocessingml-v1",
+      });
+    }
   }
 
   return result(resource, {
