@@ -146,6 +146,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           modelAnswer: q.modelAnswer,
           markingCriteria: q.markingCriteria,
           numeric: q.numeric,
+          syllabusIdentity: q.syllabusIdentity,
           offlineMarking: q.offlineMarking,
         }));
         if (!isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("offline", fallbackQuestions, count))) {
@@ -219,6 +220,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         modelAnswer: q.modelAnswer,
         markingCriteria: q.markingCriteria,
         numeric: q.numeric,
+          syllabusIdentity: q.syllabusIdentity,
           offlineMarking: q.offlineMarking,
       }));
       if (fallbackQuestions && isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("fallback", fallbackQuestions, count))) {
