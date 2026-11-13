@@ -73,8 +73,8 @@ function toHex(value: bigint): string {
   return value.toString(16).padStart(16, "0");
 }
 
-export function canonicalEventId(userId: string, source: string, sourceEventId: string): string {
-  const input = `${userId}\u0000${source}\u0000${sourceEventId}`;
+export function canonicalEventId(userId: string, source: string, sourceEventId: string, syllabusId?: string): string {
+  const input = `${userId}\\u0000${source}\\u0000${sourceEventId}\\u0000${syllabusId ?? "<unscoped>"}`;
   const first = hashLane(input, 14695981039346656037n);
   const second = hashLane(`shadecode:event:${input}`, 1099511628211n);
   return `le_${toHex(first)}${toHex(second)}`;
