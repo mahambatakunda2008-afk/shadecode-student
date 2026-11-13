@@ -19,6 +19,7 @@ export type LearningEvent = {
   source: string;
   sourceEventId: string;
   subjectId?: string;
+  syllabusId?: string;
   topicId?: string;
   entityId?: string;
   attemptId?: string;
@@ -36,6 +37,7 @@ export type SupportedSourceEvent = {
   type: string;
   occurredAt?: string;
   subjectId?: string;
+  syllabusId?: string;
   topicId?: string;
   entityId?: string;
   attemptId?: string;
@@ -95,13 +97,14 @@ export function normalizeLearningEvent(input: SupportedSourceEvent): EventNormal
   return {
     status: "accepted",
     event: {
-      eventId: canonicalEventId(userId, source, sourceEventId),
+      eventId: canonicalEventId(userId, source, sourceEventId, input.syllabusId),
       userId,
       kind,
       occurredAt,
       source,
       sourceEventId,
       subjectId: input.subjectId,
+      syllabusId: input.syllabusId,
       topicId: input.topicId,
       entityId: input.entityId,
       attemptId: input.attemptId,
