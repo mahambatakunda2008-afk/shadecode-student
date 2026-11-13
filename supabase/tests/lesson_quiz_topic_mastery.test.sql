@@ -18,7 +18,7 @@ begin
   if v_projector_signature is null then
     raise exception 'Canonical projector RPC is missing';
   end if;
-  if not has_function_privilege('authenticated', v_projector_signature, 'EXECUTE') = false then
+  if has_function_privilege('authenticated', v_projector_signature, 'EXECUTE') then
     raise exception 'Canonical projector must remain unavailable to authenticated clients';
   end if;
 end $$;
