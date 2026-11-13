@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       : await supabase.auth.getUser();
     if (authError || !authData.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const curriculum = await resolveUserSystemCurriculum(authData.user.id, subjectId, accessToken);
-    const verifiedSyllabusId = !curriculum.blocked && curriculum.resolved.status === "resolved"
+    const verifiedSyllabusId = curriculum.resolved.status === "resolved"
       ? curriculum.identity?.syllabusId ?? null
       : null;
     const context = await resolveAuthenticatedCortexStudentContext(accessToken, verifiedSyllabusId);
