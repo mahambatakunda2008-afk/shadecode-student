@@ -24,20 +24,21 @@ export function isValidHelpResult(value: unknown, level: VerifyHelpLevel): value
  * Strip every assistance field above the level the student selected.
  * Hint and method responses must never carry a hidden final answer.
  */
-export function selectHelpResult(value: VerifyHelpResult, level: VerifyHelpLevel): VerifyHelpResult {
+export function selectHelpResult(value: unknown, level: VerifyHelpLevel): VerifyHelpResult {
+  const result = (value && typeof value === "object" ? value : {}) as VerifyHelpResult;
   const common: Pick<VerifyHelpResult, "level" | "problem" | "confidence"> = {
     level,
-    ...(typeof value.problem === "string" ? { problem: value.problem } : {}),
-    ...(typeof value.confidence === "number" ? { confidence: value.confidence } : {}),
+    ...(typeof result.problem === "string" ? { problem: result.problem } : {}),
+    ...(typeof result.confidence === "number" ? { confidence: result.confidence } : {}),
   };
 
-  if (level === "hint") return { ...common, hint: value.hint };
-  if (level === "method") return { ...common, method: value.method };
+  if (level === "hint") return { ...common, hint: result.hint };
+  if (level === "method") return { ...common, method: result.method };
 
-  const solution = value.solution ?? value.content;
+  const solution = result.solution ?? result.content;
   return {
     ...common,
     ...(typeof solution === "string" ? { solution } : {}),
-    ...(typeof value.finalAnswer === "string" ? { finalAnswer: value.finalAnswer } : {}),
+    ...(typeof result.finalAnswer === "string" ? { finalAnswer: result.finalAnswer } : {}),
   };
 }
