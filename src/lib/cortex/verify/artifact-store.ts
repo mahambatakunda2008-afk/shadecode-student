@@ -1,3 +1,5 @@
+import type { VerifyExtractionPlatform, VerifyExtractionRegion } from "./local-extraction-contract";
+
 export type VerifyArtifactExecution = "none" | "online-cloud" | "local";
 
 export type VerifyArtifact = {
@@ -11,6 +13,9 @@ export type VerifyArtifact = {
   editedText: string;
   extractionConfidence?: number | null;
   extractionWarnings: string[];
+  extractionEngine?: string;
+  extractionPlatform?: VerifyExtractionPlatform;
+  extractionRegions?: VerifyExtractionRegion[];
   extractionExecution: VerifyArtifactExecution;
   createdAt: string;
   updatedAt: string;
@@ -19,7 +24,8 @@ export type VerifyArtifact = {
 export type SaveVerifyArtifactInput = Partial<Pick<
   VerifyArtifact,
   "title" | "sourceImage" | "mimeType" | "sourceName" | "rawExtractedText" |
-  "editedText" | "extractionConfidence" | "extractionWarnings" | "extractionExecution"
+  "editedText" | "extractionConfidence" | "extractionWarnings" | "extractionEngine" |
+  "extractionPlatform" | "extractionRegions" | "extractionExecution"
 >> & {
   sourceImage?: Blob;
 };
@@ -110,6 +116,9 @@ export async function saveVerifyArtifact(
         editedText: input.editedText ?? existing?.editedText ?? "",
         extractionConfidence: input.extractionConfidence === null ? null : input.extractionConfidence ?? existing?.extractionConfidence,
         extractionWarnings: input.extractionWarnings ?? existing?.extractionWarnings ?? [],
+        extractionEngine: input.extractionEngine ?? existing?.extractionEngine,
+        extractionPlatform: input.extractionPlatform ?? existing?.extractionPlatform,
+        extractionRegions: input.extractionRegions ?? existing?.extractionRegions ?? [],
         extractionExecution: input.extractionExecution ?? existing?.extractionExecution ?? "none",
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
