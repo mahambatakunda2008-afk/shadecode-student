@@ -19,7 +19,7 @@ type OutboxPayload = {
   weakAreas: string[];
   strongAreas: string[];
   timeTaken: number;
-  topicScores: Array<{ topic: string; percentage: number }>;
+  topicScores: Array<{ topic: string; percentage: number; curriculumTopicKey?: string | null }>;
 };
 
 function serviceClient() {
@@ -115,6 +115,7 @@ async function processOutbox(req: Request) {
           p_percentage: topicScore.percentage,
           p_observed_at: new Date().toISOString(),
           p_syllabus_id: payload.syllabusId ?? null,
+          p_curriculum_topic_key: topicScore.curriculumTopicKey ?? null,
         });
         if (projectionError) {
           throw new Error(`Topic mastery projection (${topicScore.topic}): ${projectionError.message}`);
