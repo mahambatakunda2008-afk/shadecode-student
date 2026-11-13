@@ -1270,6 +1270,8 @@ private fun SnapExtractScreen(padding: PaddingValues) {
     var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
     var rawOcr by remember { mutableStateOf("") }
     var editableText by remember { mutableStateOf("") }
+    var extractionRegions by remember { mutableStateOf<List<NativeExtractRegion>>(emptyList()) }
+    var extractionEngine by remember { mutableStateOf<String?>(null) }
     var redactionTerms by remember { mutableStateOf("") }
     var processing by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("Choose an image. OCR runs on this device and does not upload it.") }
@@ -1304,6 +1306,8 @@ private fun SnapExtractScreen(padding: PaddingValues) {
             artifactTitle = ""
             rawOcr = ""
             editableText = ""
+            extractionRegions = emptyList()
+            extractionEngine = null
             processing = true
             message = "Reading image locally…"
             var recognizerToClose: com.google.mlkit.vision.text.TextRecognizer? = null
@@ -1317,6 +1321,19 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                         if (screenActive.get()) {
                             rawOcr = result.text
                             editableText = result.text
+                            extractionEngine = "Google ML Kit Text Recognition (bundled Latin model)"
+                            extractionRegions = result.textBlocks.flatMap { block ->
+                                block.lines.mapNotNull { line ->
+                                    val bounds = line.boundingBox ?: return@mapNotNull null
+                                    NativeExtractRegion(
+                                        text = line.text,
+                                        left = (bounds.left.toFloat() / image.width).coerceIn(0f, 1f),
+                                        top = (bounds.top.toFloat() / image.height).coerceIn(0f, 1f),
+                                        right = (bounds.right.toFloat() / image.width).coerceIn(0f, 1f),
+                                        bottom = (bounds.bottom.toFloat() / image.height).coerceIn(0f, 1f),
+                                    )
+                                }
+                            }
                             message = if (result.text.isBlank()) {
                                 "No readable text found. This OCR pass does not interpret diagrams or graphs."
                             } else {
@@ -1468,7 +1485,12 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                                 scope.launch {
                                     try {
                                         val saved = withContext(Dispatchers.IO) {
-                                            extractStore.save(activeArtifactId, artifactTitle, rawOcr, editableText, selectedImage)
+                                            extractStore.save(
+                                                activeArtifactId, artifactTitle, rawOcr, editableText, selectedImage,
+                                                extractionEngine = extractionEngine,
+                                                extractionConfidence = null,
+                                                extractionRegions = extractionRegions,
+                                            )
                                         }
                                         activeArtifactId = saved.id
                                         artifactTitle = saved.title
@@ -1526,8 +1548,14 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                                     artifactTitle = artifact.title
                                     rawOcr = artifact.rawOcr
                                     editableText = artifact.editedText
+                                    extractionEngine = artifact.extractionEngine
+                                    extractionRegions = artifact.extractionRegions
                                     redactionTerms = ""
-                                    message = "Loaded saved text. The original source image was not saved."
+                                    message = buildString {
+                                        append("Loaded saved text. The original source image was not saved.")
+                                        artifact.extractionEngine?.let { append(" OCR engine: ").append(it).append(".") }
+                                        append(" ").append(artifact.extractionRegions.size).append(" source text regions retained.")
+                                    }
                                 }, enabled = !processing) { Text("Open") }
                                 TextButton(onClick = {
                                     scope.launch {
