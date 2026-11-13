@@ -63,7 +63,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   teacherTutorials: { href: "/learn/tutorials", label: "Tutorials", icon: MonitorPlay, feature: "tutorials" },
   compLab: { href: "/comp-lab", label: "Comp Lab", icon: Code2, feature: "code-lab" },
   curriculum: { href: "/curriculum", label: "Courses", icon: BookOpen, feature: "courses" },
-  workmate: { href: "/workmate", label: "Workmate", icon: BriefcaseBusiness, feature: "workmate" },
+  workmate: { href: "/workmate", label: "Cortex Verify", icon: BriefcaseBusiness, feature: "workmate" },
   projects: { href: "/projects", label: "Projects", icon: FolderKanban, feature: "projects" },
   studyspace: { href: "/studyspace", label: "StudySpace", icon: LibraryBig, feature: "studyspace" },
   timetable: { href: "/timetable", label: "Timetable", icon: CalendarDays, feature: "timetable" },
