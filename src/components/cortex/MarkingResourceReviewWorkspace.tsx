@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import { AlertTriangle, FileText, Loader2, Save, ScanSearch, ShieldCheck } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { prepareMarkingResourceImport } from "@/lib/cortex/verify/marking-resource-import";
@@ -128,7 +129,7 @@ export default function MarkingResourceReviewWorkspace() {
       <section className="min-w-0 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-center justify-between gap-2"><h2 className="font-bold">2. Original source evidence</h2><span className="text-xs text-[var(--muted-foreground)]">{file.name}</span></div>
         {isPdf && <iframe title="Original PDF source" src={previewUrl} className="h-[70vh] min-h-[480px] w-full rounded-xl border border-[var(--card-border)] bg-white" />}
-        {isImage && <img src={previewUrl} alt="Original uploaded marking resource" className="max-h-[70vh] w-full rounded-xl border border-[var(--card-border)] object-contain" />}
+        {isImage && <Image src={previewUrl} alt="Original uploaded marking resource" width={1200} height={900} unoptimized className="max-h-[70vh] w-full rounded-xl border border-[var(--card-border)] object-contain" />}
         {!isPdf && !isImage && <div className="rounded-xl bg-[var(--muted)] p-5 text-sm text-[var(--muted-foreground)]">Original file is preserved in local resource storage. Browser preview is not available for this file type.</div>}
         <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5"><AlertTriangle size={15} className="mr-2 inline" />The uploaded source and your syllabus selection have not been independently authenticated. Visual interpretation still requires human review.</div>
       </section>
