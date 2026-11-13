@@ -1,13 +1,12 @@
 "use client";
 
-import { CheckCircle2, FileCheck2, Sparkles, WandSparkles } from "lucide-react";
+import { CheckCircle2, FileCheck2, Lightbulb } from "lucide-react";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import CortexVerifyPanel from "@/components/cortex/CortexVerifyPanel";
 
 const modes = [
-  { icon: FileCheck2, label: "Verify", description: "Check your working" },
-  { icon: WandSparkles, label: "Guide", description: "Get unstuck without shortcuts" },
-  { icon: Sparkles, label: "Explain", description: "Understand the difficult bit" },
+  { icon: FileCheck2, label: "Mark Mode", description: "Assess your completed work" },
+  { icon: Lightbulb, label: "Help Mode", description: "Get hints, methods and explanations" },
 ];
 
 export default function WorkmatePage() {
@@ -16,8 +15,8 @@ export default function WorkmatePage() {
       <header className="ssc-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--primary)]">
-            <ShadecodeFeatureIcon feature="math-checker" size="sm" />
-            <span>Math Checker</span>
+            <ShadecodeFeatureIcon icon={FileCheck2} size="sm" />
+            <span>Cortex Verify</span>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--primary-glow)] px-3 py-1.5 text-xs font-semibold text-[var(--primary)]">
             <CheckCircle2 size={14} aria-hidden="true" /> Built around your working
@@ -31,7 +30,7 @@ export default function WorkmatePage() {
           </p>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2" aria-label="Math Checker modes">
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="Cortex Verify modes">
           {modes.map(({ icon: Icon, label, description }) => (
             <span
               key={label}
