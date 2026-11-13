@@ -34,6 +34,8 @@ export async function projectLearningEvent(
     p_event_id: event.eventId,
     p_subject: subject,
     p_topic: observation.topicId.trim(),
+    p_syllabus_id: event.syllabusId ?? null,
+    p_curriculum_topic_key: null,
     p_evidence_score: evidenceScore,
     p_correct: observation.correct,
     p_confidence: observation.confidence ?? null,
