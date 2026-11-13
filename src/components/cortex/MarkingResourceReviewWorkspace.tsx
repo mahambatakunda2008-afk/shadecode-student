@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AlertTriangle, FileText, Loader2, Save, ScanSearch, ShieldCheck } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
@@ -22,6 +22,56 @@ const kinds: Array<{ value: MarkingResourceKind; label: string }> = [
   { value: "question_bank", label: "Question bank" },
   { value: "other", label: "Other resource" },
 ];
+
+
+function PdfOcrPagePreview({ file, pageNumber, regions }: { file: File; pageNumber: number; regions: LocalVerifyExtraction["regions"] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [status, setStatus] = useState("Rendering source page locally…");
+  useEffect(() => {
+    let active = true;
+    let renderTask: { cancel: () => void } | null = null;
+    let destroy: (() => Promise<void>) | null = null;
+    void (async () => {
+      try {
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+        const task = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), useSystemFonts: true, disableFontFace: true, verbosity: 0 });
+        destroy = () => task.destroy();
+        const document = await task.promise;
+        if (!active) return;
+        if (pageNumber < 1 || pageNumber > document.numPages) throw new Error("Selected page is outside this PDF.");
+        const page = await document.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: Math.min(1.8, 1400 / Math.max(page.view[2] - page.view[0], page.view[3] - page.view[1])) });
+        const canvas = canvasRef.current;
+        const context = canvas?.getContext("2d");
+        if (!canvas || !context) throw new Error("Could not create the local page preview.");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        renderTask = page.render({ canvas, canvasContext: context, viewport });
+        await (renderTask as unknown as { promise: Promise<void> }).promise;
+        if (active) setStatus("");
+        page.cleanup();
+      } catch (error) {
+        if (active) setStatus(error instanceof Error ? error.message : "Could not render this PDF page.");
+      }
+    })();
+    return () => {
+      active = false;
+      renderTask?.cancel();
+      if (destroy) void destroy();
+    };
+  }, [file, pageNumber]);
+
+  const pageRegions = regions.filter(region => region.page === pageNumber);
+  return <div className="mt-4 rounded-xl border border-[var(--card-border)] bg-white p-2">
+    <p className="mb-2 text-xs font-bold text-slate-700">Page {pageNumber} · OCR regions aligned to rendered source</p>
+    {status && <p role="status" className="p-3 text-xs text-slate-600">{status}</p>}
+    <div className="relative w-full">
+      <canvas ref={canvasRef} className="block h-auto w-full" />
+      {pageRegions.map((region, index) => <div key={region.id} className="pointer-events-none absolute border-2 border-cyan-600 bg-cyan-400/10" style={{ left: `${region.bounds.x * 100}%`, top: `${region.bounds.y * 100}%`, width: `${region.bounds.width * 100}%`, height: `${region.bounds.height * 100}%` }}><span className="absolute -top-4 left-0 bg-cyan-700 px-1 text-[9px] text-white">{index + 1}</span></div>)}
+    </div>
+    {!status && pageRegions.length === 0 && <p className="p-2 text-xs text-slate-600">No OCR regions were detected on this page.</p>}
+  </div>;
+}
 
 export default function MarkingResourceReviewWorkspace() {
   const { user } = useUser();
@@ -48,6 +98,7 @@ export default function MarkingResourceReviewWorkspace() {
   const [resourceId, setResourceId] = useState("");
   const [savedResources, setSavedResources] = useState<ImportedMarkingResource[]>([]);
   const [pdfOcrPages, setPdfOcrPages] = useState("");
+  const [selectedPdfReviewPage, setSelectedPdfReviewPage] = useState(1);
 
   useEffect(() => {
     if (!user?.id) {
@@ -251,7 +302,7 @@ export default function MarkingResourceReviewWorkspace() {
     {extraction && file && <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
       <section className="min-w-0 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-center justify-between gap-2"><h2 className="font-bold">2. Original source evidence</h2><span className="text-xs text-[var(--muted-foreground)]">{file.name}</span></div>
-        {isPdf && <><iframe title="Original PDF source" src={previewUrl} className="h-[70vh] min-h-[480px] w-full rounded-xl border border-[var(--card-border)] bg-white" /><div className="mt-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3"><p className="text-xs font-bold">Local OCR for scanned pages</p><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">Enter page numbers to render and OCR on this device. This is useful for scanned pages and mixed PDFs. No PDF or rendered page is uploaded. Up to 20 pages are processed per batch.</p><div className="mt-2 flex flex-wrap gap-2"><input aria-label="PDF pages for local OCR" className={fieldClass + " mt-0 min-w-0 flex-1"} value={pdfOcrPages} onChange={event => setPdfOcrPages(event.target.value)} placeholder="e.g. 2, 4, 7" /><button type="button" onClick={() => void runPdfLocalOcr()} disabled={busy || !isBrowserLocalOcrAvailable()} className="min-h-10 rounded-xl bg-[var(--primary)] px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{busy ? "Processing…" : "Run local OCR"}</button></div>{!isBrowserLocalOcrAvailable() && <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">This browser does not expose its experimental TextDetector API. No cloud fallback will start automatically.</p>}</div></>}
+        {isPdf && <><iframe title="Original PDF source" src={previewUrl} className="h-[70vh] min-h-[480px] w-full rounded-xl border border-[var(--card-border)] bg-white" /><div className="mt-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3"><p className="text-xs font-bold">Local OCR for scanned pages</p><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">Enter page numbers to render and OCR on this device. This is useful for scanned pages and mixed PDFs. No PDF or rendered page is uploaded. Up to 20 pages are processed per batch.</p><div className="mt-2 flex flex-wrap gap-2"><input aria-label="PDF pages for local OCR" className={fieldClass + " mt-0 min-w-0 flex-1"} value={pdfOcrPages} onChange={event => setPdfOcrPages(event.target.value)} placeholder="e.g. 2, 4, 7" /><button type="button" onClick={() => void runPdfLocalOcr()} disabled={busy || !isBrowserLocalOcrAvailable()} className="min-h-10 rounded-xl bg-[var(--primary)] px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{busy ? "Processing…" : "Run local OCR"}</button></div>{!isBrowserLocalOcrAvailable() && <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">This browser does not expose its experimental TextDetector API. No cloud fallback will start automatically.</p>}{localOcr && <div className="mt-4"><label className="text-xs font-semibold text-[var(--foreground)]">Review OCR page<select className={fieldClass} value={selectedPdfReviewPage} onChange={event => setSelectedPdfReviewPage(Number(event.target.value))}>{[...new Set(correctedRegions.filter(region => region.page > 0).map(region => region.page))].sort((a,b) => a-b).map(page => <option key={page} value={page}>Page {page}</option>)}</select></label><PdfOcrPagePreview file={file} pageNumber={selectedPdfReviewPage} regions={correctedRegions} /></div>}</div></>}
         {isImage && <div className="relative mx-auto w-full overflow-hidden rounded-xl border border-[var(--card-border)] bg-white" style={imageDimensions ? { aspectRatio: `${imageDimensions.width} / ${imageDimensions.height}` } : undefined}><Image src={previewUrl} alt="Original uploaded marking resource" width={imageDimensions?.width || 1200} height={imageDimensions?.height || 900} unoptimized onLoad={event => setImageDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} className="block h-auto max-h-[70vh] w-full object-contain" />{localOcr && correctedRegions.map((region, index) => <div key={region.id} className="pointer-events-none absolute border-2 border-cyan-500/90 bg-cyan-400/10" style={{ left: `${region.bounds.x * 100}%`, top: `${region.bounds.y * 100}%`, width: `${region.bounds.width * 100}%`, height: `${region.bounds.height * 100}%` }}><span className="absolute -top-5 left-0 rounded bg-cyan-700 px-1 text-[9px] text-white">{index + 1}</span></div>)}</div>}
         {!isPdf && !isImage && <div className="rounded-xl bg-[var(--muted)] p-5 text-sm text-[var(--muted-foreground)]">Original file is preserved in local resource storage. Browser preview is not available for this file type.</div>}
         <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5"><AlertTriangle size={15} className="mr-2 inline" />The uploaded source and your syllabus selection have not been independently authenticated. Visual interpretation still requires human review.</div>
