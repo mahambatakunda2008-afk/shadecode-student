@@ -133,7 +133,7 @@ The lesson quiz submission path now completes its authoritative work inside one 
 2. The completion RPC grades against the answer key stored server-side in `lesson_quiz_attempts`; browser-supplied correctness is not trusted.
 3. Curriculum assessment recording uses the stable attempt identity and existing idempotent mastery function.
 4. A deterministic `quiz_completed` event is inserted into `cortex_events`. The existing database trigger increments the shared recommendation-cache generation in the same transaction.
-5. The attempt result and `completed` status are committed with those effects. A replay with the same attempt returns the stored result; a conflicting replay is rejected.
+5. The attempt result and `completed` status are committed with those effects. The lower-level curriculum assessment RPCs have also been revoked from direct `anon`/`authenticated` execution so clients cannot submit caller-invented scores outside this verified completion path. A replay with the same attempt returns the stored result; a conflicting replay is rejected.
 
 The quiz screen continues to send verified per-question evidence after the server returns, but it no longer emits a second client-originated quiz-completion event. The durable server event is authoritative for completion and recommendation invalidation.
 
