@@ -64,7 +64,7 @@ The existing audit at `docs/audits/2026-08-24-offline-sync-architecture-audit.md
 - [ ] Verify lesson depth, curriculum alignment, source provenance, structured examples, practice, and answer validation.
 - [ ] Verify Exam Hub and Exam Simulation, including question provenance, marking, timers, saved results, and recovery.
 - [ ] Complete critical Paper-to-Learning flows: source extraction, OCR correction, visual grounding, question provenance, and mastery transfer.
-- [ ] Verify Math Checker, Work Checker, calculator, and shared canvas workflows.
+- [ ] Verify Cortex Verify Mark Mode and Help Mode, calculator, and shared canvas workflows.
 - [ ] Complete the Cambridge Computer Science pseudocode/algorithm studio and relevant practical learning workflows.
 - [ ] Verify offline saved lessons, queued actions, retry/idempotency, conflict handling, and synchronization.
 - [ ] Test keyboard/accessibility, responsive layouts, mobile, and real learner workflows.
@@ -187,7 +187,7 @@ Current truth as of 2026-10-27 (superseded by the detailed progress notes below)
 - A per-subject curriculum editor has also been committed for board, qualification, level, and optional syllabus code/version.
 - The implementation is in source, but CI, schema/RLS/trigger behavior, deployed browser flows, concurrency and account isolation remain unverified. Do not state that it is live or complete without evidence.
 - Onboarding still uses a separate hard-coded per-level list; replacing it with the central catalogue and shared learner-profile contract remains open.
-- Native Android Snap & Extract work does not automatically change the web app.
+- SNAP & EXTRACT is a capability inside Cortex Verify; native Android extraction does not automatically establish web or desktop support.
 - Full global profile editing, adaptive personalization, subject-specific module integration, Android parity and deployed acceptance tests remain open.
 
 Execution gate: verify the exact commit and audit profile/subjects source-of-truth behavior before release. Test add/duplicate/persist/relogin/remove, per-subject curriculum resolution and cross-account isolation. Catalogue presence must not be represented as verified curriculum or content coverage.
