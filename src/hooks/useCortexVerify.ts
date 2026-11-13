@@ -8,6 +8,7 @@ import { runHybridJson } from "@/lib/cortex/hybridJson";
 import { isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
 import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
 import { getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
+import { markWithOfflineRubric, type OfflineVerifyRubric } from "@/lib/cortex/verify/offline-marking";
 
 export type VerifyMode = "check" | "help";
 export type HelpLevel = "hint" | "method" | "solution";
@@ -179,6 +180,7 @@ export function useCortexVerify() {
     studentAnswer?: string;
     level?: HelpLevel;
     image?: File;
+    offlineRubric?: OfflineVerifyRubric;
   }) => {
     setLoading(true); setError(null); setResult(null);
     try {
@@ -201,8 +203,24 @@ export function useCortexVerify() {
         try { const response = await sendAttemptNow(attempt); setResult(response); return response; }
         catch (err) { setError(`Saved for retry: ${errorMessage(err)}`); return null; }
       }
+      // Deterministic Mark Mode is allowed only when the caller supplies an explicit,
+      // versioned answer key. Unsupported question types remain queued for cloud review.
+      if (attempt.mode === "check" && !attempt.imageDataUrl && options.offlineRubric) {
+        const localResult = markWithOfflineRubric(
+          attempt.question || "",
+          attempt.studentAnswer || "",
+          options.offlineRubric,
+        );
+        if (localResult) {
+          const response: VerifyResult = localResult;
+          recordVerifyEvent(attempt, response);
+          await remove(attempt.userId, attempt.id);
+          setResult(response);
+          return response;
+        }
+      }
+
       // A warm browser-local model may provide Help Mode without network access.
-      // Mark Mode deliberately remains queued until a validated offline rubric path exists.
       if (attempt.mode === "help" && !attempt.imageDataUrl && getBrowserLocalModelStatus().status === "ready") {
         try {
           const response = await sendAttemptNow(attempt);
