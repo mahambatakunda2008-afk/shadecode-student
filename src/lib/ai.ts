@@ -395,7 +395,22 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
         throw new Error(`Gemini HTTP ${res.status}: ${detail}`);
       }
       const data = await res.json() as any;
-      return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
+      // Vision responses can contain more than one text part. Joining every textual
+      // part avoids silently truncating OCR output to the first segment. A blocked
+      // candidate is not a successful empty transcription and must fall through
+      // to the next configured Gemini model/key.
+      if (data?.promptFeedback?.blockReason) {
+        throw new Error(`Gemini blocked the vision request: ${String(data.promptFeedback.blockReason).slice(0, 120)}`);
+      }
+      const candidate = data?.candidates?.[0];
+      if (candidate?.finishReason === "SAFETY" || candidate?.finishReason === "RECITATION") {
+        throw new Error(`Gemini vision response blocked: ${String(candidate.finishReason)}`);
+      }
+      const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
+      const textParts = parts
+        .map((part: { text?: unknown }) => typeof part?.text === "string" ? part.text : "")
+        .filter(Boolean);
+      return textParts.length ? textParts.join("\n") : null;
     }, `gemini:${model}:key-${keyIndex + 1}`);
   }
 

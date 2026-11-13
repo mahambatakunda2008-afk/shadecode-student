@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { recognizeShape, type Point } from "./SketchWorkspace";
+import { fitQuadraticCurve, fitQuadraticSegments, recognizeShape, type Point } from "./SketchWorkspace";
 
 describe("teacher sketch auto-correction", () => {
   it("snaps a clean straight freehand stroke to a line", () => {
@@ -72,7 +72,7 @@ describe("teacher sketch auto-correction", () => {
     expect(recognizeShape(points)?.tool).toBe("triangle");
   });
 
-  it("does not misclassify a hand-drawn pentagon as a rectangle", () => {
+  it("preserves the five actual vertices of a hand-drawn pentagon", () => {
     const corners = [
       { x: 120, y: 10 }, { x: 230, y: 90 }, { x: 190, y: 210 },
       { x: 50, y: 210 }, { x: 10, y: 90 }, { x: 120, y: 10 },
@@ -85,7 +85,77 @@ describe("teacher sketch auto-correction", () => {
       });
     });
     points.push(corners[corners.length - 1]);
-    expect(recognizeShape(points)).toBeNull();
+    const result = recognizeShape(points);
+    expect(result?.tool).toBe("polygon");
+    expect(result?.vertices).toHaveLength(5);
+    expect(result?.vertices?.[0].x).toBeCloseTo(120, 0);
+    expect(result?.vertices?.[0].y).toBeCloseTo(10, 0);
+  });
+
+  it("preserves six vertices instead of flattening a hexagon into a basic shape", () => {
+    const corners = [
+      { x: 100, y: 10 }, { x: 180, y: 55 }, { x: 180, y: 145 },
+      { x: 100, y: 190 }, { x: 20, y: 145 }, { x: 20, y: 55 }, { x: 100, y: 10 },
+    ];
+    const points: Point[] = corners.slice(0, -1).flatMap((from, index) => {
+      const to = corners[index + 1];
+      return Array.from({ length: 20 }, (_, step) => {
+        const t = step / 20;
+        return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
+      });
+    });
+    points.push(corners[corners.length - 1]);
+    const result = recognizeShape(points);
+    expect(result?.tool).toBe("polygon");
+    expect(result?.vertices).toHaveLength(6);
+  });
+
+
+  it("fits the whole quadratic stroke despite uneven sampling", () => {
+    const points: Point[] = Array.from({ length: 37 }, (_, index) => {
+      const t = Math.pow(index / 36, 1.45);
+      return {
+        x: 80 + 240 * t,
+        y: 90 + 1.2 * (1 - t) * t * 150,
+      };
+    });
+    const fit = fitQuadraticCurve(points);
+    expect(fit).not.toBeNull();
+    expect(fit!.control.x).toBeCloseTo(200, 0);
+    expect(fit!.control.y).toBeCloseTo(180, 0);
+    expect(fit!.rmsError).toBeLessThan(1);
+    expect(recognizeShape(points)?.tool).toBe("curve");
+  });
+
+  it("fits an S-shaped stroke as multiple smooth quadratic segments", () => {
+    const points: Point[] = Array.from({ length: 81 }, (_, index) => {
+      const t = index / 80;
+      return { x: 80 + 300 * t, y: 130 + 65 * Math.sin(2 * Math.PI * t) };
+    });
+    const segments = fitQuadraticSegments(points, 3);
+    expect(segments).not.toBeNull();
+    expect(segments!.length).toBeGreaterThan(1);
+    expect(segments!.length).toBeLessThanOrEqual(3);
+    expect(segments![0].from).toEqual(points[0]);
+    expect(segments![segments!.length - 1].to).toEqual(points[points.length - 1]);
+    for (let index = 1; index < segments!.length; index++) {
+      expect(segments![index].from).toEqual(segments![index - 1].to);
+    }
+    expect(recognizeShape(points)?.tool).toBe("curve");
+    expect(recognizeShape(points)?.segments?.length).toBeGreaterThan(1);
+  });
+
+  it("does not force an S-shaped stroke into a single quadratic curve", () => {
+    const points: Point[] = Array.from({ length: 61 }, (_, index) => {
+      const t = index / 60;
+      return { x: 80 + 300 * t, y: 130 + 65 * Math.sin(2 * Math.PI * t) };
+    });
+    const fit = fitQuadraticCurve(points);
+    expect(fit).not.toBeNull();
+    expect(fit!.rmsError).toBeGreaterThan(12);
+    const recognized = recognizeShape(points);
+    expect(recognized?.tool).toBe("curve");
+    expect(recognized?.segments?.length).toBeGreaterThan(1);
   });
 
   it("does not turn a short accidental mark into a diagram shape", () => {
