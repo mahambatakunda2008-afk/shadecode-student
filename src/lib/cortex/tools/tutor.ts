@@ -43,6 +43,17 @@ function curriculumNote(context: SystemCurriculumContext | null | undefined): st
   return parts.join("");
 }
 
+function objectiveProgressNote(context: TutoringContext): string {
+  const progress = context.studentContext?.curriculumObjectives;
+  if (!progress || progress.state !== "available" || progress.items.length === 0) return "";
+  const observed = progress.items.filter((item) => item.evidenceState === "available");
+  if (observed.length === 0) return "";
+  const mastered = observed.filter((item) => item.status === "mastered").length;
+  const practicing = observed.filter((item) => item.status === "practicing").length;
+  const learning = observed.filter((item) => item.status === "learning").length;
+  return ` Across this verified syllabus, I have evidence for ${observed.length} curriculum objectives: ${mastered} marked mastered, ${practicing} being practised, and ${learning} being learned. I'll use this as course-level context, not assume every objective is secure.`;
+}
+
 function learnerContinuityNote(
   context: TutoringContext,
   topic: string,
@@ -126,6 +137,7 @@ export async function generateTutoringResponse(
   const recommended = context.snapshot?.recommendedNextLesson?.title;
   const curriculum = curriculumNote(context.curriculum);
   const continuity = learnerContinuityNote(context, safeTopic);
+  const objectiveProgress = objectiveProgressNote(context);
 
   const lead = `Let's work through ${safeTopic}.`;
   const levelNote =
@@ -138,5 +150,5 @@ export async function generateTutoringResponse(
     ? ` When you're ready, your recommended next lesson is "${recommended}".`
     : "";
 
-  return `${lead}${levelNote}${curriculum}${continuity}${nextNote}`;
+  return `${lead}${levelNote}${curriculum}${continuity}${objectiveProgress}${nextNote}`;
 }
