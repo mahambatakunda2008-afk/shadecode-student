@@ -17,6 +17,8 @@ export interface ExamQuestion {
   markingCriteria?: string;
   /** Set by the deterministic engine: the answer is marked exactly, offline, with no model. */
   numeric?: NumericSpec;
+  /** Curated resource-derived rubric; raw AI output is never promoted to this field. */
+  offlineMarking?: { version: 1; criteria: Array<{ id: string; description: string; marks: number; acceptedAnswers: string[] }> };
 }
 export interface GeneratedExam {
   subject: string;
