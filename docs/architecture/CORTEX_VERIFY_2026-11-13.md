@@ -198,3 +198,12 @@ Cortex Verify now has a bounded deterministic path for structured questions when
 The local checker awards each criterion only when an approved phrase is present as a whole phrase in the student's normalized response. It returns criterion-level feedback and partial credit. This is deliberately conservative: synonymous wording, diagrams, equations expressed differently, multi-step mathematical reasoning, and context-sensitive explanations may be missed. A miss is not proof that the student's idea is wrong. These checks must be labelled as bounded offline checks and remain eligible for deeper examiner/Cortex review when connected. They are not a replacement for Cambridge/ZIMSEC examiner judgement.
 
 Question generation and resource ingestion must preserve the curated `offlineMarking` field into the shared question model before a question can use this path. Unkeyed structured/essay questions continue to return unsupported and must not receive invented marks.
+
+
+## Multi-channel marking-resource acquisition
+
+Marking content is no longer treated as something Shadecode must manually author from scratch. The acquisition strategy now covers official public board resources, authorised school/teacher portals, teacher and examiner contributions, private user uploads, openly licensed resources, licensed providers, moderated community contributions, original Shadecode content, and rights-aware local device transfer. See `docs/curriculum/MARKING_RESOURCE_ACQUISITION.md` for the full workflow and source entry points.
+
+The shared `src/lib/cortex/verify/marking-resource.ts` module records source access, reuse basis, review status, exact syllabus identity, source fingerprint and reviewer evidence. Structured offline rubrics are rejected unless the source is verified, rights-cleared for private offline use, tied to the same syllabus identity as the question, reviewed by a named reviewer, limited explicitly, and has criterion marks that equal the question's mark total. Public web discovery alone does not grant copying or redistribution rights. Authenticated board portals are reference-only unless an applicable permission basis is recorded.
+
+This is a provenance and rights gate, not yet a complete automated web crawler or mark-scheme parser. Online discovery, document import, extraction, human review, and offline pack integration remain separate implementation milestones.
