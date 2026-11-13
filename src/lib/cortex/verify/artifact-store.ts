@@ -9,7 +9,7 @@ export type VerifyArtifact = {
   sourceName: string;
   rawExtractedText: string;
   editedText: string;
-  extractionConfidence?: number;
+  extractionConfidence?: number | null;
   extractionWarnings: string[];
   extractionExecution: VerifyArtifactExecution;
   createdAt: string;
@@ -107,7 +107,7 @@ export async function saveVerifyArtifact(
         sourceName: input.sourceName ?? existing?.sourceName ?? "capture",
         rawExtractedText: input.rawExtractedText ?? existing?.rawExtractedText ?? "",
         editedText: input.editedText ?? existing?.editedText ?? "",
-        extractionConfidence: input.extractionConfidence ?? existing?.extractionConfidence,
+        extractionConfidence: input.extractionConfidence === null ? null : input.extractionConfidence ?? existing?.extractionConfidence,
         extractionWarnings: input.extractionWarnings ?? existing?.extractionWarnings ?? [],
         extractionExecution: input.extractionExecution ?? existing?.extractionExecution ?? "none",
         createdAt: existing?.createdAt ?? now,
