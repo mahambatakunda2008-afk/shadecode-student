@@ -20,6 +20,17 @@ describe("markWithOfflineRubric", () => {
     expect(result?.correct).toBe(true);
   });
 
+  it("accepts fractions, scientific notation and answers with units", () => {
+    const fraction = markWithOfflineRubric("Calculate", "1/4", {
+      ...base, kind: "exact-number", answer: 0.25,
+    });
+    const scientific = markWithOfflineRubric("Calculate", "3.0 × 10^8 m/s", {
+      ...base, kind: "exact-number", answer: 3e8, tolerance: 1e5,
+    });
+    expect(fraction?.correct).toBe(true);
+    expect(scientific?.correct).toBe(true);
+  });
+
   it("does not award marks for an incorrect numeric answer", () => {
     const result = markWithOfflineRubric("Calculate 2 + 2", "5", {
       ...base, kind: "exact-number", answer: 4,
