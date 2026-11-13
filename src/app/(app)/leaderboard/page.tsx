@@ -56,7 +56,7 @@ export default function LeaderboardPage() {
       // FIX: removed .eq("current_season", CURRENT_SEASON)
       // That field is never set by streak.ts so it always returned empty.
       const { data, error } = await supabase
-        .from("profiles")
+        .from("leaderboard_profiles")
         .select("id, username, xp, season_xp, level, streak")
         .order("xp", { ascending: false })
         .limit(100);
