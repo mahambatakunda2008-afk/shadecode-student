@@ -26,7 +26,15 @@ export async function GET(request: Request) {
     const verifiedSyllabusId = curriculum.resolved.status === "resolved"
       ? curriculum.identity?.syllabusId ?? null
       : null;
-    const context = await resolveAuthenticatedCortexStudentContext(accessToken, verifiedSyllabusId);
+    const curriculumIdentity = curriculum.identity
+      ? {
+          boardId: curriculum.identity.boardId,
+          qualificationId: curriculum.identity.qualificationId,
+          syllabusVersion: curriculum.identity.syllabusVersion ?? "",
+          subjectId: curriculum.identity.subjectId,
+        }
+      : undefined;
+    const context = await resolveAuthenticatedCortexStudentContext(accessToken, verifiedSyllabusId, curriculumIdentity);
     return NextResponse.json(context, {
       headers: { "Cache-Control": "private, no-store, max-age=0" },
     });
