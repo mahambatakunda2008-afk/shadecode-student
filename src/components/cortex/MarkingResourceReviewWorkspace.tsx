@@ -9,7 +9,7 @@ import { getImportedMarkingResource, listImportedMarkingResources, saveImportedM
 import type { ImportedMarkingResource } from "@/lib/cortex/verify/marking-resource-import";
 import { extractImportedMarkingResource, type MarkingResourceExtraction } from "@/lib/cortex/verify/marking-resource-extraction";
 import { getMarkingResourceReviewDraft, saveMarkingResourceReviewDraft } from "@/lib/cortex/verify/marking-resource-review-store";
-import { extractImageLocally, isBrowserLocalOcrAvailable } from "@/lib/cortex/verify/web-local-extraction";
+import { extractImageLocally, extractPdfPagesLocally, isBrowserLocalOcrAvailable } from "@/lib/cortex/verify/web-local-extraction";
 import type { LocalVerifyExtraction } from "@/lib/cortex/verify/local-extraction-contract";
 import type { MarkingResourceKind } from "@/lib/cortex/verify/marking-resource";
 
@@ -47,6 +47,7 @@ export default function MarkingResourceReviewWorkspace() {
   const [message, setMessage] = useState("");
   const [resourceId, setResourceId] = useState("");
   const [savedResources, setSavedResources] = useState<ImportedMarkingResource[]>([]);
+  const [pdfOcrPages, setPdfOcrPages] = useState("");
 
   useEffect(() => {
     if (!user?.id) {
@@ -144,6 +145,46 @@ export default function MarkingResourceReviewWorkspace() {
     }
   }
 
+  async function runPdfLocalOcr() {
+    if (!file || !isPdf) return;
+    const pages = pdfOcrPages.split(",").map(value => Number(value.trim())).filter(Number.isInteger);
+    if (!pages.length || pages.some(page => page < 1) || new Set(pages).size !== pages.length) {
+      setMessage("Enter valid, unique PDF page numbers separated by commas, for example: 2, 4, 7.");
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    try {
+      const combinedRegions: LocalVerifyExtraction["regions"] = [];
+      const warnings: string[] = [];
+      for (let offset = 0; offset < pages.length; offset += 20) {
+        const result = await extractPdfPagesLocally(file, pages.slice(offset, offset + 20));
+        combinedRegions.push(...result.regions);
+        warnings.push(...result.warnings);
+      }
+      const combined: LocalVerifyExtraction = {
+        rawText: pages.map(page => {
+          const pageRegions = combinedRegions.filter(region => region.page === page);
+          return pageRegions.length ? `[Page ${page}]\\n${pageRegions.map(region => region.text).join("\\n")}` : `[Page ${page}]\\n[No text detected]`;
+        }).join("\\n\\n"),
+        confidence: null,
+        warnings: [...new Set(warnings)].slice(0, 20),
+        platform: "web",
+        engine: "PDF.js render + Browser TextDetector API",
+        regions: combinedRegions,
+        execution: "local",
+        sourceStored: false,
+      };
+      setLocalOcr(combined);
+      setCorrectedRegions(combined.regions);
+      setMessage(`Local OCR completed for PDF page(s): ${pages.join(", ")}. Review the page-labelled regions against the original PDF before using the text.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Local PDF OCR could not run. The original PDF is unchanged.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function saveCorrections() {
     if (!user?.id || !extraction || !resourceId) return;
     setBusy(true); setMessage("");
@@ -210,7 +251,7 @@ export default function MarkingResourceReviewWorkspace() {
     {extraction && file && <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
       <section className="min-w-0 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-center justify-between gap-2"><h2 className="font-bold">2. Original source evidence</h2><span className="text-xs text-[var(--muted-foreground)]">{file.name}</span></div>
-        {isPdf && <iframe title="Original PDF source" src={previewUrl} className="h-[70vh] min-h-[480px] w-full rounded-xl border border-[var(--card-border)] bg-white" />}
+        {isPdf && <><iframe title="Original PDF source" src={previewUrl} className="h-[70vh] min-h-[480px] w-full rounded-xl border border-[var(--card-border)] bg-white" /><div className="mt-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3"><p className="text-xs font-bold">Local OCR for scanned pages</p><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">Enter page numbers to render and OCR on this device. This is useful for scanned pages and mixed PDFs. No PDF or rendered page is uploaded. Up to 20 pages are processed per batch.</p><div className="mt-2 flex flex-wrap gap-2"><input aria-label="PDF pages for local OCR" className={fieldClass + " mt-0 min-w-0 flex-1"} value={pdfOcrPages} onChange={event => setPdfOcrPages(event.target.value)} placeholder="e.g. 2, 4, 7" /><button type="button" onClick={() => void runPdfLocalOcr()} disabled={busy || !isBrowserLocalOcrAvailable()} className="min-h-10 rounded-xl bg-[var(--primary)] px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{busy ? "Processing…" : "Run local OCR"}</button></div>{!isBrowserLocalOcrAvailable() && <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">This browser does not expose its experimental TextDetector API. No cloud fallback will start automatically.</p>}</div></>}
         {isImage && <div className="relative mx-auto w-full overflow-hidden rounded-xl border border-[var(--card-border)] bg-white" style={imageDimensions ? { aspectRatio: `${imageDimensions.width} / ${imageDimensions.height}` } : undefined}><Image src={previewUrl} alt="Original uploaded marking resource" width={imageDimensions?.width || 1200} height={imageDimensions?.height || 900} unoptimized onLoad={event => setImageDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} className="block h-auto max-h-[70vh] w-full object-contain" />{localOcr && correctedRegions.map((region, index) => <div key={region.id} className="pointer-events-none absolute border-2 border-cyan-500/90 bg-cyan-400/10" style={{ left: `${region.bounds.x * 100}%`, top: `${region.bounds.y * 100}%`, width: `${region.bounds.width * 100}%`, height: `${region.bounds.height * 100}%` }}><span className="absolute -top-5 left-0 rounded bg-cyan-700 px-1 text-[9px] text-white">{index + 1}</span></div>)}</div>}
         {!isPdf && !isImage && <div className="rounded-xl bg-[var(--muted)] p-5 text-sm text-[var(--muted-foreground)]">Original file is preserved in local resource storage. Browser preview is not available for this file type.</div>}
         <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5"><AlertTriangle size={15} className="mr-2 inline" />The uploaded source and your syllabus selection have not been independently authenticated. Visual interpretation still requires human review.</div>
@@ -221,7 +262,7 @@ export default function MarkingResourceReviewWorkspace() {
         <div className="mb-4 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-[var(--muted)] px-2.5 py-1">{extraction.format.toUpperCase()}</span><span className="rounded-full bg-[var(--muted)] px-2.5 py-1">{extraction.status.replace("_", " ")}</span><span className="rounded-full bg-[var(--muted)] px-2.5 py-1">{extraction.pageCount ?? "?"} pages</span></div>
         {extraction.warnings.map((warning, index) => <p key={index} className="mb-2 rounded-lg bg-amber-500/10 p-2.5 text-xs leading-5 text-amber-700 dark:text-amber-300">{warning}</p>)}
         {extraction.markers.length > 0 && <div className="mb-4 rounded-xl bg-[var(--muted)] p-3"><p className="mb-2 text-xs font-bold">Detected navigation hints, not approved marking criteria</p><div className="flex flex-wrap gap-1.5">{extraction.markers.slice(0, 30).map((marker, index) => <span key={index} className="rounded-md border border-[var(--card-border)] bg-[var(--card)] px-2 py-1 text-[10px]">{marker.type} · p.{marker.page}</span>)}</div></div>}
-        {localOcr && <div className="mb-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3"><p className="mb-1 text-xs font-bold">On-device OCR · {localOcr.engine}</p><p className="mb-3 text-xs text-[var(--muted-foreground)]">No image upload was performed by this OCR step. Bounding boxes are shown on the original image. OCR confidence is {localOcr.confidence === null ? "not supplied by this browser" : `${Math.round(localOcr.confidence * 100)}%`}.</p>{correctedRegions.map((region, index) => <label key={region.id} className="mb-3 block text-xs font-semibold"><span className="mb-1 block text-[var(--muted-foreground)]">Region {index + 1} · {Math.round(region.bounds.x * 100)}%, {Math.round(region.bounds.y * 100)}%</span><textarea className={fieldClass + " min-h-14 resize-y"} value={region.text} onChange={event => updateRegion(index, event.target.value)} /></label>)}{localOcr.warnings.map((warning, index) => <p key={index} className="mt-2 text-xs leading-5 text-amber-700 dark:text-amber-300">{warning}</p>)}</div>}{correctedLines.length ? <div className="max-h-[56vh] space-y-3 overflow-y-auto pr-1">{correctedLines.map((line, index) => <label key={index} className="block text-xs font-semibold"><span className="mb-1 block text-[var(--muted-foreground)]">Page {line.page} · line {line.line}</span><textarea className={fieldClass + " min-h-16 resize-y leading-5"} value={line.text} onChange={event => updateLine(index, event.target.value)} /></label>)}</div> : <p className="rounded-xl bg-[var(--muted)] p-4 text-sm text-[var(--muted-foreground)]">No text lines were extracted. Use the original page and OCR/visual review workflow.</p>}
+        {localOcr && <div className="mb-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3"><p className="mb-1 text-xs font-bold">On-device OCR · {localOcr.engine}</p><p className="mb-3 text-xs text-[var(--muted-foreground)]">No image upload was performed by this OCR step. Bounding boxes are shown on the original image. OCR confidence is {localOcr.confidence === null ? "not supplied by this browser" : `${Math.round(localOcr.confidence * 100)}%`}.</p>{correctedRegions.map((region, index) => <label key={region.id} className="mb-3 block text-xs font-semibold"><span className="mb-1 block text-[var(--muted-foreground)]">{region.page > 0 ? `PDF page ${region.page}` : "Image"} · Region {index + 1} · {Math.round(region.bounds.x * 100)}%, {Math.round(region.bounds.y * 100)}%</span><textarea className={fieldClass + " min-h-14 resize-y"} value={region.text} onChange={event => updateRegion(index, event.target.value)} /></label>)}{localOcr.warnings.map((warning, index) => <p key={index} className="mt-2 text-xs leading-5 text-amber-700 dark:text-amber-300">{warning}</p>)}</div>}{correctedLines.length ? <div className="max-h-[56vh] space-y-3 overflow-y-auto pr-1">{correctedLines.map((line, index) => <label key={index} className="block text-xs font-semibold"><span className="mb-1 block text-[var(--muted-foreground)]">Page {line.page} · line {line.line}</span><textarea className={fieldClass + " min-h-16 resize-y leading-5"} value={line.text} onChange={event => updateLine(index, event.target.value)} /></label>)}</div> : <p className="rounded-xl bg-[var(--muted)] p-4 text-sm text-[var(--muted-foreground)]">No text lines were extracted. Use the original page and OCR/visual review workflow.</p>}
         <button type="button" onClick={() => void saveCorrections()} disabled={busy} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--card-border)] px-4 py-2.5 text-sm font-bold disabled:opacity-50"><Save size={16} /> Save review draft locally</button>
       </section>
     </div>}
