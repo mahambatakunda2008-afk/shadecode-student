@@ -26,7 +26,7 @@ import { builtInCapacity } from "@/lib/exam/guaranteedExam";
 import { trackEvent } from "@/lib/traction/client";
 import { buildOfflineVerifyRubric } from "@/lib/cortex/verify/offline-question-adapter";
 
-export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string; numeric?: import("@/lib/exam/engine/numeric").NumericSpec };
+export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string; numeric?: import("@/lib/exam/engine/numeric").NumericSpec; offlineMarking?: { version: 1; criteria: Array<{ id: string; description: string; marks: number; acceptedAnswers: string[] }> } };
 export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
 export type ExamResults = { subject?: string; topic?: string; totalScore: number; maxScore: number; percentage: number; grade: string; weakAreas: string[]; strongAreas: string[]; cortexInsight: string; results: ExamResult[]; timeTaken: number };
 type Answer = { questionId: number; answer: string; timeSpent: number };
@@ -146,6 +146,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           modelAnswer: q.modelAnswer,
           markingCriteria: q.markingCriteria,
           numeric: q.numeric,
+          offlineMarking: q.offlineMarking,
         }));
         if (!isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("offline", fallbackQuestions, count))) {
           setError("The offline practice set failed question validation. Reconnect and try generating a fresh paper.");
@@ -218,6 +219,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         modelAnswer: q.modelAnswer,
         markingCriteria: q.markingCriteria,
         numeric: q.numeric,
+          offlineMarking: q.offlineMarking,
       }));
       if (fallbackQuestions && isValidGeneratedPaper(fallbackQuestions, expectedPaperLength("fallback", fallbackQuestions, count))) {
         setPaperSource("offline");
