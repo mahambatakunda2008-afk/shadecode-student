@@ -139,3 +139,16 @@ A pack is offline-ready only if the required source content and the relevant loc
 - OCR and AI extraction never equal verification.
 - The same rubric behaves consistently on web, Android and desktop.
 - Unsupported answers are escalated honestly instead of receiving guessed marks.
+
+### Current importer/extractor implementation status (2026-11-13)
+
+The first local intake primitives are now in the repository:
+
+- `marking-resource-import.ts` validates supported upload extensions/MIME types, size, required syllabus identity, exam year and SHA-256 fingerprint. It records user-supplied provenance and defaults reuse rights to unknown.
+- `marking-resource-import-store.ts` stores original documents in account-scoped IndexedDB, detects exact-content duplicates, and supports list/open/delete. The current per-account cap is 100 resources.
+- `marking-resource-extraction.ts` extracts PDF text with PDF.js and plain TXT locally, preserving page/line locations. It identifies likely question/subquestion headings, mark allocations, marking codes, diagram references and table hints as navigation anchors, not as verified rubric criteria.
+- Scanned/image-only PDF pages are explicitly flagged for OCR. Standalone images are retained for a platform OCR/vision adapter. DOCX is accepted by intake but extraction currently reports conversion required; DOCX parsing is not implemented yet.
+- Extraction does not yet interpret diagrams, graphs, handwriting, equations as semantic objects, table cell structure or mark-scheme logic. Original pages remain the evidence of record.
+- No resource is promoted to a marking rubric by extraction. Human review, source/rights verification and syllabus matching remain mandatory.
+
+The next engineering stages are DOCX parsing, OCR/region evidence adapters for web/Android/desktop, page-image preservation, a structured mark-scheme parser, and the reviewer workflow. The current extraction code is a local foundation, not a completed ingestion service or a live online crawler.
