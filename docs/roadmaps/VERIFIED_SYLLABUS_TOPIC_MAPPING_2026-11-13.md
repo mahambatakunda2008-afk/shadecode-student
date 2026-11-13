@@ -43,3 +43,5 @@ The topic label remains available for display and grouping. The curriculum key i
 ## Cortex consumer update
 
 The authenticated Cortex student-context endpoint now returns verified-version-scoped curriculum objective progress alongside syllabus-scoped topic mastery. It exposes only the authenticated learner's own objective rows and marks missing progress as insufficient evidence. Exact version resolution is required; ambiguous or missing curriculum versions fail closed.
+
+Cortex Learn now receives the verified objective-progress section. Its deterministic tutor uses course-level counts of evidence-backed mastered, practicing, and learning objectives; untouched placeholder rows do not count as demonstrated learning. Regression coverage was added to the tutor test suite.
