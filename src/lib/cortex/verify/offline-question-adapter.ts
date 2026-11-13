@@ -9,6 +9,14 @@ export function buildOfflineVerifyRubric(question: ExamQuestion): OfflineVerifyR
   const marks = Math.max(1, Math.round(Number(question.marks) || 1));
   const criterion = question.numeric ? "Numerical answer" : "Selected option";
 
+  if (question.offlineMarking?.version === 1 && question.offlineMarking.criteria.length > 0) {
+    const criteria = question.offlineMarking.criteria;
+    const total = criteria.reduce((sum, item) => sum + item.marks, 0);
+    if (criteria.every(item => Number.isFinite(item.marks) && item.marks > 0) && total > 0) {
+      return { version: 1, kind: "structured-points", marks: total, criteria };
+    }
+  }
+
   if (question.numeric && Number.isFinite(question.numeric.exact) &&
       Number.isFinite(question.numeric.tolerance) && question.numeric.tolerance >= 0) {
     return {
