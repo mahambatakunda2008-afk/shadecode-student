@@ -302,7 +302,7 @@ export default function QuizPage() {
                   {!isCorrect && (
                     <div className="flex items-baseline gap-2">
                       <span className="min-w-16 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--muted-foreground)]">Correct:</span>
-                      <span className="text-[13px] font-semibold text-[var(--success)]">{question.options[question.correctIndex]}</span>
+                      <span className="text-[13px] font-semibold text-[var(--success)]">{question.correctIndex === undefined ? "Not available" : question.options[question.correctIndex] ?? "Not available"}</span>
                     </div>
                   )}
                 </div>
