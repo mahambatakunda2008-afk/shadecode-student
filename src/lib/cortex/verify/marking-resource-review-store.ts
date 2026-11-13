@@ -1,10 +1,12 @@
 import type { MarkingResourceExtraction } from "./marking-resource-extraction";
+import type { LocalVerifyExtraction } from "./local-extraction-contract";
 
 export type MarkingResourceReviewDraft = {
   resourceId: string;
   ownerId: string;
   extraction: MarkingResourceExtraction;
   correctedLines: Array<{ page: number; line: number; text: string }>;
+  localOcr?: LocalVerifyExtraction;
   savedAt: string;
 };
 
