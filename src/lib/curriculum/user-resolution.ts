@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { CurriculumKnowledgeItem } from "./knowledge";
 import type { CurriculumObjective, ObjectiveSkillMapping } from "./objective-first";
 import type { CurriculumCoverageRecord, CurriculumVersionRecord } from "./resolver";
@@ -91,8 +92,14 @@ function asKnowledge(row: Record<string, unknown>): CurriculumKnowledgeItem {
  * learner inputs. A curriculum identity is not usable until those catalog
  * fields have been resolved.
  */
-export async function resolveUserSystemCurriculum(userId: string, subjectId?: string): Promise<UserSystemCurriculumResolution> {
-  const supabase = await createSupabaseServerClient();
+export async function resolveUserSystemCurriculum(userId: string, subjectId?: string, accessToken?: string): Promise<UserSystemCurriculumResolution> {
+  const supabase = accessToken
+    ? createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false }, global: { headers: { Authorization: `Bearer ${accessToken}` } } },
+      )
+    : await createSupabaseServerClient();
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
