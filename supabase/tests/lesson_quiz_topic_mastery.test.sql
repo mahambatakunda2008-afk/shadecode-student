@@ -97,14 +97,19 @@ begin
   select attempts into v_after_attempts from public.topic_mastery
   where user_id=v_user and subject=v_curriculum_subject and topic=v_topic
     and syllabus_id=v_syllabus_id;
-  if v_after_attempts <> coalesce(v_before_attempts,0)+1 then
+  if v_after_attempts <> coalesce(v_before_attempts,0)+2 then
     raise exception 'Topic mastery exposure did not increment exactly once: before %, after %',
       coalesce(v_before_attempts,0),v_after_attempts;
   end if;
 
   select count(*) into v_event_count from public.cortex_events
   where user_id=v_user and data->>'eventId'='lesson_quiz_'||v_attempt::text;
-  if v_event_count <> 1 then raise exception 'Expected exactly one canonical event, got %',v_event_count; end if;
+  if v_event_count <> 1 then raise exception 'Expected exactly one quiz summary event, got %',v_event_count; end if;
+
+  select count(*) into v_event_count from public.cortex_events
+  where user_id=v_user and data->>'attemptId'=v_attempt::text
+    and type='question_attempted' and source='lesson_quiz';
+  if v_event_count <> 2 then raise exception 'Expected two durable question events, got %',v_event_count; end if;
 
   execute 'set local role authenticated';
   select public.complete_lesson_quiz_attempt(v_attempt) into v_result;
@@ -112,7 +117,7 @@ begin
   select attempts into v_after_attempts from public.topic_mastery
   where user_id=v_user and subject=v_curriculum_subject and topic=v_topic
     and syllabus_id=v_syllabus_id;
-  if v_after_attempts <> coalesce(v_before_attempts,0)+1 then
+  if v_after_attempts <> coalesce(v_before_attempts,0)+2 then
     raise exception 'Replay changed the topic mastery exposure';
   end if;
 end $$;
