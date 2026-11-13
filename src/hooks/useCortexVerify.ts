@@ -5,6 +5,7 @@ import { enqueue, getAll, remove, CortexAttempt } from "../lib/offline/cortex-qu
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { createClient } from "@/lib/supabase/client";
 import { runHybridJson } from "@/lib/cortex/hybridJson";
+import { isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
 
 export type VerifyMode = "check" | "help";
 export type HelpLevel = "hint" | "method" | "solution";
@@ -122,11 +123,7 @@ Be accurate and explicit about uncertainty.`;
           const v = value as VerifyResult;
           return !!v && typeof v === "object" &&
             (attempt.mode === "help"
-              ? attempt.level === "hint"
-                ? typeof v.hint === "string"
-                : attempt.level === "method"
-                  ? typeof v.method === "string"
-                  : typeof v.solution === "string" || typeof v.content === "string"
+              ? isValidHelpResult(v, (attempt.level || "hint") as VerifyHelpLevel)
               : typeof v.feedback === "string" || Array.isArray(v.steps));
         },
         cloud: requestCloud,
@@ -137,12 +134,7 @@ Be accurate and explicit about uncertainty.`;
       data = await requestCloud();
     }
     if (attempt.mode === "help") {
-      const level = attempt.level || "hint";
-      data = level === "hint"
-        ? { level, hint: data.hint }
-        : level === "method"
-          ? { level, method: data.method }
-          : { level, solution: data.solution ?? data.content, finalAnswer: data.finalAnswer, content: data.content };
+      data = selectHelpResult(data, (attempt.level || "hint") as VerifyHelpLevel) as VerifyResult;
     }
     recordVerifyEvent(attempt, data as VerifyResult);
     await remove(attempt.userId, attempt.id);
