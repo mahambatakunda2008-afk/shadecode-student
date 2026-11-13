@@ -14,7 +14,7 @@ Built with a strong focus on Cambridge and ZIMSEC learners, Shadecode is expandi
 - **Learn** — AI-assisted, curriculum-aware learning workflows
 - **Exam Simulation** — timed assessment and performance workflows
 - **Exam Hub** — past-paper and question-bank workflows
-- **Math Checker** — handwritten mathematics feedback
+- **Cortex Verify** — a student-workspace with Mark Mode and Help Mode; SNAP & EXTRACT is its shared capture and extraction capability
 - **Project Studio** — staged project planning, evidence capture, integrity checks, recovery and learner-owned document assembly
 - **Study organisation** — tasks, timetables, focus sessions and analytics
 - **Gamification** — XP, levels, achievements, streaks, daily challenges and leaderboards
