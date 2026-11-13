@@ -214,7 +214,7 @@ export function useCortexVerify() {
         : null);
       if (attempt.mode === "check" && !attempt.imageDataUrl && offlineRubric) {
         const localResult = markWithOfflineRubric(
-          attempt.question || options.offlineQuestion?.question || "",
+          options.offlineQuestion?.question || attempt.question || "",
           attempt.studentAnswer || "",
           offlineRubric,
         );
