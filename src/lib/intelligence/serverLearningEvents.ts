@@ -28,7 +28,9 @@ export async function emitServerLearningEvent(input: SupportedSourceEvent): Prom
     return false;
   }
   try {
-    await projectLearningEvent(createSupabaseAdminClient(), normalized.event);
+    const projectionClient = createSupabaseAdminClient();
+    if (!projectionClient) throw new Error("SERVICE_ROLE_UNAVAILABLE");
+    await projectLearningEvent(projectionClient, normalized.event);
   } catch (projectionError) {
     console.error("[learning-events] server mastery projection failed:", projectionError);
     return false;
