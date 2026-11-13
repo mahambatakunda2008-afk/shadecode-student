@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { normalizeLearningEvent, type SupportedSourceEvent } from "@/lib/intelligence/learningEvents";
 import { projectLearningEvent } from "@/lib/intelligence/projectLearningEvent";
 import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
@@ -66,7 +67,10 @@ export async function POST(request: NextRequest) {
 
     let projection: { projected: boolean; reason?: string } = { projected: false, reason: "not-attempted" };
     try {
-      projection = await projectLearningEvent(supabase, normalized.event);
+      // The projection RPC is deliberately service_role-only. Keep event
+      // ingestion on the learner session, then use the server-only admin
+      // client for the isolated projection transaction.
+      projection = await projectLearningEvent(createSupabaseAdminClient(), normalized.event);
     } catch (projectionError) {
       console.error("[learning-events] mastery projection failed:", projectionError);
       return NextResponse.json({
