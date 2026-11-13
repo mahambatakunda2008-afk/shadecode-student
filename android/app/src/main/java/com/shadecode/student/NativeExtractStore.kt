@@ -26,6 +26,7 @@ data class NativeExtractArtifact(
     val rawOcr: String,
     val editedText: String,
     val sourceUri: String?,
+    val sourceImageFile: String?,
     val extractionEngine: String?,
     val extractionPlatform: String?,
     val extractionConfidence: Float?,
@@ -38,6 +39,9 @@ class NativeExtractStore(context: Context) {
     private val directory = File(context.applicationContext.filesDir, "snap_extract_artifacts")
     private val maxArtifacts = 20
     private val maxTextChars = 120_000
+    private val maxImageBytes = 8 * 1024 * 1024
+    private val imageDirectory = File(directory, "images")
+    private val appContext = context.applicationContext
 
     @Synchronized
     fun list(): List<NativeExtractArtifact> {
@@ -64,14 +68,17 @@ class NativeExtractStore(context: Context) {
         }
         if (!directory.exists() && !directory.mkdirs()) error("Could not create private local storage.")
         val existing = id?.let(::readById)
+        val artifactId = existing?.id ?: UUID.randomUUID().toString()
+        val storedImage = sourceUri?.let { copySourceImage(it, artifactId) } ?: existing?.sourceImageFile
         val now = System.currentTimeMillis()
         val defaultTitle = "Extract " + java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(now))
         val artifact = NativeExtractArtifact(
-            id = existing?.id ?: UUID.randomUUID().toString(),
+            id = artifactId,
             title = title.trim().take(100).ifBlank { defaultTitle },
             rawOcr = rawOcr,
             editedText = editedText,
             sourceUri = sourceUri?.toString() ?: existing?.sourceUri,
+            sourceImageFile = storedImage,
             extractionEngine = extractionEngine ?: existing?.extractionEngine,
             extractionPlatform = if (extractionEngine != null) "android" else existing?.extractionPlatform,
             extractionConfidence = if (extractionEngine != null) extractionConfidence else existing?.extractionConfidence,
@@ -93,9 +100,55 @@ class NativeExtractStore(context: Context) {
     }
 
     @Synchronized
+    fun loadSourceImage(id: String): ByteArray? {
+        val artifact = readById(id) ?: return null
+        val name = artifact.sourceImageFile ?: return null
+        if (name != "$id.img") return null
+        val file = File(imageDirectory, name)
+        if (!file.isFile || file.length() > maxImageBytes) return null
+        return runCatching { file.readBytes() }.getOrNull()
+    }
+
+    @Synchronized
     fun delete(id: String): Boolean {
+        val artifact = readById(id)
         val file = fileFor(id)
-        return !file.exists() || file.delete()
+        val metadataDeleted = !file.exists() || file.delete()
+        val imageDeleted = artifact?.sourceImageFile?.let { name ->
+            if (name == "$id.img") {
+                val image = File(imageDirectory, name)
+                !image.exists() || image.delete()
+            } else true
+        } ?: true
+        return metadataDeleted && imageDeleted
+    }
+
+    private fun copySourceImage(uri: Uri, id: String): String {
+        if (!imageDirectory.exists() && !imageDirectory.mkdirs()) error("Could not create private image storage.")
+        val target = File(imageDirectory, "$id.img")
+        val atomic = AtomicFile(target)
+        val output = atomic.startWrite()
+        try {
+            val input = appContext.contentResolver.openInputStream(uri)
+                ?: error("The selected source image is no longer readable. Choose it again.")
+            input.use { stream ->
+                val buffer = ByteArray(16 * 1024)
+                var total = 0
+                while (true) {
+                    val count = stream.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    require(total <= maxImageBytes) { "This image is larger than 8 MB. Choose a smaller image." }
+                    output.write(buffer, 0, count)
+                }
+                require(total > 0) { "The selected image is empty." }
+            }
+            atomic.finishWrite(output)
+        } catch (error: Exception) {
+            atomic.failWrite(output)
+            throw error
+        }
+        return target.name
     }
 
     @Synchronized
@@ -111,6 +164,7 @@ class NativeExtractStore(context: Context) {
         .put("id", artifact.id).put("title", artifact.title)
         .put("rawOcr", artifact.rawOcr).put("editedText", artifact.editedText)
         .put("sourceUri", artifact.sourceUri)
+        .put("sourceImageFile", artifact.sourceImageFile)
         .put("extractionEngine", artifact.extractionEngine)
         .put("extractionPlatform", artifact.extractionPlatform)
         .put("extractionConfidence", artifact.extractionConfidence)
@@ -128,6 +182,7 @@ class NativeExtractStore(context: Context) {
             id = json.getString("id"), title = json.optString("title", "Saved extract"),
             rawOcr = json.optString("rawOcr"), editedText = json.optString("editedText"),
             sourceUri = json.optString("sourceUri").takeIf { it.isNotBlank() && it != "null" },
+            sourceImageFile = json.optString("sourceImageFile").takeIf { it.isNotBlank() && it != "null" },
             extractionEngine = json.optString("extractionEngine").takeIf { it.isNotBlank() && it != "null" },
             extractionPlatform = json.optString("extractionPlatform").takeIf { it.isNotBlank() && it != "null" },
             extractionConfidence = if (json.isNull("extractionConfidence")) null else json.optDouble("extractionConfidence").toFloat(),
