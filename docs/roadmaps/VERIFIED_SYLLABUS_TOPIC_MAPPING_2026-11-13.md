@@ -39,3 +39,7 @@ The topic label remains available for display and grouping. The curriculum key i
 - Extended the transactional SQL regression test to assert syllabus-specific key persistence; it passed against the connected project inside BEGIN/ROLLBACK.
 - Source changes committed directly to main.
 - TypeScript/Vitest execution and end-to-end authenticated event replay have not yet been run.
+
+## Cortex consumer update
+
+The authenticated Cortex student-context endpoint now returns verified-version-scoped curriculum objective progress alongside syllabus-scoped topic mastery. It exposes only the authenticated learner's own objective rows and marks missing progress as insufficient evidence. Exact version resolution is required; ambiguous or missing curriculum versions fail closed.
