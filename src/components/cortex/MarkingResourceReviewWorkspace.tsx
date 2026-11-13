@@ -87,7 +87,7 @@ export default function MarkingResourceReviewWorkspace() {
     if (!user?.id || !extraction || !resourceId) return;
     setBusy(true); setMessage("");
     try {
-      await saveMarkingResourceReviewDraft(user.id, { resourceId, extraction, correctedLines, ...(localOcr ? { localOcr: { ...localOcr, regions: correctedRegions, rawText: correctedRegions.map(region => region.text).join("\\n") } } : {}) });
+      await saveMarkingResourceReviewDraft(user.id, { resourceId, extraction, correctedLines, ...(localOcr ? { localOcr: { ...localOcr, regions: correctedRegions, rawText: correctedRegions.map(region => region.text).join("\n") } } : {}) });
       setMessage("Your review draft and corrected text were saved locally. This does not verify the source or approve a marking rubric.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save review corrections.");
