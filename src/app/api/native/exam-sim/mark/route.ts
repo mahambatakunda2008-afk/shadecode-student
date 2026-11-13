@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     const verifiedSyllabusId = curriculum.resolved.status === "resolved"
       ? curriculum.identity?.syllabusId ?? null
       : null;
-    if (questions.some(q => !q || typeof q.id !== "string" || typeof q.question !== "string" || !Number.isFinite(q.marks) || q.marks <= 0 || typeof q.modelAnswer !== "string")) {
+    if (questions.some(q => !q || typeof q.id !== "string" || typeof q.question !== "string" || typeof q.topic !== "string" || !q.topic.trim() || !Number.isFinite(q.marks) || q.marks <= 0 || typeof q.modelAnswer !== "string")) {
       return NextResponse.json({ error: "This paper is incomplete and cannot be marked safely. Generate a new paper." }, { status: 400 });
     }
     const admin = createSupabaseAdminClient();
@@ -90,6 +90,19 @@ export async function POST(request: Request) {
         !Number.isFinite(report.percentage) || typeof report.overallFeedback !== "string") {
       return NextResponse.json({ error: "Cortex could not produce a complete verified marking report. No score was recorded. Please retry.", retryable: true }, { status: 503 });
     }
+    const topicTotals = new Map<string, { score: number; maxMarks: number }>();
+    for (const marked of report.results) {
+      const question = questions.find((item) => item.id === marked.questionId);
+      const topic = typeof question?.topic === "string" ? question.topic.trim() : "";
+      if (!topic) continue;
+      const current = topicTotals.get(topic) ?? { score: 0, maxMarks: 0 };
+      current.score += Number(marked.score) || 0;
+      current.maxMarks += Number(marked.maxMarks) || 0;
+      topicTotals.set(topic, current);
+    }
+    const topicScores = [...topicTotals.entries()]
+      .filter(([, totals]) => totals.maxMarks > 0)
+      .map(([topic, totals]) => ({ topic, percentage: Math.round((totals.score / totals.maxMarks) * 10000) / 100 }));
     const examId = randomUUID();
     const eventId = eventUuid(`native-exam:${user.id}:${attemptId}`);
     const result = { report };
@@ -112,7 +125,7 @@ export async function POST(request: Request) {
         weakAreas: report.weakTopics ?? [],
         strongAreas: report.strongTopics ?? [],
         timeTaken: 0,
-        topicScores: [],
+        topicScores,
       },
     });
     if (finalizeError || finalized !== true) {
