@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ImportedMarkingResource } from "./marking-resource-import";
+import { docxXmlToText } from "./docx-extraction";
 import {
   extractImportedMarkingResource,
   identifyMarkingStructure,
