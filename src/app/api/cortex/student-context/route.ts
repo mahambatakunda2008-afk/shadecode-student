@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const verifiedSyllabusId = curriculum.resolved.status === "resolved"
       ? curriculum.identity?.syllabusId ?? null
       : null;
-    const curriculumIdentity = curriculum.identity
+    const curriculumIdentity = curriculum.resolved.status === "resolved" && curriculum.identity
       ? {
           boardId: curriculum.identity.boardId,
           qualificationId: curriculum.identity.qualificationId,
