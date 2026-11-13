@@ -110,6 +110,21 @@ begin
   where user_id=v_user and data->>'attemptId'=v_attempt::text
     and type='question_attempted' and source='lesson_quiz';
   if v_event_count <> 2 then raise exception 'Expected two durable question events, got %',v_event_count; end if;
+  if not exists (
+    select 1 from public.cortex_events
+    where user_id=v_user and data->>'eventId'='lesson_quiz_'||v_attempt::text||'_q_1'
+      and data->'metadata'->>'correct'='true'
+  ) then raise exception 'First verified question evidence was not persisted correctly'; end if;
+  if not exists (
+    select 1 from public.cortex_events
+    where user_id=v_user and data->>'eventId'='lesson_quiz_'||v_attempt::text||'_q_2'
+      and data->'metadata'->>'correct'='false'
+  ) then raise exception 'Second verified question evidence was not persisted correctly'; end if;
+  if not exists (
+    select 1 from public.cortex_events
+    where user_id=v_user and data->>'eventId'='lesson_quiz_'||v_attempt::text
+      and data->'metadata'->>'aggregateOnly'='true'
+  ) then raise exception 'Quiz completion summary must be analytics-only'; end if;
 
   execute 'set local role authenticated';
   select public.complete_lesson_quiz_attempt(v_attempt) into v_result;
