@@ -14,6 +14,8 @@ Canonical learning-event ingress now resolves the learner's configured curriculu
 - Client-supplied topic keys are not trusted by the authenticated ingress.
 - Server-side event emitters run the same resolver.
 - The canonical projector now writes the verified key into the existing topic_mastery.curriculum_topic_key field.
+- Native exam completion now maps each marked topic against the same verified topic catalogue. The stable key is carried in the durable exam completion outbox and passed to the syllabus-aware exam projector.
+- The exam projector stores the key on insert and fills a previously null key on update without overwriting an existing key.
 
 The topic label remains available for display and grouping. The curriculum key is the stable syllabus-specific reference. No new mastery table was introduced.
 
@@ -21,7 +23,7 @@ The topic label remains available for display and grouping. The curriculum key i
 
 - Fuzzy matching and model-generated mapping are intentionally excluded.
 - Existing evidence is not retroactively assigned curriculum keys.
-- This slice maps canonical learning events. Native exam completion outbox topic scores still need the same verified key mapping before the pipeline is fully unified.
+- Native exam completion outbox topic scores now use the same exact verified mapping. Legacy outbox payloads without a key remain valid and are not retroactively guessed.
 - Learn assessment objective-level progress remains a separate consumer integration task; it should be reconciled with canonical events rather than double-counted.
 
 ## Verification
@@ -29,5 +31,7 @@ The topic label remains available for display and grouping. The curriculum key i
 - Live catalog inspection confirmed 1,708 verified curriculum knowledge records and 1,380 verified curriculum objectives.
 - The live catalog includes verified topic records with stable knowledge_key values (for example, Cambridge 0478 and 9700).
 - Added unit coverage for exact match, no fuzzy match, ambiguity, and unverified curriculum.
+- Applied database migration 20261113141351_syllabus_aware_exam_topic_keys and verified the service-role-only RPC signature/privileges.
+- Extended the transactional SQL regression test to assert syllabus-specific key persistence; it passed against the connected project inside BEGIN/ROLLBACK.
 - Source changes committed directly to main.
 - TypeScript/Vitest execution and end-to-end authenticated event replay have not yet been run.
