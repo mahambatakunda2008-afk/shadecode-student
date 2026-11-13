@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
@@ -144,8 +145,23 @@ async function runStructured(prompt: string, image?: { data: string; mimeType: s
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createSupabaseServerClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Web/PWA sessions authenticate through Supabase SSR cookies. Native clients
+    // hold a Supabase access token, so validate that token and use it for RLS too.
+    const authorization = req.headers.get("authorization") || "";
+    const bearerToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
+    const supabase = bearerToken
+      ? createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            auth: { autoRefreshToken: false, persistSession: false },
+            global: { headers: { Authorization: `Bearer ${bearerToken}` } },
+          },
+        )
+      : await createSupabaseServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      bearerToken || undefined,
+    );
     if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const rateLimitResponse = await applyRateLimit(req, aiEndpointLimiter);
