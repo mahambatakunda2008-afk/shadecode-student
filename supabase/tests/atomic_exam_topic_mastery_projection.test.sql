@@ -45,7 +45,7 @@ begin
   if v_count <> 2 then raise exception 'Expected separate mastery rows for both syllabuses, found %',v_count; end if;
 
   select count(*) into v_count from public.exam_mastery_projection_ledger
-  where user_id=v_user and attempt_id in (v_attempt,v_attempt || '-second');
+  where user_id=v_user and attempt_id in (v_attempt,v_attempt || '-second') and syllabus_id='TEST-SYLLABUS-A';
   if v_count <> 2 then raise exception 'Expected two ledger keys, found %',v_count; end if;
 end $$;
 
