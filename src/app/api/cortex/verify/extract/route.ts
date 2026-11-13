@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
+import { validateVerifyExtraction } from "@/lib/cortex/verify/extraction-contract";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 45;
@@ -32,11 +33,7 @@ function parseExtraction(text: string): ExtractionResult {
       !parsed.warnings.every((item) => typeof item === "string")) {
     throw new Error("Image extraction returned an invalid structured result.");
   }
-  return {
-    rawText: parsed.rawText,
-    confidence: parsed.confidence,
-    warnings: parsed.warnings.slice(0, 20).map((item) => item.slice(0, 300)),
-  };
+  return validateVerifyExtraction(parsed);
 }
 
 async function withTimeout<T>(promise: Promise<T>): Promise<T> {
