@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeLearningEvent, type SupportedSourceEvent } from "@/lib/intelligence/learningEvents";
 import { projectLearningEvent } from "@/lib/intelligence/projectLearningEvent";
+import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,11 @@ export async function POST(request: NextRequest) {
       metadata: safeMetadata(body.metadata),
     };
 
-    const normalized = normalizeLearningEvent(input);
+    const curriculum = await resolveUserSystemCurriculum(user.id, input.subjectId);
+    const verifiedSyllabusId = curriculum.resolved.status === "resolved"
+      ? curriculum.identity?.syllabusId ?? undefined
+      : undefined;
+    const normalized = normalizeLearningEvent({ ...input, syllabusId: verifiedSyllabusId });
     if (normalized.status === "unsupported") {
       return NextResponse.json({ error: "Unsupported or invalid learning event", source: normalized.source, sourceEventId: normalized.sourceEventId }, { status: 400 });
     }
