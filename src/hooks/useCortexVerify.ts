@@ -114,7 +114,7 @@ Help level: ${attempt.level || "hint"}
 
 Check the student's reasoning rather than blindly giving an answer. Return ONLY JSON.
 For check mode include: problem, confidence, score, correct, needsRetake, retakeReason, cortexInsight, steps, feedback, marksBreakdown, finalAnswer.
-For help mode include: problem, confidence, level, hint, method, solution, finalAnswer, content.
+For help mode, return ONLY the field matching the selected level: hint for hint, method for method, or solution (and finalAnswer when appropriate) for solution. Never include a solution or finalAnswer for hint/method.
 Be accurate and explicit about uncertainty.`;
       data = await runHybridJson<VerifyResult>({
         localPrompt,
@@ -122,7 +122,11 @@ Be accurate and explicit about uncertainty.`;
           const v = value as VerifyResult;
           return !!v && typeof v === "object" &&
             (attempt.mode === "help"
-              ? typeof v.content === "string" || typeof v.hint === "string" || typeof v.method === "string"
+              ? attempt.level === "hint"
+                ? typeof v.hint === "string"
+                : attempt.level === "method"
+                  ? typeof v.method === "string"
+                  : typeof v.solution === "string" || typeof v.content === "string"
               : typeof v.feedback === "string" || Array.isArray(v.steps));
         },
         cloud: requestCloud,
@@ -131,6 +135,14 @@ Be accurate and explicit about uncertainty.`;
       });
     } else {
       data = await requestCloud();
+    }
+    if (attempt.mode === "help") {
+      const level = attempt.level || "hint";
+      data = level === "hint"
+        ? { level, hint: data.hint }
+        : level === "method"
+          ? { level, method: data.method }
+          : { level, solution: data.solution ?? data.content, finalAnswer: data.finalAnswer, content: data.content };
     }
     recordVerifyEvent(attempt, data as VerifyResult);
     await remove(attempt.userId, attempt.id);
