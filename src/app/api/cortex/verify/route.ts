@@ -65,10 +65,14 @@ function validCheck(value: any) {
     (value.confidence === undefined || (typeof value.confidence === "number" && value.confidence >= 0 && value.confidence <= 1));
 }
 
-function validHelp(value: any) {
-  return value && typeof value === "object" &&
-    (typeof value.content === "string" || typeof value.hint === "string" || typeof value.method === "string") &&
-    Object.values(value).some((v) => typeof v === "string" && v.trim().length >= 20);
+function validHelp(value: any, level: string) {
+  if (!value || typeof value !== "object") return false;
+  if (level === "hint") return typeof value.hint === "string" && value.hint.trim().length >= 20;
+  if (level === "method") return typeof value.method === "string" && value.method.trim().length >= 20;
+  return level === "solution" && (
+    (typeof value.solution === "string" && value.solution.trim().length >= 20) ||
+    (typeof value.content === "string" && value.content.trim().length >= 20)
+  );
 }
 
 function checkPrompt(subject: string, question: string, studentAnswer: string) {
@@ -184,12 +188,22 @@ export async function POST(req: Request) {
 
     if (mode === "help") {
       const level = String(formData.get("level") || "hint");
+      if (!["hint", "method", "solution"].includes(level)) return NextResponse.json({ error: "Choose a valid help level." }, { status: 400 });
       if (!question && !image) return NextResponse.json({ error: "Add the question or a photo first." }, { status: 400 });
-      const instruction = level === "hint" ? "Give a short hint that nudges the student without revealing the answer." : level === "method" ? "Explain the method and steps without giving the final answer." : "Give a complete worked solution because the student explicitly requested it.";
-      const prompt = `You are Cortex, an educational tutor. Subject: ${subject}. Question: ${question || "Read the question from the image."} Help level: ${level}. ${instruction} Return ONLY JSON with keys level, hint, method, solution, finalAnswer, content as appropriate. Keep explanations student-friendly.`;
+      const instruction = level === "hint"
+        ? "Give one useful hint only. Do not provide the method, solution, final answer, or content that reveals them. Return the hint field only."
+        : level === "method"
+          ? "Explain the relevant method and next steps, but do not provide the final answer or a complete worked solution. Return the method field only."
+          : "Give a complete worked solution because the student explicitly requested it. Return the solution and finalAnswer fields where appropriate.";
+      const prompt = `You are Cortex, an educational tutor. Subject: ${subject}. Question: ${question || "Read the question from the image."} Student's attempt: ${studentAnswer || "The student has not provided an attempt yet."} Help level: ${level}. ${instruction} Keep explanations student-friendly, curriculum-aware and explicit about uncertainty. Return ONLY valid JSON with the requested help-level field.`;
       const result = await runStructured(prompt, image);
-      if (!validHelp(result)) return NextResponse.json({ error: "Cortex returned an incomplete explanation. Please try again." }, { status: 502 });
-      return NextResponse.json(result);
+      if (!validHelp(result, level)) return NextResponse.json({ error: "Cortex returned incomplete help for the selected level. Please try again." }, { status: 502 });
+      const safeResult = level === "hint"
+        ? { level, hint: result.hint }
+        : level === "method"
+          ? { level, method: result.method }
+          : { level, solution: result.solution ?? result.content, finalAnswer: result.finalAnswer, content: result.content };
+      return NextResponse.json(safeResult);
     }
 
     return NextResponse.json({ error: "Unknown Cortex mode." }, { status: 400 });
