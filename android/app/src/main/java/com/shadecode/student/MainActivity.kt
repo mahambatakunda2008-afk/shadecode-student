@@ -1602,7 +1602,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                 }
                             }
                         },
-                        enabled = !verifying && cloudVerifyConsent && !processing && editableText.isNotBlank() && subjects.isNotEmpty(),
+                        enabled = !verifying && cloudVerifyConsent && !processing && (editableText.isNotBlank() || verifyQuestion.isNotBlank()) && subjects.isNotEmpty(),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(if (verifying) "Verifying…" else if (verifyMode == "check") "Mark my work" else "Help me understand")
