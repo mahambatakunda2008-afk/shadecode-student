@@ -1,3 +1,5 @@
+import { normalizeLearningContextLabel } from "./learningContextKey";
+
 export type LearningEventKind =
   | "lesson_viewed"
   | "lesson_completed"
@@ -106,9 +108,9 @@ export function normalizeLearningEvent(input: SupportedSourceEvent): EventNormal
       occurredAt,
       source,
       sourceEventId,
-      subjectId: input.subjectId,
+      subjectId: input.subjectId ? normalizeLearningContextLabel(input.subjectId) : undefined,
       syllabusId: input.syllabusId,
-      topicId: input.topicId,
+      topicId: input.topicId ? normalizeLearningContextLabel(input.topicId) : undefined,
       entityId: input.entityId,
       attemptId: input.attemptId,
       metadata: { ...(input.metadata ?? {}) },
