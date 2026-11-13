@@ -100,7 +100,7 @@ export async function extractPdfPagesLocally(
     throw new Error("Choose between 1 and 20 unique, valid PDF page numbers per local OCR batch.");
   }
 
-  let document: Awaited<ReturnType<(typeof import("pdfjs-dist/legacy/build/pdf.mjs"))["getDocument"]> extends { promise: Promise<infer T> } ? T : never> | null = null;
+  let destroyDocument: (() => Promise<void>) | null = null;
   try {
     const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
     const loadingTask = pdfjs.getDocument({
@@ -109,7 +109,8 @@ export async function extractPdfPagesLocally(
       disableFontFace: true,
       verbosity: 0,
     });
-    document = await loadingTask.promise;
+    const document = await loadingTask.promise;
+    destroyDocument = () => document.destroy();
     const allRegions: LocalVerifyExtraction["regions"] = [];
     const warnings: string[] = [
       "PDF pages were rendered and OCRed locally in this browser. No PDF or page image was uploaded.",
@@ -166,6 +167,6 @@ export async function extractPdfPagesLocally(
   } catch (error) {
     throw new Error(error instanceof Error ? `Local PDF OCR failed: ${error.message}` : "Local PDF OCR failed. The original PDF is unchanged.");
   } finally {
-    if (document) await document.destroy();
+    if (destroyDocument) await destroyDocument();
   }
 }
