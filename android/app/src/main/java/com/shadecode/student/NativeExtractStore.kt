@@ -110,8 +110,17 @@ class NativeExtractStore(context: Context) {
     private fun encode(artifact: NativeExtractArtifact): String = JSONObject()
         .put("id", artifact.id).put("title", artifact.title)
         .put("rawOcr", artifact.rawOcr).put("editedText", artifact.editedText)
-        .put("sourceUri", artifact.sourceUri).put("createdAt", artifact.createdAt)
-        .put("updatedAt", artifact.updatedAt).toString()
+        .put("sourceUri", artifact.sourceUri)
+        .put("extractionEngine", artifact.extractionEngine)
+        .put("extractionPlatform", artifact.extractionPlatform)
+        .put("extractionConfidence", artifact.extractionConfidence)
+        .put("extractionRegions", org.json.JSONArray().apply {
+            artifact.extractionRegions.forEach { region ->
+                put(JSONObject().put("text", region.text).put("left", region.left).put("top", region.top)
+                    .put("right", region.right).put("bottom", region.bottom))
+            }
+        })
+        .put("createdAt", artifact.createdAt).put("updatedAt", artifact.updatedAt).toString()
 
     private fun decode(encoded: String): NativeExtractArtifact {
         val json = JSONObject(encoded)
