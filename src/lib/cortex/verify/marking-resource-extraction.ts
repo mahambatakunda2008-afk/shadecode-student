@@ -38,6 +38,7 @@ export type MarkingResourceExtraction = {
 };
 
 const MAX_EXTRACTED_CHARS = 1_500_000;
+const MAX_EXTRACTED_REGIONS = 100_000;
 const QUESTION_RE = /^(?:Question\s+)?(\d{1,2})(?:\s*\(([a-zivx]+)\))?[.)]?\s+(.{2,})$/i;
 const SUBQUESTION_RE = /^\(?([a-zivx]{1,4})\)?[.)]\s+(.{2,})$/i;
 const MARKS_RE = /\[(\d+(?:\s*\+\s*\d+)*)\s*(?:marks?|mks?)\]/i;
@@ -129,6 +130,7 @@ export async function extractImportedMarkingResource(
       const warnings: string[] = [];
       let totalChars = 0;
       const regions: MarkingResourceTextRegion[] = [];
+      let regionsTruncated = false;
       for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
         const page = await document.getPage(pageNumber);
         const textContent = await page.getTextContent();
@@ -142,7 +144,11 @@ export async function extractImportedMarkingResource(
           const bucket = buckets.get(y) || [];
           bucket.push({ x, text: item.str });
           buckets.set(y, bucket);
-          regions.push({ page: pageNumber, x, y, width, height, text: item.str });
+          if (regions.length < MAX_EXTRACTED_REGIONS) {
+            regions.push({ page: pageNumber, x, y, width, height, text: item.str });
+          } else {
+            regionsTruncated = true;
+          }
         }
         const pageText = [...buckets.entries()]
           .sort((a, b) => b[0] - a[0])
@@ -168,6 +174,9 @@ export async function extractImportedMarkingResource(
       const markerPages = new Set(markers.map(marker => marker.page));
       if (document.numPages > 0 && markerPages.size === 0) {
         warnings.push("No reliable question or marking-structure anchors were detected. Review the page layout manually.");
+      }
+      if (regionsTruncated) {
+        warnings.push(`Text-region coordinates were capped at ${MAX_EXTRACTED_REGIONS.toLocaleString()} items for memory safety. Some later regions are not available for precise visual alignment.`);
       }
       warnings.push("PDF text extraction does not interpret diagrams, plotted graphs, handwriting, shading or visual mark annotations. Review those regions against the original pages.");
       return result(resource, {
