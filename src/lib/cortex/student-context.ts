@@ -6,6 +6,7 @@ import { deriveRecurringMistakes, deriveRepeatedTopicErrors, type RecurringMista
 import { deriveSpacedRetrievalEvidence, type SpacedRetrievalEvidence } from "./spaced-retrieval";
 import { deriveEvidenceBasedReviewSuggestions, type EvidenceBasedReviewSuggestion } from "./review-suggestions";
 import { deriveReviewSessionActivity, type ReviewSessionActivity } from "./review-session-activity";
+import { deriveLearnerTopicState, type LearnerTopicState } from "@/lib/intelligence/learnerTopicState";
 
 export type EvidenceState = "available" | "insufficient_evidence" | "unavailable";
 
@@ -52,6 +53,7 @@ export interface StudentTopicEvidence {
   uncertainty: number | null;
   lastObservedAt: string | null;
   evidenceState: EvidenceState;
+  learnerState: LearnerTopicState;
   source: "topic_mastery";
 }
 
@@ -146,7 +148,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       .maybeSingle(),
     supabase
       .from("topic_mastery")
-      .select("topic, subject, syllabus_id, curriculum_topic_key, mastery_score, attempts, retention, confidence, stability, error_rate, uncertainty, last_attempted")
+      .select("topic, subject, syllabus_id, curriculum_topic_key, mastery_score, attempts, retention, confidence, stability, error_rate, uncertainty, recent_improvement, trend, last_attempted")
       .eq("user_id", userId)
       .order("last_attempted", { ascending: false })
       .limit(200),
@@ -178,6 +180,8 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
   const topics: StudentTopicEvidence[] = topicRows.map((row) => {
     const attempts = Math.max(0, Number(row.attempts) || 0);
     const hasEvidence = attempts > 0;
+    const masteryScore = hasEvidence && typeof row.mastery_score === "number" ? row.mastery_score : null;
+    const errorRate = hasEvidence && typeof row.error_rate === "number" ? row.error_rate : null;
     return {
       topicId: row.topic,
       subjectKey: row.subject,
@@ -185,15 +189,22 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       curriculumTopicKey: row.curriculum_topic_key,
       // topic_mastery may contain default placeholder values before any attempt.
       // Never expose those placeholders as measured student mastery.
-      masteryScore: hasEvidence && typeof row.mastery_score === "number" ? row.mastery_score : null,
+      masteryScore,
       attempts,
       retention: hasEvidence && typeof row.retention === "number" ? row.retention : null,
       confidence: hasEvidence && typeof row.confidence === "number" ? row.confidence : null,
       stability: hasEvidence && typeof row.stability === "number" ? row.stability : null,
-      errorRate: hasEvidence && typeof row.error_rate === "number" ? row.error_rate : null,
+      errorRate,
       uncertainty: hasEvidence && typeof row.uncertainty === "number" ? row.uncertainty : null,
       lastObservedAt: hasEvidence ? row.last_attempted : null,
       evidenceState: hasEvidence ? "available" : "insufficient_evidence",
+      learnerState: deriveLearnerTopicState({
+        attempts,
+        masteryScore,
+        errorRate,
+        recentImprovement: hasEvidence && typeof row.recent_improvement === "number" ? row.recent_improvement : null,
+        uncertainty: hasEvidence && typeof row.uncertainty === "number" ? row.uncertainty : null,
+      }),
       source: "topic_mastery",
     };
   });
