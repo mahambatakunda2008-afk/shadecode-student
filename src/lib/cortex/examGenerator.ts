@@ -3,6 +3,7 @@ import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { getMemory } from "./memory";
 import type { NumericSpec } from "@/lib/exam/engine/numeric";
+import type { MarkingResourceEvidence } from "@/lib/cortex/verify/marking-resource";
 
 export type QuestionType = "multiple_choice" | "short_answer" | "structured" | "essay";
 export interface ExamQuestion {
@@ -17,8 +18,9 @@ export interface ExamQuestion {
   markingCriteria?: string;
   /** Set by the deterministic engine: the answer is marked exactly, offline, with no model. */
   numeric?: NumericSpec;
-  /** Curated resource-derived rubric; raw AI output is never promoted to this field. */
-  offlineMarking?: { version: 1; criteria: Array<{ id: string; description: string; marks: number; acceptedAnswers: string[] }> };
+  /** Rights-cleared, reviewer-approved resource rubric; AI-generated fields are stripped during normalization. */
+  syllabusIdentity?: MarkingResourceEvidence["syllabusIdentity"];
+  offlineMarking?: { version: 1; criteria: Array<{ id: string; description: string; marks: number; acceptedAnswers: string[] }>; source: MarkingResourceEvidence; reviewerId: string; reviewedAt: string; limitations: string[] };
 }
 export interface GeneratedExam {
   subject: string;
