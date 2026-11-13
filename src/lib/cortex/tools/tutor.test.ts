@@ -33,6 +33,13 @@ const context: CortexStudentContext = {
     lastPracticeSubject: "Mathematics",
     lastPracticeSyllabusId: "cambridge-9702",
   },
+  curriculumObjectives: {
+    state: "insufficient_evidence",
+    source: "learner_curriculum_objective_progress",
+    curriculumVersionId: null,
+    evidenceCount: 0,
+    items: [],
+  },
   topics: {
     state: "available",
     source: "topic_mastery",
@@ -122,6 +129,33 @@ describe("Cortex tutor learner continuity", () => {
     expect(response).toContain("latest recorded practice score");
     expect(response).toContain("100%");
     expect(response).toContain("not proof of mastery");
+  });
+
+
+  it("uses verified syllabus objective progress as course-level learning context", async () => {
+    const objectiveContext: CortexStudentContext = {
+      ...context,
+      curriculumObjectives: {
+        state: "available",
+        source: "learner_curriculum_objective_progress",
+        curriculumVersionId: "verified-version",
+        evidenceCount: 6,
+        items: [
+          { objectiveKey: "1", status: "mastered", masteryScore: 92, attempts: 3, completedLessons: 1, lastSeenAt: "2026-11-12T10:00:00.000Z", masteredAt: "2026-11-12T10:00:00.000Z", evidenceState: "available" },
+          { objectiveKey: "2", status: "practicing", masteryScore: 61, attempts: 2, completedLessons: 0, lastSeenAt: "2026-11-12T10:00:00.000Z", masteredAt: null, evidenceState: "available" },
+          { objectiveKey: "3", status: "learning", masteryScore: null, attempts: 0, completedLessons: 1, lastSeenAt: "2026-11-12T10:00:00.000Z", masteredAt: null, evidenceState: "available" },
+        ],
+      },
+    };
+    const response = await generateTutoringResponse("chain-rule", {
+      studentContext: objectiveContext,
+      subjectName: "Mathematics",
+    });
+
+    expect(response).toContain("evidence for 3 curriculum objectives");
+    expect(response).toContain("1 marked mastered");
+    expect(response).toContain("1 being practised");
+    expect(response).toContain("1 being learned");
   });
 
   it("uses repeated-error and retrieval history to shape the next explanation", async () => {
