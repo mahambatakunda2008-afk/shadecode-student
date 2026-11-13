@@ -80,3 +80,92 @@ export async function extractImageLocally(image: Blob): Promise<LocalVerifyExtra
     bitmap?.close();
   }
 }
+
+
+/**
+ * Renders selected scanned PDF pages locally, then runs the same browser OCR
+ * adapter used for images. Pages are processed sequentially to limit memory.
+ * Page numbers in returned regions are 1-based and refer to the source PDF.
+ */
+export async function extractPdfPagesLocally(
+  pdf: Blob,
+  pageNumbers: number[],
+): Promise<LocalVerifyExtraction> {
+  if (!isBrowserLocalOcrAvailable()) {
+    throw new Error("Local PDF OCR is not supported by this browser. The PDF remains on this device; no cloud OCR was started.");
+  }
+  if (!pageNumbers.length || pageNumbers.length > 20 ||
+      pageNumbers.some(page => !Number.isInteger(page) || page < 1) ||
+      new Set(pageNumbers).size !== pageNumbers.length) {
+    throw new Error("Choose between 1 and 20 unique, valid PDF page numbers per local OCR batch.");
+  }
+
+  let document: Awaited<ReturnType<(typeof import("pdfjs-dist/legacy/build/pdf.mjs"))["getDocument"]> extends { promise: Promise<infer T> } ? T : never> | null = null;
+  try {
+    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(await pdf.arrayBuffer()),
+      useSystemFonts: true,
+      disableFontFace: true,
+      verbosity: 0,
+    });
+    document = await loadingTask.promise;
+    const allRegions: LocalVerifyExtraction["regions"] = [];
+    const warnings: string[] = [
+      "PDF pages were rendered and OCRed locally in this browser. No PDF or page image was uploaded.",
+      "OCR text is an aid, not verified evidence. Check every region against the original PDF page.",
+      "Handwriting, equations, tables, graphs, diagrams and symbols may be omitted or misread.",
+    ];
+
+    for (const pageNumber of pageNumbers) {
+      if (pageNumber > document.numPages) {
+        throw new Error(`PDF page ${pageNumber} does not exist. This document has ${document.numPages} pages.`);
+      }
+      const page = await document.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: Math.min(2, 1600 / Math.max(page.view[2] - page.view[0], page.view[3] - page.view[1])) });
+      const canvas = window.document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("This browser could not create a local PDF rendering canvas.");
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      try {
+        await page.render({ canvas, canvasContext: context, viewport }).promise;
+        const pageImage = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error(`Could not render PDF page ${pageNumber} for local OCR.`)), "image/png");
+        });
+        const pageResult = await extractImageLocally(pageImage);
+        for (const region of pageResult.regions) {
+          allRegions.push({
+            ...region,
+            id: `pdf-page-${pageNumber}-region-${allRegions.length}`,
+            page: pageNumber,
+          });
+        }
+        warnings.push(...pageResult.warnings);
+      } finally {
+        canvas.width = 0;
+        canvas.height = 0;
+        page.cleanup();
+      }
+    }
+
+    if (!allRegions.length) warnings.unshift("No readable text regions were detected on the selected pages. Review the original PDF visually.");
+    const rawText = pageNumbers.map(page => {
+      const pageRegions = allRegions.filter(region => region.page === page);
+      return pageRegions.length ? `[Page ${page}]\\n${pageRegions.map(region => region.text).join("\\n")}` : `[Page ${page}]\\n[No text detected]`;
+    }).join("\\n\\n");
+
+    return validateLocalVerifyExtraction({
+      rawText,
+      confidence: null,
+      warnings: [...new Set(warnings)].slice(0, 20),
+      platform: "web",
+      engine: "PDF.js render + Browser TextDetector API",
+      regions: allRegions,
+    });
+  } catch (error) {
+    throw new Error(error instanceof Error ? `Local PDF OCR failed: ${error.message}` : "Local PDF OCR failed. The original PDF is unchanged.");
+  } finally {
+    if (document) await document.destroy();
+  }
+}
