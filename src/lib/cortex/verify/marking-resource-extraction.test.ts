@@ -61,6 +61,7 @@ describe("marking resource extraction", () => {
     expect(result.lines.every(line => line.page === 1)).toBe(true);
     expect(result.markers.length).toBeGreaterThanOrEqual(4);
     expect(result.contentSha256).toBe("a".repeat(64));
+    expect(result.regions).toEqual([]);
   });
 
   it("does not pretend an image has been OCR'd", async () => {
@@ -68,6 +69,7 @@ describe("marking resource extraction", () => {
     const result = await extractImportedMarkingResource(source);
     expect(result.status).toBe("needs_ocr");
     expect(result.lines).toHaveLength(0);
+    expect(result.regions).toEqual([]);
     expect(result.warnings.join(" ")).toContain("OCR/vision adapter");
   });
 
@@ -75,5 +77,6 @@ describe("marking resource extraction", () => {
     const source = resource("scheme.docx", "docx-bytes");
     const result = await extractImportedMarkingResource(source);
     expect(result.status).toBe("conversion_required");
+    expect(result.regions).toEqual([]);
   });
 });
