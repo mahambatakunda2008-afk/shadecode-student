@@ -133,7 +133,19 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       const subjectName = asString(payload.subjectName);
       let studentContext = null;
       try {
-        studentContext = await resolveAuthenticatedCortexStudentContext(input.accessToken, input.curriculum?.identity.syllabusId);
+        const curriculumIdentity = input.curriculum?.identity;
+        studentContext = await resolveAuthenticatedCortexStudentContext(
+          input.accessToken,
+          curriculumIdentity?.syllabusId,
+          curriculumIdentity
+            ? {
+                boardId: curriculumIdentity.boardId,
+                qualificationId: curriculumIdentity.qualificationId,
+                syllabusVersion: curriculumIdentity.syllabusVersion,
+                subjectId: curriculumIdentity.subjectId,
+              }
+            : undefined,
+        );
       } catch (error) {
         // Saved progress remains usable even if the learner-context read is temporarily unavailable.
         console.error("[cortex] learner context unavailable; continuing without cross-session topic evidence:", error);
