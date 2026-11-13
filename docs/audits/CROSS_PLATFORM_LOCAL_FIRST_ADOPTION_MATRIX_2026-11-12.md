@@ -281,3 +281,15 @@ The first timetable slice is implemented in `src/lib/local-first/timetable.ts` a
 - Added `supabase/tests/invalidate_recommendations_from_learning_events.test.sql`; executed successfully against the active Supabase project. It verifies a quiz completion increments the version, duplicate event insertion does not increment it again, and a lesson-view event does not increment it. Test transaction rolled back.
 - This trigger only sees events actually persisted in `cortex_events`. Learning activity that never reaches durable Cortex event storage is not magically covered. The direct quiz assessment endpoint still needs to be checked for a canonical event emission path; its own assessment persistence is separate from this trigger.
 - The invalidation is now durable for all relevant event types that enter the Cortex event store, across application instances. Full app build, Vercel deployment, and end-to-end client event delivery remain unverified.
+
+
+## 2026-11-13 implementation update: server-verified lesson quizzes
+
+- Added and applied `20261114100000_server_verified_lesson_quiz_attempts.sql`. Quiz attempts are stored in `lesson_quiz_attempts`; direct table access is revoked from `anon` and `authenticated`, with server-side service-role access only.
+- The lesson quiz generation endpoint now persists the full question set, including answer keys, before returning the attempt. The browser receives the questions and options without `correctIndex`.
+- The quiz results page submits only the attempt ID and selected option indexes. The submission endpoint loads the server-owned question set, calculates the score itself, and only then returns answer keys and explanations for result rendering.
+- Curriculum mastery recording now uses server-verified counts, not browser-supplied `correctIndex` values. The authenticated RPC remains bound to the student's JWT.
+- Added and applied `20261114110000_claim_lesson_quiz_submission.sql`. A row-locking claim RPC binds each attempt to its first answer set. Replays with the same answers can resume safely; a different answer set is rejected. The existing idempotent curriculum assessment RPC prevents a retry from incrementing mastery twice.
+- Restart now requests a new server-issued attempt rather than reusing a completed attempt ID.
+- Added `supabase/tests/server_verified_lesson_quiz_attempts.test.sql`. Executed database regression checks for private answer-key storage and authenticated read denial. A separate transaction verified first claim, same-answer retry, and rejection of a different answer set. Both test transactions rolled back.
+- This is not yet an end-to-end verified deployment. Vercel status for the latest application commit was pending when checked. No full TypeScript build, browser test, production quiz submission, or multi-connection concurrency stress test has passed. Cortex question/completion events are emitted after server verification, but delivery still follows the existing client event queue and is not transactionally coupled to curriculum mastery.
