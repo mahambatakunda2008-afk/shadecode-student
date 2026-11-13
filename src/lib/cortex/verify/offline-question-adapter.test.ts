@@ -37,6 +37,21 @@ describe("buildOfflineVerifyRubric", () => {
     expect(buildOfflineVerifyRubric({ ...base, type: "multiple_choice" })).toBeNull();
   });
 
+  it("maps only an explicitly supplied structured offline marking rubric", () => {
+    const rubric = buildOfflineVerifyRubric({
+      ...base,
+      type: "structured",
+      offlineMarking: {
+        version: 1,
+        criteria: [
+          { id: "p1", description: "First marking point", marks: 2, acceptedAnswers: ["first approved phrase"] },
+          { id: "p2", description: "Second marking point", marks: 1, acceptedAnswers: ["second approved phrase"] },
+        ],
+      },
+    });
+    expect(rubric).toMatchObject({ kind: "structured-points", marks: 3, criteria: [{ id: "p1" }, { id: "p2" }] });
+  });
+
   it("does not infer keys for short-answer, structured or essay questions", () => {
     expect(buildOfflineVerifyRubric({ ...base, modelAnswer: "Some text" })).toBeNull();
     expect(buildOfflineVerifyRubric({ ...base, type: "structured", modelAnswer: "A long model answer" })).toBeNull();
