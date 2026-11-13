@@ -53,6 +53,6 @@ The live `topic_mastery` schema was inspected. It has nullable `syllabus_id` and
 
 ## Next
 
-1. Make canonical learning-event identity syllabus-aware end-to-end, including safe uniqueness and projection semantics, without merging historical rows across courses.
+1. Complete verified topic/objective mapping so event labels can be linked to stable syllabus topic keys, not just syllabus IDs.
 2. Add shared typed consumers in Learn, Exam Sim, practical work, Math Checker, and recommendation surfaces.
 3. Add validated spaced retrieval and forgetting-risk calibration only after enough longitudinal evidence exists.
