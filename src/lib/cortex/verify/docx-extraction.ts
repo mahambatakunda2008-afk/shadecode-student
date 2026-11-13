@@ -13,7 +13,7 @@ async function inflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
   if (typeof DecompressionStream === "undefined") {
     throw new Error("This browser does not support local DOCX decompression.");
   }
-  const stream = new Blob([bytes]).stream().pipeThrough(
+  const stream = new Blob([bytes.slice().buffer as ArrayBuffer]).stream().pipeThrough(
     new DecompressionStream("deflate-raw" as CompressionFormat),
   );
   return new Uint8Array(await new Response(stream).arrayBuffer());
