@@ -5,6 +5,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Next.js server-only guard throws outside the Next server runtime; Vitest runs in Node.
+      "server-only": path.resolve(__dirname, "./src/test/server-only.ts"),
     },
   },
   test: {
