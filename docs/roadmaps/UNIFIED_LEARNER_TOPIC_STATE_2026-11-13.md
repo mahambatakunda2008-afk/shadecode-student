@@ -30,7 +30,7 @@ The engine does not infer forgetting from elapsed time. Existing spaced-retrieva
 
 Bearer-token clients use the same bearer identity for both authentication and curriculum reads. Cookie-session clients continue to use the server session.
 
-The live `topic_mastery` schema was inspected. It has nullable `syllabus_id` and `curriculum_topic_key`, but its unique key remains `(user_id, subject, topic)`. The generic atomic event projector still identifies rows by user/subject/topic and does not accept syllabus identity. Therefore this change deliberately does not claim that generic unscoped events are syllabus-safe. The syllabus-specific producers and projector contract still need to be completed before those events can populate a per-syllabus mastery row reliably.
+The live `topic_mastery` schema was inspected and made syllabus-aware in the canonical projector. Its uniqueness now partitions by `(user_id, subject, topic, coalesce(syllabus_id, ''))`. Canonical event ingress resolves the learner's verified syllabus server-side and maps topic labels to a stable `curriculum_knowledge.knowledge_key` only on one exact verified match. That key is written to the existing `topic_mastery.curriculum_topic_key` field. Unmatched and ambiguous labels remain syllabus-scoped display topics without a guessed curriculum key.
 
 ## Changes committed directly to main
 
@@ -53,6 +53,11 @@ The live `topic_mastery` schema was inspected. It has nullable `syllabus_id` and
 
 ## Next
 
-1. Complete verified topic/objective mapping so event labels can be linked to stable syllabus topic keys, not just syllabus IDs.
-2. Add shared typed consumers in Learn, Exam Sim, practical work, Math Checker, and recommendation surfaces.
+1. Extend the same verified topic mapping to native exam completion outbox topic scores and curriculum objective-level assessment evidence.
+2. Add shared typed consumers in Learn, Exam Sim, practical work, Math Checker, and recommendation surfaces without double-counting existing evidence.
 3. Add validated spaced retrieval and forgetting-risk calibration only after enough longitudinal evidence exists.
+
+
+## Verified topic mapping update (2026-11-13)
+
+Completed the first verified topic-mapping slice. New module `src/lib/curriculum/topic-mapping.ts` accepts only a resolved curriculum and exact, unique matches against verified topic knowledge records. The authenticated event route and server-side event bridge both attach the canonical knowledge key. `projectLearningEvent` passes that key into the atomic syllabus-aware projection RPC. Tests cover exact match, non-fuzzy rejection, duplicate-label ambiguity, and unverified curriculum. The mapping and its boundaries are documented in `docs/roadmaps/VERIFIED_SYLLABUS_TOPIC_MAPPING_2026-11-13.md`.
