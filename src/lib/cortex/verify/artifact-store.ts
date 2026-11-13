@@ -66,8 +66,9 @@ function validateInput(input: SaveVerifyArtifactInput) {
   if ((input.rawExtractedText?.length || 0) > MAX_TEXT_CHARS || (input.editedText?.length || 0) > MAX_TEXT_CHARS) {
     throw new Error("This extracted text is too large to save. Split it into smaller pieces.");
   }
-  if (input.extractionConfidence !== undefined && input.extractionConfidence !== null &&
-      (!Number.isFinite(input.extractionConfidence) || input.extractionConfidence < 0 || input.extractionConfidence > 1)) {
+  const confidence = input.extractionConfidence;
+  if (confidence !== undefined && confidence !== null &&
+      (!Number.isFinite(confidence) || confidence < 0 || confidence > 1)) {
     throw new Error("Extraction confidence must be between 0 and 1.");
   }
 }
