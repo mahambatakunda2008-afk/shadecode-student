@@ -12,6 +12,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -64,6 +65,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -1419,12 +1423,42 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                     )
                     imagePreview?.let { preview ->
                         Spacer(Modifier.height(12.dp))
-                        Image(
-                            bitmap = preview,
-                            contentDescription = "Preview of the selected source image",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxWidth().height(220.dp),
-                        )
+                        Box(Modifier.fillMaxWidth().height(220.dp)) {
+                            Image(
+                                bitmap = preview,
+                                contentDescription = "Preview of the selected source image with OCR regions",
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                            Canvas(Modifier.fillMaxSize()) {
+                                val scale = minOf(size.width / preview.width, size.height / preview.height)
+                                val renderedWidth = preview.width * scale
+                                val renderedHeight = preview.height * scale
+                                val offsetX = (size.width - renderedWidth) / 2f
+                                val offsetY = (size.height - renderedHeight) / 2f
+                                extractionRegions.forEach { region ->
+                                    val left = offsetX + region.left.coerceIn(0f, 1f) * renderedWidth
+                                    val top = offsetY + region.top.coerceIn(0f, 1f) * renderedHeight
+                                    val right = offsetX + region.right.coerceIn(0f, 1f) * renderedWidth
+                                    val bottom = offsetY + region.bottom.coerceIn(0f, 1f) * renderedHeight
+                                    if (right > left && bottom > top) {
+                                        drawRect(
+                                            color = ShadePrimary.copy(alpha = 0.9f),
+                                            topLeft = Offset(left, top),
+                                            size = Size(right - left, bottom - top),
+                                            style = Stroke(width = 2.dp.toPx()),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        if (extractionRegions.isNotEmpty()) {
+                            Text(
+                                "Outlined areas show where the on-device OCR engine found text.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
                     }
                     if (selectedImage != null && imagePreview == null && !processing) {
                         Spacer(Modifier.height(6.dp))
