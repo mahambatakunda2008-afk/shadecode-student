@@ -464,7 +464,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                 },
                 focusStatus = focusStatus,
             )
-            3 -> SnapExtractScreen(padding)
+            3 -> SnapExtractScreen(padding, session, subjects)
             else -> ProfileNativeScreen(
                 padding = padding,
                 session = session,
@@ -1255,16 +1255,28 @@ private fun ProfileNativeScreen(
 
 
 @Composable
-private fun SnapExtractScreen(padding: PaddingValues) {
+private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, subjects: List<NativeSubjectEntity>) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val extractStore = remember { NativeExtractStore(context) }
+    val verifyApi = remember { NativeVerifyApi() }
+    var verifyMode by remember { mutableStateOf("check") }
+    var helpLevel by remember { mutableStateOf("hint") }
+    var verifyQuestion by remember { mutableStateOf("") }
+    var verifySubjectId by remember { mutableStateOf(subjects.firstOrNull()?.id.orEmpty()) }
+    var cloudVerifyConsent by remember { mutableStateOf(false) }
+    var verifying by remember { mutableStateOf(false) }
+    var verifyMessage by remember { mutableStateOf<String?>(null) }
+    var verifyResult by remember { mutableStateOf<org.json.JSONObject?>(null) }
     var savedArtifacts by remember { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
     var artifactSearch by remember { mutableStateOf("") }
     var activeArtifactId by remember { mutableStateOf<String?>(null) }
     var artifactTitle by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
+    }
+    LaunchedEffect(subjects) {
+        if (subjects.none { it.id == verifySubjectId }) verifySubjectId = subjects.firstOrNull()?.id.orEmpty()
     }
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -1505,6 +1517,119 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                         enabled = !processing && (rawOcr.isNotBlank() || editableText.isNotBlank()),
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text(if (activeArtifactId == null) "Save to this device" else "Update saved extract") }
+                }
+            }
+        }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp)) {
+                    Text("3. Use in Cortex Verify", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Your reviewed extraction becomes the working submitted to Cortex. Choose a mode and subject.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { verifyMode = "check"; verifyResult = null }, modifier = Modifier.weight(1f)) {
+                            Text(if (verifyMode == "check") "✓ Mark Mode" else "Mark Mode")
+                        }
+                        OutlinedButton(onClick = { verifyMode = "help"; verifyResult = null }, modifier = Modifier.weight(1f)) {
+                            Text(if (verifyMode == "help") "✓ Help Mode" else "Help Mode")
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text("Subject", fontWeight = FontWeight.SemiBold)
+                    subjects.forEach { subject ->
+                        TextButton(onClick = { verifySubjectId = subject.id }, modifier = Modifier.fillMaxWidth()) {
+                            Text((if (verifySubjectId == subject.id) "● " else "○ ") + subject.name)
+                        }
+                    }
+                    OutlinedTextField(
+                        value = verifyQuestion,
+                        onValueChange = { verifyQuestion = it },
+                        label = { Text("Question (recommended)") },
+                        placeholder = { Text("Type or paste the original question") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                    )
+                    if (verifyMode == "help") {
+                        Text("Help level", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf("hint", "method", "solution").forEach { level ->
+                                OutlinedButton(onClick = { helpLevel = level; verifyResult = null }, modifier = Modifier.weight(1f)) {
+                                    Text(if (helpLevel == level) "✓ " + level.replaceFirstChar { it.uppercase() } else level.replaceFirstChar { it.uppercase() })
+                                }
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        if (verifyMode == "check") "Mark Mode assesses the reasoning in your reviewed working. It does not treat OCR text as automatically correct."
+                        else "Help Mode gives a hint, method or full solution based on the question and your reviewed working.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = cloudVerifyConsent, onCheckedChange = { cloudVerifyConsent = it })
+                        Text("I agree to send the question and reviewed text to Shadecode cloud AI. This requires internet; marking and help are not offline yet.", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Button(
+                        onClick = {
+                            val chosen = subjects.firstOrNull { it.id == verifySubjectId }
+                            if (chosen == null) {
+                                verifyMessage = "Choose one of your enrolled subjects."
+                            } else {
+                                verifying = true
+                                verifyMessage = "Sending reviewed text securely to Cortex Verify…"
+                                verifyResult = null
+                                scope.launch {
+                                    try {
+                                        val result = withContext(Dispatchers.IO) {
+                                            verifyApi.submit(
+                                                session = session,
+                                                subject = chosen.name,
+                                                subjectId = chosen.id,
+                                                mode = verifyMode,
+                                                question = verifyQuestion,
+                                                studentAnswer = editableText,
+                                                helpLevel = helpLevel,
+                                            )
+                                        }
+                                        verifyResult = result
+                                        verifyMessage = "Cortex response received. Review the guidance carefully."
+                                    } catch (error: Exception) {
+                                        verifyMessage = error.message ?: "Cortex Verify could not complete the request."
+                                    } finally {
+                                        verifying = false
+                                    }
+                                }
+                            }
+                        },
+                        enabled = !verifying && cloudVerifyConsent && !processing && editableText.isNotBlank() && subjects.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(if (verifying) "Verifying…" else if (verifyMode == "check") "Mark my work" else "Help me understand")
+                    }
+                    verifyMessage?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp)) }
+                    verifyResult?.let { result ->
+                        Spacer(Modifier.height(10.dp))
+                        if (verifyMode == "check") {
+                            Text(if (result.optBoolean("correct")) "Cortex verdict: Correct" else "Cortex verdict: Review needed", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            if (result.has("score")) Text("Estimated score: ${result.optDouble("score").toInt()}%")
+                            result.optString("cortexInsight").takeIf { it.isNotBlank() }?.let { Text(it, modifier = Modifier.padding(top = 6.dp)) }
+                            result.optJSONArray("steps")?.let { steps ->
+                                for (index in 0 until steps.length()) {
+                                    val step = steps.optJSONObject(index) ?: continue
+                                    Text("Step ${index + 1} · ${step.optString("status").uppercase()}", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
+                                    Text(step.optString("description"))
+                                    step.optString("note").takeIf { it.isNotBlank() }?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                }
+                            }
+                            result.optString("feedback").takeIf { it.isNotBlank() }?.let { Text("Next improvement: $it", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp)) }
+                        } else {
+                            val helpText = result.optString("hint").ifBlank { result.optString("method") }.ifBlank { result.optString("solution") }
+                            Text("Cortex guidance", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(helpText, modifier = Modifier.padding(top = 6.dp))
+                            result.optString("finalAnswer").takeIf { it.isNotBlank() }?.let { Text("Final answer: $it", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp)) }
+                        }
+                    }
                 }
             }
         }
