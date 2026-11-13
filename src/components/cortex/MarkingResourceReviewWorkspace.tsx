@@ -5,9 +5,10 @@ import Image from "next/image";
 import { AlertTriangle, FileText, Loader2, Save, ScanSearch, ShieldCheck } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { prepareMarkingResourceImport } from "@/lib/cortex/verify/marking-resource-import";
-import { saveImportedMarkingResource } from "@/lib/cortex/verify/marking-resource-import-store";
+import { getImportedMarkingResource, listImportedMarkingResources, saveImportedMarkingResource } from "@/lib/cortex/verify/marking-resource-import-store";
+import type { ImportedMarkingResource } from "@/lib/cortex/verify/marking-resource-import";
 import { extractImportedMarkingResource, type MarkingResourceExtraction } from "@/lib/cortex/verify/marking-resource-extraction";
-import { saveMarkingResourceReviewDraft } from "@/lib/cortex/verify/marking-resource-review-store";
+import { getMarkingResourceReviewDraft, saveMarkingResourceReviewDraft } from "@/lib/cortex/verify/marking-resource-review-store";
 import { extractImageLocally, isBrowserLocalOcrAvailable } from "@/lib/cortex/verify/web-local-extraction";
 import type { LocalVerifyExtraction } from "@/lib/cortex/verify/local-extraction-contract";
 import type { MarkingResourceKind } from "@/lib/cortex/verify/marking-resource";
@@ -45,6 +46,7 @@ export default function MarkingResourceReviewWorkspace() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [resourceId, setResourceId] = useState("");
+  const [savedResources, setSavedResources] = useState<ImportedMarkingResource[]>([]);
 
   useEffect(() => {
     if (!file) { setPreviewUrl(""); return; }
@@ -81,7 +83,7 @@ export default function MarkingResourceReviewWorkspace() {
     }
   }
 
-  async function saveCorrections() {
+  async function reopenResource(id: string) {\n    if (!user?.id) return;\n    setBusy(true); setMessage("");\n    try {\n      const saved = await getImportedMarkingResource(user.id, id);\n      if (!saved) throw new Error("This resource is not available in this account on this device.");\n      const draft = await getMarkingResourceReviewDraft(user.id, id);\n      const restoredFile = new File([saved.fileBlob], saved.fileName, { type: saved.mimeType });\n      setFile(restoredFile); setResourceId(saved.id); setKind(saved.kind);\n      setBoardId(saved.syllabusIdentity.boardId); setQualificationId(saved.syllabusIdentity.qualificationId);\n      setLevel(saved.syllabusIdentity.level); setSubjectId(saved.syllabusIdentity.subjectId);\n      setSyllabusId(saved.syllabusIdentity.syllabusId); setSyllabusVersion(saved.syllabusIdentity.syllabusVersion);\n      setExamYear(saved.syllabusIdentity.examYear ? String(saved.syllabusIdentity.examYear) : "");\n      setPaperComponentId(saved.syllabusIdentity.paperComponentId || ""); setSourceUrl(saved.sourceUrl || ""); setAttribution(saved.attribution || "");\n      const result = draft?.extraction || await extractImportedMarkingResource(saved);\n      setExtraction(result); setCorrectedLines(draft?.correctedLines || result.lines.map(line => ({ ...line })));\n      setLocalOcr(draft?.localOcr || null); setCorrectedRegions(draft?.localOcr?.regions || []);\n      setMessage(draft ? "Saved review draft reopened from this device." : "Original resource reopened. No corrected review draft exists yet.");\n    } catch (error) {\n      setMessage(error instanceof Error ? error.message : "Could not reopen this resource.");\n    } finally { setBusy(false); }\n  }\n\n  async function saveCorrections() {
     if (!user?.id || !extraction || !resourceId) return;
     setBusy(true); setMessage("");
     try {
@@ -105,7 +107,7 @@ export default function MarkingResourceReviewWorkspace() {
       <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">Import a resource, preserve its original file, inspect extracted text against the source, and save corrections. Nothing becomes a trusted answer key automatically.</p>
     </div>
 
-    <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
+    {savedResources.length > 0 && <section className="mb-5 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-5"><h2 className="mb-3 font-bold">Saved resources on this device</h2><div className="grid gap-2 sm:grid-cols-2">{savedResources.map(item => <button key={item.id} type="button" disabled={busy} onClick={() => void reopenResource(item.id)} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-[var(--card-border)] px-3 py-2 text-left text-sm hover:bg-[var(--muted)] disabled:opacity-50"><span className="min-w-0"><span className="block truncate font-semibold">{item.title}</span><span className="block truncate text-xs text-[var(--muted-foreground)]">{item.syllabusIdentity.boardId} · {item.syllabusIdentity.subjectId} · {item.syllabusIdentity.syllabusVersion}</span></span><span className="shrink-0 text-xs font-bold text-[var(--primary)]">Reopen</span></button>)}</div></section>}\n\n    <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
       <div className="mb-4 flex items-center gap-2"><FileText size={18} /><h2 className="font-bold">1. Resource and syllabus identity</h2></div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <label className="text-xs font-semibold">Resource file<input className={fieldClass} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.txt,application/pdf,image/jpeg,image/png,image/webp,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => { setFile(event.target.files?.[0] || null); setExtraction(null); setResourceId(""); }} /></label>
