@@ -16,7 +16,7 @@ interface QuizQuestion {
   id: number;
   question: string;
   options: string[];
-  correctIndex: number;
+  correctIndex?: number;
   explanation: string;
 }
 
@@ -64,6 +64,7 @@ export default function QuizPage() {
   const [lessonSubject, setLessonSubject] = useState("");
   const [lessonTopic, setLessonTopic] = useState("");
   const [errMsg,      setErrMsg]      = useState("");
+  const [submissionError, setSubmissionError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -113,7 +114,7 @@ export default function QuizPage() {
           body: JSON.stringify({ lessonId }),
         });
         const qd = await qr.json();
-        if (qd?.questions?.length) { setQuestions(qd.questions); setPhase("quiz"); }
+        if (qd?.questions?.length && typeof qd.attemptId === "string") { quizAttemptIdRef.current = qd.attemptId; setQuestions(qd.questions); setPhase("quiz"); }
         else { setErrMsg("Couldn't generate quiz questions. Please try again."); setPhase("error"); }
       } catch { setErrMsg("Something went wrong. Please try again."); setPhase("error"); }
     })();
@@ -122,42 +123,61 @@ export default function QuizPage() {
   function confirm() {
     if (selected === null) return;
     setConfirmed(true);
-
-    const q = questions[current];
-    if (!q) return;
-    const result = {
-      questionId: q.id,
-      correct: selected === q.correctIndex,
-      score: selected === q.correctIndex ? 100 : 0,
-      maxScore: 100,
-      percentage: selected === q.correctIndex ? 100 : 0,
-      questionIndex: current,
-    };
-    const [event] = buildQuizQuestionEvidence(quizAttemptIdRef.current, lessonId, [result], {
-      subject: lessonSubject || undefined,
-      topicId: lessonTopic || undefined,
-      reviewSessionId: reviewSessionIdRef.current,
-    });
-    if (event) void emitLearningEvent(event);
   }
 
-  function next() {
+  async function next() {
     if (selected === null) return;
     const newAnswers = [...answers, selected];
-    setAnswers(newAnswers);
     if (current < questions.length - 1) {
+      setAnswers(newAnswers);
       setCurrent(c => c + 1);
       setSelected(null);
       setConfirmed(false);
-    } else {
-      const finalCorrectCount = newAnswers.filter((a, i) => a === questions[i]?.correctIndex).length;
-      const finalPercentage = questions.length > 0 ? Math.round((finalCorrectCount / questions.length) * 100) : 0;
+      return;
+    }
+
+    setSubmissionError("");
+    try {
+      const response = await fetch("/api/learn/quiz/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ attemptId: quizAttemptIdRef.current, answers: newAnswers }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || "Could not verify this quiz. Please retry.");
+      const verifiedQuestions = Array.isArray(result.questions) ? result.questions : [];
+      if (verifiedQuestions.length !== questions.length) throw new Error("The server returned an incomplete verified result.");
+      const completedQuestions = questions.map((question, index) => ({
+        ...question,
+        correctIndex: verifiedQuestions[index].correctIndex,
+        explanation: verifiedQuestions[index].explanation ?? question.explanation,
+      }));
+      setQuestions(completedQuestions);
+      setAnswers(newAnswers);
+
+      for (let index = 0; index < verifiedQuestions.length; index++) {
+        const verified = verifiedQuestions[index];
+        const [event] = buildQuizQuestionEvidence(quizAttemptIdRef.current, lessonId, [{
+          questionId: verified.id,
+          correct: verified.correct === true,
+          score: verified.correct === true ? 100 : 0,
+          maxScore: 100,
+          percentage: verified.correct === true ? 100 : 0,
+          questionIndex: index,
+        }], {
+          subject: lessonSubject || undefined,
+          topicId: lessonTopic || undefined,
+          reviewSessionId: reviewSessionIdRef.current,
+        });
+        if (event) void emitLearningEvent(event);
+      }
+
       const completion = buildQuizCompletionEvidence({
         quizAttemptId: quizAttemptIdRef.current,
         lessonId,
-        percentage: finalPercentage,
-        questionCount: questions.length,
-        correctCount: finalCorrectCount,
+        percentage: result.score,
+        questionCount: result.questionCount,
+        correctCount: result.correctCount,
         reviewSessionId: reviewSessionIdRef.current,
         subject: lessonSubject || undefined,
         topicId: lessonTopic || undefined,
@@ -167,11 +187,14 @@ export default function QuizPage() {
         try { sessionStorage.removeItem("shadecode:cortex:active-review:v1"); } catch {}
       }
       setPhase("results");
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : "Could not verify this quiz. Please retry.");
     }
   }
 
   function restart() {
-    quizAttemptIdRef.current = createQuizAttemptId();
+    quizAttemptIdRef.current = "";
+    setSubmissionError("");
     setCurrent(0); setSelected(null); setAnswers([]); setConfirmed(false); setPhase("quiz");
   }
 
@@ -304,7 +327,7 @@ export default function QuizPage() {
   // ── Quiz ─────────────────────────────────────────────────────────────────
 
   if (!q) return null;
-  const isCorrectAnswer = selected === q.correctIndex;
+  const isCorrectAnswer = confirmed && selected === q.correctIndex;
   const progressPct     = (current / questions.length) * 100;
 
   return (
@@ -380,13 +403,14 @@ export default function QuizPage() {
           )}
 
           {/* Action button */}
+          {submissionError && <p role="alert" className="mb-3 text-sm text-[var(--danger)]">{submissionError}</p>}
           {!confirmed ? (
             <button type="button" onClick={confirm} disabled={selected === null} className="ssc-button min-h-12 w-full font-bold">
               Confirm Answer
             </button>
           ) : (
             <button type="button" onClick={next} className="ssc-button min-h-12 w-full font-bold">
-              {current < questions.length - 1 ? "Next Question" : "See Results"} <ArrowRight size={16} aria-hidden="true" />
+              {current < questions.length - 1 ? "Next Question" : "Verify & See Results"} <ArrowRight size={16} aria-hidden="true" />
             </button>
           )}
 
@@ -394,7 +418,7 @@ export default function QuizPage() {
           <div aria-hidden="true" className="mt-6 flex justify-center gap-1.5">
             {questions.map((_, i) => {
               const dot = i < answers.length
-                ? (answers[i] === questions[i].correctIndex ? "bg-[var(--success)]" : "bg-[var(--danger)]")
+                ? "bg-[var(--primary)]"
                 : i === current ? "bg-[var(--primary)]" : "bg-[var(--card-border)]";
               return <div key={i} className={`h-2 rounded-full transition-all duration-300 ${i === current ? "w-[22px]" : "w-2"} ${dot}`} />;
             })}
