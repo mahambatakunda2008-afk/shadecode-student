@@ -53,7 +53,7 @@ The live `topic_mastery` schema was inspected and made syllabus-aware in the can
 
 ## Next
 
-1. Extend the same verified topic mapping to native exam completion outbox topic scores and curriculum objective-level assessment evidence.
+1. Extend verified mapping to curriculum objective-level assessment evidence and reconcile lesson quiz progress with canonical events.
 2. Add shared typed consumers in Learn, Exam Sim, practical work, Math Checker, and recommendation surfaces without double-counting existing evidence.
 3. Add validated spaced retrieval and forgetting-risk calibration only after enough longitudinal evidence exists.
 
@@ -61,3 +61,6 @@ The live `topic_mastery` schema was inspected and made syllabus-aware in the can
 ## Verified topic mapping update (2026-11-13)
 
 Completed the first verified topic-mapping slice. New module `src/lib/curriculum/topic-mapping.ts` accepts only a resolved curriculum and exact, unique matches against verified topic knowledge records. The authenticated event route and server-side event bridge both attach the canonical knowledge key. `projectLearningEvent` passes that key into the atomic syllabus-aware projection RPC. Tests cover exact match, non-fuzzy rejection, duplicate-label ambiguity, and unverified curriculum. The mapping and its boundaries are documented in `docs/roadmaps/VERIFIED_SYLLABUS_TOPIC_MAPPING_2026-11-13.md`.
+
+
+Native exam completion now carries the same verified curriculum topic key through its durable outbox into the exam mastery projection. Migration 20261113141351 adds an optional key argument to the service-role-only projector; old outbox records remain compatible. Its SQL regression test passed in a transaction/rollback against the connected project.
