@@ -66,7 +66,7 @@ export async function extractImageLocally(image: Blob): Promise<LocalVerifyExtra
     if (regions.length === 0) warnings.unshift("No readable text regions were detected. This does not mean the image is blank.");
 
     return validateLocalVerifyExtraction({
-      rawText,
+      rawText: rawText.slice(0, 120_000),
       confidence: null,
       warnings,
       platform: "web",
@@ -136,6 +136,10 @@ export async function extractPdfPagesLocally(
         });
         const pageResult = await extractImageLocally(pageImage);
         for (const region of pageResult.regions) {
+          if (allRegions.length >= 2_000) {
+            warnings.push("OCR regions were capped at 2,000 for memory safety. Process fewer pages per batch for more detailed region review.");
+            break;
+          }
           allRegions.push({
             ...region,
             id: `pdf-page-${pageNumber}-region-${allRegions.length}`,
