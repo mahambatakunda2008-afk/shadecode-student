@@ -333,7 +333,7 @@ export async function resolveAuthenticatedCortexStudentContext(
       lastPracticeSyllabusId: memory?.last_practice_syllabus_id ?? null,
     },
     curriculumObjectives: {
-      state: curriculumObjectives.length > 0 ? "available" : "insufficient_evidence",
+      state: curriculumObjectives.some((item) => item.evidenceState === "available") ? "available" : "insufficient_evidence",
       source: "learner_curriculum_objective_progress",
       curriculumVersionId,
       evidenceCount: curriculumObjectives.reduce((count, item) => count + item.attempts + item.completedLessons, 0),
