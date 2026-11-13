@@ -1,11 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { learningEventToObservation } from "@/lib/intelligence/learningObservation";
 import type { LearningEvent } from "@/lib/intelligence/learningEvents";
+import { normalizeLearningContextLabel } from "@/lib/intelligence/learningContextKey";
 
 function subjectForEvent(event: LearningEvent): string | null {
   const subjectId = event.subjectId?.trim() ?? "";
   const subject = typeof event.metadata.subject === "string" ? event.metadata.subject.trim() : "";
-  return subject || subjectId || null;
+  const resolved = subject || subjectId;
+  return resolved ? normalizeLearningContextLabel(resolved) : null;
 }
 
 /**
@@ -24,7 +26,8 @@ export async function projectLearningEvent(
   if (!observation) return { projected: false, reason: "no-topic-observation" };
 
   const subject = subjectForEvent(event);
-  if (!observation.topicId.trim() || !subject || !event.eventId.trim() || !event.userId.trim()) {
+  const topic = normalizeLearningContextLabel(observation.topicId);
+  if (!topic || !subject || !event.eventId.trim() || !event.userId.trim()) {
     return { projected: false, reason: "missing-projection-identity" };
   }
 
@@ -33,7 +36,7 @@ export async function projectLearningEvent(
     p_user_id: event.userId,
     p_event_id: event.eventId,
     p_subject: subject,
-    p_topic: observation.topicId.trim(),
+    p_topic: topic,
     p_syllabus_id: event.syllabusId ?? null,
     p_curriculum_topic_key: null,
     p_evidence_score: evidenceScore,
