@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { runHybridJson } from "@/lib/cortex/hybridJson";
 import { isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
 import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
+import { getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 
 export type VerifyMode = "check" | "help";
 export type HelpLevel = "hint" | "method" | "solution";
@@ -36,6 +37,7 @@ export interface VerifyResult {
   solution?: string;
   finalAnswer?: string;
   content?: string;
+  execution?: "browser-local" | "cloud";
 }
 
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -145,6 +147,7 @@ Be accurate and explicit about uncertainty.`;
     if (attempt.mode === "help") {
       data = selectHelpResult(data, (attempt.level || "hint") as VerifyHelpLevel) as VerifyResult;
     }
+    if (!navigator.onLine) data.execution = "browser-local";
     recordVerifyEvent(attempt, data as VerifyResult);
     await remove(attempt.userId, attempt.id);
     return data as VerifyResult;
@@ -198,7 +201,21 @@ export function useCortexVerify() {
         try { const response = await sendAttemptNow(attempt); setResult(response); return response; }
         catch (err) { setError(`Saved for retry: ${errorMessage(err)}`); return null; }
       }
-      setError("You're offline. Saved securely on this account and will retry when you reconnect.");
+      // A warm browser-local model may provide Help Mode without network access.
+      // Mark Mode deliberately remains queued until a validated offline rubric path exists.
+      if (attempt.mode === "help" && !attempt.imageDataUrl && getBrowserLocalModelStatus().status === "ready") {
+        try {
+          const response = await sendAttemptNow(attempt);
+          setResult(response);
+          return response;
+        } catch (err) {
+          setError(`Your help request is saved. The local model could not complete it: ${errorMessage(err)}`);
+          return null;
+        }
+      }
+      setError(attempt.mode === "check"
+        ? "You're offline. Your marking request is saved for reconnect. Offline marking is not enabled for this response type yet."
+        : "You're offline. Your request is saved for reconnect. Load a supported local model to use Help Mode without internet.");
       return null;
     } catch (err) { setError(errorMessage(err)); return null; }
     finally { setLoading(false); }
