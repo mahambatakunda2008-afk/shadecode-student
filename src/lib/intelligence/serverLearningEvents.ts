@@ -1,5 +1,6 @@
 import { normalizeLearningEvent, type SupportedSourceEvent } from "./learningEvents";
 import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
+import { resolveVerifiedCurriculumTopic } from "@/lib/curriculum/topic-mapping";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { projectLearningEvent } from "./projectLearningEvent";
 
@@ -12,7 +13,12 @@ export async function emitServerLearningEvent(input: SupportedSourceEvent): Prom
   const syllabusId = curriculum.resolved.status === "resolved"
     ? curriculum.identity?.syllabusId ?? undefined
     : undefined;
-  const normalized = normalizeLearningEvent({ ...input, syllabusId });
+  const topicMapping = resolveVerifiedCurriculumTopic(curriculum.resolved, input.topicId);
+  const normalized = normalizeLearningEvent({
+    ...input,
+    syllabusId,
+    curriculumTopicKey: topicMapping.status === "matched" ? topicMapping.curriculumTopicKey : undefined,
+  });
   if (normalized.status !== "accepted") return false;
 
   // Keep server emitters dependency-light. Persistence is delegated to the same
