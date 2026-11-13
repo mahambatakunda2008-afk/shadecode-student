@@ -38,7 +38,7 @@ export interface VerifyResult {
   solution?: string;
   finalAnswer?: string;
   content?: string;
-  execution?: "browser-local" | "cloud";
+  execution?: "browser-local" | "browser-local-deterministic" | "cloud";
 }
 
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -212,7 +212,7 @@ export function useCortexVerify() {
           options.offlineRubric,
         );
         if (localResult) {
-          const response: VerifyResult = localResult;
+          const response: VerifyResult = { ...localResult, execution: "browser-local-deterministic" };
           recordVerifyEvent(attempt, response);
           await remove(attempt.userId, attempt.id);
           setResult(response);
