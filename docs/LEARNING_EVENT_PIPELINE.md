@@ -42,3 +42,10 @@ This module does not persist events or send telemetry. Persistence and analytics
 ## Next evolution
 
 Build a durable event schema and an outcome/evaluation layer. Before collecting broad telemetry, explicitly define retention, privacy, minimization and deletion rules. Then use the event stream to compare Shadow Cortex decisions with observed outcomes.
+
+
+## Verified lesson quiz delivery
+
+Lesson quizzes use server-issued attempts with answer keys retained in the database. Submission locks the attempt to the first answer set, then a single database transaction grades the stored answer key, persists one canonical `question_attempted` event per answer, projects those observations into topic mastery only when a unique verified syllabus-topic mapping exists, records curriculum objective assessment when verified objective keys are attached, writes an analytics-only `quiz_completed` summary, invalidates recommendations through the canonical-event trigger, and finalizes the attempt.
+
+The client does not re-send question evidence after completion. Deterministic per-question event identities make retries safe. A completed attempt replay returns the stored result without repeating topic exposure. Lessons without a unique verified curriculum-topic mapping still retain durable question evidence, but do not receive guessed topic mastery.
