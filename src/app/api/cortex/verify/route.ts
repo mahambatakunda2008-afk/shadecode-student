@@ -6,6 +6,7 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
 import { isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
+import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -51,20 +52,8 @@ function extractJson(text: string): Record<string, unknown> {
   return parsed as Record<string, unknown>;
 }
 
-function validCheck(value: any) {
-  return value &&
-    typeof value === "object" &&
-    typeof value.problem === "string" &&
-    typeof value.score === "number" &&
-    value.score >= 0 &&
-    typeof value.correct === "boolean" &&
-    typeof value.cortexInsight === "string" && value.cortexInsight.trim().length >= 20 &&
-    typeof value.feedback === "string" && value.feedback.trim().length >= 20 &&
-    Array.isArray(value.steps) && value.steps.length > 0 &&
-    value.steps.every((step: any) => step && typeof step.description === "string" && step.description.trim().length >= 3 && ["correct","incorrect","partial"].includes(step.status) && typeof step.note === "string") &&
-    Array.isArray(value.marksBreakdown) &&
-    value.marksBreakdown.every((item: any) => item && typeof item.criterion === "string" && item.criterion.trim().length >= 3 && Number.isFinite(item.marksLost) && item.marksLost >= 0 && typeof item.note === "string") &&
-    (value.confidence === undefined || (typeof value.confidence === "number" && value.confidence >= 0 && value.confidence <= 1));
+function validCheck(value: unknown) {
+  return isValidVerifyMarkResult(value);
 }
 
 function checkPrompt(subject: string, question: string, studentAnswer: string) {
