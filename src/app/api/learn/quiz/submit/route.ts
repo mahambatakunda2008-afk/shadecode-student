@@ -16,8 +16,6 @@ function bearer(req: Request) {
   return value?.startsWith("Bearer ") ? value.slice(7).trim() || null : null;
 }
 
-type StoredQuestion = { id: number | string; question: string; options: string[]; correctIndex: number; explanation: string };
-
 export async function POST(req: Request) {
   try {
     const limited = await applyRateLimit(req, aiEndpointLimiter);
@@ -25,8 +23,8 @@ export async function POST(req: Request) {
     const token = bearer(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const supabase = getAdmin();
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const admin = getAdmin();
+    const { data: { user }, error: authError } = await admin.auth.getUser(token);
     if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
@@ -43,100 +41,55 @@ export async function POST(req: Request) {
       auth: { autoRefreshToken: false, persistSession: false },
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
+
     const { data: claim, error: claimError } = await learnerClient.rpc("claim_lesson_quiz_attempt", {
       p_attempt_id: attemptId,
       p_answers: answers,
     });
     if (claimError) {
       const conflict = /different answers|already being submitted/i.test(claimError.message || "");
-      return NextResponse.json({ error: conflict ? "This attempt is already locked to another answer set." : "Could not claim this quiz attempt.", retryable: !conflict }, { status: conflict ? 409 : 503 });
+      return NextResponse.json({
+        error: conflict ? "This attempt is already locked to another answer set." : "Could not claim this quiz attempt.",
+        retryable: !conflict,
+      }, { status: conflict ? 409 : 503 });
     }
     if (claim?.status === "completed") return NextResponse.json(claim.result);
 
-    const { data: attempt, error: attemptError } = await supabase.from("lesson_quiz_attempts")
-      .select("id,user_id,lesson_id,questions,status,answers,result")
+    const { data: attempt, error: attemptError } = await admin.from("lesson_quiz_attempts")
+      .select("id,lesson_id,questions,status,answers")
       .eq("id", attemptId).eq("user_id", user.id).maybeSingle();
     if (attemptError || !attempt) return NextResponse.json({ error: "Quiz attempt not found." }, { status: 404 });
 
-    if (attempt.status === "completed") {
-      const previous = Array.isArray(attempt.answers) ? attempt.answers : [];
-      if (JSON.stringify(previous) !== JSON.stringify(answers)) {
-        return NextResponse.json({ error: "This quiz attempt has already been submitted with different answers." }, { status: 409 });
-      }
-      return NextResponse.json(attempt.result);
-    }
-
-    const questions = Array.isArray(attempt.questions) ? attempt.questions as StoredQuestion[] : [];
+    const questions = Array.isArray(attempt.questions) ? attempt.questions as Array<Record<string, unknown>> : [];
     if (!questions.length || answers.length !== questions.length ||
-        questions.some(q => !Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex > 3 || !Array.isArray(q.options) || q.options.length !== 4)) {
+        questions.some(q => !Number.isInteger(q.correctIndex) || Number(q.correctIndex) < 0 || Number(q.correctIndex) > 3 ||
+          !Array.isArray(q.options) || q.options.length !== 4)) {
       return NextResponse.json({ error: "Stored quiz is invalid. Please generate a new attempt." }, { status: 422 });
     }
 
-    const correctCount = answers.reduce((total: number, selected: number, index: number) =>
-      total + (selected === questions[index].correctIndex ? 1 : 0), 0);
-    const score = Math.round((correctCount / questions.length) * 10000) / 100;
-    const reviewedQuestions = questions.map((question, index) => ({
-      id: question.id,
-      correctIndex: question.correctIndex,
-      explanation: question.explanation,
-      selectedIndex: answers[index],
-      correct: answers[index] === question.correctIndex,
-    }));
-
-    const { data: lesson, error: lessonError } = await supabase.from("learn_lessons")
-      .select("id,user_id,subject_id,curriculum_version_id,curriculum_objective_keys")
+    const { data: lesson, error: lessonError } = await admin.from("learn_lessons")
+      .select("id,user_id,subject_id")
       .eq("id", attempt.lesson_id).eq("user_id", user.id).maybeSingle();
     if (lessonError || !lesson) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
+    const { data: subject, error: subjectError } = await admin.from("subjects").select("id,name")
+      .eq("id", lesson.subject_id).eq("user_id", user.id).maybeSingle();
+    if (subjectError) return NextResponse.json({ error: "Could not verify lesson subject." }, { status: 500 });
+    if (!subject?.name) return NextResponse.json({ error: "Lesson subject not found.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    const subjectAccess = await resolveLearnerSubject(admin, user.id, subject.name, subject.id);
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
 
-    let curriculumTracked = false;
-    let mastery: unknown = null;
-    let reason: string | undefined;
-    if (lesson.curriculum_version_id && Array.isArray(lesson.curriculum_objective_keys) && lesson.curriculum_objective_keys.length > 0) {
-      const { data: subjectRow, error: subjectError } = await supabase.from("subjects").select("id,name")
-        .eq("id", lesson.subject_id).eq("user_id", user.id).maybeSingle();
-      if (subjectError) return NextResponse.json({ error: "Could not verify lesson subject." }, { status: 500 });
-      if (!subjectRow?.name) return NextResponse.json({ error: "Lesson subject not found.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
-      const subjectAccess = await resolveLearnerSubject(supabase, user.id, subjectRow.name, subjectRow.id);
-      if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
-
-      const { data, error } = await learnerClient.rpc("record_curriculum_assessment_result_idempotent", {
-        p_user_id: user.id,
-        p_curriculum_version_id: lesson.curriculum_version_id,
-        p_objective_keys: lesson.curriculum_objective_keys,
-        p_score: score,
-        p_correct_count: correctCount,
-        p_question_count: questions.length,
-        p_lesson_id: lesson.id,
-        p_attempt_id: attempt.id,
-        p_evidence: { source: "lesson_quiz", attemptId: attempt.id, submittedAt: new Date().toISOString() },
-      });
-      if (error) {
-        console.error("Curriculum assessment recording error:", error);
-        return NextResponse.json({ error: "Could not record curriculum assessment. Your answers remain available; retry submission.", retryable: true }, { status: 503 });
-      }
-      curriculumTracked = true;
-      mastery = data;
-    } else {
-      reason = "CURRICULUM_UNVERIFIED";
-    }
-
-    const result = {
-      attemptId: attempt.id,
-      score,
-      correctCount,
-      questionCount: questions.length,
-      questions: reviewedQuestions,
-      curriculumTracked,
-      ...(reason ? { reason } : {}),
-      mastery,
-    };
-
-    const { error: saveError } = await supabase.from("lesson_quiz_attempts").update({
-      status: "completed", answers, result, completed_at: new Date().toISOString(),
-    }).eq("id", attempt.id).eq("user_id", user.id).eq("status", "issued");
-    if (saveError) {
-      console.error("Quiz result persistence error:", saveError);
-      return NextResponse.json({ error: "Your score was calculated but could not be saved. Retry safely.", retryable: true }, { status: 503 });
+    // One database transaction grades the server-owned answer key, records
+    // curriculum mastery, persists the Cortex event, invalidates recommendations,
+    // and finalizes the attempt. Replaying this RPC returns the saved result.
+    const { data: result, error: completionError } = await learnerClient.rpc("complete_lesson_quiz_attempt", {
+      p_attempt_id: attemptId,
+    });
+    if (completionError || !result) {
+      console.error("Atomic quiz completion error:", completionError);
+      return NextResponse.json({
+        error: "Quiz completion could not be finalized. Your answer set is locked and safe; retry submission.",
+        retryable: true,
+      }, { status: 503 });
     }
 
     return NextResponse.json(result);
