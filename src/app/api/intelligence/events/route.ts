@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
       // The projection RPC is deliberately service_role-only. Keep event
       // ingestion on the learner session, then use the server-only admin
       // client for the isolated projection transaction.
-      projection = await projectLearningEvent(createSupabaseAdminClient(), normalized.event);
+      const projectionClient = createSupabaseAdminClient();
+      if (!projectionClient) throw new Error("SERVICE_ROLE_UNAVAILABLE");
+      projection = await projectLearningEvent(projectionClient, normalized.event);
     } catch (projectionError) {
       console.error("[learning-events] mastery projection failed:", projectionError);
       return NextResponse.json({
