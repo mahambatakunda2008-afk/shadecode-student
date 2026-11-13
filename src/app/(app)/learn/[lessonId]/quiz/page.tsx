@@ -280,7 +280,7 @@ export default function QuizPage() {
                 <div className="mb-3 flex flex-col gap-1.5 pl-[26px]">
                   <div className="flex items-baseline gap-2">
                     <span className="min-w-16 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--muted-foreground)]">Your ans:</span>
-                    <span className={`text-[13px] font-semibold ${isCorrect ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>{question.options[userAns] ?? "No answer"}</span>
+                    <span className={`text-[13px] font-semibold ${isCorrect ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>{userAns === undefined ? "No answer" : question.options[userAns] ?? "No answer"}</span>
                   </div>
                   {!isCorrect && (
                     <div className="flex items-baseline gap-2">
