@@ -53,6 +53,45 @@ describe("markWithOfflineRubric", () => {
     expect(result?.correct).toBe(true);
   });
 
+  it("awards explicit structured partial credit criterion by criterion", () => {
+    const result = markWithOfflineRubric("Explain the process", "Energy is transferred by conduction. Particles vibrate more and transfer energy.", {
+      version: 1,
+      kind: "structured-points",
+      marks: 4,
+      criteria: [
+        { id: "transfer", description: "Identifies energy transfer by conduction", marks: 2, acceptedAnswers: ["energy is transferred by conduction", "conduction transfers energy"] },
+        { id: "particles", description: "Explains particle vibration", marks: 2, acceptedAnswers: ["particles vibrate more", "increased particle vibration"] },
+      ],
+    });
+    expect(result?.correct).toBe(true);
+    expect(result?.score).toBe(100);
+    expect(result?.marksBreakdown).toHaveLength(2);
+  });
+
+  it("awards partial marks without treating unapproved wording as a match", () => {
+    const result = markWithOfflineRubric("Explain", "Conduction happens. Particles move.", {
+      version: 1,
+      kind: "structured-points",
+      marks: 4,
+      criteria: [
+        { id: "transfer", description: "Energy transfer", marks: 2, acceptedAnswers: ["energy is transferred by conduction"] },
+        { id: "particles", description: "Particle vibration", marks: 2, acceptedAnswers: ["particles vibrate more"] },
+      ],
+    });
+    expect(result?.correct).toBe(false);
+    expect(result?.score).toBe(0);
+    expect(result?.marksBreakdown.reduce((sum, item) => sum + item.marksLost, 0)).toBe(4);
+  });
+
+  it("rejects inconsistent structured rubric totals", () => {
+    expect(markWithOfflineRubric("Explain", "Some answer", {
+      version: 1,
+      kind: "structured-points",
+      marks: 5,
+      criteria: [{ id: "a", description: "Point A", marks: 2, acceptedAnswers: ["point a"] }],
+    })).toBeNull();
+  });
+
   it("declines malformed rubrics, blank answers and unparseable numbers", () => {
     expect(markWithOfflineRubric("Q", "A", { ...base, kind: "exact-number", answer: 4, marks: 0 })).toBeNull();
     expect(markWithOfflineRubric("Q", "", { ...base, kind: "multiple-choice", answer: "A" })).toBeNull();
