@@ -110,7 +110,7 @@ export async function extractPdfPagesLocally(
       verbosity: 0,
     });
     const document = await loadingTask.promise;
-    destroyDocument = () => document.destroy();
+    destroyDocument = () => loadingTask.destroy();
     const allRegions: LocalVerifyExtraction["regions"] = [];
     const warnings: string[] = [
       "PDF pages were rendered and OCRed locally in this browser. No PDF or page image was uploaded.",
