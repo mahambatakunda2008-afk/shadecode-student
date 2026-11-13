@@ -1,5 +1,6 @@
 import type { ExamQuestion } from "@/lib/exam/types";
 import type { OfflineVerifyRubric } from "./offline-marking";
+import { validateCuratedMarkingRubric } from "./marking-resource";
 
 /**
  * Converts only question types with an explicit deterministic answer key.
@@ -9,11 +10,23 @@ export function buildOfflineVerifyRubric(question: ExamQuestion): OfflineVerifyR
   const marks = Math.max(1, Math.round(Number(question.marks) || 1));
   const criterion = question.numeric ? "Numerical answer" : "Selected option";
 
-  if (question.offlineMarking?.version === 1 && question.offlineMarking.criteria.length > 0) {
-    const criteria = question.offlineMarking.criteria;
-    const total = criteria.reduce((sum, item) => sum + item.marks, 0);
-    if (criteria.every(item => Number.isFinite(item.marks) && item.marks > 0) && total > 0) {
-      return { version: 1, kind: "structured-points", marks: total, criteria };
+  if (question.offlineMarking?.version === 1 && question.syllabusIdentity) {
+    const candidate = question.offlineMarking;
+    const total = candidate.criteria.reduce((sum, item) => sum + item.marks, 0);
+    const rubric = {
+      version: 1 as const,
+      criteria: candidate.criteria,
+      totalMarks: total,
+      sourceEvidenceId: candidate.source.id,
+      syllabusIdentity: candidate.source.syllabusIdentity,
+      reviewerId: candidate.reviewerId,
+      reviewedAt: candidate.reviewedAt,
+      limitations: candidate.limitations,
+    };
+    const evidenceMatchesQuestion = JSON.stringify(candidate.source.syllabusIdentity) === JSON.stringify(question.syllabusIdentity);
+    const validation = validateCuratedMarkingRubric(rubric, candidate.source);
+    if (evidenceMatchesQuestion && total === marks && validation.valid) {
+      return { version: 1, kind: "structured-points", marks: total, criteria: candidate.criteria };
     }
   }
 
