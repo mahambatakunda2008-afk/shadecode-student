@@ -35,7 +35,7 @@ export function selectHelpResult(value: unknown, level: VerifyHelpLevel): Verify
   if (level === "hint") return { ...common, hint: result.hint };
   if (level === "method") return { ...common, method: result.method };
 
-  const solution = result.solution ?? result.content;
+  const solution = typeof result.solution === "string" && result.solution.trim().length >= 20 ? result.solution : result.content;
   return {
     ...common,
     ...(typeof solution === "string" ? { solution } : {}),
