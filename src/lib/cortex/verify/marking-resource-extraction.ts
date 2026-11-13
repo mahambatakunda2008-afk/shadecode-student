@@ -132,7 +132,7 @@ export async function extractImportedMarkingResource(
       for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
         const page = await document.getPage(pageNumber);
         const textContent = await page.getTextContent();
-        const buckets = new Map<number, string[]>();
+        const buckets = new Map<number, { x: number; text: string }[]>();
         for (const item of textContent.items) {
           if (!("str" in item) || !item.str.trim()) continue;
           const x = Number(item.transform[4]) || 0;
@@ -186,6 +186,7 @@ export async function extractImportedMarkingResource(
         status: "failed",
         pageCount: null,
         lines: [],
+        regions: [],
         markers: [],
         warnings: [error instanceof Error ? `PDF extraction failed: ${error.message}` : "PDF extraction failed."],
         extractionEngine: "pdfjs-dist-page-text-v1",
