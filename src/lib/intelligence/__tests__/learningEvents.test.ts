@@ -37,7 +37,7 @@ describe("canonical learning events", () => {
     expect(result.status).toBe("accepted");
     if (result.status === "accepted") {
       expect(result.event.kind).toBe("lesson_completed");
-      expect(result.event.topicId).toBe("topic-1");
+      expect(result.event.topicId).toBe("topic 1");
       expect(result.event.metadata).toEqual({ progress: 100, aggregateOnly: false });
     }
   });
