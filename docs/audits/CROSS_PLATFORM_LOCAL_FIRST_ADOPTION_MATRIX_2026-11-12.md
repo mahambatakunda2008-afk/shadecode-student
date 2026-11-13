@@ -125,6 +125,20 @@ A platform can be labelled **Offline-ready** only when all P0/P1 journeys pass o
 11. Test low-storage, browser storage eviction, interrupted downloads, app update and schema migration.
 12. Repeat on a second device/account to verify cross-device convergence.
 
+## Server-verified lesson quiz completion (2026-11-13)
+
+The lesson quiz submission path now completes its authoritative work inside one Postgres transaction through `complete_lesson_quiz_attempt`:
+
+1. The authenticated claim RPC locks the attempt to its first answer set. A different answer set is rejected.
+2. The completion RPC grades against the answer key stored server-side in `lesson_quiz_attempts`; browser-supplied correctness is not trusted.
+3. Curriculum assessment recording uses the stable attempt identity and existing idempotent mastery function.
+4. A deterministic `quiz_completed` event is inserted into `cortex_events`. The existing database trigger increments the shared recommendation-cache generation in the same transaction.
+5. The attempt result and `completed` status are committed with those effects. A replay with the same attempt returns the stored result; a conflicting replay is rejected.
+
+The quiz screen continues to send verified per-question evidence after the server returns, but it no longer emits a second client-originated quiz-completion event. The durable server event is authoritative for completion and recommendation invalidation.
+
+A regression transaction was executed against the active Supabase project and rolled back. It verified server-side scoring, same-answer completion replay, conflicting-answer rejection, completed attempt persistence, and exactly one durable Cortex completion event. This was a database transaction test, not a deployed API/browser test or multi-connection stress test. Production deployment and full build status remain unverified.
+
 ## Evidence boundary
 This document records static source inspection and prior repository context. It does not certify airplane-mode behaviour, Android/iOS device support, desktop release completeness, local OCR, local AI quality, or full syllabus coverage. Update each row only when a reproducible test and platform/version evidence are attached.
 
