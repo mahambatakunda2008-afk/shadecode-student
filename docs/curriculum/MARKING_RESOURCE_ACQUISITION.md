@@ -56,7 +56,7 @@ Required evidence:
 - extraction engine/version, page count, text fingerprint, page-level extraction warnings;
 - review status, reviewer role/ID, timestamp, unresolved issues and corrections.
 
-Use `src/lib/cortex/verify/marking-resource.ts` as the shared rights/provenance gate. Its current rubric validator requires verified source status, rights-cleared private offline use, matching syllabus identity, reviewer evidence, explicit limitations and criterion marks that sum to the total.
+Use `src/lib/cortex/verify/marking-resource-sources.ts` as the initial discovery catalogue. Every entry defaults to unknown reuse rights and disables automatic crawling. Use `src/lib/cortex/verify/marking-resource.ts` as the shared rights/provenance gate. Its current rubric validator requires verified source status, rights-cleared private offline use, matching syllabus identity, reviewer evidence, explicit limitations and criterion marks that sum to the total.
 
 ## 4. Build a useful marking scheme, not just a text dump
 
