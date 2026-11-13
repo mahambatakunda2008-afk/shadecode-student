@@ -31,8 +31,9 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const lessonId = typeof body.lessonId === "string" ? body.lessonId : null;
+    const attemptId = typeof body.attemptId === "string" ? body.attemptId.trim() : "";
     const answers = Array.isArray(body.answers) ? body.answers : null;
-    if (!lessonId || !answers || answers.length === 0) {
+    if (!lessonId || !attemptId || attemptId.length < 8 || attemptId.length > 200 || !answers || answers.length === 0) {
       return NextResponse.json({ error: "lessonId and answers are required" }, { status: 400 });
     }
 
@@ -78,7 +79,13 @@ export async function POST(req: Request) {
     const questionCount = answers.length;
     const score = Math.round((correctAnswers / questionCount) * 10000) / 100;
 
-    const { data, error } = await supabase.rpc("record_curriculum_assessment_result", {
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!anonKey) return NextResponse.json({ error: "Authentication configuration unavailable." }, { status: 500 });
+    const learnerClient = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data, error } = await learnerClient.rpc("record_curriculum_assessment_result_idempotent", {
       p_user_id: user.id,
       p_curriculum_version_id: lesson.curriculum_version_id,
       p_objective_keys: objectiveKeys,
@@ -86,8 +93,10 @@ export async function POST(req: Request) {
       p_correct_count: correctAnswers,
       p_question_count: questionCount,
       p_lesson_id: lesson.id,
+      p_attempt_id: attemptId,
       p_evidence: {
         source: "lesson_quiz",
+        attemptId,
         submittedAt: new Date().toISOString()
       }
     });
