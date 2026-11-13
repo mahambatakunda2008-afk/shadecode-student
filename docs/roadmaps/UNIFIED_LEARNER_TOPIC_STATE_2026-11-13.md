@@ -53,7 +53,7 @@ The live `topic_mastery` schema was inspected and made syllabus-aware in the can
 
 ## Next
 
-1. Extend verified mapping to curriculum objective-level assessment evidence and reconcile lesson quiz progress with canonical events.
+1. Extend the same shared evidence contract to lesson-view/completion and activity interactions where meaningful assessment evidence exists; avoid treating passive views as mastery.
 2. Add shared typed consumers in Learn, Exam Sim, practical work, Math Checker, and recommendation surfaces without double-counting existing evidence.
 3. Add validated spaced retrieval and forgetting-risk calibration only after enough longitudinal evidence exists.
 
@@ -64,3 +64,8 @@ Completed the first verified topic-mapping slice. New module `src/lib/curriculum
 
 
 Native exam completion now carries the same verified curriculum topic key through its durable outbox into the exam mastery projection. Migration 20261113141351 adds an optional key argument to the service-role-only projector; old outbox records remain compatible. Its SQL regression test passed in a transaction/rollback against the connected project.
+
+
+## Learn quiz integration update (2026-11-13)
+
+Lesson quiz completion now updates two complementary records atomically: the existing idempotent curriculum objective assessment progress and the syllabus-aware `topic_mastery` projection. The completion function resolves only the lesson's attached verified curriculum version and requires exactly one verified topic knowledge match. It writes a canonical quiz event with explicit score/correctness evidence and projects using the stable quiz attempt ID. A retry of the same completed attempt returns the stored result and cannot count the evidence twice. Unmatched or ambiguous topics remain unprojected rather than guessed. Migration `20261113142018_unify_lesson_quiz_topic_mastery` is applied; a SQL structural regression test passed in a transaction/rollback. Full authenticated quiz submission replay and app build remain unverified.
