@@ -13,7 +13,7 @@ declare
   v_count integer;
   v_other boolean;
 begin
-  v_first := public.project_exam_topic_mastery(v_user,v_attempt,'Outbox regression','Atomic topic',60,now(),'TEST-SYLLABUS-A');
+  v_first := public.project_exam_topic_mastery(v_user,v_attempt,'Outbox regression','Atomic topic',60,now(),'TEST-SYLLABUS-A','TEST.topic.atomic');
   if not v_first then raise exception 'First mastery projection was not applied'; end if;
 
   v_retry := public.project_exam_topic_mastery(v_user,v_attempt,'Outbox regression','Atomic topic',60,now(),'TEST-SYLLABUS-A');
@@ -22,12 +22,12 @@ begin
   select * into v_row from public.topic_mastery
   where user_id=v_user and subject='Outbox regression' and topic='Atomic topic' and syllabus_id='TEST-SYLLABUS-A';
   if not found then raise exception 'Mastery row was not created'; end if;
-  if v_row.attempts <> 1 or v_row.exposure <> 1 or v_row.mastery_score <> 60 then
+  if v_row.attempts <> 1 or v_row.exposure <> 1 or v_row.mastery_score <> 60 or v_row.curriculum_topic_key <> 'TEST.topic.atomic' then
     raise exception 'Unexpected first projection values: attempts %, exposure %, mastery %',
       v_row.attempts,v_row.exposure,v_row.mastery_score;
   end if;
 
-  v_first := public.project_exam_topic_mastery(v_user,v_attempt || '-second','Outbox regression','Atomic topic',100,now(),'TEST-SYLLABUS-A');
+  v_first := public.project_exam_topic_mastery(v_user,v_attempt || '-second','Outbox regression','Atomic topic',100,now(),'TEST-SYLLABUS-A','TEST.topic.atomic');
   if not v_first then raise exception 'Second distinct attempt was not applied'; end if;
 
   select * into v_row from public.topic_mastery
@@ -37,7 +37,7 @@ begin
       v_row.attempts,v_row.exposure,v_row.mastery_score;
   end if;
 
-  v_other := public.project_exam_topic_mastery(v_user,v_attempt,'Outbox regression','Atomic topic',20,now(),'TEST-SYLLABUS-B');
+  v_other := public.project_exam_topic_mastery(v_user,v_attempt,'Outbox regression','Atomic topic',20,now(),'TEST-SYLLABUS-B','TESTB.topic.atomic');
   if not v_other then raise exception 'Different syllabus attempt was not applied'; end if;
 
   select count(*) into v_count from public.topic_mastery
