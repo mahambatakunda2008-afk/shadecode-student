@@ -37,6 +37,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "A valid attemptId and answer selections are required." }, { status: 400 });
     }
 
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!anonKey) return NextResponse.json({ error: "Authentication configuration unavailable." }, { status: 500 });
+    const learnerClient = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data: claim, error: claimError } = await learnerClient.rpc("claim_lesson_quiz_attempt", {
+      p_attempt_id: attemptId,
+      p_answers: answers,
+    });
+    if (claimError) {
+      const conflict = /different answers|already being submitted/i.test(claimError.message || "");
+      return NextResponse.json({ error: conflict ? "This attempt is already locked to another answer set." : "Could not claim this quiz attempt.", retryable: !conflict }, { status: conflict ? 409 : 503 });
+    }
+    if (claim?.status === "completed") return NextResponse.json(claim.result);
+
     const { data: attempt, error: attemptError } = await supabase.from("lesson_quiz_attempts")
       .select("id,user_id,lesson_id,questions,status,answers,result")
       .eq("id", attemptId).eq("user_id", user.id).maybeSingle();
@@ -83,12 +99,6 @@ export async function POST(req: Request) {
       const subjectAccess = await resolveLearnerSubject(supabase, user.id, subjectRow.name, subjectRow.id);
       if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
 
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (!anonKey) return NextResponse.json({ error: "Authentication configuration unavailable." }, { status: 500 });
-      const learnerClient = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, anonKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      });
       const { data, error } = await learnerClient.rpc("record_curriculum_assessment_result_idempotent", {
         p_user_id: user.id,
         p_curriculum_version_id: lesson.curriculum_version_id,
