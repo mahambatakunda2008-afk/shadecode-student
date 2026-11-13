@@ -4,8 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { emitLearningEvent } from "@/lib/intelligence/emitLearningEvent";
-import { buildQuizQuestionEvidence } from "@/lib/intelligence/quizEvidence";
 import { normalizeLearningContext } from "@/lib/intelligence/learningContextKey";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
@@ -155,22 +153,7 @@ export default function QuizPage() {
       setQuestions(completedQuestions);
       setAnswers(newAnswers);
 
-      for (let index = 0; index < verifiedQuestions.length; index++) {
-        const verified = verifiedQuestions[index];
-        const [event] = buildQuizQuestionEvidence(quizAttemptIdRef.current, lessonId, [{
-          questionId: verified.id,
-          correct: verified.correct === true,
-          score: verified.correct === true ? 100 : 0,
-          maxScore: 100,
-          percentage: verified.correct === true ? 100 : 0,
-          questionIndex: index,
-        }], {
-          subject: lessonSubject || undefined,
-          topicId: lessonTopic || undefined,
-          reviewSessionId: reviewSessionIdRef.current,
-        });
-        if (event) void emitLearningEvent(event);
-      }
+      // Verified question evidence is persisted and projected atomically by the server.
       if (reviewSessionIdRef.current) {
         try { sessionStorage.removeItem("shadecode:cortex:active-review:v1"); } catch {}
       }
