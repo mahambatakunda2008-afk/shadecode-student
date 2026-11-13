@@ -28,6 +28,13 @@ begin
   ]'::jsonb)
   returning id into v_attempt;
 
+  if has_function_privilege('authenticated','public.record_curriculum_assessment_result(uuid,uuid,text[],numeric,integer,integer,uuid,jsonb)','EXECUTE') then
+    raise exception 'Authenticated role can bypass verified quiz completion to write curriculum mastery';
+  end if;
+  if has_function_privilege('authenticated','public.record_curriculum_assessment_result_idempotent(uuid,uuid,text[],numeric,integer,integer,uuid,text,jsonb)','EXECUTE') then
+    raise exception 'Authenticated role can directly submit curriculum assessment scores';
+  end if;
+
   execute 'set local role authenticated';
   select public.claim_lesson_quiz_attempt(v_attempt,array[2,0]) into v_claim;
   if v_claim->>'status' <> 'processing' then raise exception 'Quiz claim did not enter processing'; end if;
