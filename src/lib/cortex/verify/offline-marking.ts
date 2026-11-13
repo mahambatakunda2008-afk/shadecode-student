@@ -74,6 +74,9 @@ export function markWithOfflineRubric(
       exact: rubric.answer,
       tolerance: rubric.tolerance ?? 0,
     });
+    // A numeric rubric cannot fairly judge a response that contains no parseable number.
+    // Return null so the caller can route it to Help/cloud marking instead of recording a false zero.
+    if (marked.matched === null) return null;
     correct = marked.correct;
   } else if (rubric.kind === "multiple-choice") {
     correct = normalized(studentAnswer) === normalized(rubric.answer);
