@@ -161,6 +161,10 @@ export default function MarkingResourceReviewWorkspace() {
     setCorrectedLines(current => current.map((line, itemIndex) => itemIndex === index ? { ...line, text } : line));
   }
 
+  function updateRegion(index: number, text: string) {
+    setCorrectedRegions(current => current.map((region, itemIndex) => itemIndex === index ? { ...region, text } : region));
+  }
+
   return <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
     <div className="mb-6">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--primary)]">Cortex Verify · Resource intake</p>
