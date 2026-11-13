@@ -110,7 +110,6 @@ export async function extractImportedMarkingResource(
       const loadingTask = pdfjs.getDocument({
         data: bytes,
         useSystemFonts: true,
-        isEvalSupported: false,
         disableFontFace: true,
         verbosity: 0,
       });
