@@ -189,3 +189,12 @@ Do not create a competing Verify page, a second attempt queue, or a duplicate do
 9. **Acceptance:** airplane mode, reload/reopen, force-close, account switch, reconnect, duplicate replay, conflict, low storage, low-memory device, accessibility, and real-device testing.
 
 A feature is not complete because the page renders, a request is queued, or a model returns JSON. Completion requires an end-to-end student workflow with reliable evidence and explicit offline/online behavior.
+
+
+## Curated structured partial-credit checks
+
+Cortex Verify now has a bounded deterministic path for structured questions when the question resource carries an explicit `offlineMarking` rubric (version 1). Each criterion has a stable ID, description, positive mark value, and one or more explicitly approved answer phrases. The criterion marks must sum exactly to the rubric total. The adapter does not derive these keys from a prose model answer or examiner paragraph.
+
+The local checker awards each criterion only when an approved phrase is present as a whole phrase in the student's normalized response. It returns criterion-level feedback and partial credit. This is deliberately conservative: synonymous wording, diagrams, equations expressed differently, multi-step mathematical reasoning, and context-sensitive explanations may be missed. A miss is not proof that the student's idea is wrong. These checks must be labelled as bounded offline checks and remain eligible for deeper examiner/Cortex review when connected. They are not a replacement for Cambridge/ZIMSEC examiner judgement.
+
+Question generation and resource ingestion must preserve the curated `offlineMarking` field into the shared question model before a question can use this path. Unkeyed structured/essay questions continue to return unsupported and must not receive invented marks.
