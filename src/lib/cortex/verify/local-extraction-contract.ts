@@ -19,7 +19,7 @@ export type VerifyExtractionRegion = {
 
 export type LocalVerifyExtraction = {
   rawText: string;
-  confidence: number;
+  confidence: number | null;
   warnings: string[];
   platform: VerifyExtractionPlatform;
   engine: string;
@@ -48,7 +48,7 @@ export function validateLocalVerifyExtraction(value: unknown): LocalVerifyExtrac
   if (typeof value.rawText !== "string" || value.rawText.length > MAX_TEXT_LENGTH) {
     throw new Error("Local extraction returned missing or oversized text.");
   }
-  if (!validConfidence(value.confidence)) {
+  if (value.confidence !== null && !validConfidence(value.confidence)) {
     throw new Error("Local extraction returned an invalid confidence value.");
   }
   if (!Array.isArray(value.warnings) ||
@@ -101,7 +101,7 @@ export function validateLocalVerifyExtraction(value: unknown): LocalVerifyExtrac
 
   return {
     rawText: value.rawText,
-    confidence: value.confidence,
+    confidence: value.confidence as number | null,
     warnings: (value.warnings as string[]).slice(0, MAX_WARNINGS),
     platform: value.platform as VerifyExtractionPlatform,
     engine: value.engine.trim(),
