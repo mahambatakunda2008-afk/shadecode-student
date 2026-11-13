@@ -10,6 +10,14 @@ import { isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib
 export type VerifyMode = "check" | "help";
 export type HelpLevel = "hint" | "method" | "solution";
 
+export type VerifyExtraction = {
+  rawText: string;
+  confidence: number;
+  warnings: string[];
+  execution: "online-cloud";
+  sourceStored: false;
+};
+
 export interface VerifyResult {
   problem: string;
   confidence?: number;
@@ -158,6 +166,7 @@ export function useCortexVerify() {
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [extracting, setExtracting] = useState(false);
 
   const submit = useCallback(async (options: {
     mode: VerifyMode;
@@ -194,6 +203,38 @@ export function useCortexVerify() {
     finally { setLoading(false); }
   }, []);
 
+  const extractImage = useCallback(async (image: File, cloudConsent: boolean): Promise<VerifyExtraction> => {
+    if (!cloudConsent) throw new Error("Confirm cloud processing before extracting this image.");
+    setExtracting(true);
+    setError(null);
+    try {
+      await currentUserId();
+      const form = new FormData();
+      form.append("image", image);
+      form.append("cloudConsent", "true");
+      const response = await fetchWithTimeout("/api/cortex/verify/extract", { method: "POST", body: form });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error || "Image extraction failed.");
+      if (!data || typeof data.rawText !== "string" || typeof data.confidence !== "number" ||
+          !Array.isArray(data.warnings) || !data.warnings.every((item: unknown) => typeof item === "string")) {
+        throw new Error("Cortex returned an invalid extraction.");
+      }
+      return {
+        rawText: data.rawText,
+        confidence: Math.max(0, Math.min(1, data.confidence)),
+        warnings: data.warnings,
+        execution: "online-cloud",
+        sourceStored: false,
+      };
+    } catch (err) {
+      const message = errorMessage(err);
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setExtracting(false);
+    }
+  }, []);
+
   const check = useCallback((options: Parameters<typeof submit>[0] & { mode: "check" }) => submit(options), [submit]);
   const help = useCallback((options: Parameters<typeof submit>[0] & { mode: "help"; level: HelpLevel }) => submit(options), [submit]);
   const clearResult = useCallback(() => { setResult(null); setError(null); }, []);
@@ -221,5 +262,5 @@ export function useCortexVerify() {
     return () => { cancelled = true; window.removeEventListener("online", processQueueOnce); if (timer) window.clearTimeout(timer); };
   }, []);
 
-  return { result, loading, error, check, help, clearResult };
+  return { result, loading, error, extracting, extractImage, check, help, clearResult };
 }
