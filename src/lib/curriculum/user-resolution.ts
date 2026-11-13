@@ -113,7 +113,7 @@ export async function resolveUserSystemCurriculum(userId: string, subjectId?: st
   }
 
   const identities = normalizeStoredCurriculumIdentities(profile?.curriculum_subjects);
-  const normalizeSubject = (value: string) => value.normalize("NFKC").toLocaleLowerCase("en").replace(/[^\\p{L}\\p{N}]+/gu, " ").trim();
+  const normalizeSubject = (value: string) => value.normalize("NFKC").toLocaleLowerCase("en").replace(/[^a-z0-9]+/g, " ").trim();
   const requestedSubject = subjectId ? normalizeSubject(subjectId) : "";
   const matches = subjectId
     ? identities.filter((identity) => normalizeSubject(identity.subjectId) === requestedSubject
