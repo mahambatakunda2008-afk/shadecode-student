@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { normalizeLearningEvent, type SupportedSourceEvent } from "@/lib/intelligence/learningEvents";
 import { projectLearningEvent } from "@/lib/intelligence/projectLearningEvent";
 import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
+import { resolveVerifiedCurriculumTopic } from "@/lib/curriculum/topic-mapping";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,12 @@ export async function POST(request: NextRequest) {
     const verifiedSyllabusId = curriculum.resolved.status === "resolved"
       ? curriculum.identity?.syllabusId ?? undefined
       : undefined;
-    const normalized = normalizeLearningEvent({ ...input, syllabusId: verifiedSyllabusId });
+    const topicMapping = resolveVerifiedCurriculumTopic(curriculum.resolved, input.topicId);
+    const normalized = normalizeLearningEvent({
+      ...input,
+      syllabusId: verifiedSyllabusId,
+      curriculumTopicKey: topicMapping.status === "matched" ? topicMapping.curriculumTopicKey : undefined,
+    });
     if (normalized.status === "unsupported") {
       return NextResponse.json({ error: "Unsupported or invalid learning event", source: normalized.source, sourceEventId: normalized.sourceEventId }, { status: 400 });
     }
