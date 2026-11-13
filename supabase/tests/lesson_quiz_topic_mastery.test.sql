@@ -106,7 +106,12 @@ begin
   where user_id=v_user and data->>'eventId'='lesson_quiz_'||v_attempt::text;
   if v_event_count <> 1 then raise exception 'Expected exactly one canonical event, got %',v_event_count; end if;
 
+  execute 'set local role authenticated';
   select public.complete_lesson_quiz_attempt(v_attempt) into v_result;
+  execute 'set local role service_role';
+  select attempts into v_after_attempts from public.topic_mastery
+  where user_id=v_user and subject=v_curriculum_subject and topic=v_topic
+    and syllabus_id=v_syllabus_id;
   if v_after_attempts <> coalesce(v_before_attempts,0)+1 then
     raise exception 'Replay changed the topic mastery exposure';
   end if;
