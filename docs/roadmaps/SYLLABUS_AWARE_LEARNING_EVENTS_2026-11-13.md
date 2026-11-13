@@ -18,7 +18,9 @@ The event API persists using the learner's authenticated client, then calls the 
 - File: `supabase/migrations/20261113135648_syllabus_aware_learning_projection.sql`
 - Applied to connected Shadecode Student project `zczdtffwzkctkxwmvalb`.
 - Database migration history confirms version `20261113135648`.
-- Existing legacy topic rows were preserved in the NULL-syllabus partition.
+- Exam projection migration: `20261113135853_syllabus_aware_exam_topic_projection`, also applied to the connected project.
+- Both mastery and exam-projection ledgers now include syllabus identity in their idempotency/uniqueness partitions.
+- Existing legacy topic and outbox rows remain in the NULL-syllabus partition.
 
 The RPC remains `SECURITY INVOKER`, with execution granted only to `service_role`. Live privilege checks confirmed:
 - service_role: execute
@@ -28,7 +30,7 @@ The RPC remains `SECURITY INVOKER`, with execution granted only to `service_role
 ## Tests and verification
 
 - Updated `supabase/tests/atomic_canonical_learning_projection.test.sql` to the new RPC signature and syllabus partition.
-- Executed the regression transaction against the connected database. It confirmed:
+- Executed the canonical event projection regression transaction against the connected database. It confirmed:
   - first event projects;
   - replay of the same event is rejected;
   - second event in syllabus A updates the same A row;
@@ -37,6 +39,8 @@ The RPC remains `SECURITY INVOKER`, with execution granted only to `service_role
 - Test ran inside BEGIN/ROLLBACK; no test rows were retained.
 - Verified the new unique expression index in the live database.
 - Supabase Security Advisor reported no new warnings for this migration. The existing unrelated findings remain: two RLS-enabled tables without policies, existing SECURITY DEFINER function grants, and leaked-password protection disabled.
+- Executed the exam outbox projection regression transaction against the connected database. It confirmed duplicate replay is rejected and same subject/topic values in two syllabuses produce two independent mastery rows.
+- Verified both projector RPCs are executable only by `service_role`; `authenticated` and `anon` are denied.
 - Added Vitest coverage for syllabus-bearing event normalization and distinct event IDs.
 - TypeScript, Vitest, lint, and end-to-end authenticated browser/native event replay have not yet been confirmed passing.
 
