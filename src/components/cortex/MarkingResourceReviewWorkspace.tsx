@@ -228,6 +228,7 @@ export default function MarkingResourceReviewWorkspace() {
       };
       setLocalOcr(combined);
       setCorrectedRegions(combined.regions);
+      setSelectedPdfReviewPage(pages[0]);
       setMessage(`Local OCR completed for PDF page(s): ${pages.join(", ")}. Review the page-labelled regions against the original PDF before using the text.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Local PDF OCR could not run. The original PDF is unchanged.");
