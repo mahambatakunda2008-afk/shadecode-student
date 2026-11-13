@@ -135,6 +135,19 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
     ? mistakeEventsQuery.eq("data->>syllabusId", syllabusId).limit(500)
     : mistakeEventsQuery.limit(0);
 
+  const topicEvidenceQuery = supabase
+    .from("topic_mastery")
+    .select("topic, subject, syllabus_id, curriculum_topic_key, mastery_score, attempts, retention, confidence, stability, error_rate, uncertainty, recent_improvement, trend, last_attempted")
+    .eq("user_id", userId)
+    .order("last_attempted", { ascending: false })
+    .limit(200);
+  // A selected verified syllabus is an exact partition. Without one, only
+  // legacy/unattributed rows are returned; syllabus-owned rows stay hidden
+  // rather than being blended across the learner's different courses.
+  const scopedTopicEvidenceQuery = syllabusId
+    ? topicEvidenceQuery.eq("syllabus_id", syllabusId)
+    : topicEvidenceQuery.is("syllabus_id", null);
+
   const [academicProfileResult, memoryResult, topicsResult, mistakeEventsResult] = await Promise.all([
     supabase
       .from("profiles")
