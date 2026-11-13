@@ -10,6 +10,8 @@ declare
   v_first boolean;
   v_duplicate boolean;
   v_second boolean;
+  v_third boolean;
+  v_syllabus_rows integer;
   v_row public.topic_mastery%rowtype;
 begin
   v_first := public.project_canonical_learning_observation(
@@ -36,11 +38,21 @@ begin
   if not v_second then raise exception 'Second distinct canonical event was not applied'; end if;
 
   select * into v_row from public.topic_mastery
-  where user_id=v_user and subject='Canonical projection regression' and topic='Atomic topic';
+  where user_id=v_user and subject='Canonical projection regression' and topic='Atomic topic' and syllabus_id='TEST-SYLLABUS-A';
   if v_row.attempts <> 2 or v_row.exposure <> 2 or v_row.mastery_score <> 72 then
     raise exception 'Unexpected second projection values: attempts %, exposure %, mastery %',
       v_row.attempts,v_row.exposure,v_row.mastery_score;
   end if;
+
+  v_third := public.project_canonical_learning_observation(
+    v_user,v_event || '-other-syllabus','Canonical projection regression','Atomic topic','TEST-SYLLABUS-B',null,25,false,40,45,now()
+  );
+  if not v_third then raise exception 'Different syllabus projection was not applied'; end if;
+
+  select count(*) into v_syllabus_rows from public.topic_mastery
+  where user_id=v_user and subject='Canonical projection regression' and topic='Atomic topic'
+    and syllabus_id in ('TEST-SYLLABUS-A','TEST-SYLLABUS-B');
+  if v_syllabus_rows <> 2 then raise exception 'Different syllabuses were merged into one mastery row'; end if;
 end $$;
 
 rollback;
