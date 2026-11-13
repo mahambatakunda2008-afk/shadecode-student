@@ -45,6 +45,11 @@ describe("validateLocalVerifyExtraction", () => {
     expect(() => validateLocalVerifyExtraction(result)).toThrow(/invalid bounds/i);
   });
 
+  it("accepts an unavailable confidence score without inventing one", () => {
+    const result = validateLocalVerifyExtraction({ ...validResult, confidence: null });
+    expect(result.confidence).toBeNull();
+  });
+
   it("rejects invalid confidence rather than silently clamping it", () => {
     expect(() => validateLocalVerifyExtraction({ ...validResult, confidence: 1.4 }))
       .toThrow(/confidence/i);
