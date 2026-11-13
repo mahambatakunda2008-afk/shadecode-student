@@ -159,12 +159,7 @@ export async function resolveAuthenticatedCortexStudentContext(accessToken?: str
       .select("current_streak, frequently_studied_subjects, strong_subjects, weak_subjects, total_study_sessions, total_lessons_completed, average_exam_score, last_topic, last_practice_score, last_practice_topic, last_practice_subject, last_practice_syllabus_id, updated_at")
       .eq("user_id", userId)
       .maybeSingle(),
-    supabase
-      .from("topic_mastery")
-      .select("topic, subject, syllabus_id, curriculum_topic_key, mastery_score, attempts, retention, confidence, stability, error_rate, uncertainty, recent_improvement, trend, last_attempted")
-      .eq("user_id", userId)
-      .order("last_attempted", { ascending: false })
-      .limit(200),
+    scopedTopicEvidenceQuery,
     scopedMistakeEventsQuery,
   ]);
 
