@@ -92,10 +92,6 @@ export async function saveVerifyArtifact(
         tx.abort();
         return;
       }
-      if (!existing && artifactId) {
-        tx.abort();
-        return;
-      }
       const now = new Date().toISOString();
       const sourceImage = input.sourceImage || existing?.sourceImage;
       if (!sourceImage) {
