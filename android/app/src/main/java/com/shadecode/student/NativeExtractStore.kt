@@ -8,9 +8,10 @@ import java.io.File
 import java.util.UUID
 
 /**
- * Private, device-local storage for derived Snap & Extract text.
- * Source images are deliberately not copied. A stored source URI is informational only
- * and may no longer be readable after Android revokes the picker grant.
+ * Private, device-local storage for Snap & Extract artifacts.
+ * When an artifact is saved, its source image is copied into app-private storage so
+ * the student can reopen and review it even after Android revokes the picker grant.
+ * The original picker URI is retained only as provenance, not as the durable image source.
  */
 data class NativeExtractRegion(
     val text: String,
@@ -95,7 +96,9 @@ class NativeExtractStore(context: Context) {
             atomicFile.failWrite(output)
             throw error
         }
-        list().drop(maxArtifacts).forEach { old -> fileFor(old.id).delete() }
+        // Prune through delete() so each evicted artifact's private source image is
+        // removed together with its metadata instead of leaking orphaned image files.
+        list().drop(maxArtifacts).forEach { old -> delete(old.id) }
         return artifact
     }
 
