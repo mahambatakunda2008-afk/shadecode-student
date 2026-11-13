@@ -60,17 +60,19 @@ export async function extractDocxText(file: Blob): Promise<{ text: string; engin
     if (view.getUint32(cursor, true) !== 0x02014b50) throw new Error("DOCX ZIP directory entry is invalid.");
     const method = view.getUint16(cursor + 10, true);
     const compressedSize = view.getUint32(cursor + 20, true);
+    const uncompressedSize = view.getUint32(cursor + 24, true);
     const nameLength = view.getUint16(cursor + 28, true);
     const extraLength = view.getUint16(cursor + 30, true);
     const commentLength = view.getUint16(cursor + 32, true);
     const localOffset = view.getUint32(cursor + 42, true);
     const name = new TextDecoder().decode(bytes.subarray(cursor + 46, cursor + 46 + nameLength));
     if (name === "word/document.xml") {
-      if (compressedSize > DOCX_MAX_XML_BYTES) throw new Error("DOCX document XML exceeds the local extraction safety limit.");
+      if (compressedSize > DOCX_MAX_XML_BYTES || uncompressedSize > DOCX_MAX_XML_BYTES) throw new Error("DOCX document XML exceeds the local extraction safety limit.");
       if (view.getUint32(localOffset, true) !== 0x04034b50) throw new Error("DOCX document entry is invalid.");
       const localNameLength = view.getUint16(localOffset + 26, true);
       const localExtraLength = view.getUint16(localOffset + 28, true);
       const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+      if (dataStart + compressedSize > bytes.byteLength) throw new Error("DOCX document entry exceeds the file boundary.");
       const compressed = bytes.slice(dataStart, dataStart + compressedSize);
       if (method === 0) documentXml = compressed;
       else if (method === 8) documentXml = await inflateRaw(compressed);
