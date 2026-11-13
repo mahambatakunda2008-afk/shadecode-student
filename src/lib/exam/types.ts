@@ -10,6 +10,11 @@ export type ExamQuestion = {
   modelAnswer?: string;
   markingCriteria?: string;
   numeric?: NumericSpec;
+  /** Explicit, curated deterministic sub-marking rubric. Never generated from prose at runtime. */
+  offlineMarking?: {
+    version: 1;
+    criteria: Array<{ id: string; description: string; marks: number; acceptedAnswers: string[] }>;
+  };
 };
 
 export type ExamAnswer = { questionId: number; answer: string; timeSpent: number };
