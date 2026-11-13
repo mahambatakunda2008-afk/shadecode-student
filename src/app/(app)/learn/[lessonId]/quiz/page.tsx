@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { emitLearningEvent } from "@/lib/intelligence/emitLearningEvent";
-import { buildQuizQuestionEvidence, buildQuizCompletionEvidence } from "@/lib/intelligence/quizEvidence";
+import { buildQuizQuestionEvidence } from "@/lib/intelligence/quizEvidence";
 import { normalizeLearningContext } from "@/lib/intelligence/learningContextKey";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
@@ -171,18 +171,6 @@ export default function QuizPage() {
         });
         if (event) void emitLearningEvent(event);
       }
-
-      const completion = buildQuizCompletionEvidence({
-        quizAttemptId: quizAttemptIdRef.current,
-        lessonId,
-        percentage: result.score,
-        questionCount: result.questionCount,
-        correctCount: result.correctCount,
-        reviewSessionId: reviewSessionIdRef.current,
-        subject: lessonSubject || undefined,
-        topicId: lessonTopic || undefined,
-      });
-      void emitLearningEvent(completion);
       if (reviewSessionIdRef.current) {
         try { sessionStorage.removeItem("shadecode:cortex:active-review:v1"); } catch {}
       }
