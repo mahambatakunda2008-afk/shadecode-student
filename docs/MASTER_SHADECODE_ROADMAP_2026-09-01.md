@@ -129,7 +129,7 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 
 | Capability | Status | Current truth / next move |
 |---|---|---|
-| Math Checker | 🟡 | Existing surface; evolve toward working analysis. |
+| Cortex Verify | 🟡 | Existing Workmate/CortexVerifyPanel; consolidate Mark Mode and Help Mode, integrate SNAP & EXTRACT as shared capture/extraction, and complete offline + cross-platform workflows. |
 | Handwriting recognition | 🔵 | Image/math direction exists; robust reasoning extraction remains. |
 | Step-by-step working analysis | 🔵 | Direction exists; structured evidence needed. |
 | Graph intelligence | ⚪ | Planned. |
@@ -138,7 +138,7 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 | Biology-aware tutoring | 🟡 | Partial generic/curriculum capability. |
 | Practical simulator | ⚪ | Planned. |
 | Measurement / uncertainty lab | ⚪ | Planned. |
-| Snap & Learn / Snap & Extract | 🟡 | Native Android now has bundled on-device image OCR, editable text, spacing cleanup, and phrase redaction for the text representation. Graph/diagram semantics, structured tables/equations, offline translation, PDF image OCR, audio/video, local artifact library, and irreversible visual redaction remain incomplete. See `docs/architecture/SNAP_AND_EXTRACT_LOCAL_FIRST_2026-10-26.md`. |
+| SNAP & EXTRACT (within Cortex Verify) | 🟡 | Native Android has on-device image OCR, editable text, cleanup and a private local text library. Integration into the shared Verify workflow and web/desktop support remain incomplete. Graph/diagram semantics, structured tables/equations, PDF image OCR, audio/video, and irreversible visual redaction remain future work. See `docs/architecture/SNAP_AND_EXTRACT_LOCAL_FIRST_2026-10-26.md` and `docs/architecture/CORTEX_VERIFY_2026-11-13.md`. |
 | Diagram understanding | ⚪ | Planned. |
 
 ## E. Creation / Projects / Research
