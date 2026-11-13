@@ -1,5 +1,7 @@
 import { normalizeLearningEvent, type SupportedSourceEvent } from "./learningEvents";
 import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { projectLearningEvent } from "./projectLearningEvent";
 
 /**
  * Server-side bridge for product mutations that already have an authenticated user.
@@ -23,6 +25,12 @@ export async function emitServerLearningEvent(input: SupportedSourceEvent): Prom
   });
   if (error) {
     console.error("[learning-events] server persistence failed:", error);
+    return false;
+  }
+  try {
+    await projectLearningEvent(createSupabaseAdminClient(), normalized.event);
+  } catch (projectionError) {
+    console.error("[learning-events] server mastery projection failed:", projectionError);
     return false;
   }
   return true;
