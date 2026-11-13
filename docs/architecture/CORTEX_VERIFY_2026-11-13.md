@@ -166,6 +166,7 @@ Do not create a competing Verify page, a second attempt queue, or a duplicate do
 - Web/PWA now has consent-gated cloud image transcription, an editable extracted-text review step, and account-scoped IndexedDB capture storage with source-image retention, reopen and delete controls. The transcription is explicitly labelled AI-assisted, not verified OCR.
 - The extraction endpoint does not persist source images server-side. The student must explicitly consent before the browser sends an image for cloud extraction or image-based marking/help.
 - Web/PWA local OCR is still missing. Its saved captures and reviewed text can be reopened offline, and text-only attempts can use the existing local runtime when ready; this does not provide offline image-to-text extraction.
+- A shared platform-neutral local OCR contract has now been added at `src/lib/cortex/verify/local-extraction-contract.ts`. It validates platform, engine/version, confidence, warnings and normalized source-region geometry. Unit tests were added; they have not yet been executed. This is an integration boundary, not an OCR engine, so it does not make web/PWA local OCR available by itself.
 - Text-only attempts can use the existing browser-local hybrid runtime when a model is already ready. This does not prove first-launch offline availability or local image understanding.
 - Failed attempts are stored in an account-scoped queue and retried on reconnect. This is not the same as offline marking or offline help.
 - Android OCR exists as a separate local capability and is not yet integrated into the shared Verify workflow.
@@ -177,7 +178,7 @@ Do not create a competing Verify page, a second attempt queue, or a duplicate do
 
 1. **Product/UI alignment:** one visible Mark Mode and one visible Help Mode; remove Math Checker naming from current navigation and product copy.
 2. **Shared artifact contract:** represent source, extracted blocks, confidence, coordinates, provenance and user corrections without losing the original.
-3. **SNAP & EXTRACT integration:** web/PWA has consent-based online transcription and local artifact retention; next add real local browser OCR, then connect the existing Android OCR library and desktop capture/extraction to the same artifact contract.
+3. **SNAP & EXTRACT integration:** web/PWA has consent-based online transcription and local artifact retention; a shared local OCR validation contract now exists. Next implement a real browser-local OCR engine, then adapt the existing Android ML Kit OCR and desktop capture/extraction to this contract.
 4. **Offline Mark Mode:** deterministic local marking for explicitly supported question types, downloaded rubrics/resources, honest unsupported states.
 5. **Offline Help Mode:** local help packs and optional pre-provisioned local models with device-capability checks.
 6. **Online enhancement:** consent-based cloud OCR/vision, advanced marking and explanations.
