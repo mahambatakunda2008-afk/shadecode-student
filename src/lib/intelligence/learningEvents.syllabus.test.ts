@@ -16,6 +16,8 @@ describe("syllabus-aware canonical learning events", () => {
     expect(result.status).toBe("accepted");
     if (result.status !== "accepted") return;
     expect(result.event.syllabusId).toBe("9702-2025-2027");
+    expect(result.event.subjectId).toBe("9702");
+    expect(result.event.topicId).toBe("waves");
   });
 
   it("creates distinct idempotency identities for different syllabuses", () => {
