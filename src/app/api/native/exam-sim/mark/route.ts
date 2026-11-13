@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { generateExamFeedback } from "@/lib/cortex/markingEngine";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
+import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
 import type { ExamQuestion } from "@/lib/cortex/examGenerator";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +52,10 @@ export async function POST(request: Request) {
     }
     const access = await resolveLearnerSubject(supabase, user.id, subject, body?.subjectId);
     if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
+    const curriculum = await resolveUserSystemCurriculum(user.id, access.subject);
+    const verifiedSyllabusId = curriculum.resolved.status === "resolved"
+      ? curriculum.identity?.syllabusId ?? null
+      : null;
     if (questions.some(q => !q || typeof q.id !== "string" || typeof q.question !== "string" || !Number.isFinite(q.marks) || q.marks <= 0 || typeof q.modelAnswer !== "string")) {
       return NextResponse.json({ error: "This paper is incomplete and cannot be marked safely. Generate a new paper." }, { status: 400 });
     }
@@ -98,6 +103,7 @@ export async function POST(request: Request) {
         eventId,
         examId,
         subject: access.subject,
+        syllabusId: verifiedSyllabusId,
         difficulty: "native-simulation",
         score: report.totalScore,
         maxScore: report.totalMaxMarks,
