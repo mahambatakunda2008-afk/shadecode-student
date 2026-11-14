@@ -13,8 +13,10 @@ This is **personalized learner-model training**, not training shared foundation-
 3. Only scored results update the local learner model.
 4. The learner model aggregates evidence by subject and, when supplied, a verified syllabus topic.
 5. Lost-mark notes become recurring misconception signals. Criteria with no lost marks are not treated as mistakes.
-6. The next local-model request receives a compact learner context and is instructed to adapt explanation style, revisit recurring errors and prefer fresh transfer questions over repeating the same question.
-7. When online, the client also submits an authenticated `question.attempted` event to `/api/intelligence/events`. The canonical event pipeline persists it and projects topic mastery only when a topic identity can be verified.
+6. When online, Verify first reads the authenticated, syllabus-scoped shared Cortex student context. It uses canonical `topic_mastery`, curriculum objective progress, repeated mistakes and evidence-backed review suggestions from the same learner profile used by Learn and Exam Simulator.
+7. The shared evidence is filtered to the active subject and supplied to the marking/remediation prompts. It can shape feedback and the next practice choice, but it must never influence the independent mark or correctness decision.
+8. If shared intelligence is unavailable, Verify falls back to the compact account-scoped local model. Offline requests use that local model directly.
+9. The client submits an authenticated `question.attempted` event to `/api/intelligence/events`. The canonical event pipeline persists it and projects topic mastery only when a topic identity can be verified.
 
 ## What is stored locally
 
@@ -39,8 +41,9 @@ The mastery estimate uses a simple 70/30 exponential moving average. It is a heu
 
 ## Privacy and reliability
 
-- Local learner-model data is scoped to the signed-in browser profile.
-- Server-side topic mastery uses the existing authenticated canonical learning-event pipeline and per-user database policies.
+- Local fallback learner-model data is scoped to the signed-in account on that device. It is an offline continuity cache, not the authoritative cross-product mastery store.
+- Online shared context is resolved server-side from the authenticated user and exact verified syllabus. Server-side topic mastery uses the existing canonical learning-event pipeline and per-user database policies.
+- Learn, Exam Simulator and Verify share the existing `topic_mastery` and curriculum objective evidence. Verify does not create a competing server-side mastery table.
 - A failed local write or event request must never block marking.
 - Cached results are not counted as new evidence: only a fresh marked attempt updates the learner model.
 - Offline attempts update the local learner model. Cross-device synchronization of those offline learner signals remains future work.
@@ -49,7 +52,7 @@ The mastery estimate uses a simple 70/30 exponential moving average. It is a heu
 ## Next engineering stages
 
 1. Supply canonical syllabus topic keys from the question/curriculum picker wherever available.
-2. Add authenticated retrieval and synchronization of compact learner-model aggregates across devices.
+2. Complete cross-device synchronization of offline-only local learner signals through the canonical event outbox, with replay/idempotency tests.
 3. Build a visible, editable learner profile showing strengths, recurring misconceptions and evidence behind each estimate.
 4. Feed the learner model into question selection, lesson sequencing, spaced retrieval and offline practice.
 5. Add model calibration and decay/recovery rules using longitudinal evidence, not arbitrary one-attempt thresholds.
