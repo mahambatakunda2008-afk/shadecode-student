@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { AlertTriangle, FileText, Loader2, Save, ScanSearch, ShieldCheck } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { prepareMarkingResourceImport } from "@/lib/cortex/verify/marking-resource-import";
@@ -91,6 +90,37 @@ function PdfOcrPagePreview({ file, pageNumber, regions, manualRegions, onCreateR
       {selection && <div className="pointer-events-none absolute border-2 border-fuchsia-700 bg-fuchsia-400/20" style={{ left: `${selection.x * 100}%`, top: `${selection.y * 100}%`, width: `${selection.width * 100}%`, height: `${selection.height * 100}%` }} />}
     </div>
     {!status && pageRegions.length === 0 && pageManualRegions.length === 0 && <p className="p-2 text-xs text-slate-600">No OCR regions or manual visual regions on this page yet.</p>}
+  </div>;
+}
+
+
+function ImageVisualRegionSelector({ src, regions, manualRegions, onCreateRegion, onImageLoad }: { src: string; regions: LocalVerifyExtraction["regions"]; manualRegions: ManualVisualRegion[]; onCreateRegion: (region: ManualVisualRegion) => void; onImageLoad: (dimensions: { width: number; height: number }) => void }) {
+  const imageRef = useRef<HTMLImageElement>(null);
+  const dragStart = useRef<{ x: number; y: number } | null>(null);
+  const [selection, setSelection] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [status, setStatus] = useState("");
+  function point(event: React.PointerEvent<HTMLDivElement>) { const rect = event.currentTarget.getBoundingClientRect(); return { x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)), y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) }; }
+  async function createCrop(x: number, y: number, width: number, height: number) {
+    const source = imageRef.current;
+    if (!source?.naturalWidth || !source.naturalHeight) return null;
+    const sx = Math.round(x * source.naturalWidth), sy = Math.round(y * source.naturalHeight);
+    const sw = Math.max(1, Math.round(width * source.naturalWidth)), sh = Math.max(1, Math.round(height * source.naturalHeight));
+    const canvas = document.createElement("canvas"); canvas.width = sw; canvas.height = sh;
+    const context = canvas.getContext("2d"); if (!context) return null;
+    context.drawImage(source, sx, sy, sw, sh, 0, 0, sw, sh);
+    return new Promise<{ blob: Blob; width: number; height: number } | null>(resolve => canvas.toBlob(blob => resolve(blob ? { blob, width: sw, height: sh } : null), "image/webp", 0.88));
+  }
+  const pageRegions = regions.filter(region => region.page === 0 || region.page === 1);
+  return <div className="mt-3 rounded-xl border border-[var(--card-border)] bg-white p-2">
+    <p className="mb-2 text-xs font-bold text-slate-700">Original image · drag to preserve a visual region</p>
+    <p className="mb-2 text-xs text-slate-600">Select a graph, diagram, table, circuit, apparatus or any other evidence area. The crop is created locally on this device.</p>
+    {status && <p role="status" className="mb-2 text-xs text-amber-700">{status}</p>}
+    <div className="relative w-full select-none" onPointerDown={event => { const p = point(event); dragStart.current = p; setSelection({ x: p.x, y: p.y, width: 0, height: 0 }); event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={event => { if (!dragStart.current) return; const p = point(event), start = dragStart.current; setSelection({ x: Math.min(start.x, p.x), y: Math.min(start.y, p.y), width: Math.abs(p.x - start.x), height: Math.abs(p.y - start.y) }); }} onPointerUp={async event => { if (!dragStart.current) return; const p = point(event), start = dragStart.current; const region = { id: crypto.randomUUID(), page: 1, x: Math.min(start.x, p.x), y: Math.min(start.y, p.y), width: Math.abs(p.x - start.x), height: Math.abs(p.y - start.y), label: "Visual region" }; dragStart.current = null; setSelection(null); if (region.width < 0.01 || region.height < 0.01) return; const crop = await createCrop(region.x, region.y, region.width, region.height); if (!crop) { setStatus("Could not create the local image crop."); return; } if (crop.blob.size > 4 * 1024 * 1024) { setStatus("This crop is larger than 4 MB. Select a smaller region."); return; } onCreateRegion({ ...region, crop: crop.blob, cropWidth: crop.width, cropHeight: crop.height }); setStatus(""); }} onPointerCancel={() => { dragStart.current = null; setSelection(null); }}>
+      <img ref={imageRef} src={src} alt="Original uploaded resource for visual region selection" onLoad={event => onImageLoad({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} className="block h-auto w-full" draggable={false} />
+      {pageRegions.map((region, index) => <div key={region.id} className="pointer-events-none absolute border-2 border-cyan-600 bg-cyan-400/10" style={{ left: `${region.bounds.x * 100}%`, top: `${region.bounds.y * 100}%`, width: `${region.bounds.width * 100}%`, height: `${region.bounds.height * 100}%` }}><span className="absolute -top-4 left-0 bg-cyan-700 px-1 text-[9px] text-white">OCR {index + 1}</span></div>)}
+      {manualRegions.filter(region => region.page === 1).map((region, index) => <div key={region.id} className="pointer-events-none absolute border-2 border-fuchsia-600 bg-fuchsia-400/10" style={{ left: `${region.x * 100}%`, top: `${region.y * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%` }}><span className="absolute -top-4 left-0 bg-fuchsia-700 px-1 text-[9px] text-white">VIS {index + 1}</span></div>)}
+      {selection && <div className="pointer-events-none absolute border-2 border-fuchsia-700 bg-fuchsia-400/20" style={{ left: `${selection.x * 100}%`, top: `${selection.y * 100}%`, width: `${selection.width * 100}%`, height: `${selection.height * 100}%` }} />}
+    </div>
   </div>;
 }
 
@@ -336,7 +366,7 @@ export default function MarkingResourceReviewWorkspace() {
       <section className="min-w-0 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-center justify-between gap-2"><h2 className="font-bold">2. Original source evidence</h2><span className="text-xs text-[var(--muted-foreground)]">{file.name}</span></div>
         {isPdf && <><iframe title="Original PDF source" src={previewUrl} className="h-[70vh] min-h-[480px] w-full rounded-xl border border-[var(--card-border)] bg-white" /><div className="mt-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3"><p className="text-xs font-bold">Local OCR for scanned pages</p><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">Enter page numbers to render and OCR on this device. This is useful for scanned pages and mixed PDFs. No PDF or rendered page is uploaded. Up to 20 pages are processed per batch.</p><div className="mt-2 flex flex-wrap gap-2"><input aria-label="PDF pages for local OCR" className={fieldClass + " mt-0 min-w-0 flex-1"} value={pdfOcrPages} onChange={event => setPdfOcrPages(event.target.value)} placeholder="e.g. 2, 4, 7" /><button type="button" onClick={() => void runPdfLocalOcr()} disabled={busy || !isBrowserLocalOcrAvailable()} className="min-h-10 rounded-xl bg-[var(--primary)] px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{busy ? "Processing…" : "Run local OCR"}</button></div>{!isBrowserLocalOcrAvailable() && <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">This browser does not expose its experimental TextDetector API. No cloud fallback will start automatically.</p>}{extraction && <div className="mt-4"><label className="text-xs font-semibold text-[var(--foreground)]">Inspect original PDF page<input className={fieldClass} type="number" min={1} max={extraction.pageCount || undefined} step={1} value={selectedPdfReviewPage} onChange={event => setSelectedPdfReviewPage(Math.max(1, Number(event.target.value) || 1))} /></label><p className="mt-1 text-xs text-[var(--muted-foreground)]">Use this page viewer to inspect diagrams, graphs, tables, equations and page layout. OCR boxes are overlaid when available.</p><PdfOcrPagePreview file={file} pageNumber={selectedPdfReviewPage} regions={correctedRegions} manualRegions={manualVisualRegions} onCreateRegion={region => setManualVisualRegions(current => [...current, region])} /></div>}</div></>}
-        {isImage && <div className="relative mx-auto w-full overflow-hidden rounded-xl border border-[var(--card-border)] bg-white" style={imageDimensions ? { aspectRatio: `${imageDimensions.width} / ${imageDimensions.height}` } : undefined}><Image src={previewUrl} alt="Original uploaded marking resource" width={imageDimensions?.width || 1200} height={imageDimensions?.height || 900} unoptimized onLoad={event => setImageDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} className="block h-auto max-h-[70vh] w-full object-contain" />{localOcr && correctedRegions.map((region, index) => <div key={region.id} className="pointer-events-none absolute border-2 border-cyan-500/90 bg-cyan-400/10" style={{ left: `${region.bounds.x * 100}%`, top: `${region.bounds.y * 100}%`, width: `${region.bounds.width * 100}%`, height: `${region.bounds.height * 100}%` }}><span className="absolute -top-5 left-0 rounded bg-cyan-700 px-1 text-[9px] text-white">{index + 1}</span></div>)}</div>}
+        {isImage && <ImageVisualRegionSelector src={previewUrl} regions={correctedRegions} manualRegions={manualVisualRegions} onCreateRegion={region => setManualVisualRegions(current => [...current, region])} onImageLoad={setImageDimensions} />}
         {!isPdf && !isImage && <div className="rounded-xl bg-[var(--muted)] p-5 text-sm text-[var(--muted-foreground)]">Original file is preserved in local resource storage. Browser preview is not available for this file type.</div>}
         <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5"><AlertTriangle size={16} className="mr-2 inline" />The uploaded source and your syllabus selection have not been independently authenticated. Visual interpretation still requires human review.</div>
       </section>
