@@ -6,13 +6,15 @@ import { questionItems, REVIEW_GROUPS } from "@/lib/teacher/reviewItems";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Teacher portal · Shadecode Student" };
 
+const TEACHING_ROLES = ["teacher", "tutor", "administrator", "staff"] as const;
+
 export default async function TeacherHome() {
   const reviewer = (await getReviewer())!;
   const [lessons, { data: rows }, institutionMemberships, groupMemberships] = await Promise.all([
     loadLessonItems(reviewer.supabase),
     reviewer.supabase.from("content_reviews").select("question_id,verdict,reviewer_id").limit(10000),
-    reviewer.supabase.from("platform_institution_members").select("institution_id").eq("user_id", reviewer.user.id).eq("status", "active"),
-    reviewer.supabase.from("platform_group_members").select("group_id").eq("user_id", reviewer.user.id).eq("status", "active"),
+    reviewer.supabase.from("platform_institution_members").select("institution_id").eq("user_id", reviewer.user.id).eq("status", "active").in("membership_role", [...TEACHING_ROLES]),
+    reviewer.supabase.from("platform_group_members").select("group_id").eq("user_id", reviewer.user.id).eq("status", "active").in("membership_role", [...TEACHING_ROLES]),
   ]);
 
   const items = [...questionItems(), ...lessons];
