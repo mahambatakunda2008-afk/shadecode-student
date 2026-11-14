@@ -9,7 +9,41 @@ export type GraphReviewHint = {
   sourceText: string;
   confidence: "candidate";
   interpretation: "unverified";
+  /** Parsed strings/values copied from source text, never treated as visual measurements. */
+  candidateDetails: string[];
 };
+
+const COORDINATE_PAIR_RE = /\(([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\)/g;
+const AXIS_LABEL_RE = /\b([xy])[ -]?axis\b(?:\s*(?:labelled|labeled|is|:)?\s*([^.;]{1,60}))?/gi;
+const UNIT_CANDIDATE_RE = /\b(?:cm|mm|km|m|ms|s|kg|g|mol|N|newtons?|volts?|amperes?|A|V|J|W|Pa|Hz|degrees?|°C)\b/gi;
+
+function extractCandidateDetails(text: string, type: GraphReviewHintType): string[] {
+  const details: string[] = [];
+  if (type === "coordinate") {
+    for (const match of text.matchAll(COORDINATE_PAIR_RE)) {
+      details.push(`Coordinate candidate: (${match[1]}, ${match[2]})`);
+    }
+    if (!details.length) {
+      const equals = text.match(/\bx\s*=\s*[+-]?\d+(?:\.\d+)?\s*[,; ]+\by\s*=\s*[+-]?\d+(?:\.\d+)?/i);
+      if (equals) details.push(`Coordinate notation candidate: ${equals[0]}`);
+    }
+  }
+  if (type === "axis") {
+    for (const match of text.matchAll(AXIS_LABEL_RE)) {
+      const label = match[2]?.trim();
+      details.push(label ? `${match[1].toUpperCase()}-axis label candidate: ${label}` : `${match[1].toUpperCase()}-axis reference`);
+    }
+  }
+  if (type === "unit") {
+    const units = [...new Set(text.match(UNIT_CANDIDATE_RE) || [])];
+    if (units.length) details.push(`Unit candidates: ${units.join(", ")}`);
+  }
+  if (type === "scale") {
+    const scale = text.match(/\b(?:scale|each division|per square|per centimetre|per cm)\b[^.;]{0,80}/i);
+    if (scale) details.push(`Scale wording candidate: ${scale[0].trim()}`);
+  }
+  return details;
+}
 
 const RULES: Array<{ type: GraphReviewHintType; pattern: RegExp }> = [
   { type: "axis", pattern: /\b(?:x|y)[ -]?axis\b|\bhorizontal axis\b|\bvertical axis\b/i },
@@ -34,6 +68,7 @@ export function collectGraphReviewHints(lines: MarkingResourceTextLine[]): Graph
           sourceText: line.text,
           confidence: "candidate",
           interpretation: "unverified",
+          candidateDetails: extractCandidateDetails(line.text, rule.type),
         });
       }
     }
