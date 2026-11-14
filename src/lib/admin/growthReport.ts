@@ -1,0 +1,201 @@
+/**
+ * src/lib/admin/growthReport.ts
+ *
+ * Pure aggregation behind /admin/growth. Everything here is computed from real
+ * rows (traction_events + signup dates) with unique-student counts, never from
+ * ratios of raw event counts. Days are UTC days.
+ */
+
+export interface EventRow {
+  name: string;
+  user_id: string | null;
+  created_at: string;
+  properties?: Record<string, unknown> | null;
+}
+export interface SignupRow {
+  id: string;
+  created_at: string;
+}
+
+/** Events that mean the student actually did learning, not just opened the app. */
+export const LEARNING_START_EVENTS = ["learning_action_started", "learning_session_started", "exam_started"] as const;
+export const LEARNING_DONE_EVENTS = ["learning_session_completed", "exam_completed", "task_completed"] as const;
+export const SHARE_EVENTS = ["result_shared", "share_completed", "share_started"] as const;
+const ENGAGED = new Set<string>([...LEARNING_START_EVENTS, ...LEARNING_DONE_EVENTS]);
+
+const DAY_MS = 86_400_000;
+export const dayKey = (iso: string | number | Date): string => new Date(iso).toISOString().slice(0, 10);
+const dayIndex = (key: string): number => Math.floor(Date.parse(`${key}T00:00:00Z`) / DAY_MS);
+const pct = (part: number, whole: number): number | null => (whole > 0 ? Math.round((part / whole) * 100) : null);
+
+export interface FunnelStep { key: string; label: string; users: number; ofSignups: number | null; ofPrevious: number | null }
+export interface CohortRow { weekStart: string; size: number; d1: number | null; d7: number | null; d30: number | null }
+export interface DayPoint { day: string; active: number; engaged: number; signups: number }
+export interface CountRow { label: string; events: number; users: number }
+
+export interface GrowthReport {
+  generatedAt: string;
+  headline: {
+    signups7d: number; signupsPrev7d: number; signupsGrowthPct: number | null;
+    dau: number; wau: number; mau: number; engagedWau: number; stickinessPct: number | null;
+  };
+  series: DayPoint[];
+  funnel: FunnelStep[];
+  cohorts: CohortRow[];
+  adoption: {
+    actionSources: CountRow[];
+    goalKinds: CountRow[];
+    firstStep: { syllabus: number; generic: number };
+    shares: CountRow[];
+  };
+  topEvents: CountRow[];
+  health: { eventsAnalysed: number; anonymousPct: number | null; signupsKnown: number };
+}
+
+interface Options { events: readonly EventRow[]; signups: readonly SignupRow[]; now?: Date; funnelWindowDays?: number; seriesDays?: number }
+
+const uniq = <T,>(set: Set<T> | undefined) => set?.size ?? 0;
+
+function countBy(rows: readonly EventRow[], pick: (e: EventRow) => string | null): CountRow[] {
+  const map = new Map<string, { events: number; users: Set<string> }>();
+  for (const e of rows) {
+    const label = pick(e);
+    if (!label) continue;
+    const entry = map.get(label) ?? { events: 0, users: new Set<string>() };
+    entry.events += 1;
+    if (e.user_id) entry.users.add(e.user_id);
+    map.set(label, entry);
+  }
+  return [...map.entries()].map(([label, v]) => ({ label, events: v.events, users: v.users.size })).sort((a, b) => b.events - a.events);
+}
+
+const prop = (e: EventRow, key: string): string | null => {
+  const v = e.properties?.[key];
+  return typeof v === "string" && v ? v : null;
+};
+
+export function buildGrowthReport({ events, signups, now = new Date(), funnelWindowDays = 14, seriesDays = 14 }: Options): GrowthReport {
+  const today = dayIndex(dayKey(now));
+  const known = events.filter((e) => Number.isFinite(Date.parse(e.created_at)));
+
+  // Per-user activity days (any event, and learning events only).
+  const activeDays = new Map<string, Set<number>>();
+  const dayActive = new Map<number, Set<string>>();
+  const dayEngaged = new Map<number, Set<string>>();
+  for (const e of known) {
+    if (!e.user_id) continue;
+    const d = dayIndex(dayKey(e.created_at));
+    (activeDays.get(e.user_id) ?? activeDays.set(e.user_id, new Set()).get(e.user_id)!).add(d);
+    (dayActive.get(d) ?? dayActive.set(d, new Set()).get(d)!).add(e.user_id);
+    if (ENGAGED.has(e.name)) (dayEngaged.get(d) ?? dayEngaged.set(d, new Set()).get(d)!).add(e.user_id);
+  }
+  const usersBetween = (map: Map<number, Set<string>>, from: number, to: number) => {
+    const out = new Set<string>();
+    for (let d = from; d <= to; d++) map.get(d)?.forEach((u) => out.add(u));
+    return out.size;
+  };
+
+  // Signups per day.
+  const signupDay = new Map<number, number>();
+  const signupOf = new Map<string, { created: number; day: number }>();
+  for (const s of signups) {
+    const t = Date.parse(s.created_at);
+    if (!Number.isFinite(t) || !s.id) continue;
+    const d = dayIndex(dayKey(t));
+    signupDay.set(d, (signupDay.get(d) ?? 0) + 1);
+    signupOf.set(s.id, { created: t, day: d });
+  }
+  const signupsBetween = (from: number, to: number) => { let n = 0; for (let d = from; d <= to; d++) n += signupDay.get(d) ?? 0; return n; };
+  const signups7d = signupsBetween(today - 6, today);
+  const signupsPrev7d = signupsBetween(today - 13, today - 7);
+
+  const wau = usersBetween(dayActive, today - 6, today);
+  const mau = usersBetween(dayActive, today - 29, today);
+  let dauSum = 0;
+  for (let d = today - 6; d <= today; d++) dauSum += uniq(dayActive.get(d));
+
+  const series: DayPoint[] = [];
+  for (let d = today - (seriesDays - 1); d <= today; d++) {
+    series.push({ day: new Date(d * DAY_MS).toISOString().slice(0, 10), active: uniq(dayActive.get(d)), engaged: uniq(dayEngaged.get(d)), signups: signupDay.get(d) ?? 0 });
+  }
+
+  // Activation funnel over recent signups, using only each student's events AFTER they signed up.
+  const cohort = [...signupOf.entries()].filter(([, s]) => s.day >= today - (funnelWindowDays - 1));
+  const cohortIds = new Set(cohort.map(([id]) => id));
+  const stepUsers = { opened: new Set<string>(), started: new Set<string>(), done: new Set<string>(), shared: new Set<string>(), returned: new Set<string>() };
+  for (const e of known) {
+    if (!e.user_id || !cohortIds.has(e.user_id)) continue;
+    const s = signupOf.get(e.user_id)!;
+    if (Date.parse(e.created_at) < s.created) continue;
+    stepUsers.opened.add(e.user_id);
+    if ((LEARNING_START_EVENTS as readonly string[]).includes(e.name)) stepUsers.started.add(e.user_id);
+    if ((LEARNING_DONE_EVENTS as readonly string[]).includes(e.name)) stepUsers.done.add(e.user_id);
+    if ((SHARE_EVENTS as readonly string[]).includes(e.name)) stepUsers.shared.add(e.user_id);
+    if (dayIndex(dayKey(e.created_at)) > s.day) stepUsers.returned.add(e.user_id);
+  }
+  const rawSteps: Array<[string, string, number]> = [
+    ["signed_up", "Signed up", cohort.length],
+    ["opened", "Opened the app", stepUsers.opened.size],
+    ["started", "Started learning", stepUsers.started.size],
+    ["done", "Finished something", stepUsers.done.size],
+    ["returned", "Came back another day", stepUsers.returned.size],
+    ["shared", "Shared a result", stepUsers.shared.size],
+  ];
+  const funnel: FunnelStep[] = rawSteps.map(([key, label, users], i) => ({
+    key, label, users, ofSignups: pct(users, cohort.length), ofPrevious: i === 0 ? null : pct(users, rawSteps[i - 1][2]),
+  }));
+
+  // Weekly signup cohorts: rolling retention = active on day N after signup, or later.
+  const mondayOf = (d: number) => d - ((new Date(d * DAY_MS).getUTCDay() + 6) % 7);
+  const byWeek = new Map<number, string[]>();
+  for (const [id, s] of signupOf) {
+    const w = mondayOf(s.day);
+    if (w >= mondayOf(today) - 7 * 5) (byWeek.get(w) ?? byWeek.set(w, []).get(w)!).push(id);
+  }
+  const retained = (ids: string[], n: number): number | null => {
+    const eligible = ids.filter((id) => today >= signupOf.get(id)!.day + n);
+    if (!eligible.length) return null;
+    const back = eligible.filter((id) => [...(activeDays.get(id) ?? [])].some((d) => d >= signupOf.get(id)!.day + n));
+    return pct(back.length, eligible.length);
+  };
+  const cohorts: CohortRow[] = [...byWeek.entries()].sort((a, b) => b[0] - a[0]).map(([w, ids]) => ({
+    weekStart: new Date(w * DAY_MS).toISOString().slice(0, 10), size: ids.length, d1: retained(ids, 1), d7: retained(ids, 7), d30: retained(ids, 30),
+  }));
+
+  // Adoption of the retention/activation features.
+  const actions = known.filter((e) => e.name === "learning_action_started");
+  const firstStepEvents = actions.filter((e) => prop(e, "source") === "dashboard_first_lesson");
+  const shares = known.filter((e) => e.name === "result_shared");
+
+  const topMap = new Map<string, { events: number; users: Set<string> }>();
+  for (const e of known) {
+    const entry = topMap.get(e.name) ?? { events: 0, users: new Set<string>() };
+    entry.events += 1;
+    if (e.user_id) entry.users.add(e.user_id);
+    topMap.set(e.name, entry);
+  }
+
+  return {
+    generatedAt: now.toISOString(),
+    headline: {
+      signups7d, signupsPrev7d, signupsGrowthPct: signupsPrev7d > 0 ? Math.round(((signups7d - signupsPrev7d) / signupsPrev7d) * 100) : null,
+      dau: uniq(dayActive.get(today)), wau, mau, engagedWau: usersBetween(dayEngaged, today - 6, today), stickinessPct: pct(Math.round(dauSum / 7), mau),
+    },
+    series, funnel, cohorts,
+    adoption: {
+      actionSources: countBy(actions, (e) => prop(e, "source")),
+      goalKinds: countBy(actions.filter((e) => prop(e, "source") === "dashboard_goal"), (e) => prop(e, "kind")),
+      firstStep: {
+        syllabus: firstStepEvents.filter((e) => e.properties?.curriculum_step === true).length,
+        generic: firstStepEvents.filter((e) => e.properties?.curriculum_step !== true).length,
+      },
+      shares: countBy(shares, (e) => `${prop(e, "source") ?? "exam"} · ${prop(e, "channel") ?? "other"}`),
+    },
+    topEvents: [...topMap.entries()].map(([label, v]) => ({ label, events: v.events, users: v.users.size })).sort((a, b) => b.users - a.users || b.events - a.events).slice(0, 12),
+    health: {
+      eventsAnalysed: known.length,
+      anonymousPct: known.length ? pct(known.filter((e) => !e.user_id).length, known.length) : null,
+      signupsKnown: signupOf.size,
+    },
+  };
+}
