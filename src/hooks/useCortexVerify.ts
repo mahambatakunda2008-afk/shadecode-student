@@ -175,7 +175,7 @@ ${buildVerifyLearnerContext(readVerifyLearnerModel())}\n\nUse this private learn
       data = selectHelpResult(data, (attempt.level || "hint") as VerifyHelpLevel) as VerifyResult;
     }
     if (!navigator.onLine) data.execution = "browser-local";
-    recordVerifyEvent(attempt, data as VerifyResult);
+    recordVerifyEvent(attempt, data as VerifyResult, attempt.topicId);
     await remove(attempt.userId, attempt.id);
     return data as VerifyResult;
   } catch (err) {
@@ -202,6 +202,7 @@ export function useCortexVerify() {
   const submit = useCallback(async (options: {
     mode: VerifyMode;
     subject?: string;
+    topicId?: string;
     question?: string;
     studentAnswer?: string;
     level?: HelpLevel;
@@ -240,6 +241,7 @@ export function useCortexVerify() {
         userId,
         mode: options.mode,
         subject: options.subject?.trim() || undefined,
+        topicId: options.topicId?.trim() || undefined,
         question: options.question?.trim() || undefined,
         studentAnswer: options.studentAnswer?.trim() || undefined,
         level: options.level,
