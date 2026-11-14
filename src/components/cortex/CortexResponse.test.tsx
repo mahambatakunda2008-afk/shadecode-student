@@ -63,6 +63,85 @@ describe("Cortex response formatting", () => {
     expect(normalizeCortexResponseText("Invalid: &#x110000; and &#99999999;.")).toBe("Invalid: &#x110000; and &#99999999;.");
   });
 
+  it("preserves escaped LaTeX punctuation inside dollar-delimited maths", () => {
+    const inline = String.raw`$\{x\} + \_n + \%import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import CortexResponse, { normalizeCortexResponseText, parseCortexResponseBlocks } from "./CortexResponse";
+
+describe("Cortex response formatting", () => {
+  it("keeps headings, paragraphs and separate ordered steps structured", () => {
+    const blocks = parseCortexResponseBlocks("## Method\nUse the equation first.\n\n1. Substitute the values.\n2. Simplify the expression.");
+    expect(blocks.map(block => block.type)).toEqual(["heading", "paragraph", "list"]);
+    expect(blocks[2]).toMatchObject({ ordered: true, items: [{ text: "Substitute the values." }, { text: "Simplify the expression." }] });
+  });
+
+  it("recognises tables and fenced working without flattening them into prose", () => {
+    const blocks = parseCortexResponseBlocks("| Quantity | Value |\n| --- | --- |\n| Force | 12 N |\n\n\`\`\`text\nF = ma\n\`\`\`");
+    expect(blocks.map(block => block.type)).toEqual(["table", "code"]);
+  });
+
+  it("renders mathematical notation and safe web links", () => {
+    const html = renderToStaticMarkup(
+      <CortexResponse text={"The result is $F=ma$. See [the syllabus](https://example.com/syllabus)."} />,
+    );
+    expect(html).toContain("katex");
+    expect(html).toContain('href="https://example.com/syllabus"');
+    expect(html).toContain('rel="noopener noreferrer"');
+  });
+
+  it("does not turn unsafe link schemes into clickable links", () => {
+    const html = renderToStaticMarkup(<CortexResponse text={"[unsafe](javascript:alert(1))"} />);
+    expect(html).not.toContain("<a ");
+    expect(html).toContain("javascript:alert(1)");
+  });
+  it("keeps indented continuation lines inside blockquotes", () => {
+    const blocks = parseCortexResponseBlocks("> **Working:**\n  Substitute the centre and radius.\n  Then simplify.");
+    expect(blocks[0]).toMatchObject({ type: "quote", text: "**Working:**\nSubstitute the centre and radius.\nThen simplify." });
+    const html = renderToStaticMarkup(<CortexResponse text={"> **Working:**\n  Substitute the centre and radius.\n  Then simplify."} />);
+    expect((html.match(/<blockquote/g) || []).length).toBe(1);
+  });
+
+  it("preserves intentional paragraph line breaks and multi-line quotations", () => {
+    const blocks = parseCortexResponseBlocks("First line\nSecond line\n\n> A quoted point\n> with its continuation");
+    expect(blocks[0]).toMatchObject({ type: "paragraph", text: "First line\nSecond line" });
+    expect(blocks[1]).toMatchObject({ type: "quote", text: "A quoted point\nwith its continuation" });
+  });
+
+  it("repairs provider-escaped Markdown and HTML entities in worked solutions", () => {
+    const sample = String.raw`\### Part 1: Finding the Equation
+\*\*Identify the values\*\*: The centre is $(-3, 2)$.
+1\. \*\*Substitute the values\*\*:&#x20;
+&#x20;   $(x + 3)^2 + (y - 2)^2 = 10$
+2\. \*\*Simplify\*\*: The equation is ready.`;
+    const blocks = parseCortexResponseBlocks(sample);
+    expect(blocks[0]).toMatchObject({ type: "heading", text: "Part 1: Finding the Equation" });
+    expect(blocks[1]).toMatchObject({ type: "paragraph", text: "**Identify the values**: The centre is $(-3, 2)$." });
+    expect(blocks[2]).toMatchObject({ type: "list", ordered: true });
+    expect(blocks[2]).toMatchObject({ items: [{ text: "**Substitute the values**: \n$(x + 3)^2 + (y - 2)^2 = 10$" }, { text: "**Simplify**: The equation is ready." }] });
+  });
+
+  it("repairs Markdown punctuation after multiple transport-escaping layers", () => {
+    expect(normalizeCortexResponseText("\\\\### Part 2")).toBe("### Part 2");
+    expect(normalizeCortexResponseText("\\\\*\\\\*Important\\\\*\\\\*")).toBe("**Important**");
+  });
+
+  it("leaves invalid numeric HTML entities intact instead of crashing", () => {
+    expect(normalizeCortexResponseText("Invalid: &#x110000; and &#99999999;.")).toBe("Invalid: &#x110000; and &#99999999;.");
+  });
+
+;
+    const display = String.raw`$
+\begin{aligned}
+\text{Set }&=\{1,2,3\}\\
+P(A)&=\frac{1}{2}
+\end{aligned}
+$`;
+    expect(normalizeCortexResponseText(inline)).toBe(inline);
+    expect(normalizeCortexResponseText(display)).toBe(display);
+    const html = renderToStaticMarkup(<CortexResponse text={inline + "\n\n" + display} />);
+    expect((html.match(/class="katex/g) || []).length).toBeGreaterThanOrEqual(2);
+  });
+
   it("preserves LaTeX inline and display delimiters while unescaping Markdown", () => {
     const inline = "Use \\(\\frac{1}{2}\\) as the exact value.";
     const display = "\\[x^2 + y^2 = r^2\\]";
