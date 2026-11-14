@@ -3,7 +3,25 @@
 import React from "react";
 import katex from "katex";
 
-type Block =
+
+/** Normalize common provider-side Markdown/HTML escaping before parsing. */
+export function normalizeCortexResponseText(source: string): string {
+  return source
+    .replace(/\\r\\n?/g, "\\n")
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (_, decimal: string) => String.fromCodePoint(parseInt(decimal, 10)))
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    // Providers sometimes escape Markdown punctuation even though the
+    // response is intended to be rendered as Markdown.
+    .replace(/\\\\([\\\\`*_{}\\[\\]()#+.!|>~-])/g, "$1")
+    .trim();
+}
+\ntype Block =
   | { type: "heading"; level: number; text: string }
   | { type: "paragraph"; text: string }
   | { type: "list"; ordered: boolean; items: string[] }
