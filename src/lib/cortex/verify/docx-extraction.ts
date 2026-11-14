@@ -16,7 +16,30 @@ async function inflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
   const stream = new Blob([bytes.slice().buffer as ArrayBuffer]).stream().pipeThrough(
     new DecompressionStream("deflate-raw" as CompressionFormat),
   );
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > DOCX_MAX_XML_BYTES) {
+        await reader.cancel("DOCX XML exceeded the local decompression limit.");
+        throw new Error("DOCX document XML expands beyond the 12 MB local extraction safety limit.");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const output = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    output.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return output;
 }
 
 function decodeXmlEntities(value: string): string {
