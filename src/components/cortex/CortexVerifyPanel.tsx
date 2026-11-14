@@ -56,7 +56,7 @@ export default function CortexVerifyPanel() {
   const [reviewResources, setReviewResources] = useState<ImportedMarkingResource[]>([]);
   const [selectedReviewResourceId, setSelectedReviewResourceId] = useState("");
   const [visualEvidenceOptions, setVisualEvidenceOptions] = useState<Array<{ id: string; file: File; label: string; annotation?: string; previewUrl: string }>>([]);
-  const [selectedVisualEvidence, setSelectedVisualEvidence] = useState<Array<{ file: File; label: string; annotation?: string }>>([]);
+  const [selectedVisualEvidence, setSelectedVisualEvidence] = useState<Array<{ id: string; file: File; label: string; annotation?: string }>>([]);
   const [visualEvidenceLoading, setVisualEvidenceLoading] = useState(false);
   const [visualEvidenceError, setVisualEvidenceError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -252,13 +252,24 @@ export default function CortexVerifyPanel() {
   {visualEvidenceLoading && <p className="mt-2 text-xs text-[var(--muted-foreground)]">Loading locally saved crops…</p>}
   {visualEvidenceError && <p className="mt-2 text-xs text-amber-600">{visualEvidenceError}</p>}
   {visualEvidenceOptions.length > 0 && <div className="mt-3 space-y-2"><p className="text-xs font-semibold">Choose up to five crops to attach</p>{visualEvidenceOptions.map(option => {
-    const selected = selectedVisualEvidence.some(item => item.file.name === option.file.name && item.label === option.label);
+    const selected = selectedVisualEvidence.some(item => item.id === option.id);
     return <label key={option.id} className="flex cursor-pointer items-start gap-3 rounded-lg bg-[var(--muted)] p-3">
       <input type="checkbox" checked={selected} disabled={!selected && selectedVisualEvidence.length >= 5} onChange={event => {
         setCloudConsent(false);
-        setSelectedVisualEvidence(current => event.target.checked
-          ? current.length < 5 ? [...current, { file: option.file, label: option.label, annotation: option.annotation }] : current
-          : current.filter(item => item.file !== option.file));
+        setSelectedVisualEvidence(current => {
+          if (event.target.checked) {
+            if (current.length >= 5) return current;
+            const totalBytes = [...current, option].reduce((sum, item) => sum + item.file.size, 0) + (image && cloudConsent ? image.size : 0);
+            if (totalBytes > 8 * 1024 * 1024) {
+              setVisualEvidenceError("Selected image evidence exceeds the 8 MB request limit. Remove a crop or use a smaller image.");
+              return current;
+            }
+            setVisualEvidenceError(null);
+            return [...current, { id: option.id, file: option.file, label: option.label, annotation: option.annotation }];
+          }
+          setVisualEvidenceError(null);
+          return current.filter(item => item.id !== option.id);
+        });
       }} className="mt-1" />
       <img src={option.previewUrl} alt={`Preview: ${option.label}`} className="h-20 w-24 shrink-0 rounded-lg bg-[var(--card)] object-contain" />
       <span className="min-w-0"><span className="block text-xs font-semibold">{option.label}</span><span className="mt-1 block text-[11px] text-[var(--muted-foreground)]">{option.annotation || "No interpretation notes"}</span><span className="mt-1 block text-[10px] text-[var(--muted-foreground)]">{(option.file.size / 1024).toFixed(0)} KB</span></span>
