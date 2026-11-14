@@ -23,7 +23,7 @@ class NativeVerifyApi(
     ): JSONObject {
         require(mode == "check" || mode == "help") { "Choose Mark Mode or Help Mode." }
         require(subject.isNotBlank() && subjectId.isNotBlank()) { "Choose one of your enrolled subjects." }
-        require(question.isNotBlank() || studentAnswer.isNotBlank()) { "Add a question or extracted working first." }
+        require(question.isNotBlank() || studentAnswer.isNotBlank() || visualEvidence.isNotEmpty()) { "Add a question, extracted working or visual evidence first." }
         if (mode == "help") require(helpLevel in setOf("hint", "method", "solution")) { "Choose a valid help level." }
 
         val boundary = "ShadecodeVerify-${UUID.randomUUID()}"
