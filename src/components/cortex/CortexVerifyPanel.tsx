@@ -84,7 +84,7 @@ export default function CortexVerifyPanel() {
           .map(item => ({ subjectId: item.subjectId as string, subjectName: typeof item.subjectName === "string" ? item.subjectName : undefined, boardId: item.boardId as string, qualificationId: item.qualificationId as string, level: item.level as string }));
         setCurriculumSubjects(valid);
         const labels = valid.map(item => item.subjectName || item.subjectId);
-        if (labels.length && !labels.includes(subject)) setSubject(labels[0]);
+        if (labels.length) setSubject(current => labels.includes(current) ? current : labels[0]);
       })
       .catch(() => { if (!cancelled) setCurriculumSubjects([]); });
     return () => { cancelled = true; };
