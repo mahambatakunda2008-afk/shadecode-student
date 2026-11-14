@@ -6,7 +6,7 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
 import { resolveAuthenticatedCortexStudentContext } from "@/lib/cortex/student-context";
-import { buildSharedVerifyLearnerContext, selectSharedVerifyIntervention } from "@/lib/cortex/verify/shared-learner-context";
+import { buildSharedVerifyLearnerContext, selectSharedVerifyIntervention, selectSharedVerifyTeachingStrategy } from "@/lib/cortex/verify/shared-learner-context";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
 import { hasCompleteMathematicalMarkup, isCleanMathematicalAudit, isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
 import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
@@ -225,6 +225,15 @@ export async function POST(req: Request) {
             repeatedIncorrectResponses: repeated?.incorrectResponses ?? 0,
             recurringMistakeCount: recurring.length,
           });
+          const learnedStrategy = selectSharedVerifyTeachingStrategy(sharedContext, subject, requestedTopicId);
+          if (learnedStrategy) {
+            teachingStrategy = {
+              strategy: learnedStrategy.recommendedStrategy,
+              reason: `Across ${learnedStrategy.cycles[learnedStrategy.recommendedStrategy]} completed cycles for this verified topic, this approach showed a descriptive ${learnedStrategy.advantage} percentage-point advantage over the next approach. This is exploratory, not causal evidence.`,
+              confidence: "moderate",
+              evidence: "verified-topic-history",
+            };
+          }
         }
       }
       // Only auto-select when the learner has not explicitly chosen a level.
@@ -321,7 +330,7 @@ Set consistent=false if any substitution, arithmetic, sign, coordinate, exponent
       return NextResponse.json({
         ...selectHelpResult(result, helpLevel),
         ...(adaptiveHelpLevel ? { adaptiveSelection: true } : {}),
-        ...(teachingStrategy ? { teachingStrategy: teachingStrategy.strategy, teachingStrategyConfidence: teachingStrategy.confidence } : { teachingStrategy: "diagnostic-first", teachingStrategyConfidence: "low" }),
+        ...(teachingStrategy ? { teachingStrategy: teachingStrategy.strategy, teachingStrategyConfidence: teachingStrategy.confidence, ...(teachingStrategy.evidence === "verified-topic-history" ? { teachingStrategyEvidence: "verified-topic-history" } : {}) } : { teachingStrategy: "diagnostic-first", teachingStrategyConfidence: "low", teachingStrategyEvidence: "insufficient-history" }),
       });
     }
 
