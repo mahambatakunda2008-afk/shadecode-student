@@ -1,0 +1,223 @@
+{
+  "asset_key": "biology-9700-infectious-diseases",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Infectious diseases: pathogens, transmission and control",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "10",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus, Version 1, September 2025, 2028–2030, Topic 10, p. 31. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "10.1.1",
+      "10.1.2",
+      "10.1.3",
+      "10.1.4"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation, assessment review and accessibility review before import or publication.",
+      "Questions are original learning checks, not Cambridge past-paper questions or official mark schemes.",
+      "Disease prevention content is educational and must not be treated as individual medical advice. Avoid implying that any single intervention guarantees protection.",
+      "The malaria diagram is a transmission overview only. Detailed Plasmodium life-cycle stages are outside the stated syllabus requirement."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Define infectious disease in terms of pathogens and transmissibility.",
+      "Name and classify the specified pathogens causing cholera, malaria, tuberculosis and HIV/AIDS.",
+      "Explain how each of the four diseases is transmitted between human hosts, including the role of a vector in malaria.",
+      "Evaluate biological, social and economic factors involved in prevention and control of the four diseases."
+    ],
+    "sections": [
+      {
+        "heading": "Infectious diseases and pathogens",
+        "body": "An infectious disease is caused by a pathogen and is transmissible. A pathogen is an infectious agent that causes disease. Pathogens include bacteria, viruses and protoctists. Transmission is the movement of a pathogen from an infected source to a new host. A disease may spread directly between people or indirectly through contaminated food or water, droplets, body fluids, or a vector. Distinguish the pathogen (the causal agent) from the disease (the condition) and from symptoms (effects experienced by the host)."
+      },
+      {
+        "heading": "The four named diseases and their pathogens",
+        "body": "Cholera is caused by the bacterium Vibrio cholerae. Malaria is caused by protoctists in the genus Plasmodium; the specified species are Plasmodium falciparum, Plasmodium malariae, Plasmodium ovale and Plasmodium vivax. Tuberculosis (TB) is caused by the bacteria Mycobacterium tuberculosis and Mycobacterium bovis. HIV/AIDS is caused by the human immunodeficiency virus (HIV). HIV is the virus; AIDS is the advanced syndrome that can develop when HIV has severely damaged immune function. Do not classify Plasmodium as a bacterium or AIDS as the pathogen."
+      },
+      {
+        "heading": "Cholera: faecal–oral transmission",
+        "body": "Vibrio cholerae can be shed in the faeces of an infected person. If faecal material contaminates drinking water or food, another person may ingest the bacteria. Transmission is therefore commonly described as faecal–oral. Inadequate sanitation, unsafe water supplies, poor food hygiene, overcrowding and disruption of water infrastructure increase the opportunity for transmission. The syllabus requires the transmission route, not a detailed account of cholera toxin action."
+      },
+      {
+        "heading": "Malaria: transmission by a mosquito vector",
+        "body": "Malaria is transmitted through the bite of an infected female Anopheles mosquito. The mosquito acts as a vector: it carries the Plasmodium pathogen between human hosts. The mosquito introduces infective parasites while feeding. Malaria is not normally transmitted by casual contact, sharing food or breathing the same air. Vector abundance, mosquito breeding sites, housing, bed-net use, local climate, access to prevention and access to diagnosis and treatment influence transmission. Detailed stages of the Plasmodium life cycle are not required by this syllabus outcome."
+      },
+      {
+        "heading": "Tuberculosis: airborne transmission",
+        "body": "TB is transmitted when a person with infectious pulmonary TB releases droplets or aerosols containing Mycobacterium bacteria, for example when coughing, sneezing, speaking or singing. Another person may inhale infectious particles. Risk is increased by prolonged close contact, crowded or poorly ventilated indoor spaces and delayed diagnosis. M. tuberculosis is commonly associated with human TB; M. bovis is associated with cattle and can reach people through routes including unpasteurised milk or close contact with infected animals. Do not claim that every TB infection is immediately symptomatic or infectious."
+      },
+      {
+        "heading": "HIV: transmission through specific body fluids",
+        "body": "HIV can be transmitted when infectious body fluids, especially blood, semen, vaginal fluids, rectal fluids or breast milk, enter another person's body. Important routes include unprotected sexual contact, sharing contaminated needles or injecting equipment, transfusion of unscreened infected blood, and transmission from mother to child during pregnancy, birth or breastfeeding. HIV is not transmitted by ordinary social contact such as hugging, sharing utensils, using the same toilet or mosquito bites. Prevention must address the actual routes of exposure rather than stigma or myths."
+      },
+      {
+        "heading": "Prevention and control: biological factors",
+        "body": "Biological factors include the pathogen's mode of transmission, its survival outside the host, the presence of a vector or animal reservoir, infectiousness, available medicines, and the possibility of asymptomatic infection. Cholera control interrupts ingestion of contaminated material through safe water, sanitation, handwashing and food hygiene. Malaria control reduces mosquito bites and vector populations using insecticide-treated nets, suitable indoor residual spraying, environmental management of breeding sites and appropriate preventive or treatment programmes. TB control relies on early detection, effective treatment, ventilation, respiratory hygiene and appropriate infection-control measures. HIV prevention includes condoms, effective antiretroviral treatment, testing, sterile injecting equipment, screened blood and prevention of mother-to-child transmission."
+      },
+      {
+        "heading": "Prevention and control: social and economic factors",
+        "body": "Control programmes depend on more than biological knowledge. Social factors include health education, trust in health services, stigma, cultural practices, literacy, housing density, mobility, conflict and community participation. Economic factors include the cost and reliability of clean water, sanitation, diagnostic tests, medicines, insecticide-treated nets, transport and trained staff. Poverty can increase exposure and delay treatment; weak infrastructure can undermine otherwise effective interventions. A balanced discussion links each factor to a particular transmission route and explains how it affects access, uptake or effectiveness. Measures must be affordable, acceptable, sustainable and equitable."
+      },
+      {
+        "heading": "Compare control strategies by transmission route",
+        "body": "Match each intervention to the route it interrupts. Cholera: prevent faecal contamination of food and water and improve sanitation. Malaria: reduce contact with infected mosquitoes and manage vector populations. TB: detect and treat infectious cases, improve ventilation and reduce inhalation exposure. HIV: prevent exposure to infectious body fluids and provide testing and treatment. No single measure is sufficient in every setting. Combined programmes are more robust because they address several points in the chain of transmission."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Define an infectious disease.",
+        "answer": "An infectious disease is caused by a pathogen and is transmissible.",
+        "mark_points": [
+          "Caused by a pathogen",
+          "Transmissible / can pass from one host to another"
+        ]
+      },
+      {
+        "question": "Name the pathogen and state its type for cholera.",
+        "answer": "Vibrio cholerae, a bacterium.",
+        "mark_points": [
+          "Vibrio cholerae",
+          "Bacterium"
+        ]
+      },
+      {
+        "question": "Name all four Plasmodium species specified for malaria.",
+        "answer": "Plasmodium falciparum, P. malariae, P. ovale and P. vivax.",
+        "mark_points": [
+          "P. falciparum",
+          "P. malariae",
+          "P. ovale",
+          "P. vivax"
+        ]
+      },
+      {
+        "question": "Name the two bacterial species specified as causes of TB.",
+        "answer": "Mycobacterium tuberculosis and Mycobacterium bovis.",
+        "mark_points": [
+          "Mycobacterium tuberculosis",
+          "Mycobacterium bovis"
+        ]
+      },
+      {
+        "question": "Explain how cholera is transmitted.",
+        "answer": "Faeces from an infected person contaminate water or food; another person ingests the contaminated material and becomes infected.",
+        "mark_points": [
+          "Pathogen shed in faeces",
+          "Food or water becomes contaminated",
+          "Another host ingests it"
+        ]
+      },
+      {
+        "question": "Explain the role of a vector in malaria transmission.",
+        "answer": "An infected female Anopheles mosquito carries Plasmodium between human hosts and transmits it when taking a blood meal.",
+        "mark_points": [
+          "Female Anopheles mosquito",
+          "Carries/transmits Plasmodium between hosts",
+          "Bite/feeding introduces pathogen"
+        ]
+      },
+      {
+        "question": "Describe how pulmonary TB can spread between people.",
+        "answer": "An infectious person releases droplets or aerosols containing Mycobacterium when coughing, sneezing or speaking; another person inhales them.",
+        "mark_points": [
+          "Infectious respiratory source",
+          "Droplets/aerosols contain bacteria",
+          "Inhalation by another person"
+        ]
+      },
+      {
+        "question": "State two routes by which HIV can be transmitted.",
+        "answer": "Examples include unprotected sexual contact, sharing contaminated injecting equipment, infected blood transfusion, and mother-to-child transmission during pregnancy, birth or breastfeeding.",
+        "mark_points": [
+          "Any two valid routes involving infectious body fluids"
+        ]
+      },
+      {
+        "question": "Explain why improved sanitation reduces cholera transmission.",
+        "answer": "Safe disposal of faeces prevents contamination of water and food, reducing the chance that people ingest Vibrio cholerae.",
+        "mark_points": [
+          "Safe faecal waste disposal",
+          "Prevents food/water contamination",
+          "Reduces ingestion of pathogen"
+        ]
+      },
+      {
+        "question": "Discuss two biological and two socioeconomic factors affecting malaria control.",
+        "answer": "Biological factors include mosquito vector abundance and insecticide resistance. Socioeconomic factors include affordability and access to nets or healthcare, and housing or infrastructure that affects exposure and breeding sites.",
+        "mark_points": [
+          "Two relevant biological factors linked to control",
+          "Two relevant social/economic factors linked to uptake or exposure",
+          "Explanation of effect"
+        ]
+      },
+      {
+        "question": "Why is ventilation relevant to TB control?",
+        "answer": "Ventilation dilutes and removes infectious airborne particles, reducing the concentration that other people may inhale.",
+        "mark_points": [
+          "Airborne particles/aerosols",
+          "Dilution/removal by ventilation",
+          "Reduced inhaled dose/exposure"
+        ]
+      },
+      {
+        "question": "Explain why ordinary social contact does not transmit HIV.",
+        "answer": "HIV is transmitted through specific infectious body fluids entering the body; casual contact such as hugging or sharing utensils does not provide this route of exposure.",
+        "mark_points": [
+          "Specific infectious body fluids required",
+          "Casual contact does not provide transmission route"
+        ]
+      },
+      {
+        "question": "Compare one prevention measure for cholera with one for HIV.",
+        "answer": "Cholera prevention can use safe water and sanitation to interrupt faecal–oral transmission. HIV prevention can use condoms or sterile injecting equipment to prevent exposure to infectious body fluids.",
+        "mark_points": [
+          "Valid cholera measure linked to route",
+          "Valid HIV measure linked to route",
+          "Accurate distinction between routes"
+        ]
+      },
+      {
+        "question": "Explain why disease-control programmes must consider economic factors.",
+        "answer": "Even effective interventions may fail if communities cannot afford or access them; funding, transport, infrastructure, staff and reliable supplies affect coverage and continuity.",
+        "mark_points": [
+          "Cost/access affects uptake",
+          "Examples of relevant resources",
+          "Link to programme coverage/sustainability"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/infectious-diseases/pathogen-classification.svg",
+        "role": "Classification overview of the four named diseases and their pathogen types."
+      },
+      {
+        "path": "/learning-assets/biology/9700/infectious-diseases/transmission-routes.svg",
+        "role": "Comparison of transmission routes for cholera, malaria, TB and HIV."
+      },
+      {
+        "path": "/learning-assets/biology/9700/infectious-diseases/malaria-vector-route.svg",
+        "role": "Simplified malaria host-to-host vector transmission schematic, not a parasite life-cycle diagram."
+      },
+      {
+        "path": "/learning-assets/biology/9700/infectious-diseases/prevention-control-matrix.svg",
+        "role": "Route-matched prevention and control strategies across the four diseases."
+      }
+    ]
+  }
+}
