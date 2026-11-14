@@ -22,7 +22,7 @@ export function normalizeCortexResponseText(source: string): string {
     .trim();
 }
 
-type ListItem = { text: string; children?: { ordered: boolean; items: ListItem[] }[] };
+type ListItem = { text: string; checked?: boolean; children?: { ordered: boolean; items: ListItem[] }[] };
 
 type Block =
   | { type: "heading"; level: number; text: string }
@@ -66,7 +66,7 @@ function parseListAt(lines: string[], start: number, indent: number): { block: {
       break;
     }
     if (marker.ordered !== first.ordered) break;
-    const item: ListItem = { text: marker.text };
+    const item: ListItem = { text: marker.text, checked: marker.checked };
     items.push(item);
     index++;
     while (index < lines.length) {
@@ -206,7 +206,7 @@ function ResponseList({ ordered, items, className = "" }: { ordered: boolean; it
   const List = ordered ? "ol" : "ul";
   return <List className={`space-y-2 pl-6 marker:font-bold marker:text-[var(--primary)] ${ordered ? "list-decimal" : "list-disc"} ${className}`}>
     {items.map((item, index) => <li key={index} className="min-w-0 whitespace-pre-line ps-1 leading-7 [overflow-wrap:anywhere]">
-      <InlineText text={item.text} />
+      {item.checked !== undefined && <span aria-label={item.checked ? "Completed" : "Not completed"} className={`me-2 inline-flex h-4 w-4 translate-y-0.5 items-center justify-center rounded border text-[10px] leading-none ${item.checked ? "border-[var(--primary)] bg-[var(--primary)] text-white" : "border-[var(--muted-foreground)]"}`}>{item.checked ? "✓" : ""}</span>}\n      <InlineText text={item.text} />
       {item.children?.map((child, childIndex) => <ResponseList key={childIndex} ordered={child.ordered} items={child.items} className="mt-2" />)}
     </li>)}
   </List>;
