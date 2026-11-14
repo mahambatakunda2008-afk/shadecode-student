@@ -55,6 +55,7 @@ export default function CortexVerifyPanel() {
   const [userId, setUserId] = useState<string | null>(null);
   const [reviewResources, setReviewResources] = useState<ImportedMarkingResource[]>([]);
   const [selectedReviewResourceId, setSelectedReviewResourceId] = useState("");
+  const [visualEvidenceOptions, setVisualEvidenceOptions] = useState<Array<{ id: string; file: File; label: string; annotation?: string; previewUrl: string }>>([]);
   const [selectedVisualEvidence, setSelectedVisualEvidence] = useState<Array<{ file: File; label: string; annotation?: string }>>([]);
   const [visualEvidenceLoading, setVisualEvidenceLoading] = useState(false);
   const [visualEvidenceError, setVisualEvidenceError] = useState<string | null>(null);
@@ -68,25 +69,37 @@ export default function CortexVerifyPanel() {
     return () => { cancelled = true; };
   }, [userId]);
   useEffect(() => {
-    if (!userId || !selectedReviewResourceId) { setSelectedVisualEvidence([]); return; }
+    if (!userId || !selectedReviewResourceId) {
+      setVisualEvidenceOptions([]);
+      setSelectedVisualEvidence([]);
+      return;
+    }
     let cancelled = false;
+    const objectUrls: string[] = [];
     setVisualEvidenceLoading(true);
     setVisualEvidenceError(null);
+    setSelectedVisualEvidence([]);
     void getMarkingResourceReviewDraft(userId, selectedReviewResourceId).then(draft => {
       if (cancelled) return;
       const regions = draft?.manualVisualRegions || [];
-      const evidence = regions.filter(region => region.crop instanceof Blob && region.crop.size > 0).slice(0, 5).map((region, index) => {
+      const options = regions.filter(region => region.crop instanceof Blob && region.crop.size > 0).map((region, index) => {
         const mime = region.crop!.type || "image/webp";
         const extension = mime === "image/png" ? "png" : mime === "image/jpeg" ? "jpg" : "webp";
         const linkedOcrText = (draft?.localOcr?.regions || []).filter(ocrRegion => region.linkedOcrRegionIds?.includes(ocrRegion.id)).map(ocrRegion => ocrRegion.text).filter(Boolean).join(" | ");
-        const notes = [region.annotation || "", linkedOcrText ? `Linked OCR labels: ${linkedOcrText}` : ""].filter(Boolean).join("\n");
-        return { file: new File([region.crop!], `visual-region-${index + 1}.${extension}`, { type: mime }), label: region.label || "Visual region", annotation: notes };
+        const notes = [region.annotation || "", linkedOcrText ? `Linked OCR labels: ${linkedOcrText}` : ""].filter(Boolean).join("\\n");
+        const file = new File([region.crop!], `visual-region-${index + 1}.${extension}`, { type: mime });
+        const previewUrl = URL.createObjectURL(region.crop!);
+        objectUrls.push(previewUrl);
+        return { id: region.id, file, label: region.label || "Visual region", annotation: notes, previewUrl };
       });
-      setSelectedVisualEvidence(evidence);
-      if (!evidence.length) setVisualEvidenceError("No saved visual crops found. Select and save regions in Resource review first.");
+      setVisualEvidenceOptions(options);
+      if (!options.length) setVisualEvidenceError("No saved visual crops found. Select and save regions in Resource review first.");
     }).catch(err => { if (!cancelled) setVisualEvidenceError(err instanceof Error ? err.message : "Could not load saved visual regions."); })
       .finally(() => { if (!cancelled) setVisualEvidenceLoading(false); });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
   }, [userId, selectedReviewResourceId]);
 
   useEffect(() => { const update = () => setOnline(navigator.onLine); const refresh = async () => { try { const { data } = await createClient().auth.getUser(); const id = data.user?.id || null; setUserId(id); if (id) setQueueCount((await getAll(id)).length); } catch {} }; update(); void refresh(); window.addEventListener("online", update); window.addEventListener("offline", update); return () => { window.removeEventListener("online", update); window.removeEventListener("offline", update); }; }, []);
@@ -238,8 +251,20 @@ export default function CortexVerifyPanel() {
   </select>
   {visualEvidenceLoading && <p className="mt-2 text-xs text-[var(--muted-foreground)]">Loading locally saved crops…</p>}
   {visualEvidenceError && <p className="mt-2 text-xs text-amber-600">{visualEvidenceError}</p>}
-  {selectedVisualEvidence.length > 0 && <div className="mt-3 space-y-2">{selectedVisualEvidence.map((item,index) => <div key={index} className="rounded-lg bg-[var(--muted)] p-3"><p className="text-xs font-semibold">{item.label}</p><p className="mt-1 text-[11px] text-[var(--muted-foreground)]">{item.annotation || "No interpretation notes"}</p></div>)}</div>}
-  <p className="mt-2 text-xs text-[var(--muted-foreground)]">Up to five saved crops are included in this Mark or Help request. Crops stay on this device unless you explicitly consent to cloud processing.</p>
+  {visualEvidenceOptions.length > 0 && <div className="mt-3 space-y-2"><p className="text-xs font-semibold">Choose up to five crops to attach</p>{visualEvidenceOptions.map(option => {
+    const selected = selectedVisualEvidence.some(item => item.file.name === option.file.name && item.label === option.label);
+    return <label key={option.id} className="flex cursor-pointer items-start gap-3 rounded-lg bg-[var(--muted)] p-3">
+      <input type="checkbox" checked={selected} disabled={!selected && selectedVisualEvidence.length >= 5} onChange={event => {
+        setCloudConsent(false);
+        setSelectedVisualEvidence(current => event.target.checked
+          ? current.length < 5 ? [...current, { file: option.file, label: option.label, annotation: option.annotation }] : current
+          : current.filter(item => item.file !== option.file));
+      }} className="mt-1" />
+      <img src={option.previewUrl} alt={`Preview: ${option.label}`} className="h-20 w-24 shrink-0 rounded-lg bg-[var(--card)] object-contain" />
+      <span className="min-w-0"><span className="block text-xs font-semibold">{option.label}</span><span className="mt-1 block text-[11px] text-[var(--muted-foreground)]">{option.annotation || "No interpretation notes"}</span><span className="mt-1 block text-[10px] text-[var(--muted-foreground)]">{(option.file.size / 1024).toFixed(0)} KB</span></span>
+    </label>;
+  })}</div>}
+  <p className="mt-2 text-xs text-[var(--muted-foreground)]">{selectedVisualEvidence.length} of 5 crops selected. Only selected crops are attached. They stay on this device unless you explicitly consent to cloud processing.</p>
   {selectedVisualEvidence.length > 0 && <label className="mt-3 flex items-start gap-2 text-xs leading-5"><input type="checkbox" checked={cloudConsent} onChange={e => setCloudConsent(e.target.checked)} className="mt-0.5" /><span>I agree to send these visual crops, labels and notes, together with my question and working, to Shadecode cloud AI for this request. Visual evidence is never queued for later upload.</span></label>}
 </div>{fileError && <p role="alert" className="mt-3 text-sm text-[var(--danger)]">{fileError}</p>}{image && <div className="mt-4 space-y-3 border-t border-[var(--card-border)] pt-4"><div className="space-y-2"><button type="button" onClick={() => void extractCurrentImageLocally()} disabled={!localOcrSupported || !artifactSaved || localExtracting} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--primary)]/30 bg-[var(--card)] px-4 py-2 text-xs font-bold disabled:opacity-50">{localExtracting ? <><Loader2 size={16} className="animate-spin" /> Extracting on this device…</> : "Extract locally (no upload)"}</button>{!localOcrSupported && <p className="text-xs leading-5 text-[var(--muted-foreground)]">This browser does not expose a supported local OCR engine. Your image stays on this device. Use the Android app for bundled on-device OCR, or choose cloud extraction below only if you consent.</p>}</div><label className="flex items-start gap-2 text-xs leading-5"><input type="checkbox" checked={cloudConsent} onChange={(e) => setCloudConsent(e.target.checked)} className="mt-0.5" /><span>I agree to send this image and my submitted work to Shadecode cloud AI for extraction, marking or help when connected. Offline, supported text-only answer-key checks can run locally, and Help can use a compatible model already loaded on this device. Unsupported requests may be saved for reconnect. Images are not processed by cloud AI until I am online.</span></label><button type="button" onClick={() => void extractCurrentImage()} disabled={!cloudConsent || !online || !artifactSaved || extracting} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-4 py-2 text-xs font-bold disabled:opacity-50">{extracting ? <><Loader2 size={16} className="animate-spin" /> Extracting online…</> : "Extract text for review"}</button></div>}{(rawExtractedText || extractedText) && <div className="mt-4 border-t border-[var(--card-border)] pt-4"><label className="block text-sm font-bold">SNAP & EXTRACT · Review extracted text<textarea value={extractedText} onChange={(e) => setExtractedText(e.target.value)} onBlur={() => void persistCurrentArtifact({ editedText: extractedText })} rows={7} className="mt-2 w-full resize-y rounded-2xl border border-[var(--card-border)] bg-[var(--muted)] p-4 text-sm leading-6" /></label><div className="mt-2 flex flex-wrap gap-2"><button type="button" onClick={restoreOriginalExtraction} className="rounded-lg border border-[var(--card-border)] px-3 py-2 text-xs font-bold">Restore original extraction</button><button type="button" onClick={clearExtraction} className="rounded-lg px-3 py-2 text-xs font-bold text-[var(--danger)]">Clear extraction</button></div>{extractionNote && <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">{extractionNote}</p>}<p className="mt-2 text-xs text-[var(--muted-foreground)]">Review and correct this transcription before using it in Mark Mode or Help Mode. It is an AI-assisted cloud transcription, not verified OCR.</p><p className="mt-2 text-xs text-[var(--muted-foreground)]">{artifactSaved ? "Source image and extraction saved privately on this device." : "Saving this capture locally…"}</p></div>}</div>{savedArtifacts.length > 0 && <div className="mt-4 rounded-2xl border border-[var(--card-border)] bg-[var(--muted)]/40 p-4"><p className="text-sm font-bold">Saved captures on this device</p><div className="mt-3 space-y-2">{savedArtifacts.map((artifact) => <div key={artifact.id} className="flex items-center gap-2 rounded-xl bg-[var(--card)] p-3"><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{artifact.title}</p><p className="text-[11px] text-[var(--muted-foreground)]">{new Date(artifact.updatedAt).toLocaleString()}</p></div><button type="button" onClick={() => { const restored = new File([artifact.sourceImage], artifact.sourceName, { type: artifact.mimeType }); setImage(restored); const reader = new FileReader(); reader.onload = (event) => setPreview(String(event.target?.result || "")); reader.readAsDataURL(restored); setArtifactId(artifact.id); pendingArtifactId.current = artifact.id; setArtifactOwner(userId); setArtifactSaved(true); setCloudConsent(false); setRawExtractedText(artifact.rawExtractedText); setExtractedText(artifact.editedText); setExtractionNote(artifact.extractionExecution === "online-cloud" ? "Restored a cloud-extracted capture. Review its transcription before use." : "Restored a saved capture."); }} className="rounded-lg border border-[var(--card-border)] px-2.5 py-1.5 text-xs font-bold">Open</button><button type="button" onClick={() => { void deleteVerifyArtifact(userId!, artifact.id).then(async () => { setSavedArtifacts(await listVerifyArtifacts(userId!)); if (artifactId === artifact.id) { setImage(undefined); setPreview(null); setArtifactId(null); pendingArtifactId.current = null; setArtifactSaved(false); setRawExtractedText(""); setExtractedText(""); setExtractionNote(""); } }); }} className="rounded-lg px-2 py-1.5 text-xs font-bold text-[var(--danger)]">Delete</button></div>)}</div></div>}{!online && <div className="mt-4 flex items-start gap-3 rounded-2xl bg-[var(--muted)] p-4"><WifiOff size={18} /><div><p className="text-sm font-bold">Offline mode</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">You can capture work, edit extracted text and reopen saved captures offline. Text-only Help can run on this device when a compatible local model is already loaded. Mark Mode can check supported numeric and multiple-choice answers locally when a trusted answer key is available. This is a narrow answer-key check, not full working/partial-credit marking. Other response types are saved for reconnect. Image-based cloud processing waits until you are online.</p></div></div>}{error && <div role="alert" className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--card-border)] p-4 text-sm"><AlertTriangle size={18} /><span>{error}</span></div>}<div className="mt-5 flex justify-end gap-2"><button type="button" onClick={reset} disabled={loading} className="min-h-11 rounded-xl px-4 py-3 text-sm font-bold text-[var(--muted-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]">Clear</button><button type="button" onClick={() => void submit()} disabled={loading || extracting || localExtracting || !userId || (mode === "check" ? (!question.trim() && !studentAnswer.trim() && !extractedText.trim() && !(image && cloudConsent) && selectedVisualEvidence.length === 0) : (!question.trim() && !extractedText.trim() && !(image && cloudConsent) && selectedVisualEvidence.length === 0))} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] px-5 py-3 text-sm font-black text-white shadow-sm transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] disabled:opacity-50">{loading ? <><Loader2 size={18} className="animate-spin" /> {mode === "check" ? "Cortex is marking…" : "Cortex is helping…"}</> : mode === "check" ? <>Mark my work <ArrowRight size={18} /></> : <>Get help <Lightbulb size={18} /></>}</button></div>{!userId && <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">Sign in to use Cortex Verify and keep your offline work private.</p>}<div className="mt-5 flex items-center justify-center gap-2 text-[11px] text-[var(--muted-foreground)]"><ShieldCheck size={14} /> Your offline submissions stay scoped to your account.</div></div>{result && <ResultCard result={result} mode={mode} onRetry={clearResult} onHelp={() => { clearResult(); setMode("help"); }} />}</section>;
 }
