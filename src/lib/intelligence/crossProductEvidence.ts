@@ -17,7 +17,6 @@ const ELIGIBLE_EVENT_TYPES = new Set([
   "quiz.completed", "quiz_completed",
   "exam.completed", "exam_completed",
   "project.stage_completed", "project_stage_completed",
-  "project.evidence_added",
   "mistake.reviewed", "mistake_reviewed",
 ]);
 
