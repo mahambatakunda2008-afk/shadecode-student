@@ -221,6 +221,11 @@ export async function extractImportedMarkingResource(
     try {
       const extracted = await extractDocxText(resource.fileBlob);
       const lines = normalizePageText(1, extracted.text);
+      const visualWarnings = [
+        extracted.imageCount > 0 ? `DOCX contains ${extracted.imageCount} embedded image reference(s). Images are not extracted or interpreted; inspect the original document.` : null,
+        extracted.chartCount > 0 ? `DOCX contains ${extracted.chartCount} chart reference(s). Chart data and axes are not extracted; inspect the original document.` : null,
+        extracted.tableCount > 0 ? `DOCX contains ${extracted.tableCount} table(s). Cell text is preserved as rows, but merged cells, layout, borders and visual meaning require source review.` : null,
+      ].filter((warning): warning is string => Boolean(warning));
       return result(resource, {
         format: "docx",
         status: "extracted",
@@ -229,7 +234,8 @@ export async function extractImportedMarkingResource(
         regions: [],
         markers: identifyMarkingStructure(lines),
         warnings: [
-          "DOCX paragraph text was extracted locally. Original Word page layout, floating objects, images, equations, comments and visual positioning are not preserved; review the source document before using this text as evidence.",
+          "DOCX paragraph text was extracted locally. Original Word page layout, floating objects, equations, comments and visual positioning are not preserved; review the source document before using this text as evidence.",
+          ...visualWarnings,
           "DOCX text extraction does not establish copyright permissions, authenticity or marking-scheme validity.",
         ],
         extractionEngine: extracted.engine,
