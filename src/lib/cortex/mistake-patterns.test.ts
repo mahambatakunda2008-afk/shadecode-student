@@ -38,6 +38,22 @@ describe("deriveRepeatedTopicErrors", () => {
     ])).toEqual([]);
   });
 
+  it("does not treat self-assessed practical marks as verified recurring errors", () => {
+    const selfAssessed = (attemptId: string) => ({
+      type: "question_attempted",
+      data: {
+        attemptId,
+        subjectId: "Biology",
+        topicId: "Practical skills",
+        metadata: { correct: false, selfAssessment: true, practiceMode: "self_assessed_practical" },
+      },
+    });
+    expect(deriveRepeatedTopicErrors([
+      selfAssessed("practice-1"),
+      selfAssessed("practice-2"),
+    ])).toEqual([]);
+  });
+
   it("ignores events without explicit correctness evidence", () => {
     expect(deriveRepeatedTopicErrors([{
       type: "question_attempted",
@@ -47,6 +63,22 @@ describe("deriveRepeatedTopicErrors", () => {
 });
 
 describe("deriveRecurringMistakes", () => {
+  it("does not promote self-assessed practical diagnoses into recurring mistakes", () => {
+    const selfAssessed = (attemptId: string) => ({
+      type: "question_attempted",
+      data: {
+        attemptId,
+        subjectId: "Biology",
+        topicId: "Practical skills",
+        metadata: { correct: false, selfAssessment: true, mistakeId: "weak-evaluation" },
+      },
+    });
+    expect(deriveRecurringMistakes([
+      selfAssessed("practice-1"),
+      selfAssessed("practice-2"),
+    ])).toEqual([]);
+  });
+
   it("requires the same diagnosed mistake ID across distinct attempts", () => {
     const diagnosed = (attemptId: string, mistakeId: string) => ({
       type: "question_attempted",
