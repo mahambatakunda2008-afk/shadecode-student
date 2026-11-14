@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const authorization = req.headers.get("authorization") || "";
-    const bearerToken = authorization.match(/^Bearer\\s+(.+)$/i)?.[1]?.trim();
+    const bearerToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
     const supabase = bearerToken
       ? createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
