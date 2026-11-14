@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
-import { isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
+import { hasCompleteMathematicalMarkup, isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
 import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
 
 export const dynamic = "force-dynamic";
@@ -219,6 +219,12 @@ Keep explanations student-friendly and curriculum-aware. Return ONLY valid JSON 
       const result = await runStructured(evidencePrompt(prompt), images);
       const helpLevel = level as VerifyHelpLevel;
       if (!isValidHelpResult(result, helpLevel)) return NextResponse.json({ error: "Cortex returned incomplete help for the selected level. Please try again." }, { status: 502 });
+      if (helpLevel === "solution" && /math/i.test(subject)) {
+        const solutionText = typeof result.solution === "string" ? result.solution : typeof result.content === "string" ? result.content : "";
+        if (!hasCompleteMathematicalMarkup(solutionText)) {
+          return NextResponse.json({ error: "Cortex could not preserve the mathematical notation in this solution. Please try again." }, { status: 502 });
+        }
+      }
       return NextResponse.json(selectHelpResult(result, helpLevel));
     }
 
