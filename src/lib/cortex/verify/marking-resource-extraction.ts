@@ -66,7 +66,7 @@ export function joinPdfTextItemsByLayout(items: PdfTextLayoutItem[]): string {
   let previous = ordered[0];
   for (const item of ordered.slice(1)) {
     const gap = item.x - (previous.x + Math.max(0, previous.width));
-    output += gap >= columnGap ? "\\t" : " ";
+    output += gap >= columnGap ? "\t" : " ";
     output += item.text.trim();
     previous = item;
   }
