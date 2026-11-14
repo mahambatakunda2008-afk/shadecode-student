@@ -43,7 +43,7 @@ function isTableDivider(line: string): boolean {
 }
 
 function listMarker(line: string): { indent: number; ordered: boolean; text: string } | null {
-  const match = line.match(/^(\\s*)(?:([-*+])|(\\d{1,3})[.)])\\s+(.+)$/);
+  const match = line.match(/^(\s*)(?:([-*+])|(\d{1,3})[.)])\s+(.+)$/);
   if (!match) return null;
   return { indent: match[1].length, ordered: Boolean(match[3]), text: match[4] };
 }
@@ -82,9 +82,9 @@ function parseListAt(lines: string[], start: number, indent: number): { block: {
       }
       const raw = lines[index];
       if (!raw.trim()) break;
-      const leading = raw.match(/^\\s*/)?.[0].length || 0;
+      const leading = raw.match(/^\s*/)?.[0].length || 0;
       if (leading > indent && raw.trim()) {
-        item.text += "\\n" + raw.trim();
+        item.text += "\n" + raw.trim();
         index++;
         continue;
       }
@@ -95,13 +95,13 @@ function parseListAt(lines: string[], start: number, indent: number): { block: {
 }
 
 export function parseCortexResponseBlocks(source: string): Block[] {
-  const lines = normalizeCortexResponseText(source).split("\\n");
+  const lines = normalizeCortexResponseText(source).split("\n");
   const blocks: Block[] = [];
   let paragraph: string[] = [];
   let code: string[] = [];
   let inCode = false;
   const flush = () => {
-    const text = paragraph.join("\\n").trim();
+    const text = paragraph.join("\n").trim();
     if (text) blocks.push({ type: "paragraph", text });
     paragraph = [];
   };
@@ -109,9 +109,9 @@ export function parseCortexResponseBlocks(source: string): Block[] {
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
     const line = raw.trimEnd();
-    if (/^\\s*\x60\x60\x60/.test(line)) {
+    if (/^\s*\x60\x60\x60/.test(line)) {
       flush();
-      if (inCode) blocks.push({ type: "code", text: code.join("\\n") });
+      if (inCode) blocks.push({ type: "code", text: code.join("\n") });
       code = [];
       inCode = !inCode;
       continue;
@@ -132,16 +132,16 @@ export function parseCortexResponseBlocks(source: string): Block[] {
       continue;
     }
 
-    const heading = line.match(/^\\s{0,3}(#{1,4})\\s+(.+)$/);
+    const heading = line.match(/^\s{0,3}(#{1,4})\s+(.+)$/);
     if (heading) { flush(); blocks.push({ type: "heading", level: heading[1].length, text: heading[2] }); continue; }
-    if (/^\\s*(---+|\\*\\*\\*|___+)\\s*$/.test(line)) { flush(); blocks.push({ type: "rule" }); continue; }
-    if (/^\\s*>/.test(line)) {
+    if (/^\s*(---+|\*\*\*|___+)\s*$/.test(line)) { flush(); blocks.push({ type: "rule" }); continue; }
+    if (/^\s*>/.test(line)) {
       flush();
-      const quoteLines = [line.replace(/^\\s*>\\s?/, "")];
-      while (i + 1 < lines.length && /^\\s*>/.test(lines[i + 1])) {
-        quoteLines.push(lines[++i].replace(/^\\s*>\\s?/, ""));
+      const quoteLines = [line.replace(/^\s*>\s?/, "")];
+      while (i + 1 < lines.length && /^\s*>/.test(lines[i + 1])) {
+        quoteLines.push(lines[++i].replace(/^\s*>\s?/, ""));
       }
-      blocks.push({ type: "quote", text: quoteLines.join("\\n") });
+      blocks.push({ type: "quote", text: quoteLines.join("\n") });
       continue;
     }
 
@@ -156,7 +156,7 @@ export function parseCortexResponseBlocks(source: string): Block[] {
     paragraph.push(line.trim());
   }
   flush();
-  if (inCode && code.length) blocks.push({ type: "code", text: code.join("\\n") });
+  if (inCode && code.length) blocks.push({ type: "code", text: code.join("\n") });
   return blocks;
 }
 
