@@ -183,7 +183,9 @@ function InlineText({ text }: { text: string }) {
     if (displayMath || inlineMath) {
       const expression = displayMath ? token.slice(2, -2) : token.startsWith("$") ? token.slice(1, -1) : token.slice(2, -2);
       const html = renderMath(expression, displayMath);
-      if (html) return <span key={index} className={displayMath ? "my-3 block overflow-x-auto text-center" : "inline-block max-w-full align-middle"} dangerouslySetInnerHTML={{ __html: html }} />;
+      if (html) return displayMath
+        ? <div key={index} className="my-3 block max-w-full overflow-x-auto overscroll-x-contain py-1 text-center" role="math" dangerouslySetInnerHTML={{ __html: html }} />
+        : <span key={index} className="inline-block max-w-full align-middle" dangerouslySetInnerHTML={{ __html: html }} />;
       return <code key={index}>{expression}</code>;
     }
     const linkStart = token.startsWith("[") ? token.indexOf("](") : -1;
@@ -220,7 +222,7 @@ export default function CortexResponse({ text, className = "" }: { text: string;
       }
       if (block.type === "list") return <ResponseList key={index} ordered={block.ordered} items={block.items} />;
       if (block.type === "quote") return <blockquote key={index} className="whitespace-pre-wrap border-s-[3px] border-[var(--primary)] bg-[var(--muted)]/70 px-4 py-3 text-[var(--muted-foreground)]"><InlineText text={block.text} /></blockquote>;
-      if (block.type === "table") return <div key={index} className="max-w-full overflow-x-auto rounded-xl border border-[var(--card-border)]"><table className="w-full min-w-[420px] border-collapse text-left text-sm"><thead className="bg-[var(--muted)]"><tr>{block.rows[0]?.map((cell, cellIndex) => <th key={cellIndex} className="border-b border-[var(--card-border)] px-3 py-2.5 font-bold text-[var(--foreground)]"><InlineText text={cell} /></th>)}</tr></thead><tbody>{block.rows.slice(1).map((row, rowIndex) => <tr key={rowIndex} className="even:bg-[var(--muted)]/50">{row.map((cell, cellIndex) => <td key={cellIndex} className="border-b border-[var(--card-border)] px-3 py-2.5 align-top last:border-0"><InlineText text={cell} /></td>)}</tr>)}</tbody></table></div>;
+      if (block.type === "table") return <div key={index} className="w-full max-w-full overflow-x-auto overscroll-x-contain rounded-xl border border-[var(--card-border)]" role="region" aria-label="Scrollable response table" tabIndex={0}><table className="w-full min-w-[420px] table-auto border-collapse text-left text-sm"><thead className="bg-[var(--muted)]"><tr>{block.rows[0]?.map((cell, cellIndex) => <th key={cellIndex} className="max-w-[min(70vw,24rem)] whitespace-normal break-words border-b border-[var(--card-border)] px-3 py-2.5 font-bold text-[var(--foreground)] [overflow-wrap:anywhere]"><InlineText text={cell} /></th>)}</tr></thead><tbody>{block.rows.slice(1).map((row, rowIndex) => <tr key={rowIndex} className="even:bg-[var(--muted)]/50">{row.map((cell, cellIndex) => <td key={cellIndex} className="max-w-[min(70vw,24rem)] whitespace-normal break-words border-b border-[var(--card-border)] px-3 py-2.5 align-top last:border-0 [overflow-wrap:anywhere]"><InlineText text={cell} /></td>)}</tr>)}</tbody></table></div>;
       if (block.type === "code") return <pre key={index} className="max-w-full overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--muted)] p-4 font-mono text-xs leading-6 text-[var(--foreground)] [tab-size:2]"><code>{block.text}</code></pre>;
       if (block.type === "rule") return <hr key={index} className="border-[var(--card-border)]" />;
       return <p key={index} className="whitespace-pre-line leading-7"><InlineText text={block.text} /></p>;
