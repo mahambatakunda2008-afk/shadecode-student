@@ -7,6 +7,7 @@ import { getLessonCache, saveLessonCache, type LocalLessonList } from "@/lib/loc
 import PaperStudyLauncher from "./PaperStudyLauncher";
 import { AlertCircle, BookOpen, CheckCircle2, Clock3, RefreshCw, Sparkles, WifiOff, Zap } from "lucide-react";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
+import LearnerPracticeRecommendations from "./components/LearnerPracticeRecommendations";
 
 const REQUEST_TIMEOUT_MS = 12000;
 const GENERATE_TIMEOUT_MS = 65000;
@@ -165,6 +166,8 @@ export default function LearnPageClientV2() {
           </div>
           {generateError && <p className="mt-3 flex items-center gap-2 text-xs font-medium text-[var(--destructive,#ef4444)]"><AlertCircle className="h-4 w-4" /> {generateError}</p>}
         </section>
+
+        {subject && <LearnerPracticeRecommendations userId={userId} subject={subject} onPick={setTopic} />}
 
         <section>
           <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-bold">Subjects</h2><span className="text-xs text-[var(--muted-foreground)]">{data.subjects.length} available</span></div>
