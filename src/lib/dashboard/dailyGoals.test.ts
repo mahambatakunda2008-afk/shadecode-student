@@ -61,3 +61,44 @@ describe("buildDailyGoals", () => {
     expect(goals[1]).toMatchObject({ actionLabel: "10 min", href: "/learn?subject=Maths&topic=Practise+fractions" });
   });
 });
+
+describe("buildDailyGoals: evidence-backed review", () => {
+  const reviews = [
+    { subjectKey: "physics", topicId: "Waves", priority: "high" as const, reason: "repeated_errors" as const, distinctAttempts: 3 },
+    { subjectKey: "maths", topicId: "Algebra", priority: "standard" as const, reason: "retrieval_practice" as const, distinctAttempts: 4 },
+  ];
+  it("offers the top review with honest wording and review metadata", () => {
+    const [goal] = buildDailyGoals({ lessons: [], exams: [], recommendations: [], reviews, now });
+    expect(goal).toMatchObject({
+      kind: "review", title: "Revisit Waves", detail: "Physics · Incorrect across 3 separate attempts",
+      href: "/learn?subject=physics&topic=Waves", review: { subjectKey: "physics", topicId: "Waves" },
+    });
+    expect(`${goal.title} ${goal.detail}`).not.toMatch(/due|overdue|forget|retention/i);
+  });
+  it("skips a topic already practised today and falls to the next", () => {
+    const activity = [{ subjectKey: "physics", topicId: "waves", state: "practised" as const, lastObservedAt: new Date(2026, 10, 14, 8, 0).toISOString() }];
+    const goals = buildDailyGoals({ lessons: [], exams: [], recommendations: [], reviews, reviewActivity: activity, now });
+    expect(goals.map((g) => g.title)).toEqual(["Revisit Algebra"]);
+  });
+  it("still offers a topic practised on an earlier day", () => {
+    const activity = [{ subjectKey: "physics", topicId: "Waves", state: "completed" as const, lastObservedAt: new Date(2026, 10, 12, 8, 0).toISOString() }];
+    expect(buildDailyGoals({ lessons: [], exams: [], recommendations: [], reviews, reviewActivity: activity, now })[0].title).toBe("Revisit Waves");
+  });
+  it("ranks urgent exam, high-priority review, then the unfinished lesson", () => {
+    const goals = buildDailyGoals({
+      lessons: [lesson()], exams: [{ id: "e", subject: "Chemistry", exam_date: "2026-11-16" }], recommendations: [], reviews, now,
+    });
+    expect(goals.map((g) => g.kind)).toEqual(["exam_prep", "review", "finish_lesson"]);
+  });
+  it("never shows a review and a lesson for the same topic, nor repeats it as a recommendation", () => {
+    const goals = buildDailyGoals({
+      lessons: [lesson({ lessonTitle: "Waves" })], exams: [],
+      recommendations: [{ id: "r", title: "Waves", subject: "Physics" }], reviews: [reviews[0]], now,
+    });
+    expect(goals.map((g) => g.title)).toEqual(["Finish Waves"]);
+  });
+  it("keeps standard-priority reviews below an unfinished lesson", () => {
+    const goals = buildDailyGoals({ lessons: [lesson()], exams: [], recommendations: [], reviews: [reviews[1]], now });
+    expect(goals.map((g) => g.kind)).toEqual(["finish_lesson", "review"]);
+  });
+});

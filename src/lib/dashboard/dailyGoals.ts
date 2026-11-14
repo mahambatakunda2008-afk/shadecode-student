@@ -7,7 +7,7 @@
  * done (lesson completed, exam passed), so there is nothing to tick off.
  */
 
-export type DailyGoalKind = "exam_prep" | "finish_lesson" | "recommended";
+export type DailyGoalKind = "exam_prep" | "finish_lesson" | "review" | "recommended";
 
 export interface DailyGoal {
   id: string;
@@ -17,6 +17,8 @@ export interface DailyGoal {
   actionLabel: string;
   href: string;
   subject?: string;
+  /** Set on review goals so the launcher can credit the review session. */
+  review?: { subjectKey: string; topicId: string };
 }
 
 export interface GoalLesson {
@@ -42,7 +44,25 @@ export interface GoalRecommendation {
   estimatedTime?: number;
 }
 
+/** Evidence-backed review suggestion (see src/lib/cortex/review-suggestions.ts). No due dates are implied. */
+export interface GoalReview {
+  subjectKey: string;
+  topicId: string;
+  priority: "high" | "standard";
+  reason: "repeated_errors" | "retrieval_practice";
+  distinctAttempts: number;
+}
+export interface GoalReviewActivity {
+  subjectKey: string;
+  topicId: string;
+  state: "practised" | "completed";
+  lastObservedAt: string | null;
+}
+
 export interface BuildGoalsInput {
+  /** Already ordered by the API (repeated errors first). Optional. */
+  reviews?: readonly GoalReview[];
+  reviewActivity?: readonly GoalReviewActivity[];
   lessons: readonly GoalLesson[];
   exams: readonly GoalExam[];
   /** Cortex recommendations AFTER the hero's one, used to fill remaining slots. */
@@ -71,8 +91,18 @@ function when(days: number): string {
   return days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
 }
 
-export function buildDailyGoals({ lessons, exams, recommendations, now = new Date(), limit = 3 }: BuildGoalsInput): DailyGoal[] {
+function sameLocalDay(iso: string | null, now: Date): boolean {
+  if (!iso) return false;
+  const t = new Date(iso);
+  return !Number.isNaN(t.getTime()) && t.getFullYear() === now.getFullYear() && t.getMonth() === now.getMonth() && t.getDate() === now.getDate();
+}
+
+const titleCase = (v: string) => (v ? v.charAt(0).toUpperCase() + v.slice(1) : v);
+
+export function buildDailyGoals({ lessons, exams, recommendations, reviews = [], reviewActivity = [], now = new Date(), limit = 3 }: BuildGoalsInput): DailyGoal[] {
   const urgent: DailyGoal[] = [];
+  const reviewHigh: DailyGoal[] = [];
+  const reviewStandard: DailyGoal[] = [];
   const soon: DailyGoal[] = [];
   const started: DailyGoal[] = [];
   const filler: DailyGoal[] = [];
@@ -118,7 +148,29 @@ export function buildDailyGoals({ lessons, exams, recommendations, now = new Dat
     });
   }
 
-  // 3) Cortex recommendations fill any remaining slots (never repeating the above).
+  // 3) One evidence-backed review (not already practised today). No due dates, no forgetting claims.
+  const practisedToday = new Set(
+    reviewActivity.filter((a) => sameLocalDay(a.lastObservedAt, now)).map((a) => `${norm(a.subjectKey)}\u0000${norm(a.topicId)}`),
+  );
+  const review = reviews.find((r) => r.topicId?.trim() && r.subjectKey?.trim() && !practisedToday.has(`${norm(r.subjectKey)}\u0000${norm(r.topicId)}`) && !startedTitles.has(norm(r.topicId)));
+  if (review) {
+    startedTitles.add(norm(review.topicId));
+    const why = review.reason === "repeated_errors"
+      ? `Incorrect across ${review.distinctAttempts} separate attempts`
+      : `Practised across ${review.distinctAttempts} separate attempts. Try it again`;
+    (review.priority === "high" ? reviewHigh : reviewStandard).push({
+      id: `review-${norm(review.subjectKey)}-${norm(review.topicId)}`,
+      kind: "review",
+      title: `Revisit ${review.topicId}`,
+      detail: `${titleCase(review.subjectKey)} · ${why}`,
+      actionLabel: "Practise",
+      href: `/learn?subject=${encodeURIComponent(review.subjectKey)}&topic=${encodeURIComponent(review.topicId)}`,
+      subject: titleCase(review.subjectKey),
+      review: { subjectKey: review.subjectKey, topicId: review.topicId },
+    });
+  }
+
+  // 4) Cortex recommendations fill any remaining slots (never repeating the above).
   for (const rec of recommendations) {
     const title = rec.title?.trim();
     if (!title) continue;
@@ -138,5 +190,5 @@ export function buildDailyGoals({ lessons, exams, recommendations, now = new Dat
     });
   }
 
-  return [...urgent, ...started, ...soon, ...filler].slice(0, Math.max(0, limit));
+  return [...urgent, ...reviewHigh, ...started, ...soon, ...reviewStandard, ...filler].slice(0, Math.max(0, limit));
 }
