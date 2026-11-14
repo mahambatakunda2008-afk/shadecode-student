@@ -117,7 +117,7 @@ function InlineText({ text }: { text: string }) {
     const linkLabel = linkStart > 1 && token.endsWith(")") ? token.slice(1, linkStart) : "";
     const linkHref = linkStart > 1 && token.endsWith(")") ? token.slice(linkStart + 2, -1) : "";
     const safeLink = linkHref.startsWith("https://") || linkHref.startsWith("http://");
-    if (linkLabel && safeLink && !/\\s/.test(linkHref)) return <a key={index} href={linkHref} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--primary)] underline decoration-[var(--primary)]/40 underline-offset-2 hover:decoration-[var(--primary)]">{linkLabel}</a>;
+    if (linkLabel && safeLink && !linkHref.includes(" ")) return <a key={index} href={linkHref} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--primary)] underline decoration-[var(--primary)]/40 underline-offset-2 hover:decoration-[var(--primary)]">{linkLabel}</a>;
     if ((token.startsWith("**") && token.endsWith("**")) || (token.startsWith("__") && token.endsWith("__"))) return <strong key={index} className="font-bold text-[var(--foreground)]">{token.slice(2, -2)}</strong>;
     if ((token.startsWith("*") && token.endsWith("*")) || (token.startsWith("_") && token.endsWith("_"))) return <em key={index}>{token.slice(1, -1)}</em>;
     if (token.startsWith("~~") && token.endsWith("~~")) return <del key={index}>{token.slice(2, -2)}</del>;
