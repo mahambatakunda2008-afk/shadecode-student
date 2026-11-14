@@ -79,6 +79,11 @@ describe("marking resource extraction", () => {
     expect(docxXmlToText(xml)).toBe("1 Explain & define.\nMethod\t[2 marks]");
   });
 
+  it("preserves DOCX table row and cell boundaries", () => {
+    const xml = `<w:document xmlns:w="urn:w"><w:body><w:p><w:r><w:t>Results</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Time / s</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Distance / m</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:tc><w:p><w:r><w:t>1.0</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>2.5</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>`;
+    expect(docxXmlToText(xml)).toBe("Results\\n| Time / s | Distance / m |\\n| 1.0 | 2.5 |");
+  });
+
   it("fails safely when a DOCX is not a valid ZIP document", async () => {
     const source = resource("scheme.docx", "not-a-docx");
     const result = await extractImportedMarkingResource(source);
