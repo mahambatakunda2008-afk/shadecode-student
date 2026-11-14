@@ -267,9 +267,10 @@ export default function Settings() {
         <ShadeNetSettingsCard />
       </section>
 
-      <section aria-label="More settings" className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="More settings" className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
         <ActionCard icon={<MessageSquare size={22} aria-hidden="true" />} title="Send feedback" description="Report a bug or suggest an improvement." onClick={() => router.push("/feedback")} />
         <ActionCard icon={<Heart size={22} aria-hidden="true" />} title="Support Shadecode" description="Contribute voluntarily to help keep learning accessible." onClick={() => router.push("/support")} />
+        <ActionCard icon={<Shield size={22} aria-hidden="true" />} title="Delete account" description="Request deletion of your account and associated personal data." onClick={() => router.push("/delete-account.html")} />
         <InfoCard
           icon={<Shield size={22} aria-hidden="true" />}
           title={isBeyond ? "Workspace details" : isFoundation ? "Learning space details" : "Study space details"}

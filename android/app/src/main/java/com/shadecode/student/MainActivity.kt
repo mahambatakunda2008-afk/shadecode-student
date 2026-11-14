@@ -1120,6 +1120,7 @@ private fun ProfileNativeScreen(
     onSignOut: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var displayName by remember(profile?.id, profile?.displayName) { mutableStateOf(profile?.displayName.orEmpty()) }
     var studyLevel by remember(profile?.id, profile?.studyLevel) { mutableStateOf(profile?.studyLevel ?: "upper-secondary") }
     var selectedCodes by remember(profile?.id, profile?.subjects) {
@@ -1255,6 +1256,7 @@ private fun ProfileNativeScreen(
             ) {
                 if (saving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Text("Save learning profile")
             }
+            TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://shadecodestudent.vercel.app/delete-account.html"))) }) { Text("Request account deletion") }
             TextButton(onClick = onSignOut) { Text("Sign out") }
             Spacer(Modifier.height(24.dp))
         }
