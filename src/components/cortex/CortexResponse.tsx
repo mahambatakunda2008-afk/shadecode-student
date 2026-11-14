@@ -15,7 +15,9 @@ export function normalizeCortexResponseText(source: string): string {
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;|&apos;/gi, "'")
-    .replace(/\\([\\\`*_{}\[\]()#+.!|>~-])/g, "$1")
+    // Handle repeated escaping layers introduced by JSON/API transport.
+    .replace(/\\\\([\\\\\`*_{}\\[\\]()#+.!|>~-])/g, "$1")
+    .replace(/\\\\([\\\\\`*_{}\\[\\]()#+.!|>~-])/g, "$1")
     .trim();
 }
 
