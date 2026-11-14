@@ -162,9 +162,17 @@ export async function emitLearningEvent(input: LearningEventInput): Promise<bool
 export function installLearningEventSync(): () => void {
   if (typeof window === "undefined") return () => undefined;
   const flush = () => {
-    if (document.visibilityState === "hidden") return;
+    if (document.visibilityState === "hidden" || !navigator.onLine) return;
     void flushLearningEvents();
     void flushDiscoveryProgress();
+    // Verify has a dedicated compact outbox; drain it from the app-wide sync
+    // lifecycle too, so pending evidence is not stranded after leaving Verify.
+    const activeUserId = getRememberedUserId();
+    if (activeUserId) {
+      void import("@/lib/cortex/verify/learning-event-outbox")
+        .then(({ flushVerifyLearningEvents }) => flushVerifyLearningEvents(activeUserId))
+        .catch(() => undefined);
+    }
   };
   const flushOnVisible = () => {
     if (document.visibilityState === "visible") flush();
