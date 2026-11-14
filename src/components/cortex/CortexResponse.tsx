@@ -22,10 +22,12 @@ export function normalizeCortexResponseText(source: string): string {
     .trim();
 }
 
+type ListItem = { text: string; children?: { ordered: boolean; items: ListItem[] }[] };
+
 type Block =
   | { type: "heading"; level: number; text: string }
   | { type: "paragraph"; text: string }
-  | { type: "list"; ordered: boolean; items: string[] }
+  | { type: "list"; ordered: boolean; items: ListItem[] }
   | { type: "quote"; text: string }
   | { type: "table"; rows: string[][] }
   | { type: "code"; text: string }
@@ -40,14 +42,66 @@ function isTableDivider(line: string): boolean {
   return cells.length > 1 && cells.every(cell => /^:?-{3,}:?$/.test(cell));
 }
 
+function listMarker(line: string): { indent: number; ordered: boolean; text: string } | null {
+  const match = line.match(/^(\\s*)(?:([-*+])|(\\d{1,3})[.)])\\s+(.+)$/);
+  if (!match) return null;
+  return { indent: match[1].length, ordered: Boolean(match[3]), text: match[4] };
+}
+
+function parseListAt(lines: string[], start: number, indent: number): { block: { type: "list"; ordered: boolean; items: ListItem[] }; next: number } {
+  const first = listMarker(lines[start])!;
+  const items: ListItem[] = [];
+  let index = start;
+  while (index < lines.length) {
+    const marker = listMarker(lines[index]);
+    if (!marker || marker.indent < indent) break;
+    if (marker.indent > indent) {
+      if (items.length && marker.indent > indent) {
+        const nested = parseListAt(lines, index, marker.indent);
+        const parent = items[items.length - 1];
+        parent.children = [...(parent.children || []), nested.block];
+        index = nested.next;
+        continue;
+      }
+      break;
+    }
+    if (marker.ordered !== first.ordered) break;
+    const item: ListItem = { text: marker.text };
+    items.push(item);
+    index++;
+    while (index < lines.length) {
+      const nextMarker = listMarker(lines[index]);
+      if (nextMarker) {
+        if (nextMarker.indent > indent) {
+          const nested = parseListAt(lines, index, nextMarker.indent);
+          item.children = [...(item.children || []), nested.block];
+          index = nested.next;
+          continue;
+        }
+        break;
+      }
+      const raw = lines[index];
+      if (!raw.trim()) break;
+      const leading = raw.match(/^\\s*/)?.[0].length || 0;
+      if (leading > indent && raw.trim()) {
+        item.text += "\\n" + raw.trim();
+        index++;
+        continue;
+      }
+      break;
+    }
+  }
+  return { block: { type: "list", ordered: first.ordered, items }, next: index };
+}
+
 export function parseCortexResponseBlocks(source: string): Block[] {
-  const lines = normalizeCortexResponseText(source).split("\n");
+  const lines = normalizeCortexResponseText(source).split("\\n");
   const blocks: Block[] = [];
   let paragraph: string[] = [];
   let code: string[] = [];
   let inCode = false;
   const flush = () => {
-    const text = paragraph.join("\n").trim();
+    const text = paragraph.join("\\n").trim();
     if (text) blocks.push({ type: "paragraph", text });
     paragraph = [];
   };
@@ -55,9 +109,9 @@ export function parseCortexResponseBlocks(source: string): Block[] {
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
     const line = raw.trimEnd();
-    if (/^\s*```/.test(line)) {
+    if (/^\\s*\x60\x60\x60/.test(line)) {
       flush();
-      if (inCode) blocks.push({ type: "code", text: code.join("\n") });
+      if (inCode) blocks.push({ type: "code", text: code.join("\\n") });
       code = [];
       inCode = !inCode;
       continue;
@@ -78,47 +132,31 @@ export function parseCortexResponseBlocks(source: string): Block[] {
       continue;
     }
 
-    const heading = line.match(/^\s{0,3}(#{1,4})\s+(.+)$/);
+    const heading = line.match(/^\\s{0,3}(#{1,4})\\s+(.+)$/);
     if (heading) { flush(); blocks.push({ type: "heading", level: heading[1].length, text: heading[2] }); continue; }
-    if (/^\s*(---+|\*\*\*|___+)\s*$/.test(line)) { flush(); blocks.push({ type: "rule" }); continue; }
-    if (/^\s*>/.test(line)) {
+    if (/^\\s*(---+|\\*\\*\\*|___+)\\s*$/.test(line)) { flush(); blocks.push({ type: "rule" }); continue; }
+    if (/^\\s*>/.test(line)) {
       flush();
-      const quoteLines = [line.replace(/^\s*>\s?/, "")];
-      while (i + 1 < lines.length && /^\s*>/.test(lines[i + 1])) {
-        quoteLines.push(lines[++i].replace(/^\s*>\s?/, ""));
+      const quoteLines = [line.replace(/^\\s*>\\s?/, "")];
+      while (i + 1 < lines.length && /^\\s*>/.test(lines[i + 1])) {
+        quoteLines.push(lines[++i].replace(/^\\s*>\\s?/, ""));
       }
-      blocks.push({ type: "quote", text: quoteLines.join("\n") });
+      blocks.push({ type: "quote", text: quoteLines.join("\\n") });
       continue;
     }
 
-    const bullet = line.match(/^\s*[-*+]\s+(.+)$/);
-    const numbered = line.match(/^\s*(\d{1,3})[.)]\s+(.+)$/);
-    if (bullet || numbered) {
+    const marker = listMarker(line);
+    if (marker) {
       flush();
-      const ordered = !!numbered;
-      const items = [bullet?.[1] || numbered?.[2] || ""];
-      while (i + 1 < lines.length) {
-        const next = lines[i + 1];
-        const match = ordered ? next.match(/^\s*\d{1,3}[.)]\s+(.+)$/) : next.match(/^\s*[-*+]\s+(.+)$/);
-        if (match) {
-          items.push(match[1]);
-          i++;
-          continue;
-        }
-        if (/^\s{2,}\S/.test(next)) {
-          items[items.length - 1] += "\n" + next.trim();
-          i++;
-          continue;
-        }
-        break;
-      }
-      blocks.push({ type: "list", ordered, items });
+      const parsed = parseListAt(lines, i, marker.indent);
+      blocks.push(parsed.block);
+      i = parsed.next - 1;
       continue;
     }
     paragraph.push(line.trim());
   }
   flush();
-  if (inCode && code.length) blocks.push({ type: "code", text: code.join("\n") });
+  if (inCode && code.length) blocks.push({ type: "code", text: code.join("\\n") });
   return blocks;
 }
 
@@ -161,6 +199,17 @@ function InlineText({ text }: { text: string }) {
   })}</>;
 }
 
+
+function ResponseList({ ordered, items, className = "" }: { ordered: boolean; items: ListItem[]; className?: string }) {
+  const List = ordered ? "ol" : "ul";
+  return <List className={`space-y-2 pl-6 marker:font-bold marker:text-[var(--primary)] ${ordered ? "list-decimal" : "list-disc"} ${className}`}>
+    {items.map((item, index) => <li key={index} className="min-w-0 whitespace-pre-line ps-1 leading-7 [overflow-wrap:anywhere]">
+      <InlineText text={item.text} />
+      {item.children?.map((child, childIndex) => <ResponseList key={childIndex} ordered={child.ordered} items={child.items} className="mt-2" />)}
+    </li>)}
+  </List>;
+}
+
 export default function CortexResponse({ text, className = "" }: { text: string; className?: string }) {
   const blocks = parseCortexResponseBlocks(text || "");
   return <div className={`cortex-response min-w-0 space-y-4 text-[15px] leading-7 text-[var(--foreground)] [overflow-wrap:anywhere] ${className}`}>
@@ -169,15 +218,10 @@ export default function CortexResponse({ text, className = "" }: { text: string;
         const Tag = block.level <= 2 ? "h4" : "h5";
         return <Tag key={index} className="pt-2 text-base font-bold leading-6 text-[var(--foreground)]"><InlineText text={block.text} /></Tag>;
       }
-      if (block.type === "list") {
-        const List = block.ordered ? "ol" : "ul";
-        return <List key={index} className={`space-y-2.5 pl-6 marker:font-bold marker:text-[var(--primary)] ${block.ordered ? "list-decimal" : "list-disc"}`}>
-          {block.items.map((item, itemIndex) => <li key={itemIndex} className="whitespace-pre-line ps-1 leading-7"><InlineText text={item} /></li>)}
-        </List>;
-      }
+      if (block.type === "list") return <ResponseList key={index} ordered={block.ordered} items={block.items} />;
       if (block.type === "quote") return <blockquote key={index} className="whitespace-pre-wrap border-s-[3px] border-[var(--primary)] bg-[var(--muted)]/70 px-4 py-3 text-[var(--muted-foreground)]"><InlineText text={block.text} /></blockquote>;
       if (block.type === "table") return <div key={index} className="max-w-full overflow-x-auto rounded-xl border border-[var(--card-border)]"><table className="w-full min-w-[420px] border-collapse text-left text-sm"><thead className="bg-[var(--muted)]"><tr>{block.rows[0]?.map((cell, cellIndex) => <th key={cellIndex} className="border-b border-[var(--card-border)] px-3 py-2.5 font-bold text-[var(--foreground)]"><InlineText text={cell} /></th>)}</tr></thead><tbody>{block.rows.slice(1).map((row, rowIndex) => <tr key={rowIndex} className="even:bg-[var(--muted)]/50">{row.map((cell, cellIndex) => <td key={cellIndex} className="border-b border-[var(--card-border)] px-3 py-2.5 align-top last:border-0"><InlineText text={cell} /></td>)}</tr>)}</tbody></table></div>;
-      if (block.type === "code") return <pre key={index} className="max-w-full overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--muted)] p-4 font-mono text-xs leading-6 text-[var(--foreground)]"><code>{block.text}</code></pre>;
+      if (block.type === "code") return <pre key={index} className="max-w-full overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--muted)] p-4 font-mono text-xs leading-6 text-[var(--foreground)] [tab-size:2]"><code>{block.text}</code></pre>;
       if (block.type === "rule") return <hr key={index} className="border-[var(--card-border)]" />;
       return <p key={index} className="whitespace-pre-line leading-7"><InlineText text={block.text} /></p>;
     })}
