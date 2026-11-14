@@ -30,8 +30,9 @@ export async function GET(req: Request) {
     }
 
     const unique = new Map<string, { id: string; title: string; code: string }>();
-    for (const item of curriculum.resolved.knowledge || []) {
-      const code = typeof item.topicCode === "string" ? item.topicCode.trim() : "";
+    for (const item of curriculum.resolved.knowledgeByKind.topic || []) {
+      if (item.status !== "verified" || item.provenance?.mappingStatus !== "verified" || !item.code) continue;
+      const code = item.code.trim();
       const title = typeof item.title === "string" ? item.title.trim() : "";
       if (!code || !title) continue;
       const id = code.slice(0, 120);
