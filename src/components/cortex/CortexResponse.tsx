@@ -3,6 +3,12 @@
 import React from "react";
 import katex from "katex";
 
+function decodeNumericEntity(original: string, codePoint: number): string {
+  return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff
+    ? String.fromCodePoint(codePoint)
+    : original;
+}
+
 /** Normalize common provider-side Markdown/HTML escaping before parsing. */
 export function normalizeCortexResponseText(source: string): string {
   // Protect LaTeX delimiters while repairing transport-escaped Markdown.
@@ -13,8 +19,8 @@ export function normalizeCortexResponseText(source: string): string {
   });
   return protectedSource
     .replace(/\r\n?/g, "\n")
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
-    .replace(/&#([0-9]+);/g, (_, decimal: string) => String.fromCodePoint(parseInt(decimal, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (entity: string, hex: string) => decodeNumericEntity(entity, parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (entity: string, decimal: string) => decodeNumericEntity(entity, parseInt(decimal, 10)))
     .replace(/&nbsp;|&#160;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
