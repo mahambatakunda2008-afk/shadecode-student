@@ -94,7 +94,16 @@ describe("marking resource extraction", () => {
     expect(markers.some(marker => marker.type === "table_hint")).toBe(true);
   });
 
-  it("flags mathematical notation without claiming to parse its meaning", () => {\n    const markers = identifyMarkingStructure([\n      { page: 1, line: 1, text: "v = u + at" },\n      { page: 1, line: 2, text: "x² + y² = r²" },\n      { page: 1, line: 3, text: "The student explains the method clearly." },\n    ]);\n    expect(markers.filter(marker => marker.type === "math_notation").map(marker => marker.value)).toEqual(["v = u + at", "x² + y² = r²"]);\n  });\n\n  it("extracts TXT with line provenance and structure markers", async () => {
+  it("flags mathematical notation without claiming to parse its meaning", () => {
+    const markers = identifyMarkingStructure([
+      { page: 1, line: 1, text: "v = u + at" },
+      { page: 1, line: 2, text: "x² + y² = r²" },
+      { page: 1, line: 3, text: "The student explains the method clearly." },
+    ]);
+    expect(markers.filter(marker => marker.type === "math_notation").map(marker => marker.value)).toEqual(["v = u + at", "x² + y² = r²"]);
+  });
+
+  it("extracts TXT with line provenance and structure markers", async () => {
     const result = await extractImportedMarkingResource(resource(
       "scheme.txt",
       "1 State the equation.\n(a) Define acceleration. [2 marks]\nM1 for method; A1 for answer.",
