@@ -53,7 +53,9 @@ llama_sampler * create_sampler() {
     llama_sampler_chain_add(chain, llama_sampler_init_top_k(40));
     llama_sampler_chain_add(chain, llama_sampler_init_top_p(0.95f, 1));
     llama_sampler_chain_add(chain, llama_sampler_init_temp(0.25f));
-    llama_sampler_chain_add(chain, llama_sampler_init_greedy());
+    // A distribution sampler must terminate the chain. A greedy sampler here
+    // would override temperature/top-p and make the configured sampling ineffective.
+    llama_sampler_chain_add(chain, llama_sampler_init_dist(0x5CADEC0u));
     return chain;
 }
 }
