@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
-import { hasCompleteMathematicalMarkup, isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
+import { hasCompleteMathematicalMarkup, isCleanMathematicalAudit, isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
 import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
 
 export const dynamic = "force-dynamic";
@@ -236,7 +236,7 @@ Set consistent=false if any substitution, arithmetic, sign, coordinate, exponent
         // Include the original image evidence as well. Without it, image-only
         // questions cannot be independently audited and must not be guessed.
         const audit = await runStructured(auditPrompt, images);
-        if (audit.consistent !== true || !Array.isArray(audit.issues) || audit.issues.length > 0) {
+        if (!isCleanMathematicalAudit(audit)) {
           return NextResponse.json({ error: "Cortex detected a possible mathematical inconsistency and withheld this solution. Please try again." }, { status: 502 });
         }
       }
