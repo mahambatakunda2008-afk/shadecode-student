@@ -191,7 +191,11 @@ ${buildVerifyLearnerContext(readVerifyLearnerModel(attempt.userId), { subject: a
       data = await requestCloud();
     }
     if (attempt.mode === "help") {
-      data = selectHelpResult(data, (attempt.level || "hint") as VerifyHelpLevel) as VerifyResult;
+      const adaptiveLevel = data.adaptiveSelection === true &&
+        (data.level === "hint" || data.level === "method" || data.level === "solution")
+        ? data.level
+        : null;
+      data = selectHelpResult(data, (adaptiveLevel || attempt.level || "hint") as VerifyHelpLevel) as VerifyResult;
       recordVerifyIntervention({
         userId: attempt.userId, subject: attempt.subject, topic: attempt.topicId,
         level: (attempt.level || "hint") as HelpLevel, question: attempt.question,
