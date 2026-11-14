@@ -67,6 +67,15 @@ describe("activation funnel", () => {
     expect(step("started").ofSignups).toBe(50);
     expect(step("started").ofPrevious).toBe(67);
   });
+  it("counts lesson quizzes as starting and finishing learning", () => {
+    const q = buildGrowthReport({
+      events: [ev("quiz_started", "u3", "2026-11-10T11:05:00Z"), ev("quiz_completed", "u3", "2026-11-10T11:12:00Z")],
+      signups, now,
+    });
+    expect(q.funnel.find((s) => s.key === "started")!.users).toBe(1);
+    expect(q.funnel.find((s) => s.key === "done")!.users).toBe(1);
+    expect(q.headline.engagedWau).toBe(1);
+  });
   it("excludes signups older than the funnel window", () => {
     const old = buildGrowthReport({ events: [], signups: [{ id: "x", created_at: "2026-09-01T00:00:00Z" }], now });
     expect(old.funnel[0].users).toBe(0);

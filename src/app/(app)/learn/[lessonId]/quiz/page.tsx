@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { normalizeLearningContext } from "@/lib/intelligence/learningContextKey";
 import { ShareQuizResult } from "@/components/share/ShareQuizResult";
 import { gradeForPercentage } from "@/lib/challenge/fromResult";
+import { trackEvent } from "@/lib/traction/client";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
   ArrowRight, RotateCcw, Trophy, Brain,
@@ -115,7 +116,7 @@ export default function QuizPage() {
           body: JSON.stringify({ lessonId }),
         });
         const qd = await qr.json();
-        if (qd?.questions?.length && typeof qd.attemptId === "string") { quizAttemptIdRef.current = qd.attemptId; setQuestions(qd.questions); setPhase("quiz"); }
+        if (qd?.questions?.length && typeof qd.attemptId === "string") { quizAttemptIdRef.current = qd.attemptId; setQuestions(qd.questions); setPhase("quiz"); void trackEvent("quiz_started", { source: "lesson_quiz", question_count: qd.questions.length }); }
         else { setErrMsg("Couldn't generate quiz questions. Please try again."); setPhase("error"); }
       } catch { setErrMsg("Something went wrong. Please try again."); setPhase("error"); }
     })();
@@ -162,6 +163,8 @@ export default function QuizPage() {
         try { sessionStorage.removeItem("shadecode:cortex:active-review:v1"); } catch {}
       }
       setPhase("results");
+      const correct = completedQuestions.reduce((n, q, i) => (newAnswers[i] === q.correctIndex ? n + 1 : n), 0);
+      void trackEvent("quiz_completed", { source: "lesson_quiz", subject: lessonSubject || undefined, correct, total: completedQuestions.length, percentage: Math.round((correct / completedQuestions.length) * 100) });
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : "Could not verify this quiz. Please retry.");
     } finally {
@@ -186,6 +189,7 @@ export default function QuizPage() {
       quizAttemptIdRef.current = data.attemptId;
       setQuestions(data.questions);
       setPhase("quiz");
+      void trackEvent("quiz_started", { source: "lesson_quiz_retry", question_count: data.questions.length });
     } catch (error) {
       setErrMsg(error instanceof Error ? error.message : "Could not restart this quiz.");
       setPhase("error");
