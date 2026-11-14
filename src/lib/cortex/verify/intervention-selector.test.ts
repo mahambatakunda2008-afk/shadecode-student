@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectVerifyIntervention } from "./intervention-selector";
+import { resolveVerifyHelpLevel, selectVerifyIntervention } from "./intervention-selector";
 import type { VerifyInterventionOutcome } from "./intervention-outcomes";
 
 function outcome(
@@ -82,6 +82,18 @@ describe("selectVerifyIntervention", () => {
       method,
       outcome("vi_method_0002", "method", 36),
     ], { subjectKey: "physics", topicId: "waves" })).toBeNull();
+  });
+
+  it("uses the evidence-backed level only when the learner has not chosen one", () => {
+    expect(resolveVerifyHelpLevel({
+      requestedLevel: "hint", explicit: false, recommendedLevel: "method",
+    })).toBe("method");
+    expect(resolveVerifyHelpLevel({
+      requestedLevel: "solution", explicit: true, recommendedLevel: "hint",
+    })).toBe("solution");
+    expect(resolveVerifyHelpLevel({
+      requestedLevel: "hint", explicit: false, recommendedLevel: null,
+    })).toBe("hint");
   });
 
 });
