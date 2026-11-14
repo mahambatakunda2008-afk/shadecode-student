@@ -208,7 +208,7 @@ function InlineText({ text }: { text: string }) {
       const expression = displayMath ? token.slice(2, -2) : token.startsWith("$") ? token.slice(1, -1) : token.slice(2, -2);
       const html = renderMath(expression, displayMath);
       if (html) return displayMath
-        ? <div key={index} className="my-3 block max-w-full overflow-x-auto overscroll-x-contain py-1 text-center" role="math" dangerouslySetInnerHTML={{ __html: html }} />
+        ? <span key={index} className="my-3 block max-w-full overflow-x-auto overscroll-x-contain py-1 text-center" role="math" dangerouslySetInnerHTML={{ __html: html }} />
         : <span key={index} className="inline-block max-w-full align-middle" dangerouslySetInnerHTML={{ __html: html }} />;
       return <code key={index}>{expression}</code>;
     }
