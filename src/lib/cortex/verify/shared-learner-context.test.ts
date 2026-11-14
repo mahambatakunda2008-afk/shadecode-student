@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSharedVerifyLearnerContext } from "./shared-learner-context";
+import { buildSharedVerifyLearnerContext, selectSharedVerifyIntervention } from "./shared-learner-context";
 import type { CortexStudentContext } from "@/lib/cortex/student-context";
 
 const base = {
