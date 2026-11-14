@@ -91,7 +91,7 @@ object NativeOfflineMarker {
     )
     private fun parseNumber(value: String): Double? {
         val cleaned = value.trim().replace(",", "")
-            .replace(Regex("(?i)\\s*(m|cm|mm|km|s|ms|kg|g|n|v|a|hz|j|w|pa)$"), "").trim()
+            .replace(Regex("(?i)\\s*(cm|mm|km|ms|kg|pa|hz|m|s|g|n|v|a|j|w)$"), "").trim()
         return cleaned.toDoubleOrNull()?.takeIf { it.isFinite() }
     }
     private fun normalize(value: String) = value.trim().lowercase().replace(Regex("\\s+"), " ").trimEnd('.', ',', ';', ':', '!', '?')
