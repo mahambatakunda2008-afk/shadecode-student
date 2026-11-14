@@ -1,4 +1,5 @@
 import type { CortexStudentContext } from "@/lib/cortex/student-context";
+import { selectVerifyIntervention } from "./intervention-selector";
 
 function normalize(value: string): string {
   return value.normalize("NFKC").toLocaleLowerCase("en").replace(/[^a-z0-9]+/g, " ").trim();
@@ -49,7 +50,7 @@ export function buildSharedVerifyLearnerContext(
     ...interventionOutcomes.map(item =>
       `- Verify intervention follow-up for ${item.topicId} (${item.interventionLevel}): ${item.state}; ${item.baselineAttempts} baseline attempt(s) at ${item.baselineScore ?? "not yet measured"}% and ${item.transferAttempts} fresh-transfer attempt(s) at ${item.transferScore ?? "not yet measured"}%; change ${item.scoreChange === null ? "not yet established" : `${item.scoreChange > 0 ? "+" : ""}${item.scoreChange} percentage points`}. Descriptive evidence only, not proof the intervention caused the change.`,
     ),
-    "Use this evidence only to tailor the explanation and next practice task. Mark the submitted work independently. Do not infer mastery from lesson views or one attempt. Prefer a fresh transfer question for developing topics, guided reteaching for repeated errors, and retrieval practice where evidence supports it.",
+    "Use this evidence only to tailor the explanation and next practice task. If an exploratory teaching-approach signal exists and the learner has not chosen a help level, prefer that approach. Never override an explicit learner choice. Mark the submitted work independently. Do not infer mastery from lesson views or one attempt. Prefer a fresh transfer question for developing topics, guided reteaching for repeated errors, and retrieval practice where evidence supports it.",
   ];
 
   const useful = lines.filter((line, index) => index === 0 || index === lines.length - 1 || !line.startsWith("- ") || line.length > 2);
