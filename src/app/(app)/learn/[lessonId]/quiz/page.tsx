@@ -5,6 +5,8 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeLearningContext } from "@/lib/intelligence/learningContextKey";
+import { ShareQuizResult } from "@/components/share/ShareQuizResult";
+import { gradeForPercentage } from "@/lib/challenge/fromResult";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
   ArrowRight, RotateCcw, Trophy, Brain,
@@ -261,6 +263,15 @@ export default function QuizPage() {
             </div>
           </div>
         </div>
+
+        <ShareQuizResult
+          attemptId={quizAttemptIdRef.current}
+          subject={lessonSubject}
+          correct={correctCount}
+          total={questions.length}
+          percentage={pct}
+          grade={gradeForPercentage(pct)}
+        />
 
         {/* Per-question breakdown */}
         <h2 className={`${eyebrow} mb-3`}>Question Breakdown</h2>

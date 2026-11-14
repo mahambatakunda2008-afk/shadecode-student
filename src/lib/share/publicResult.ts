@@ -8,7 +8,7 @@
  * challenge can never disagree about the same stored result.
  */
 
-import { challengeFromResult, type ExamResultRow } from "@/lib/challenge/fromResult";
+import { challengeFromResult, gradeForPercentage, type ExamResultRow } from "@/lib/challenge/fromResult";
 
 /** Columns the public page may select. Deliberately excludes user_id and weak_areas. */
 export const PUBLIC_RESULT_COLUMNS =
@@ -48,6 +48,54 @@ export function toPublicResult(row: PublicResultRow | null | undefined): PublicR
     grade: fields.grade,
     timeSeconds: fields.time_taken,
     completedAt: created,
+  };
+}
+
+/** Label shown where an exam result shows its difficulty. */
+export const LESSON_QUIZ_LABEL = "Lesson quiz";
+
+/** Columns the public page may select from a lesson quiz attempt. Never `result`, `user_id` or answer keys. */
+export const PUBLIC_LESSON_QUIZ_COLUMNS = "lesson_id, questions, answers, status, completed_at";
+
+export interface LessonQuizAttemptRow {
+  questions?: unknown;
+  answers?: unknown;
+  status?: unknown;
+  completed_at?: unknown;
+}
+
+/**
+ * Projects a COMPLETED lesson quiz attempt to the public shape. The score is
+ * recomputed from the server-owned answer key, and only counts leave this
+ * function: no question text, options, answers, lesson title or user id.
+ */
+export function toPublicLessonQuizResult(
+  row: LessonQuizAttemptRow | null | undefined,
+  subjectName: unknown,
+): PublicResult | null {
+  if (!row || row.status !== "completed") return null;
+  if (typeof subjectName !== "string" || !subjectName.trim()) return null;
+  if (!Array.isArray(row.questions) || !Array.isArray(row.answers)) return null;
+  const total = row.questions.length;
+  if (total === 0 || row.answers.length !== total) return null;
+  const answers: unknown[] = row.answers;
+  const correct = row.questions.reduce<number>((n, q, i) => {
+    const key = (q as { correctIndex?: unknown } | null)?.correctIndex;
+    return Number.isInteger(key) && key === answers[i] ? n + 1 : n;
+  }, 0);
+  const percentage = Math.round((correct / total) * 100);
+  const completedAt =
+    typeof row.completed_at === "string" && !Number.isNaN(Date.parse(row.completed_at)) ? row.completed_at : null;
+  return {
+    subject: subjectName.trim(),
+    topic: null,
+    difficulty: LESSON_QUIZ_LABEL,
+    percentage,
+    correct,
+    total,
+    grade: gradeForPercentage(percentage),
+    timeSeconds: null,
+    completedAt,
   };
 }
 
