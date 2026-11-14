@@ -15,9 +15,11 @@ describe("Cortex Verify result cache fingerprints", () => {
     const baseKey = await createVerifyResultCacheKey(base);
     const solutionKey = await createVerifyResultCacheKey({ ...base, level: "solution" });
     const markKey = await createVerifyResultCacheKey({ ...base, mode: "check", studentAnswer: "x = 3" });
-    if (!baseKey || !solutionKey || !markKey) return;
+    const topicKey = await createVerifyResultCacheKey({ ...base, topicId: "Sequences" });
+    if (!baseKey || !solutionKey || !markKey || !topicKey) return;
     expect(solutionKey).not.toBe(baseKey);
     expect(markKey).not.toBe(baseKey);
+    expect(topicKey).not.toBe(baseKey);
   });
 
   it("includes the exact source image bytes in the fingerprint", async () => {
