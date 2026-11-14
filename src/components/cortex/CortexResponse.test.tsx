@@ -195,4 +195,16 @@ $$c=\sqrt{a^2+b^2}$$`;
     });
   });
 
+  it("repairs multiply escaped headings, list markers and nested HTML spaces in Help Mode output", () => {
+    const source = "\\### Part 1: Equation\nGiven:\n\\- Centre $(h, k) = (-3, 2)$\n\\- Radius $r = \\sqrt{10}$\n1\\. Substitute the values:\n&amp;#x20;   $$ (x + 3)^2 + (y - 2)^2 = 10 $$";
+    const normalized = normalizeCortexResponseText(source);
+    expect(normalized).toContain("### Part 1: Equation");
+    expect(normalized).toContain("- Centre");
+    expect(normalized).toContain("1. Substitute the values:");
+    expect(normalized).not.toContain("&amp;#x20;");
+    const blocks = parseCortexResponseBlocks(source);
+    expect(blocks[0]).toMatchObject({ type: "heading", text: "Part 1: Equation" });
+    expect(blocks.some(block => block.type === "list")).toBe(true);
+  });
+
 });
