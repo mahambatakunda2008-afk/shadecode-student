@@ -331,6 +331,7 @@ export function useCortexVerify() {
           recordVerifyIntervention({
             userId: attempt.userId, subject: attempt.subject, topic: attempt.topicId,
             level: resolvedHelpLevel as HelpLevel, question: attempt.question,
+            teachingStrategy: validated.teachingStrategy,
           });
         }
         recordVerifyEvent(attempt, validated, options.topicId);
