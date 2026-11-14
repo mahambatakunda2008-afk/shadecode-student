@@ -130,7 +130,10 @@ $$`;
   });
 
   it("keeps currency values and unmatched dollar markers from swallowing table columns", () => {
-    const source = "| Item | Cost | Note |\n| --- | --- | --- |\n| Book | $25 | Standard price |\n| Formula | $P(A|B)$ | Conditional probability |";
+    const source = "| Item | Cost | Note |
+| --- | --- | --- |
+| Book | $25 | Standard price |
+| Formula | $P(A|B)$ | Conditional probability |";
     const blocks = parseCortexResponseBlocks(source);
     expect(blocks[0]).toMatchObject({
       type: "table",
