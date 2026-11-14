@@ -28,6 +28,11 @@ describe("Cortex response formatting", () => {
     expect(html).not.toContain("<a ");
     expect(html).toContain("javascript:alert(1)");
   });
+  it("keeps indented continuation lines inside blockquotes", () => {
+    const blocks = parseCortexResponseBlocks("> **Working:**\n  Substitute the centre and radius.\n  Then simplify.");
+    expect(blocks[0]).toMatchObject({ type: "quote", text: "**Working:**\nSubstitute the centre and radius.\nThen simplify." });
+  });
+
   it("preserves intentional paragraph line breaks and multi-line quotations", () => {
     const blocks = parseCortexResponseBlocks("First line\nSecond line\n\n> A quoted point\n> with its continuation");
     expect(blocks[0]).toMatchObject({ type: "paragraph", text: "First line\nSecond line" });
