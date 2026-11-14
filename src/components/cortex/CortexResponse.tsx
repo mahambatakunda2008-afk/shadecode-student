@@ -283,7 +283,7 @@ function renderMath(expression: string, display: boolean) {
 }
 
 function InlineText({ text }: { text: string }) {
-  const pattern = /(\$\$[\s\S]+?\$\$|\$[^\n$]+\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]|\\\\begin\\{(aligned|align\\*?|gather\\*?|equation\\*?|split|cases|matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix)\\}[\s\S]+?\\\\end\\{\\2\\}|\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_|~~[^~]+~~|`[^`]+`)/g;
+  const pattern = /(\$\$[\s\S]+?\$\$|\$[^\n$]+\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]|\\\\begin\{(?:aligned|align\*?|gather\*?|equation\*?|split|cases|matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix)\}[\s\S]+?\\\\end\{(?:aligned|align\*?|gather\*?|equation\*?|split|cases|matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix)\}|\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_|~~[^~]+~~|`[^`]+`)/g;
   const tokens = text.split(pattern).filter(Boolean);
   return <>{tokens.map((token, index) => {
     const environmentMath = token.startsWith("\\begin{");
