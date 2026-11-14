@@ -14,6 +14,7 @@ import { buildVerifyLearnerContext } from "@/lib/cortex/verify/learner-model";
 import { readVerifyLearnerModel, recordVerifyLearningSignal } from "@/lib/cortex/verify/learner-model-store";
 import { enqueueVerifyLearningEvent, flushVerifyLearningEvents } from "@/lib/cortex/verify/learning-event-outbox";
 import { createVerifyResultCacheKey, getCachedVerifyResult, saveCachedVerifyResult } from "@/lib/cortex/verify/result-cache";
+import { consumeVerifyIntervention, recordVerifyIntervention } from "@/lib/cortex/verify/intervention-tracker";
 import type { ExamQuestion } from "@/lib/exam/types";
 
 export type VerifyMode = "check" | "help";
@@ -86,6 +87,10 @@ function recordVerifyEvent(attempt: CortexAttempt, result: VerifyResult, topicId
   if (attempt.mode === "check" && typeof result.score === "number") {
     const misconceptionTags = (result.marksBreakdown || []).filter(item => item.marksLost > 0).map(item => (item.note || item.criterion).trim()).filter(Boolean).slice(0, 8);
     recordVerifyLearningSignal(attempt.userId, { subject: attempt.subject || "General", topic: topicId || "General practice", score: result.score, correct: result.correct, misconceptionTags });
+    const intervention = consumeVerifyIntervention({
+      userId: attempt.userId, subject: attempt.subject, topic: topicId,
+      question: attempt.question, occurredAt: new Date().toISOString(),
+    });
     enqueueVerifyLearningEvent(attempt.userId, {
       sourceEventId: attempt.id,
       subjectId: attempt.subject || "General",
@@ -98,6 +103,12 @@ function recordVerifyEvent(attempt: CortexAttempt, result: VerifyResult, topicId
         correct: typeof result.correct === "boolean" ? result.correct : result.score >= 50,
         confidence: typeof result.confidence === "number" ? result.confidence : null,
         misconceptionTags: misconceptionTags.join("; ").slice(0, 500),
+        ...(intervention ? {
+          interventionId: intervention.interventionId,
+          interventionLevel: intervention.interventionLevel,
+          interventionToAttemptHours: intervention.interventionToAttemptHours,
+          freshTransfer: intervention.freshTransfer,
+        } : {}),
       },
     });
     void flushVerifyLearningEvents(attempt.userId);
@@ -180,6 +191,10 @@ ${buildVerifyLearnerContext(readVerifyLearnerModel(attempt.userId), { subject: a
     }
     if (attempt.mode === "help") {
       data = selectHelpResult(data, (attempt.level || "hint") as VerifyHelpLevel) as VerifyResult;
+      recordVerifyIntervention({
+        userId: attempt.userId, subject: attempt.subject, topic: attempt.topicId,
+        level: (attempt.level || "hint") as HelpLevel, question: attempt.question,
+      });
     }
     if (!navigator.onLine) data.execution = "browser-local";
     recordVerifyEvent(attempt, data as VerifyResult, attempt.topicId);
@@ -282,7 +297,13 @@ export function useCortexVerify() {
         if (attempt.mode === "help" ? !isValidHelpResult(validated, (attempt.level || "hint") as VerifyHelpLevel) : !isValidVerifyMarkResult(validated)) {
           throw new Error("Cortex returned an invalid visual verification result.");
         }
-        if (attempt.mode === "help") Object.assign(validated, selectHelpResult(validated, (attempt.level || "hint") as VerifyHelpLevel));
+        if (attempt.mode === "help") {
+          Object.assign(validated, selectHelpResult(validated, (attempt.level || "hint") as VerifyHelpLevel));
+          recordVerifyIntervention({
+            userId: attempt.userId, subject: attempt.subject, topic: attempt.topicId,
+            level: (attempt.level || "hint") as HelpLevel, question: attempt.question,
+          });
+        }
         recordVerifyEvent(attempt, validated, options.topicId);
         if (cacheKey) { try { await saveCachedVerifyResult(userId, cacheKey, validated); } catch { /* Best-effort cache. */ } }
         setResult(validated);
