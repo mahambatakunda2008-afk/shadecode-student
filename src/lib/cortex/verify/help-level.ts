@@ -52,14 +52,22 @@ export function selectHelpResult(value: unknown, level: VerifyHelpLevel): Verify
 export function hasCompleteMathematicalMarkup(value: string): boolean {
   const text = value.trim();
   if (!text) return false;
-  const hasMathDelimiters = text.includes("\\(") || text.includes("\\[") || text.includes("$");
-  if (!hasMathDelimiters) return false;
 
-  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-  const equationLike = lines.filter(line =>
-    /(?:=|≠|≤|≥|→|\\frac|\\sqrt|\\begin\{(?:aligned|align|equation)|\b(?:sin|cos|tan|log|ln)\b)/i.test(line)
-  );
-  return equationLike.every(line =>
-    line.includes("\\(") || line.includes("\\)") || line.includes("\\[") || line.includes("\\]") || line.includes("$")
-  );
+  // Remove only complete, paired math spans. Any equation-like material left
+  // outside those spans is damaged/unprotected notation and must be rejected.
+  const withoutMath = text
+    .replace(/\\\\\\[[\\s\\S]*?\\\\\\]/g, " ")
+    .replace(/\\\\\\([\\s\\S]*?\\\\\\)/g, " ")
+    .replace(/\\$\\$[\\s\\S]*?\\$\\$/g, " ")
+    .replace(/\\$(?!\\$)[^\\n$]+?\\$/g, " ");
+
+  const hasMath = withoutMath !== text;
+  if (!hasMath) return false;
+
+  // An unmatched delimiter is a strong signal that the provider truncated or
+  // corrupted the expression before it reached KaTeX.
+  if (/\\\\\\[|\\\\\\]|\\\\\\(|\\\\\\)|\\$/.test(withoutMath)) return false;
+
+  const unprotectedEquation = /(?:=|≠|≤|≥|→|\\\\frac|\\\\sqrt|\\\\begin\\s*\\{|\\b(?:sin|cos|tan|log|ln)\\b)/i;
+  return !unprotectedEquation.test(withoutMath);
 }
