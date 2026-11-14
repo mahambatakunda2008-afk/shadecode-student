@@ -130,7 +130,9 @@ Help level: ${attempt.level || "hint"}
 Check the student's reasoning rather than blindly giving an answer. Return ONLY JSON.
 For check mode include: problem, confidence, score, correct, needsRetake, retakeReason, cortexInsight, steps, feedback, marksBreakdown, finalAnswer.
 For help mode, return ONLY the field matching the selected level: hint for hint, method for method, or solution (and finalAnswer when appropriate) for solution. Never include a solution or finalAnswer for hint/method.
-Be accurate and explicit about uncertainty.`;
+Be accurate and explicit about uncertainty.
+
+MATHEMATICAL FORMATTING IS MANDATORY: put every equation and mathematical expression inside valid LaTeX delimiters, using \\( ... \\) inline and \\[ ... \\] for display equations. Use proper LaTeX for fractions (\\frac{a}{b}), roots (\\sqrt{10}), powers (r^2), subscripts (x_{B}), coordinates and aligned working. Never output bare or fragmented mathematical notation, detached exponents, missing operators, or variables on separate lines. Define symbols, preserve signs/brackets, show complete substitutions, and use numbered steps. Independently verify every calculation and ensure the final answer agrees with the derivation. If source text or an image is unclear, say so instead of guessing. Keep all delimiters and backslashes intact inside JSON string values.\`;
       data = await runHybridJson<VerifyResult>({
         localPrompt,
         validate: (value): value is VerifyResult => {
