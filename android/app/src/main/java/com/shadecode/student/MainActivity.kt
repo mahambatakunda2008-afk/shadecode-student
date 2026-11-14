@@ -1488,6 +1488,8 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                                     null, visualOcrLinks.toList()
                                                 )
                                                 visualCropBytes = visualCropBytes + (regionId to bytes)
+                                                selectedVisualRegionIds = emptySet()
+                                                cloudVerifyConsent = false
                                                 message = "Visual crop added locally. Save the extract, then save its visual evidence."
                                             } else message = "That crop exceeds 4 MB. Select a smaller area."
                                         }
@@ -1721,7 +1723,21 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     enabled = region.id in selectedVisualRegionIds || selectedVisualRegionIds.size < 5,
                                     onCheckedChange = { checked ->
                                         cloudVerifyConsent = false
-                                        selectedVisualRegionIds = if (checked) selectedVisualRegionIds + region.id else selectedVisualRegionIds - region.id
+                                        if (checked) {
+                                            val proposed = selectedVisualRegionIds + region.id
+                                            val totalBytes = visualRegions
+                                                .filter { it.id in proposed }
+                                                .sumOf { visualCropBytes[it.id]?.size?.toLong() ?: 0L }
+                                            if (totalBytes > 8L * 1024L * 1024L) {
+                                                verifyMessage = "Selected visual crops exceed the 8 MB combined upload limit. Remove a crop or select smaller regions."
+                                            } else {
+                                                selectedVisualRegionIds = proposed
+                                                verifyMessage = null
+                                            }
+                                        } else {
+                                            selectedVisualRegionIds = selectedVisualRegionIds - region.id
+                                            verifyMessage = null
+                                        }
                                     },
                                 )
                                 visualCropPreviews[region.id]?.let { crop ->
@@ -1783,7 +1799,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                 }
                             }
                         },
-                        enabled = !verifying && cloudVerifyConsent && !processing && (editableText.isNotBlank() || verifyQuestion.isNotBlank() || visualRegions.any { it.cropFile != null }) && subjects.isNotEmpty(),
+                        enabled = !verifying && cloudVerifyConsent && !processing && (editableText.isNotBlank() || verifyQuestion.isNotBlank() || selectedVisualRegionIds.isNotEmpty()) && subjects.isNotEmpty(),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(if (verifying) "Verifying…" else if (verifyMode == "check") "Mark my work" else "Help me understand")
