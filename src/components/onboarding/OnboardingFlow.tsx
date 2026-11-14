@@ -7,7 +7,6 @@ import { WelcomeStep } from './steps/WelcomeStep';
 import { AcademicContextStep } from './steps/AcademicContextStep';
 import { SubjectsStep } from './steps/SubjectStep';
 import { StepGoalSelection } from './steps/StepGoalSelection';
-import { ConfirmStep } from './steps/ConfirmStep';
 import { BrandLockup } from '@/components/brand/BrandLockup';
 import { mapOnboardingFormData } from '@/lib/onboarding/mapFormData';
 import { setOnboardingComplete } from '@/lib/onboarding';
@@ -15,7 +14,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { OnboardingFormData } from '@/types';
 
 interface OnboardingRecommendations { recommendedSubjects?: string[]; suggestedCourse?: { title?: string; summary?: string }; firstLesson?: { title?: string; description?: string } | null; }
-const STEP_LABELS = ['Path', 'Setup', 'Learning', 'Direction', 'Ready'] as const;
+const STEP_LABELS = ['Path', 'Setup', 'Learning', 'Direction'] as const;
 const TOTAL = STEP_LABELS.length;
 const DEFAULTS: Partial<OnboardingFormData> = { subjects: [], goals: [], dailyGoalMinutes: 30, studyStyle: 'flexible' };
 
@@ -42,11 +41,13 @@ export function OnboardingFlow() {
   const back = () => setStep(s => Math.max(s - 1, 1));
   const homeRoute = formData.studyLevel === 'primary' || formData.studyLevel === 'early-childhood' ? '/discovery' : '/dashboard';
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (patch: Partial<OnboardingFormData> = {}) => {
+    const submitted = { ...formData, ...patch };
+    setFormData(submitted);
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const res = await fetch('/api/onboarding/complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mapOnboardingFormData(formData)) });
+      const res = await fetch('/api/onboarding/complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mapOnboardingFormData(submitted)) });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error ?? 'Failed to save your setup.');
       setOnboardingComplete();
@@ -76,8 +77,7 @@ export function OnboardingFlow() {
           {step === 1 && <WelcomeStep {...common} onNext={next} />}
           {step === 2 && <AcademicContextStep {...common} onNext={next} onBack={back} />}
           {step === 3 && <SubjectsStep {...common} onNext={next} onBack={back} />}
-          {step === 4 && <StepGoalSelection {...common} onNext={next} onBack={back} />}
-          {step === 5 && <><ConfirmStep {...common} onNext={next} onBack={back} onSubmit={handleSubmit} isSubmitting={isSubmitting} error={submitError} />{recommendations && <div className="ssc-onboarding-recommendations"><div className="ssc-onboarding-recommendations__label">Your starting point</div>{recommendations.suggestedCourse?.title && <div className="ssc-onboarding-recommendations__title">{recommendations.suggestedCourse.title}</div>}{recommendations.firstLesson?.title && <div className="ssc-onboarding-recommendations__detail">First up: {recommendations.firstLesson.title}</div>}</div>}</>}
+          {step === 4 && <><StepGoalSelection {...common} onNext={next} onBack={back} onSubmit={handleSubmit} isSubmitting={isSubmitting} submitError={submitError} />{recommendations && <div className="ssc-onboarding-recommendations"><div className="ssc-onboarding-recommendations__label">Your starting point</div>{recommendations.suggestedCourse?.title && <div className="ssc-onboarding-recommendations__title">{recommendations.suggestedCourse.title}</div>}{recommendations.firstLesson?.title && <div className="ssc-onboarding-recommendations__detail">First up: {recommendations.firstLesson.title}</div>}</div>}</>}
         </section>
       </div>
     </main>

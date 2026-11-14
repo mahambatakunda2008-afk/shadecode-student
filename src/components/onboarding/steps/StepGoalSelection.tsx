@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { StepActions } from './StepActions';
-import type { StepProps } from '@/types';
+import type { OnboardingFormData, StepProps } from '@/types';
+
+interface GoalStepProps extends StepProps {
+  /** When provided this is the last step: the primary button submits onboarding instead of advancing. */
+  onSubmit?: (patch: Partial<OnboardingFormData>) => Promise<void>;
+  isSubmitting?: boolean;
+  submitError?: string | null;
+}
 
 type Goal = readonly [string, string];
 const GOALS_BY_LEVEL: Record<string, Goal[]> = {
@@ -67,7 +74,7 @@ const STYLES = [
   { id: 'flexible', label: 'Flexible', desc: 'Choose what fits your day.' },
 ] as const;
 
-export function StepGoalSelection({ data, onUpdate, onNext, onBack }: StepProps) {
+export function StepGoalSelection({ data, onUpdate, onNext, onBack, onSubmit, isSubmitting = false, submitError = null }: GoalStepProps) {
   const level = data.studyLevel ?? 'upper-secondary';
   const goals = useMemo(() => GOALS_BY_LEVEL[level] ?? GOALS_BY_LEVEL['upper-secondary'], [level]);
   const times = useMemo(() => TIMES_BY_LEVEL[level] ?? TIMES_BY_LEVEL.default, [level]);
@@ -80,9 +87,11 @@ export function StepGoalSelection({ data, onUpdate, onNext, onBack }: StepProps)
   useEffect(() => { setSelected(prev => prev.filter(value => goals.some(([goal]) => goal === value))); setMinutes(prev => times.includes(prev) ? prev : (times[1] ?? times[0])); }, [goals, times]);
 
   const toggle = (goal: string) => { setError(''); setSelected(prev => prev.includes(goal) ? prev.filter(x => x !== goal) : [...prev, goal]); };
+  // Goals are optional: the server falls back to exam preparation, so nobody is blocked here.
   const handleNext = () => {
-    if (!selected.length) { setError(level === 'early-childhood' ? 'Choose at least one area to explore.' : 'Choose at least one goal.'); return; }
-    onUpdate({ goals: selected, dailyGoalMinutes: minutes, studyStyle: style });
+    const patch = { goals: selected, dailyGoalMinutes: minutes, studyStyle: style };
+    if (onSubmit) { void onSubmit(patch); return; }
+    onUpdate(patch);
     onNext();
   };
 
@@ -90,7 +99,7 @@ export function StepGoalSelection({ data, onUpdate, onNext, onBack }: StepProps)
     <div style={{ opacity: in_ ? 1 : 0, transform: in_ ? 'translateY(0)' : 'translateY(8px)', transition: 'opacity .25s ease, transform .25s ease' }}>
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.11em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: 6 }}>04 · Direction</p>
       <h2 style={{ fontSize: 23, lineHeight: 1.15, fontWeight: 720, color: 'var(--foreground)', marginBottom: 6 }}>{level === 'early-childhood' ? 'What should we explore together?' : 'What should Shadecode help you do?'}</h2>
-      <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--muted-foreground)', marginBottom: 18 }}>{level === 'early-childhood' ? 'These choices shape the kinds of activities we put first.' : 'Pick one or more. You can change these later.'}</p>
+      <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--muted-foreground)', marginBottom: 18 }}>{level === 'early-childhood' ? 'These choices shape the kinds of activities we put first.' : 'Pick any that fit, or skip. You can change these later.'}</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
         {goals.map(([goal, description]) => { const active = selected.includes(goal); return <button key={goal} type="button" onClick={() => toggle(goal)} style={{ padding: 12, borderRadius: 11, textAlign: 'left', cursor: 'pointer', background: active ? 'var(--primary-glow)' : 'rgba(255,255,255,.045)', border: active ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,.09)', color: 'var(--foreground)' }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><span style={{ fontSize: 13, fontWeight: 680 }}>{goal}</span>{active && <span style={{ color: 'var(--primary)', fontSize: 12 }}>✓</span>}</div><div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 5, lineHeight: 1.35 }}>{description}</div></button>; })}
@@ -110,8 +119,8 @@ export function StepGoalSelection({ data, onUpdate, onNext, onBack }: StepProps)
         </div>
       </div>
 
-      {error && <p role="alert" style={{ fontSize: 12, color: 'var(--danger)', marginTop: 12 }}>{error}</p>}
-      <StepActions onNext={handleNext} onBack={onBack} />
+      {(error || submitError) && <p role="alert" style={{ fontSize: 12, color: 'var(--danger)', marginTop: 12 }}>{error || submitError}</p>}
+      <StepActions onNext={handleNext} onBack={onBack} nextLabel={onSubmit ? 'Start learning →' : undefined} isLoading={isSubmitting} />
     </div>
   );
 }
