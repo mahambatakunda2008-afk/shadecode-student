@@ -16,6 +16,23 @@ describe("graph review evidence hints", () => {
     expect(hints.find(hint => hint.type === "coordinate")?.sourceText).toContain("(2, 4)");
   });
 
+  it("extracts explicit coordinate, axis, unit and scale candidates without claiming visual verification", () => {
+    const hints = collectGraphReviewHints([
+      { page: 3, line: 1, text: "Label the x-axis time / s and the y-axis distance / m." },
+      { page: 3, line: 2, text: "Use a scale of 2 cm per division." },
+      { page: 3, line: 3, text: "Plot coordinates (1.5, 3) and (-2, 4.25)." },
+    ]);
+    const coordinates = hints.find(hint => hint.type === "coordinate");
+    expect(coordinates?.candidateDetails).toEqual([
+      "Coordinate candidate: (1.5, 3)",
+      "Coordinate candidate: (-2, 4.25)",
+    ]);
+    expect(hints.find(hint => hint.type === "axis")?.candidateDetails).toContain("X-axis label candidate: time / s");
+    expect(hints.find(hint => hint.type === "unit")?.candidateDetails).toContain("Unit candidates: s, m");
+    expect(hints.find(hint => hint.type === "scale")?.candidateDetails[0]).toContain("2 cm per division");
+    expect(hints.every(hint => hint.interpretation === "unverified" && hint.confidence === "candidate")).toBe(true);
+  });
+
   it("does not manufacture graph data from ordinary prose", () => {
     expect(collectGraphReviewHints([
       { page: 1, line: 1, text: "The student explains the method clearly." },
