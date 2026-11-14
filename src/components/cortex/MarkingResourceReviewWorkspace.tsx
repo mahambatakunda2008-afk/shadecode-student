@@ -269,6 +269,7 @@ export default function MarkingResourceReviewWorkspace() {
       <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">Import a resource, preserve its original file, inspect extracted text against the source, and save corrections. Nothing becomes a trusted answer key automatically.</p>
     </div>
 
+    {savedResources.length > 0 && <section className="mb-5 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-5">
       <h2 className="mb-3 font-bold">Saved resources on this device</h2>
       <div className="grid gap-2 sm:grid-cols-2">
         {savedResources.map(item => <button key={item.id} type="button" disabled={busy} onClick={() => void reopenResource(item.id)} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-[var(--card-border)] px-3 py-2 text-left text-sm hover:bg-[var(--muted)] disabled:opacity-50">
