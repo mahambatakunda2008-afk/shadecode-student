@@ -81,6 +81,22 @@ describe("deriveRecurringMistakes", () => {
     ])).toEqual([]);
   });
 
+  it("requires verified, independently assessed evidence for recurring mistakes", () => {
+    const unverified = (attemptId: string) => ({
+      type: "question_attempted",
+      data: {
+        attemptId,
+        subjectId: "Mathematics",
+        topicId: "Differentiation",
+        metadata: { correct: false, mistakeId: "chain-rule-omitted-inner-derivative" },
+      },
+    });
+    expect(deriveRecurringMistakes([
+      unverified("exam-1"),
+      unverified("exam-2"),
+    ])).toEqual([]);
+  });
+
   it("requires the same diagnosed mistake ID across distinct attempts", () => {
     const diagnosed = (attemptId: string, mistakeId: string) => ({
       type: "question_attempted",
