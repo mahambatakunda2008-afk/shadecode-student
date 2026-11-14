@@ -372,9 +372,20 @@ export default function PracticalPracticeClient() {
 
       const eventContext = normalizeLearningContext(set.subject, task.title);
       const reviewMetadata = reviewSessionId ? { reviewSessionId, reviewSource: "cortex_suggestion" } as const : null;
+      const selfAwardedMark = attempt.selfAwardedMarks[key];
+      const hasSelfAwardedMark = Number.isFinite(selfAwardedMark) && selfAwardedMark >= 0 && selfAwardedMark <= question.marks;
+      const evidenceScore = hasSelfAwardedMark && question.marks > 0
+        ? Math.round((selfAwardedMark / question.marks) * 100)
+        : undefined;
+      const skillEvidence = getPracticalQuestionSkills(task, question.id)
+        .map((skill) => `${skill}:${attempt.skillRatings[`${task.id}::${skill}`] ?? "unrated"}`)
+        .join("; ")
+        .slice(0, 500);
       void emitLearningEvent({
         source: "biology-practical",
-        sourceEventId: "practical-question:" + set.id + ":" + attempt.startedAt + ":" + task.id + ":" + question.id,
+        // A changed self-awarded mark is a distinct evidence observation, while
+        // an unchanged replay remains idempotent.
+        sourceEventId: "practical-question:" + set.id + ":" + attempt.startedAt + ":" + task.id + ":" + question.id + ":score:" + (hasSelfAwardedMark ? selfAwardedMark : "unrated"),
         type: "question.attempted",
         ...eventContext,
         entityId: question.id,
@@ -384,6 +395,15 @@ export default function PracticalPracticeClient() {
           selfAssessment: true,
           paper: task.paper,
           answerLength: answer.length,
+          skillEvidence,
+          ...(evidenceScore !== undefined ? {
+            evidenceScore,
+            selfAwardedMark,
+            maxMarks: question.marks,
+            // This is explicitly a learner self-assessment signal, not an
+            // independently verified correctness judgement.
+            correct: evidenceScore >= 50,
+          } : {}),
           ...(reviewMetadata ?? {}),
         },
       });
