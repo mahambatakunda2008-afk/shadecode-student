@@ -46,7 +46,7 @@ const MARKS_RE = /\[(\d+(?:\s*\+\s*\d+)*)\s*(?:marks?|mks?)\]/i;
 const MARKING_CODE_RE = /\b(?:B\d|M\d|A\d|C\d|E\d|FT|cao|oe|ecf)\b/gi;
 const DIAGRAM_RE = /\b(?:diagram|graph|sketch|figure|plot|circuit|label(?:led|ed)?)\b/i;
 const TABLE_RE = /\b(?:table|results|readings|record your|column headings)\b/i;
-
+const MATH_NOTATION_RE = /[=<>≤≥≈≠±×÷√∑∫∆Δθπ∞→↔∝·]|[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻₀₁₂₃₄₅₆₇₈₉]|\\b[A-Za-z]\\s*\\^\\s*\\d|\\b\\d+\\s*\\/\\s*\\d+|\\b[A-Za-z]\\s*[_^]\\s*[A-Za-z0-9]/;\n
 
 export type PdfTextLayoutItem = { x: number; width: number; text: string };
 
@@ -120,6 +120,7 @@ export function identifyMarkingStructure(lines: MarkingResourceTextLine[]): Mark
     if (codes) markers.push({ type: "marking_code", value: [...new Set(codes.map(code => code.toUpperCase()))].join(", "), page: item.page, line: item.line });
     if (DIAGRAM_RE.test(text)) markers.push({ type: "diagram_reference", value: text, page: item.page, line: item.line });
     if (TABLE_RE.test(text) || text.includes("\t")) markers.push({ type: "table_hint", value: text, page: item.page, line: item.line });
+    if (MATH_NOTATION_RE.test(text)) markers.push({ type: "math_notation", value: text, page: item.page, line: item.line });
   }
   return markers;
 }
