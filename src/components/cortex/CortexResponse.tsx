@@ -1,13 +1,7 @@
-"use client";
-
-import React from "react";
-import katex from "katex";
-
-
 /** Normalize common provider-side Markdown/HTML escaping before parsing. */
 export function normalizeCortexResponseText(source: string): string {
   return source
-    .replace(/\\r\\n?/g, "\\n")
+    .replace(/\r\n?/g, "\n")
     .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
     .replace(/&#([0-9]+);/g, (_, decimal: string) => String.fromCodePoint(parseInt(decimal, 10)))
     .replace(/&nbsp;|&#160;/gi, " ")
@@ -16,12 +10,11 @@ export function normalizeCortexResponseText(source: string): string {
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;|&apos;/gi, "'")
-    // Providers sometimes escape Markdown punctuation even though the
-    // response is intended to be rendered as Markdown.
-    .replace(/\\\\([\\\\`*_{}\\[\\]()#+.!|>~-])/g, "$1")
+    .replace(/\\([\\\`*_{}\[\]()#+.!|>~-])/g, "$1")
     .trim();
 }
-\ntype Block =
+
+type Block =
   | { type: "heading"; level: number; text: string }
   | { type: "paragraph"; text: string }
   | { type: "list"; ordered: boolean; items: string[] }
@@ -40,7 +33,7 @@ function isTableDivider(line: string): boolean {
 }
 
 export function parseCortexResponseBlocks(source: string): Block[] {
-  const lines = source.replace(/\r\n?/g, "\n").split("\n");
+  const lines = normalizeCortexResponseText(source).split("\n");
   const blocks: Block[] = [];
   let paragraph: string[] = [];
   let code: string[] = [];
