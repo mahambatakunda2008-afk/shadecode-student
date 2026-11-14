@@ -186,12 +186,12 @@ export async function POST(req: Request) {
     });
     for (const file of visualFiles) {
       if (!["image/webp", "image/png", "image/jpeg"].includes(file.type)) return NextResponse.json({ error: "Visual evidence must be WEBP, PNG or JPEG." }, { status: 400 });
-      if (file.size > MAX_IMAGE_BYTES) return NextResponse.json({ error: "Each visual crop must be 4 MB or smaller." }, { status: 413 });
+      if (file.size > 4 * 1024 * 1024) return NextResponse.json({ error: "Each visual crop must be 4 MB or smaller." }, { status: 413 });
       totalImageBytes += file.size;
       if (totalImageBytes > 8 * 1024 * 1024) return NextResponse.json({ error: "Combined image evidence must be 8 MB or smaller. Select fewer or smaller regions." }, { status: 413 });
       images.push({ data: Buffer.from(await file.arrayBuffer()).toString("base64"), mimeType: file.type });
     }
-    const visualContext = visualContexts.length ? "\\nVisual evidence supplied by the student (labels/notes are student-provided, not verified):\\n" + visualContexts.map((item, index) => (index + 1) + ". " + item).join("\\n") : "";
+    const visualContext = visualContexts.length ? "\nVisual evidence supplied by the student (labels/notes are student-provided, not verified):\n" + visualContexts.map((item, index) => (index + 1) + ". " + item).join("\n") : "";
     const evidencePrompt = (prompt: string) => prompt + visualContext;
 
     if (mode === "check") {
