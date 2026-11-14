@@ -57,7 +57,7 @@ export async function extractImageLocally(image: Blob): Promise<LocalVerifyExtra
       .filter((region): region is NonNullable<typeof region> => region !== null)
       .sort((a, b) => a.bounds.y - b.bounds.y || a.bounds.x - b.bounds.x);
 
-    const rawText = regions.map((region) => region.text).join("\\n");
+    const rawText = regions.map((region) => region.text).join("\n");
     const warnings = [
       "The browser OCR API does not provide a confidence score.",
       "This experimental browser engine may be unavailable or behave differently across devices.",
@@ -157,8 +157,8 @@ export async function extractPdfPagesLocally(
     if (!allRegions.length) warnings.unshift("No readable text regions were detected on the selected pages. Review the original PDF visually.");
     const rawText = pageNumbers.map(page => {
       const pageRegions = allRegions.filter(region => region.page === page);
-      return pageRegions.length ? `[Page ${page}]\\n${pageRegions.map(region => region.text).join("\\n")}` : `[Page ${page}]\\n[No text detected]`;
-    }).join("\\n\\n");
+      return pageRegions.length ? `[Page ${page}]\n${pageRegions.map(region => region.text).join("\n")}` : `[Page ${page}]\n[No text detected]`;
+    }).join("\n\n");
 
     return validateLocalVerifyExtraction({
       rawText,
