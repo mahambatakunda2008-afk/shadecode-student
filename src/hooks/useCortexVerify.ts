@@ -262,10 +262,14 @@ export function useCortexVerify() {
       }
       // Reuse an exact, owner-scoped result before spending another model call.
       // The cache stores a response and request fingerprint, never source images.
-      const cacheKey = await createVerifyResultCacheKey({
-        mode: options.mode, subject: options.subject, topicId: options.topicId, question: options.question,
-        studentAnswer: options.studentAnswer, level: options.level, levelExplicit: options.levelExplicit, image: options.image, visualEvidence,
-      });
+      // Adaptive Help depends on current server-side learning evidence. Do not
+      // reuse a cached response after that evidence may have changed.
+      const cacheKey = options.mode === "help" && options.levelExplicit !== true
+        ? null
+        : await createVerifyResultCacheKey({
+            mode: options.mode, subject: options.subject, topicId: options.topicId, question: options.question,
+            studentAnswer: options.studentAnswer, level: options.level, levelExplicit: options.levelExplicit, image: options.image, visualEvidence,
+          });
       const attempt: CortexAttempt = {
         id: `${Date.now()}-${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`,
         userId,
