@@ -4,6 +4,7 @@ import { docxXmlToText } from "./docx-extraction";
 import {
   extractImportedMarkingResource,
   identifyMarkingStructure,
+  parsePdfPageSelection,
 } from "./marking-resource-extraction";
 
 function resource(fileName: string, content: string): ImportedMarkingResource {
@@ -34,6 +35,20 @@ function resource(fileName: string, content: string): ImportedMarkingResource {
     contentSha256: "a".repeat(64),
   };
 }
+
+describe("PDF OCR page selection", () => {
+  it("accepts unique whole pages within the document", () => {
+    expect(parsePdfPageSelection("2, 4, 7", 10)).toEqual({ pages: [2, 4, 7], error: null });
+  });
+
+  it.each(["", "1,,2", "1.5", "0", "11", "2, 2", Array.from({ length: 21 }, (_, index) => index + 1).join(",")])(
+    "rejects invalid page selection %s",
+    input => {
+      expect(parsePdfPageSelection(input, 10).pages).toEqual([]);
+      expect(parsePdfPageSelection(input, 10).error).toBeTruthy();
+    },
+  );
+});
 
 describe("marking resource extraction", () => {
   it("identifies question, subquestion, marks, marking codes and visual references", () => {
