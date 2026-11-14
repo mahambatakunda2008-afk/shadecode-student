@@ -47,6 +47,32 @@ const MARKING_CODE_RE = /\b(?:B\d|M\d|A\d|C\d|E\d|FT|cao|oe|ecf)\b/gi;
 const DIAGRAM_RE = /\b(?:diagram|graph|sketch|figure|plot|circuit|label(?:led|ed)?)\b/i;
 const TABLE_RE = /\b(?:table|results|readings|record your|column headings)\b/i;
 
+
+export type PdfTextLayoutItem = { x: number; width: number; text: string };
+
+/** Reconstructs text order while retaining likely column boundaries as tabs. */
+export function joinPdfTextItemsByLayout(items: PdfTextLayoutItem[]): string {
+  const ordered = [...items].filter(item => item.text.trim()).sort((a, b) => a.x - b.x);
+  if (!ordered.length) return "";
+  const characterWidths = ordered
+    .filter(item => item.width > 0 && item.text.length > 0)
+    .map(item => item.width / item.text.length)
+    .sort((a, b) => a - b);
+  const medianCharacterWidth = characterWidths.length
+    ? characterWidths[Math.floor(characterWidths.length / 2)]
+    : 4;
+  const columnGap = Math.max(18, medianCharacterWidth * 4);
+  let output = ordered[0].text.trim();
+  let previous = ordered[0];
+  for (const item of ordered.slice(1)) {
+    const gap = item.x - (previous.x + Math.max(0, previous.width));
+    output += gap >= columnGap ? "\\t" : " ";
+    output += item.text.trim();
+    previous = item;
+  }
+  return output.replace(/[ ]{2,}/g, " ").trim();
+}
+
 export type PdfPageSelection = { pages: number[]; error: null } | { pages: []; error: string };
 
 /** Parse and validate a user-selected PDF OCR batch before rendering any pages. */
@@ -93,7 +119,7 @@ export function identifyMarkingStructure(lines: MarkingResourceTextLine[]): Mark
     const codes = text.match(MARKING_CODE_RE);
     if (codes) markers.push({ type: "marking_code", value: [...new Set(codes.map(code => code.toUpperCase()))].join(", "), page: item.page, line: item.line });
     if (DIAGRAM_RE.test(text)) markers.push({ type: "diagram_reference", value: text, page: item.page, line: item.line });
-    if (TABLE_RE.test(text)) markers.push({ type: "table_hint", value: text, page: item.page, line: item.line });
+    if (TABLE_RE.test(text) || text.includes("\\t")) markers.push({ type: "table_hint", value: text, page: item.page, line: item.line });
   }
   return markers;
 }
@@ -156,7 +182,7 @@ export async function extractImportedMarkingResource(
       for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
         const page = await document.getPage(pageNumber);
         const textContent = await page.getTextContent();
-        const buckets = new Map<number, { x: number; text: string }[]>();
+        const buckets = new Map<number, PdfTextLayoutItem[]>();
         for (const item of textContent.items) {
           if (!("str" in item) || !item.str.trim()) continue;
           const x = Number(item.transform[4]) || 0;
@@ -164,7 +190,7 @@ export async function extractImportedMarkingResource(
           const width = Number(item.width) || 0;
           const height = Math.abs(Number(item.height) || Number(item.transform[3]) || 0);
           const bucket = buckets.get(y) || [];
-          bucket.push({ x, text: item.str });
+          bucket.push({ x, width, text: item.str });
           buckets.set(y, bucket);
           if (regions.length < MAX_EXTRACTED_REGIONS) {
             regions.push({ page: pageNumber, x, y, width, height, text: item.str });
@@ -201,6 +227,7 @@ export async function extractImportedMarkingResource(
         warnings.push(`Text-region coordinates were capped at ${MAX_EXTRACTED_REGIONS.toLocaleString()} items for memory safety. Some later regions are not available for precise visual alignment.`);
       }
       warnings.push("PDF text extraction does not interpret diagrams, plotted graphs, handwriting, shading or visual mark annotations. Review those regions against the original pages.");
+      warnings.push("Wide horizontal gaps between PDF text fragments are retained as tab-separated layout hints. These are heuristic column boundaries, not a reconstructed table; verify them against the page preview.");
       return result(resource, {
         format: "pdf",
         status: warnings.some(warning => warning.includes("needs OCR")) ? "needs_ocr" : "extracted",
