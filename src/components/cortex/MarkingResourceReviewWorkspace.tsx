@@ -65,14 +65,18 @@ function PdfOcrPagePreview({ file, pageNumber, regions, manualRegions, onCreateR
   }, [file, pageNumber]);
 
   const pageRegions = regions.filter(region => region.page === pageNumber);
+  const pageManualRegions = manualRegions.filter(region => region.page === pageNumber);
+  function point(event: React.PointerEvent<HTMLDivElement>) { const rect = event.currentTarget.getBoundingClientRect(); return { x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)), y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) }; }
   return <div className="mt-4 rounded-xl border border-[var(--card-border)] bg-white p-2">
     <p className="mb-2 text-xs font-bold text-slate-700">Original PDF page {pageNumber} · OCR overlays appear when available</p>\n    <p className="mb-2 text-xs text-slate-600">Drag across a diagram, graph, circuit, table or other visual to preserve its exact page region for review.</p>
     {status && <p role="status" className="p-3 text-xs text-slate-600">{status}</p>}
-    <div className="relative w-full">
+    <div className="relative w-full select-none" onPointerDown={event => { if (status) return; const p = point(event); dragStart.current = p; setSelection({ x: p.x, y: p.y, width: 0, height: 0 }); event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={event => { if (!dragStart.current) return; const p = point(event); const start = dragStart.current; setSelection({ x: Math.min(start.x, p.x), y: Math.min(start.y, p.y), width: Math.abs(p.x - start.x), height: Math.abs(p.y - start.y) }); }} onPointerUp={event => { if (!dragStart.current) return; const p = point(event); const start = dragStart.current; const region = { id: crypto.randomUUID(), page: pageNumber, x: Math.min(start.x, p.x), y: Math.min(start.y, p.y), width: Math.abs(p.x - start.x), height: Math.abs(p.y - start.y), label: "Visual region" }; dragStart.current = null; setSelection(null); if (region.width >= 0.01 && region.height >= 0.01) onCreateRegion(region); }} onPointerCancel={() => { dragStart.current = null; setSelection(null); }}>
       <canvas ref={canvasRef} className="block h-auto w-full" />
-      {pageRegions.map((region, index) => <div key={region.id} className="pointer-events-none absolute border-2 border-cyan-600 bg-cyan-400/10" style={{ left: `${region.bounds.x * 100}%`, top: `${region.bounds.y * 100}%`, width: `${region.bounds.width * 100}%`, height: `${region.bounds.height * 100}%` }}><span className="absolute -top-4 left-0 bg-cyan-700 px-1 text-[9px] text-white">{index + 1}</span></div>)}
+      {pageRegions.map((region, index) => <div key={region.id} className="pointer-events-none absolute border-2 border-cyan-600 bg-cyan-400/10" style={{ left: `${region.bounds.x * 100}%`, top: `${region.bounds.y * 100}%`, width: `${region.bounds.width * 100}%`, height: `${region.bounds.height * 100}%` }}><span className="absolute -top-4 left-0 bg-cyan-700 px-1 text-[9px] text-white">OCR {index + 1}</span></div>)}
+      {pageManualRegions.map((region, index) => <div key={region.id} className="pointer-events-none absolute border-2 border-fuchsia-600 bg-fuchsia-400/10" style={{ left: `${region.x * 100}%`, top: `${region.y * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%` }}><span className="absolute -top-4 left-0 bg-fuchsia-700 px-1 text-[9px] text-white">VIS {index + 1}</span></div>)}
+      {selection && <div className="pointer-events-none absolute border-2 border-fuchsia-700 bg-fuchsia-400/20" style={{ left: `${selection.x * 100}%`, top: `${selection.y * 100}%`, width: `${selection.width * 100}%`, height: `${selection.height * 100}%` }} />}
     </div>
-    {!status && pageRegions.length === 0 && <p className="p-2 text-xs text-slate-600">No OCR regions were detected on this page.</p>}
+    {!status && pageRegions.length === 0 && pageManualRegions.length === 0 && <p className="p-2 text-xs text-slate-600">No OCR regions or manual visual regions on this page yet.</p>}
   </div>;
 }
 
