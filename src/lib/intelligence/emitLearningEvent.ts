@@ -2,48 +2,12 @@ import { isLearningEventDeliveryComplete, type LearningEventKind } from "./learn
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 import { getRememberedUserId } from "@/lib/local-first/identity";
 import { normalizeLearningContext } from "./learningContextKey";
+import {
+  crossProductEvidenceEventKey,
+  crossProductEvidenceStorageKey,
+  toPrivateCrossProductSignal,
+} from "./crossProductEvidence";
 import { recordVerifyLearningSignal } from "@/lib/cortex/verify/learner-model-store";
-
-const LOCAL_LEARNING_DEDUPE_PREFIX = "shadecode:cortex:cross-product-evidence:v1:";
-const LOCAL_EVIDENCE_EVENT_TYPES = new Set([
-  "question.attempted", "question_attempted", "lesson_completed",
-  "activity_completed", "quiz_completed", "exam_completed",
-  "project_stage_completed", "mistake_reviewed",
-]);
-
-function recordPrivateCrossProductEvidence(input: LearningEventInput, ownerId: string) {
-  if (typeof window === "undefined" || !input.subjectId || !input.topicId ||
-      !LOCAL_EVIDENCE_EVENT_TYPES.has(input.type) ||
-      input.metadata?.selfAssessment === true || input.metadata?.aggregateOnly === true) return;
-
-  const correct = input.metadata?.correct;
-  const rawScore = input.metadata?.evidenceScore ?? input.metadata?.percentage;
-  const score = typeof rawScore === "number" && Number.isFinite(rawScore)
-    ? rawScore
-    : typeof correct === "boolean" ? (correct ? 100 : 0) : null;
-  if (score === null) return;
-
-  const dedupeKey = LOCAL_LEARNING_DEDUPE_PREFIX + encodeURIComponent(ownerId);
-  try {
-    const ids = JSON.parse(localStorage.getItem(dedupeKey) || "[]") as unknown;
-    const seen = Array.isArray(ids) ? ids.filter((value): value is string => typeof value === "string").slice(-499) : [];
-    const eventKey = `${input.source}:${input.sourceEventId}`;
-    if (seen.includes(eventKey)) return;
-    recordVerifyLearningSignal(ownerId, {
-      subject: input.subjectId,
-      topic: input.topicId,
-      score,
-      correct: typeof correct === "boolean" ? correct : score >= 50,
-      misconceptionTags: typeof input.metadata?.misconceptionTags === "string"
-        ? input.metadata.misconceptionTags.split(";").map(value => value.trim()).filter(Boolean).slice(0, 8)
-        : [],
-      occurredAt: input.occurredAt,
-    });
-    localStorage.setItem(dedupeKey, JSON.stringify([...seen, eventKey].slice(-500)));
-  } catch {
-    // Local personalization is best-effort and must never block canonical event delivery.
-  }
-}
 
 type LearningMetadata = Record<string, string | number | boolean | null>;
 export type LearningEventInput = {
@@ -185,7 +149,23 @@ export async function flushLearningEvents(): Promise<void> {
 export async function emitLearningEvent(input: LearningEventInput): Promise<boolean> {
   if (typeof window === "undefined") return false;
   const ownerId = getRememberedUserId();
-  if (ownerId) recordPrivateCrossProductEvidence(input, ownerId);
+  if (ownerId && typeof window !== "undefined") {
+    const signal = toPrivateCrossProductSignal(input);
+    if (signal) {
+      const dedupeKey = crossProductEvidenceStorageKey(ownerId);
+      try {
+        const ids = JSON.parse(localStorage.getItem(dedupeKey) || "[]") as unknown;
+        const seen = Array.isArray(ids) ? ids.filter((value): value is string => typeof value === "string").slice(-499) : [];
+        const eventKey = crossProductEvidenceEventKey(input);
+        if (!seen.includes(eventKey)) {
+          recordVerifyLearningSignal(ownerId, signal);
+          localStorage.setItem(dedupeKey, JSON.stringify([...seen, eventKey].slice(-500)));
+        }
+      } catch {
+        // Local personalization is best-effort and must never block canonical event delivery.
+      }
+    }
+  }
   if (!navigator.onLine) {
     if (ownerId) enqueue(input, ownerId);
     return false;
