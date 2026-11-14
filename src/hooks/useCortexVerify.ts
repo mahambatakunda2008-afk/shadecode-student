@@ -12,6 +12,7 @@ import { markWithOfflineRubric, type OfflineVerifyRubric } from "@/lib/cortex/ve
 import { buildOfflineVerifyRubric } from "@/lib/cortex/verify/offline-question-adapter";
 import { buildVerifyLearnerContext } from "@/lib/cortex/verify/learner-model";
 import { readVerifyLearnerModel, recordVerifyLearningSignal } from "@/lib/cortex/verify/learner-model-store";
+import { enqueueVerifyLearningEvent, flushVerifyLearningEvents } from "@/lib/cortex/verify/learning-event-outbox";
 import { createVerifyResultCacheKey, getCachedVerifyResult, saveCachedVerifyResult } from "@/lib/cortex/verify/result-cache";
 import type { ExamQuestion } from "@/lib/exam/types";
 
@@ -85,20 +86,20 @@ function recordVerifyEvent(attempt: CortexAttempt, result: VerifyResult, topicId
   if (attempt.mode === "check" && typeof result.score === "number") {
     const misconceptionTags = (result.marksBreakdown || []).filter(item => item.marksLost > 0).map(item => (item.note || item.criterion).trim()).filter(Boolean).slice(0, 8);
     recordVerifyLearningSignal({ subject: attempt.subject || "General", topic: topicId || "General practice", score: result.score, correct: result.correct, misconceptionTags });
-    if (navigator.onLine) {
-      void fetch("/api/intelligence/events", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: "cortex-verify", sourceEventId: attempt.id, type: "question.attempted",
-          subjectId: attempt.subject || "General", topicId, attemptId: attempt.id,
-          occurredAt: new Date().toISOString(),
-          metadata: { mode: "mark", score: result.score, evidenceScore: result.score,
-            correct: result.correct === true || result.score >= 99,
-            confidence: typeof result.confidence === "number" ? result.confidence : null,
-            misconceptionTags: misconceptionTags.join("; ").slice(0, 500) },
-        }),
-      }).catch(() => undefined);
-    }
+    enqueueVerifyLearningEvent(attempt.userId, {
+      sourceEventId: attempt.id,
+      subjectId: attempt.subject || "General",
+      topicId,
+      attemptId: attempt.id,
+      occurredAt: new Date().toISOString(),
+      metadata: {
+        mode: "mark", score: result.score, evidenceScore: result.score,
+        correct: result.correct === true || result.score >= 99,
+        confidence: typeof result.confidence === "number" ? result.confidence : null,
+        misconceptionTags: misconceptionTags.join("; ").slice(0, 500),
+      },
+    });
+    void flushVerifyLearningEvents(attempt.userId);
   }
   emitCortexEvent({
     id: attempt.id,
@@ -375,6 +376,7 @@ export function useCortexVerify() {
       if (!navigator.onLine) return;
       try {
         const userId = await currentUserId();
+        await flushVerifyLearningEvents(userId);
         const items = await getAll(userId);
         items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         for (const item of items) {
