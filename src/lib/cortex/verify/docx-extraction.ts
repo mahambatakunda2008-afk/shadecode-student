@@ -90,7 +90,7 @@ export function docxXmlToText(xml: string): string {
   return output.join("\n").slice(0, DOCX_MAX_TEXT_CHARS);
 }
 
-export async function extractDocxText(file: Blob): Promise<{ text: string; engine: string }> {
+export async function extractDocxText(file: Blob): Promise<{ text: string; engine: string; tableCount: number; imageCount: number; chartCount: number }> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const eocd = findEndOfCentralDirectory(view);
@@ -144,7 +144,14 @@ export async function extractDocxText(file: Blob): Promise<{ text: string; engin
 
   if (!documentXml) throw new Error("DOCX does not contain word/document.xml.");
   if (documentXml.byteLength > DOCX_MAX_XML_BYTES) throw new Error("DOCX document XML exceeds the local extraction safety limit.");
-  const text = docxXmlToText(new TextDecoder("utf-8", { fatal: false }).decode(documentXml));
+  const xml = new TextDecoder("utf-8", { fatal: false }).decode(documentXml);
+  const text = docxXmlToText(xml);
   if (!text) throw new Error("No readable paragraph text was found in this DOCX.");
-  return { text, engine: "shadecode-docx-wordprocessingml-v1" };
+  return {
+    text,
+    engine: "shadecode-docx-wordprocessingml-v1",
+    tableCount: (xml.match(/<w:tbl\\b/gi) ?? []).length,
+    imageCount: (xml.match(/<(?:a:blip|v:imagedata)\\b/gi) ?? []).length,
+    chartCount: (xml.match(/<c:chart\\b/gi) ?? []).length,
+  };
 }
