@@ -1,0 +1,231 @@
+{
+  "asset_key": "biology-9700-homeostasis-plants",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Homeostasis in plants: stomatal regulation and water stress",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "14",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 14, pp. 38–39.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "14.2.1",
+      "14.2.2",
+      "14.2.3",
+      "14.2.4"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain how stomatal aperture balances carbon dioxide uptake and water conservation.",
+      "Describe daily rhythms and guard-cell structure.",
+      "Explain guard-cell turgor changes during opening and closure.",
+      "Explain ABA and calcium-ion second-messenger signalling during water stress."
+    ],
+    "sections": [
+      [
+        "Why stomata are regulated",
+        "Stomata allow carbon dioxide to diffuse into leaves for photosynthesis, but water vapour also diffuses out through them during transpiration. Changes in stomatal aperture balance carbon dioxide uptake against water conservation. Stomata respond to environmental conditions such as light availability and water stress."
+      ],
+      [
+        "Stomatal structure",
+        "Each stoma is a pore surrounded by two guard cells. Guard cells contain chloroplasts and have unevenly thickened walls: the wall next to the pore is thicker and less extensible than the outer wall. Cellulose microfibrils are arranged radially, helping determine how guard cells change shape as their turgor changes."
+      ],
+      [
+        "How guard cells open a stoma",
+        "In conditions that favour opening, guard cells accumulate solutes. Potassium ions enter and anions also accumulate, lowering the water potential of the guard cells. Water enters by osmosis and the cells become turgid. Their radial cellulose microfibrils and uneven wall thickness cause them to bow apart, opening the pore."
+      ],
+      [
+        "How guard cells close a stoma",
+        "When solutes leave guard cells, their water potential rises. Water leaves by osmosis and the cells become flaccid. The guard cells move closer together and the stomatal pore closes or narrows, reducing water loss but also restricting carbon dioxide entry."
+      ],
+      [
+        "Environmental responses and trade-offs",
+        "Bright light commonly promotes opening so carbon dioxide can enter for photosynthesis. In darkness, stomata commonly close. When water is scarce, closure reduces transpiration and helps prevent excessive water loss. Closing stomata also restricts carbon dioxide uptake, so photosynthesis may become limited."
+      ],
+      [
+        "Daily rhythms in stomatal aperture",
+        "Stomata show daily rhythms of opening and closing. In many plants they open during the light period and close in darkness, although the timing and extent depend on species and environmental conditions. Endogenous circadian rhythms can contribute, so the pattern is not simply an instantaneous response to light."
+      ],
+      [
+        "Abscisic acid during water stress",
+        "When a plant experiences water stress, abscisic acid (ABA) promotes stomatal closure. ABA acts on guard cells and initiates signalling that includes an increase in cytosolic calcium ion concentration. Calcium ions act as a second messenger, transmitting and amplifying the signal inside the cell."
+      ],
+      [
+        "Calcium ions and guard-cell ion movement",
+        "The calcium signal promotes changes in guard-cell membrane transport, including activation of anion channels. Anion loss depolarises the membrane and favours potassium ion efflux. The loss of solutes raises guard-cell water potential, so water leaves by osmosis, turgor falls and the stoma closes."
+      ],
+      [
+        "Interpreting stomatal responses",
+        "A wider stomatal aperture can increase carbon dioxide diffusion into the leaf but also increases the route for water vapour loss. A narrower aperture conserves water but restricts carbon dioxide uptake. Explain both sides of this trade-off when interpreting environmental response data."
+      ],
+      [
+        "Comparing opening and closing",
+        "Opening involves solute accumulation, water entry, increased guard-cell turgor and separation of guard cells. Closure involves solute loss, water exit, reduced turgor and narrowing of the pore. ABA and calcium signalling are especially important in closure during water stress."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "State the two competing functions balanced by regulation of stomatal aperture.",
+        "answer": "Allowing carbon dioxide uptake for photosynthesis while minimising water loss by transpiration.",
+        "mark_points": [
+          "CO2 uptake",
+          "Minimise water loss"
+        ]
+      },
+      {
+        "question": "Name the cells that surround a stoma.",
+        "answer": "Guard cells.",
+        "mark_points": [
+          "Guard cells"
+        ]
+      },
+      {
+        "question": "Describe two structural features of guard cells that help them open and close the pore.",
+        "answer": "The inner wall next to the pore is thicker and less extensible than the outer wall; cellulose microfibrils are arranged radially, constraining expansion.",
+        "mark_points": [
+          "Uneven wall thickness",
+          "Radial cellulose microfibrils"
+        ]
+      },
+      {
+        "question": "Explain how potassium ion uptake causes a stoma to open.",
+        "answer": "Potassium ions accumulate in guard cells, lowering their water potential. Water enters by osmosis, increasing turgor so the guard cells bow apart and open the pore.",
+        "mark_points": [
+          "K+ accumulation lowers water potential",
+          "Water enters by osmosis",
+          "Turgor increases",
+          "Guard cells bow apart"
+        ]
+      },
+      {
+        "question": "Explain how loss of solutes causes a stoma to close.",
+        "answer": "Solute loss raises guard-cell water potential, so water leaves by osmosis. Turgor falls and the guard cells become flaccid, narrowing the pore.",
+        "mark_points": [
+          "Solute loss raises water potential",
+          "Water leaves by osmosis",
+          "Turgor decreases",
+          "Pore narrows"
+        ]
+      },
+      {
+        "question": "Why do stomata commonly open in daylight?",
+        "answer": "Light commonly promotes guard-cell solute uptake and opening, allowing carbon dioxide to diffuse into the leaf for photosynthesis.",
+        "mark_points": [
+          "Light promotes opening",
+          "CO2 enters for photosynthesis"
+        ]
+      },
+      {
+        "question": "Explain why closing stomata during water stress is beneficial and costly.",
+        "answer": "Closure reduces water loss by transpiration, helping conserve water, but also reduces carbon dioxide entry and may limit photosynthesis.",
+        "mark_points": [
+          "Reduces water loss",
+          "Restricts CO2 uptake/photosynthesis"
+        ]
+      },
+      {
+        "question": "What is meant by a daily rhythm in stomatal aperture?",
+        "answer": "A recurring pattern of stomatal opening and closing over a 24-hour cycle, commonly associated with opening in light and closing in darkness.",
+        "mark_points": [
+          "Recurring daily pattern",
+          "Opening/closing pattern"
+        ]
+      },
+      {
+        "question": "Why may stomatal rhythms persist partly independently of immediate light changes?",
+        "answer": "An endogenous circadian rhythm can contribute to the daily pattern, rather than stomata responding only to the immediate presence or absence of light.",
+        "mark_points": [
+          "Endogenous rhythm",
+          "Not only immediate light response"
+        ]
+      },
+      {
+        "question": "State the plant hormone involved in stomatal closure during water stress.",
+        "answer": "Abscisic acid (ABA).",
+        "mark_points": [
+          "Abscisic acid/ABA"
+        ]
+      },
+      {
+        "question": "Explain the role of calcium ions in ABA-induced stomatal closure.",
+        "answer": "ABA signalling increases cytosolic calcium ions. Calcium acts as a second messenger and helps activate ion-transport responses that cause solute loss from guard cells.",
+        "mark_points": [
+          "ABA increases cytosolic Ca2+",
+          "Calcium is a second messenger",
+          "Promotes ion movement/solute loss"
+        ]
+      },
+      {
+        "question": "Outline how ABA signalling leads to water leaving guard cells.",
+        "answer": "ABA triggers calcium signalling and ion-channel changes. Anions and potassium ions leave guard cells, raising their water potential; water then leaves by osmosis, reducing turgor and closing the pore.",
+        "mark_points": [
+          "ABA/Ca2+ signalling",
+          "Anions and K+ leave",
+          "Water potential rises",
+          "Water leaves by osmosis",
+          "Turgor falls/stoma closes"
+        ]
+      },
+      {
+        "question": "A plant is moved from bright light into darkness. Predict the likely stomatal response and explain it.",
+        "answer": "Stomata commonly close as guard-cell solutes leave, water exits by osmosis and turgor decreases; this reduces unnecessary water loss when photosynthesis is limited.",
+        "mark_points": [
+          "Stomata close/narrow",
+          "Solute and water loss",
+          "Turgor falls"
+        ]
+      },
+      {
+        "question": "A drought-stressed plant has narrower stomatal apertures than a well-watered plant. Explain the difference.",
+        "answer": "Water stress increases ABA signalling in guard cells. Calcium acts as a second messenger, promoting ion loss and water loss, reducing turgor and closing stomata.",
+        "mark_points": [
+          "Water stress/ABA",
+          "Calcium second messenger",
+          "Ion and water loss",
+          "Reduced turgor/closure"
+        ]
+      },
+      {
+        "question": "Explain why stomatal closure can reduce plant growth.",
+        "answer": "Closure limits carbon dioxide diffusion into leaves, reducing the substrate available for carbon fixation and potentially lowering photosynthesis and biomass production.",
+        "mark_points": [
+          "CO2 diffusion decreases",
+          "Carbon fixation/photosynthesis decreases",
+          "Growth/biomass may fall"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/stoma-guard-cell-structure.svg",
+        "role": "stoma guard cell structure"
+      },
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/guard-cell-opening-closing.svg",
+        "role": "guard cell opening closing"
+      },
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/aba-calcium-stomatal-closure.svg",
+        "role": "aba calcium stomatal closure"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions are original learning checks, not official Cambridge questions or mark schemes.",
+      "Diagrams are explanatory schematics, not photomicrographs."
+    ]
+  }
+}
