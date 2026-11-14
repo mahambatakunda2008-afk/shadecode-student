@@ -10,6 +10,7 @@ import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
 import { getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { markWithOfflineRubric, type OfflineVerifyRubric } from "@/lib/cortex/verify/offline-marking";
 import { buildOfflineVerifyRubric } from "@/lib/cortex/verify/offline-question-adapter";
+import { createVerifyResultCacheKey, getCachedVerifyResult, saveCachedVerifyResult } from "@/lib/cortex/verify/result-cache";
 import type { ExamQuestion } from "@/lib/exam/types";
 
 export type VerifyMode = "check" | "help";
@@ -40,7 +41,7 @@ export interface VerifyResult {
   solution?: string;
   finalAnswer?: string;
   content?: string;
-  execution?: "browser-local" | "browser-local-deterministic" | "cloud";
+  execution?: "browser-local" | "browser-local-deterministic" | "cloud" | "cached";
 }
 
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -205,6 +206,12 @@ export function useCortexVerify() {
       if (visualEvidence.reduce((sum, item) => sum + item.file.size, 0) > 8 * 1024 * 1024) {
         throw new Error("Combined visual evidence must be 8 MB or smaller.");
       }
+      // Reuse an exact, owner-scoped result before spending another model call.
+      // The cache stores a response and request fingerprint, never source images.
+      const cacheKey = await createVerifyResultCacheKey({
+        mode: options.mode, subject: options.subject, question: options.question,
+        studentAnswer: options.studentAnswer, level: options.level, image: options.image, visualEvidence,
+      });
       const attempt: CortexAttempt = {
         id: `${Date.now()}-${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`,
         userId,
@@ -217,6 +224,12 @@ export function useCortexVerify() {
         createdAt: new Date().toISOString(),
         attempts: 0,
       };
+      if (cacheKey) {
+        try {
+          const cached = await getCachedVerifyResult(userId, cacheKey);
+          if (cached) { setResult(cached); return cached; }
+        } catch { /* Cache failure must never block a fresh verification. */ }
+      }
       if (visualEvidence.length) {
         const fd = new FormData();
         fd.append("mode", attempt.mode);
@@ -240,12 +253,18 @@ export function useCortexVerify() {
         }
         if (attempt.mode === "help") Object.assign(validated, selectHelpResult(validated, (attempt.level || "hint") as VerifyHelpLevel));
         recordVerifyEvent(attempt, validated);
+        if (cacheKey) { try { await saveCachedVerifyResult(userId, cacheKey, validated); } catch { /* Best-effort cache. */ } }
         setResult(validated);
         return validated;
       }
       await enqueue(attempt);
       if (navigator.onLine) {
-        try { const response = await sendAttemptNow(attempt); setResult(response); return response; }
+        try {
+          const response = await sendAttemptNow(attempt);
+          if (cacheKey) { try { await saveCachedVerifyResult(userId, cacheKey, response); } catch { /* Best-effort cache. */ } }
+          setResult(response);
+          return response;
+        }
         catch (err) { setError(`Saved for retry: ${errorMessage(err)}`); return null; }
       }
       // Deterministic Mark Mode is allowed only when the caller supplies an explicit,
@@ -263,6 +282,7 @@ export function useCortexVerify() {
           const response: VerifyResult = { ...localResult, execution: "browser-local-deterministic" };
           recordVerifyEvent(attempt, response);
           await remove(attempt.userId, attempt.id);
+          if (cacheKey) { try { await saveCachedVerifyResult(userId, cacheKey, response); } catch { /* Best-effort cache. */ } }
           setResult(response);
           return response;
         }
