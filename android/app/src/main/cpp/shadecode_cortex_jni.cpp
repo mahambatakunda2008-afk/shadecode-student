@@ -108,15 +108,29 @@ Java_com_shadecode_student_LlamaCppRuntime_nativeGenerate(JNIEnv * env, jobject,
     if (!g_model || !g_context || !g_sampler) return nullptr;
 
     const std::string text = jstring_to_string(env, prompt);
-    const auto tokens = common_tokenize(g_context, text, true, true);
-    if (tokens.empty() || tokens.size() >= static_cast<size_t>(kContext - 64)) return nullptr;
+    auto tokens = common_tokenize(g_context, text, true, true);
+    if (tokens.empty()) return nullptr;
+
+    // Reserve context space for the requested answer. Keep the beginning
+    // (tutoring instructions) and end (the student's latest question/working)
+    // when an unusually long prompt must be shortened.
+    const int limit = std::max(16, std::min(static_cast<int>(maxTokens), 512));
+    const size_t promptBudget = static_cast<size_t>(std::max(128, kContext - limit - 16));
+    if (tokens.size() > promptBudget) {
+        const size_t headCount = std::min(static_cast<size_t>(384), promptBudget / 3);
+        const size_t tailCount = promptBudget - headCount;
+        std::vector<llama_token> bounded;
+        bounded.reserve(promptBudget);
+        bounded.insert(bounded.end(), tokens.begin(), tokens.begin() + headCount);
+        bounded.insert(bounded.end(), tokens.end() - tailCount, tokens.end());
+        tokens = std::move(bounded);
+    }
 
     llama_memory_clear(llama_get_memory(g_context), false);
     llama_sampler_reset(g_sampler);
     if (!decode(tokens)) return nullptr;
 
     std::string output;
-    const int limit = std::max(1, std::min(static_cast<int>(maxTokens), 512));
     llama_pos position = static_cast<llama_pos>(tokens.size());
     auto * vocab = llama_model_get_vocab(g_model);
 
