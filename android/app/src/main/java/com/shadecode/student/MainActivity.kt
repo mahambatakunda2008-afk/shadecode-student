@@ -1293,6 +1293,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
     var editableText by remember { mutableStateOf("") }
     var extractionRegions by remember { mutableStateOf<List<NativeExtractRegion>>(emptyList()) }
     var visualRegions by remember { mutableStateOf<List<NativeVisualRegion>>(emptyList()) }
+    var selectedVisualRegionIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var visualCropBytes by remember { mutableStateOf<Map<String, ByteArray>>(emptyMap()) }
     var visualCropPreviews by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
     var visualLabel by remember { mutableStateOf("Diagram or graph") }
@@ -1342,6 +1343,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
             editableText = ""
             extractionRegions = emptyList()
             visualRegions = emptyList()
+            selectedVisualRegionIds = emptySet()
             visualCropBytes = emptyMap()
             visualCropPreviews = emptyMap()
             extractionEngine = null
@@ -1709,9 +1711,37 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
                     )
+                    val attachableVisualRegions = visualRegions.filter { it.cropFile != null }
+                    if (attachableVisualRegions.isNotEmpty()) {
+                        Text("Choose visual evidence to attach (up to five)", fontWeight = FontWeight.SemiBold)
+                        attachableVisualRegions.forEach { region ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = region.id in selectedVisualRegionIds,
+                                    enabled = region.id in selectedVisualRegionIds || selectedVisualRegionIds.size < 5,
+                                    onCheckedChange = { checked ->
+                                        cloudVerifyConsent = false
+                                        selectedVisualRegionIds = if (checked) selectedVisualRegionIds + region.id else selectedVisualRegionIds - region.id
+                                    },
+                                )
+                                visualCropPreviews[region.id]?.let { crop ->
+                                    Image(bitmap = crop, contentDescription = region.label, modifier = Modifier.size(64.dp).padding(end = 8.dp), contentScale = ContentScale.Crop)
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text(region.label, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+                                    if (region.annotation.isNotBlank()) Text(region.annotation, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                        Text("${selectedVisualRegionIds.size} of 5 visual crops selected. Only selected crops are attached.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = cloudVerifyConsent, onCheckedChange = { cloudVerifyConsent = it })
-                        Text("I agree to send the question, reviewed text and up to five saved visual crops (including my labels and notes) to Shadecode cloud AI. Images are sent only when I press the button. This requires internet; offline marking and help are not yet available for visual evidence.", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            if (selectedVisualRegionIds.isEmpty()) "I agree to send the question and reviewed text to Shadecode cloud AI when I press the button. This requires internet."
+                            else "I agree to send the question, reviewed text and only the selected visual crops, labels and notes to Shadecode cloud AI when I press the button. This requires internet. Offline visual marking and help are not yet available.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                     Button(
                         onClick = {
@@ -1726,7 +1756,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     try {
                                         val result = withContext(Dispatchers.IO) {
                                             val visualEvidence = activeArtifactId?.let { artifactId ->
-                                                visualRegions.take(5).mapNotNull { region ->
+                                                visualRegions.filter { it.id in selectedVisualRegionIds }.take(5).mapNotNull { region ->
                                                     extractStore.loadVisualCrop(artifactId, region.id)?.let { bytes ->
                                                         NativeVerifyVisualEvidence(region.label, region.annotation, bytes)
                                                     }
@@ -1824,6 +1854,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     extractionEngine = artifact.extractionEngine
                                     extractionRegions = artifact.extractionRegions
                                     visualRegions = artifact.visualRegions
+                                    selectedVisualRegionIds = emptySet()
                                     visualCropBytes = emptyMap()
                                     visualCropPreviews = emptyMap()
                                     redactionTerms = ""
