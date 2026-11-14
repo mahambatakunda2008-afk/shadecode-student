@@ -1,7 +1,7 @@
 import type { MarkingResourceExtraction } from "./marking-resource-extraction";
 import type { LocalVerifyExtraction } from "./local-extraction-contract";
 
-export type ManualVisualRegion = { id: string; page: number; x: number; y: number; width: number; height: number; label: string; crop?: Blob; cropWidth?: number; cropHeight?: number; };
+export type ManualVisualRegion = { id: string; page: number; x: number; y: number; width: number; height: number; label: string; annotation?: string; linkedOcrRegionIds?: string[]; crop?: Blob; cropWidth?: number; cropHeight?: number; };
 
 export type MarkingResourceReviewDraft = {
   resourceId: string;
