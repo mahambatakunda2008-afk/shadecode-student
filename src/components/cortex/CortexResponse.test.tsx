@@ -1,0 +1,31 @@
+import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import CortexResponse, { parseCortexResponseBlocks } from "./CortexResponse";
+
+describe("Cortex response formatting", () => {
+  it("keeps headings, paragraphs and separate ordered steps structured", () => {
+    const blocks = parseCortexResponseBlocks("## Method\nUse the equation first.\n\n1. Substitute the values.\n2. Simplify the expression.");
+    expect(blocks.map(block => block.type)).toEqual(["heading", "paragraph", "list"]);
+    expect(blocks[2]).toMatchObject({ ordered: true, items: ["Substitute the values.", "Simplify the expression."] });
+  });
+
+  it("recognises tables and fenced working without flattening them into prose", () => {
+    const blocks = parseCortexResponseBlocks("| Quantity | Value |\n| --- | --- |\n| Force | 12 N |\n\n\`\`\`text\nF = ma\n\`\`\`");
+    expect(blocks.map(block => block.type)).toEqual(["table", "code"]);
+  });
+
+  it("renders mathematical notation and safe web links", () => {
+    const html = renderToStaticMarkup(
+      <CortexResponse text={"The result is $F=ma$. See [the syllabus](https://example.com/syllabus)."} />,
+    );
+    expect(html).toContain("katex");
+    expect(html).toContain('href="https://example.com/syllabus"');
+    expect(html).toContain('rel="noopener noreferrer"');
+  });
+
+  it("does not turn unsafe link schemes into clickable links", () => {
+    const html = renderToStaticMarkup(<CortexResponse text={"[unsafe](javascript:alert(1))"} />);
+    expect(html).not.toContain("<a ");
+    expect(html).toContain("javascript:alert(1)");
+  });
+});
