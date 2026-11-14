@@ -67,8 +67,8 @@ function attemptScores(events: Array<{ data: Record<string, unknown>; row: Event
 /**
  * Describe whether performance changed after a Verify intervention.
  *
- * Requires a verified curriculum topic, two independent baseline attempts,
- * and two distinct fresh-transfer attempts. The result is descriptive only:
+ * Requires a verified curriculum topic, two independent baseline attempts in
+ * the 30 days before help, and two distinct fresh-transfer attempts. The result is descriptive only:
  * it does not establish that the intervention caused the change.
  */
 export function deriveVerifyInterventionOutcomes(rows: EventRow[]): VerifyInterventionOutcome[] {
@@ -126,9 +126,11 @@ export function deriveVerifyInterventionOutcomes(rows: EventRow[]): VerifyInterv
       event.data.topicId === topic &&
       event.data.curriculumTopicKey === topicKey,
     );
-    const baseline = attemptScores(allTopicEvents.filter(event =>
-      Date.parse(occurredAt(event.data, event.row)!) < inferredInterventionTime,
-    ));
+    const baselineWindowStart = inferredInterventionTime - 30 * 86_400_000;
+    const baseline = attemptScores(allTopicEvents.filter(event => {
+      const time = Date.parse(occurredAt(event.data, event.row)!);
+      return time < inferredInterventionTime && time >= baselineWindowStart;
+    }));
     const transfer = attemptScores(sameTopic.filter(event => event.metadata.freshTransfer === true)
       .map(event => ({ data: event.data, row: event.row })));
     const baselineMean = baseline.length ? baseline.reduce((sum, item) => sum + item.score, 0) / baseline.length : null;
