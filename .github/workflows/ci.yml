@@ -7,7 +7,78 @@ on:
     branches: [main, fix/exam-hub-subject-access]
 
 jobs:
-  verify:
+  teacher-security-migration:
+    name: Teacher trigger privilege migration (disposable PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shadecode_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d shadecode_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Prepare isolated trigger fixture
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 <<'SQL'
+          create role anon;
+          create role authenticated;
+          create role service_role;
+          create schema auth;
+          create table public.teacher_tutorials (id bigint primary key, status text not null);
+          create function public.guard_teacher_tutorial_transition()
+          returns trigger language plpgsql security definer
+          as $
+          begin
+            if old.status = 'published' and new.status <> 'published' then
+              raise exception 'published tutorials cannot be silently downgraded';
+            end if;
+            return new;
+          end;
+          $;
+          grant execute on function public.guard_teacher_tutorial_transition() to public, anon, authenticated, service_role;
+          create trigger teacher_tutorial_transition_guard
+            before update on public.teacher_tutorials
+            for each row execute function public.guard_teacher_tutorial_transition();
+          SQL
+      - name: Apply trigger-only privilege migration
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261114170000_revoke_direct_teacher_tutorial_guard_execute.sql
+      - name: Assert API roles cannot invoke guard and trigger remains attached
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/teacher_tutorial_guard_privileges.test.sql
+      - name: Prove trigger still executes after direct grants are revoked
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 <<'SQL'
+          insert into public.teacher_tutorials (id, status) values (1, 'draft');
+          update public.teacher_tutorials set status = 'review' where id = 1;
+          do $
+          begin
+            begin
+              update public.teacher_tutorials set status = 'published' where id = 1;
+              raise exception 'expected trigger to reject protected transition';
+            exception when raise_exception then
+              if sqlerrm = 'expected trigger to reject protected transition' then raise; end if;
+            end;
+          end $;
+          SQL
+
     name: Typecheck, lint, test, build
     runs-on: ubuntu-latest
     timeout-minutes: 15
