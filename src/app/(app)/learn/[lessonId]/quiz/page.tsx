@@ -65,6 +65,7 @@ export default function QuizPage() {
   const [lessonTopic, setLessonTopic] = useState("");
   const [errMsg,      setErrMsg]      = useState("");
   const [submissionError, setSubmissionError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -126,7 +127,7 @@ export default function QuizPage() {
   }
 
   async function next() {
-    if (selected === null) return;
+    if (selected === null || submitting) return;
     const newAnswers = [...answers, selected];
     if (current < questions.length - 1) {
       setAnswers(newAnswers);
@@ -137,6 +138,7 @@ export default function QuizPage() {
     }
 
     setSubmissionError("");
+    setSubmitting(true);
     try {
       const response = await fetch("/api/learn/quiz/submit", {
         method: "POST",
@@ -162,6 +164,8 @@ export default function QuizPage() {
       setPhase("results");
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : "Could not verify this quiz. Please retry.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -408,8 +412,8 @@ export default function QuizPage() {
               Confirm Answer
             </button>
           ) : (
-            <button type="button" onClick={next} className="ssc-button min-h-12 w-full font-bold">
-              {current < questions.length - 1 ? "Next Question" : "Verify & See Results"} <ArrowRight size={16} aria-hidden="true" />
+            <button type="button" onClick={next} disabled={submitting} aria-busy={submitting} className="ssc-button min-h-12 w-full font-bold disabled:opacity-70">
+              {submitting ? "Verifying your answers…" : current < questions.length - 1 ? "Next Question" : "Verify & See Results"} {!submitting && <ArrowRight size={16} aria-hidden="true" />}
             </button>
           )}
 
