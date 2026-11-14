@@ -44,7 +44,7 @@ describe("PDF text layout reconstruction", () => {
       { x: 90, width: 55, text: "Distance" },
       { x: 240, width: 40, text: "Speed" },
     ]);
-    expect(line).toBe("Time\\tDistance\\tSpeed");
+    expect(line).toBe("Time\tDistance\tSpeed");
   });
 
   it("keeps ordinary sentence fragments separated by spaces", () => {
@@ -60,7 +60,7 @@ describe("PDF text layout reconstruction", () => {
     expect(joinPdfTextItemsByLayout([
       { x: 80, width: 20, text: "right" },
       { x: 0, width: 30, text: "left" },
-    ])).toBe("left\\tright");
+    ])).toBe("left\tright");
   });
 });
 
