@@ -222,6 +222,7 @@ export function useCortexVerify() {
         fd.append("subject", attempt.subject || "General");
         fd.append("question", attempt.question || "");
         fd.append("studentAnswer", attempt.studentAnswer || "");
+        if (imageDataUrl) { const imageResponse = await fetchWithTimeout(imageDataUrl); if (!imageResponse.ok) throw new Error("Could not prepare the selected source image."); fd.append("image", await imageResponse.blob(), options.image?.name || "source-image.jpg"); }
         if (attempt.mode === "help" && attempt.level) fd.append("level", attempt.level);
         fd.append("visualEvidenceConsent", "true");
         visualEvidence.forEach(({ file, label, annotation }) => {
