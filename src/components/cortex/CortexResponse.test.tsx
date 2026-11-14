@@ -22,7 +22,8 @@ x - y &= 1
     const html = renderToStaticMarkup(<CortexResponse text={source} />);
     expect(html).toContain('role="math"');
     expect(html).toContain('class="katex-display"');
-    expect(html).toContain("2x");
+    expect(html).toContain('class="mord">2</span>');
+    expect(html).toContain('class="mord mathnormal">x</span>');
   });
   it("renders mathematical notation and safe web links", () => {
     const html = renderToStaticMarkup(
