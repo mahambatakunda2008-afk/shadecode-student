@@ -16,6 +16,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
+import CortexResponse from "@/components/cortex/CortexResponse";
 
 export function CortexIntelligencePanel() {
   const { report, patterns, loading, error } = useCortexIntelligence();
@@ -67,7 +68,7 @@ export function CortexIntelligencePanel() {
               Focus Area
             </span>
           </div>
-          <p className="text-white text-sm font-medium">{report.focus}</p>
+          <CortexResponse text={report.focus} className="text-sm font-medium text-white" />
         </div>
 
         {/* Insight */}
@@ -78,7 +79,7 @@ export function CortexIntelligencePanel() {
               Learning Insight
             </span>
           </div>
-          <p className="text-slate-300 text-sm leading-relaxed">{report.learningInsight}</p>
+          <CortexResponse text={report.learningInsight} className="text-sm leading-relaxed text-slate-300" />
         </div>
 
         {/* Recommendation */}
@@ -89,7 +90,7 @@ export function CortexIntelligencePanel() {
               Recommended
             </span>
           </div>
-          <p className="text-slate-300 text-sm">{report.recommendation}</p>
+          <CortexResponse text={report.recommendation} className="text-sm text-slate-300" />
         </div>
 
         {/* Study Patterns */}
