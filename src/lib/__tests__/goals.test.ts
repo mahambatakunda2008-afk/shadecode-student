@@ -73,3 +73,36 @@ describe("isValidWeeklyGoalMinutes", () => {
     expect(isValidWeeklyGoalMinutes(Infinity)).toBe(false);
   });
 });
+
+import { suggestWeeklyGoalMinutes, weeklyTotalsBefore } from "../goals";
+
+describe("suggestWeeklyGoalMinutes", () => {
+  it("never invents a target without at least two active weeks", () => {
+    expect(suggestWeeklyGoalMinutes([])).toBeNull();
+    expect(suggestWeeklyGoalMinutes([0, 0, 0, 0])).toBeNull();
+    expect(suggestWeeklyGoalMinutes([120, 0, 0, 0])).toBeNull();
+  });
+  it("averages active weeks and rounds to 15 minutes", () => {
+    expect(suggestWeeklyGoalMinutes([100, 140, 0, 0])).toBe(120);
+    expect(suggestWeeklyGoalMinutes([100, 130, 95, 110])).toBe(105);
+  });
+  it("stays inside the valid goal range", () => {
+    expect(suggestWeeklyGoalMinutes([10, 12])).toBe(30);
+    expect(suggestWeeklyGoalMinutes([9000, 9000])).toBe(4200);
+  });
+});
+
+describe("weeklyTotalsBefore", () => {
+  const weekStart = new Date("2026-11-09T00:00:00Z");
+  it("buckets only completed prior weeks and ignores the current week", () => {
+    const rows = [
+      { created_at: "2026-11-08T10:00:00Z", duration_minutes: 30 },
+      { created_at: "2026-11-02T00:00:00Z", duration_minutes: 20 },
+      { created_at: "2026-10-30T10:00:00Z", duration_minutes: 45 },
+      { created_at: "2026-11-09T01:00:00Z", duration_minutes: 99 },
+      { created_at: "2026-09-01T00:00:00Z", duration_minutes: 99 },
+      { created_at: "bad", duration_minutes: 99 },
+    ];
+    expect(weeklyTotalsBefore(rows, weekStart)).toEqual([50, 45, 0, 0]);
+  });
+});

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getWeekStartUTC, computeGoalProgress, isValidWeeklyGoalMinutes } from "@/lib/goals";
+import {
+  getWeekStartUTC,
+  computeGoalProgress,
+  isValidWeeklyGoalMinutes,
+  suggestWeeklyGoalMinutes,
+  weeklyTotalsBefore,
+} from "@/lib/goals";
 
 export const dynamic = "force-dynamic";
 
@@ -48,8 +54,23 @@ export async function GET() {
       0
     );
 
-    const progress = computeGoalProgress(profile?.weekly_goal_minutes ?? null, minutesThisWeek);
-    return NextResponse.json(progress);
+    const chosen: number | null = profile?.weekly_goal_minutes ?? null;
+    if (chosen) {
+      return NextResponse.json({ ...computeGoalProgress(chosen, minutesThisWeek), goalSource: "set" });
+    }
+
+    // No explicit goal: derive a target from the student's own last four weeks
+    // instead of asking them to type one. Nothing is stored; they can still set one.
+    const historyStart = new Date(weekStart.getTime() - 28 * 24 * 60 * 60 * 1000);
+    const { data: history } = await supabase
+      .from("focus_sessions")
+      .select("created_at,duration_minutes")
+      .eq("user_id", user.id)
+      .gte("created_at", historyStart.toISOString())
+      .lt("created_at", weekStart.toISOString());
+    const suggested = suggestWeeklyGoalMinutes(weeklyTotalsBefore(history ?? [], weekStart));
+    const progress = computeGoalProgress(suggested, minutesThisWeek);
+    return NextResponse.json({ ...progress, goalSource: suggested ? "history" : null });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to load goal progress" },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Target, Loader2, Pencil } from "lucide-react";
 import { fetchWithTimeout, FetchTimeoutError } from "@/lib/async/fetchWithTimeout";
 import type { GoalProgress } from "@/lib/goals";
@@ -162,12 +163,39 @@ export default function GoalTracker() {
               }}
             />
           </div>
+          {progress.goalSource === "history" && !progress.goalMet && (
+            <p style={{ fontSize: 11.5, color: "var(--muted-foreground)", margin: "8px 0 0" }}>
+              Target based on your last few weeks
+            </p>
+          )}
           {progress.goalMet && (
             <p style={{ fontSize: 11.5, color: "#22c55e", fontWeight: 600, margin: "8px 0 0" }}>
               Goal reached this week 🎉
             </p>
           )}
         </>
+      ) : !editing ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 13, color: "var(--muted-foreground)" }}>
+            {progress && progress.minutesThisWeek > 0
+              ? `${formatMinutes(progress.minutesThisWeek)} focused this week`
+              : "Your target appears after a couple of focus sessions."}
+          </span>
+          <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={() => setEditing(true)}
+              style={{ background: "none", border: "none", padding: 0, fontSize: 12, color: "var(--muted-foreground)", cursor: "pointer", textDecoration: "underline" }}
+            >
+              Set my own
+            </button>
+            <Link
+              href="/focus"
+              style={{ padding: "8px 14px", borderRadius: 10, background: "var(--primary)", color: "var(--primary-foreground)", fontSize: 12, fontWeight: 700, textDecoration: "none" }}
+            >
+              Start focus
+            </Link>
+          </span>
+        </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <input
@@ -198,6 +226,12 @@ export default function GoalTracker() {
             }}
           >
             {saving ? "Saving…" : hasGoal ? "Update" : "Set goal"}
+          </button>
+          <button
+            onClick={() => setEditing(false)}
+            style={{ background: "none", border: "none", padding: 0, fontSize: 12, color: "var(--muted-foreground)", cursor: "pointer" }}
+          >
+            Cancel
           </button>
         </div>
       )}

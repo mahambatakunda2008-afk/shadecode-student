@@ -29,6 +29,8 @@ export interface GoalProgress {
   /** Null when no goal is set -- there's nothing to show a percentage of. */
   percentComplete: number | null;
   goalMet: boolean;
+  /** "set" = chosen by the student; "history" = derived from their last weeks of focus sessions. */
+  goalSource?: GoalSource | null;
 }
 
 export function computeGoalProgress(
@@ -57,4 +59,41 @@ export function isValidWeeklyGoalMinutes(value: unknown): value is number {
     value >= MIN_WEEKLY_GOAL_MINUTES &&
     value <= MAX_WEEKLY_GOAL_MINUTES
   );
+}
+
+export type GoalSource = "set" | "history";
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Focused minutes for each of the `weeks` COMPLETED weeks before `weekStart`
+ * (index 0 = last week). Only real focus_sessions rows count.
+ */
+export function weeklyTotalsBefore(
+  rows: ReadonlyArray<{ created_at: string; duration_minutes: number | null }>,
+  weekStart: Date,
+  weeks = 4
+): number[] {
+  const totals = Array.from({ length: weeks }, () => 0);
+  for (const row of rows) {
+    const t = Date.parse(row.created_at);
+    if (!Number.isFinite(t) || t >= weekStart.getTime()) continue;
+    const index = Math.floor((weekStart.getTime() - t - 1) / WEEK_MS);
+    if (index >= 0 && index < weeks) totals[index] += Math.max(0, row.duration_minutes ?? 0);
+  }
+  return totals;
+}
+
+/**
+ * A default weekly target derived from what the student has actually done,
+ * so no one has to guess a number. Needs at least two active weeks of real
+ * history; returns null otherwise (we never invent a target for a new user).
+ * Rounded to 15 minutes and kept inside the valid goal range.
+ */
+export function suggestWeeklyGoalMinutes(weeklyTotals: readonly number[]): number | null {
+  const active = weeklyTotals.filter((n) => Number.isFinite(n) && n > 0);
+  if (active.length < 2) return null;
+  const average = active.reduce((sum, n) => sum + n, 0) / active.length;
+  const rounded = Math.round(average / 15) * 15;
+  return Math.min(MAX_WEEKLY_GOAL_MINUTES, Math.max(MIN_WEEKLY_GOAL_MINUTES, rounded));
 }
