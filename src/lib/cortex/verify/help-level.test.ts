@@ -70,3 +70,14 @@ describe("Cortex Verify mathematical notation gate", () => {
     expect(hasCompleteMathematicalMarkup("The answer is \\(x=4")).toBe(false);
   });
 });
+
+
+describe("Cortex Verify independent mathematics audit", () => {
+  it("accepts only an explicit clean audit", async () => {
+    const { isCleanMathematicalAudit } = await import("./help-level");
+    expect(isCleanMathematicalAudit({ consistent: true, issues: [] })).toBe(true);
+    expect(isCleanMathematicalAudit({ consistent: true, issues: ["Final answer conflicts with the working"] })).toBe(false);
+    expect(isCleanMathematicalAudit({ consistent: false, issues: [] })).toBe(false);
+    expect(isCleanMathematicalAudit({ consistent: true })).toBe(false);
+  });
+});
