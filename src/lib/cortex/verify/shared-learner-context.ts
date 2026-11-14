@@ -26,9 +26,8 @@ export function buildSharedVerifyLearnerContext(
   const suggestions = context.reviewSuggestions.items
     .filter(item => normalize(item.subjectKey) === subjectKey)
     .slice(0, 6);
-  const objectives = context.curriculumObjectives.items
-    .filter(item => item.evidenceState === "available")
-    .slice(0, 8);
+  // Objective evidence currently has no subject key. Exclude it here rather than
+  // risk placing another subject's objectives in this subject-specific prompt.
 
   const lines = [
     "AUTHENTICATED SHARED CORTEX LEARNER EVIDENCE (active verified curriculum; heuristic, not ground truth):",
@@ -43,9 +42,6 @@ export function buildSharedVerifyLearnerContext(
     ),
     ...suggestions.map(item =>
       `- Evidence-backed review suggestion: ${item.topicId}; ${item.priority} priority; ${item.reason}; ${item.distinctAttempts} distinct attempts. This is a suggestion, not a predicted due date.`,
-    ),
-    ...objectives.map(item =>
-      `- Curriculum objective ${item.objectiveKey}: ${item.status}; ${item.attempts} assessment attempt(s), ${item.completedLessons} completed lesson(s).`,
     ),
     "Use this evidence only to tailor the explanation and next practice task. Mark the submitted work independently. Do not infer mastery from lesson views or one attempt. Prefer a fresh transfer question for developing topics, guided reteaching for repeated errors, and retrieval practice where evidence supports it.",
   ];
