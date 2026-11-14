@@ -13,7 +13,7 @@ const KEY_PREFIX = "shadecode:cortex:verify-interventions:v1:";
 function keyFor(userId: string) { return KEY_PREFIX + encodeURIComponent(userId); }
 
 function fingerprint(value: string): string {
-  // A compact, non-reversible comparison token. The question itself is never stored.
+  // A compact, non-cryptographic equality fingerprint, not a security hash. The question itself is never stored.
   let hash = 2166136261;
   for (let i = 0; i < value.length; i += 1) {
     hash ^= value.charCodeAt(i);
