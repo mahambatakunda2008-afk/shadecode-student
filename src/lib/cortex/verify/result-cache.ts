@@ -35,7 +35,7 @@ async function hashText(value: string) {
 
 /** Fingerprint exact request content without retaining source images in this cache. */
 export async function createVerifyResultCacheKey(input: {
-  mode: "check" | "help"; subject?: string; question?: string; studentAnswer?: string;
+  mode: "check" | "help"; subject?: string; topicId?: string; question?: string; studentAnswer?: string;
   level?: string; image?: Blob | null; visualEvidence?: Array<{ file: Blob; label: string; annotation?: string }>;
 }): Promise<string | null> {
   try {
@@ -51,7 +51,7 @@ export async function createVerifyResultCacheKey(input: {
       images.push([hash, item.label, item.annotation || ""].join(":"));
     }
     return hashText(JSON.stringify({
-      version: 2, mode: input.mode, subject: (input.subject || "General").trim().toLowerCase(),
+      version: 3, mode: input.mode, subject: (input.subject || "General").trim().toLowerCase(), topicId: (input.topicId || "").trim().toLowerCase(),
       question: (input.question || "").trim(), studentAnswer: (input.studentAnswer || "").trim(),
       level: input.mode === "help" ? input.level || "hint" : "", images,
     }));
