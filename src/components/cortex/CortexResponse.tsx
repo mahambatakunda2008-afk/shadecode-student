@@ -90,12 +90,26 @@ function splitTableRow(line: string): string[] {
       continue;
     }
     if (char === "$") {
+      const isEscaped = index > 0 && line[index - 1] === "\\\\";
+      if (isEscaped) {
+        cell += char;
+        continue;
+      }
       if (next === "$") {
-        mathDelimiter = "$$";
-        cell += "$$";
-        index++;
-      } else {
+        // A currency marker or malformed delimiter must not swallow the rest
+        // of a table row when no matching display delimiter exists.
+        if (line.indexOf("$", index + 2) !== -1) {
+          mathDelimiter = "$";
+          cell += "$";
+          index++;
+        } else {
+          cell += "$";
+          index++;
+        }
+      } else if (line.indexOf("$", index + 1) !== -1) {
         mathDelimiter = "$";
+        cell += char;
+      } else {
         cell += char;
       }
       continue;
