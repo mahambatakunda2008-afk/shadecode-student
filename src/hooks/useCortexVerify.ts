@@ -10,6 +10,8 @@ import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
 import { getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { markWithOfflineRubric, type OfflineVerifyRubric } from "@/lib/cortex/verify/offline-marking";
 import { buildOfflineVerifyRubric } from "@/lib/cortex/verify/offline-question-adapter";
+import { buildVerifyLearnerContext } from "@/lib/cortex/verify/learner-model";
+import { readVerifyLearnerModel, recordVerifyLearningSignal } from "@/lib/cortex/verify/learner-model-store";
 import { createVerifyResultCacheKey, getCachedVerifyResult, saveCachedVerifyResult } from "@/lib/cortex/verify/result-cache";
 import type { ExamQuestion } from "@/lib/exam/types";
 
@@ -79,7 +81,25 @@ async function currentUserId() {
   return data.user.id;
 }
 
-function recordVerifyEvent(attempt: CortexAttempt, result: VerifyResult) {
+function recordVerifyEvent(attempt: CortexAttempt, result: VerifyResult, topicId?: string) {
+  if (attempt.mode === "check" && typeof result.score === "number") {
+    const misconceptionTags = (result.marksBreakdown || []).map(item => item.criterion.trim()).filter(Boolean).slice(0, 8);
+    recordVerifyLearningSignal({ subject: attempt.subject || "General", topic: topicId || "General practice", score: result.score, correct: result.correct, misconceptionTags });
+    if (navigator.onLine) {
+      void fetch("/api/intelligence/events", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "cortex-verify", sourceEventId: attempt.id, type: "question.attempted",
+          subjectId: attempt.subject || "General", topicId, attemptId: attempt.id,
+          occurredAt: new Date().toISOString(),
+          metadata: { mode: "mark", score: result.score, evidenceScore: result.score,
+            correct: result.correct === true || result.score >= 99,
+            confidence: typeof result.confidence === "number" ? result.confidence : null,
+            misconceptionTags: misconceptionTags.join("; ").slice(0, 500) },
+        }),
+      }).catch(() => undefined);
+    }
+  }
   emitCortexEvent({
     id: attempt.id,
     userId: attempt.userId,
@@ -134,7 +154,7 @@ For check mode include: problem, confidence, score, correct, needsRetake, retake
 For help mode, return ONLY the field matching the selected level: hint for hint, method for method, or solution (and finalAnswer when appropriate) for solution. Never include a solution or finalAnswer for hint/method.
 Be accurate and explicit about uncertainty.
 
-MATHEMATICAL FORMATTING IS MANDATORY: put every equation and mathematical expression inside valid LaTeX delimiters, using \\( ... \\) inline and \\[ ... \\] for display equations. Use proper LaTeX for fractions (\\frac{a}{b}), roots (\\sqrt{10}), powers (r^2), subscripts (x_{B}), coordinates and aligned working. Never output bare or fragmented mathematical notation, detached exponents, missing operators, or variables on separate lines. Define symbols, preserve signs/brackets, show complete substitutions, and use numbered steps. Independently verify every calculation and ensure the final answer agrees with the derivation. If source text or an image is unclear, say so instead of guessing. Keep all delimiters and backslashes intact inside JSON string values.`;
+${buildVerifyLearnerContext(readVerifyLearnerModel())}\n\nUse this private learner model to adapt explanations and choose fresh practice. Do not repeat an identical question when a new question can test the same skill.\n\nMATHEMATICAL FORMATTING IS MANDATORY: put every equation and mathematical expression inside valid LaTeX delimiters, using \\( ... \\) inline and \\[ ... \\] for display equations. Use proper LaTeX for fractions (\\frac{a}{b}), roots (\\sqrt{10}), powers (r^2), subscripts (x_{B}), coordinates and aligned working. Never output bare or fragmented mathematical notation, detached exponents, missing operators, or variables on separate lines. Define symbols, preserve signs/brackets, show complete substitutions, and use numbered steps. Independently verify every calculation and ensure the final answer agrees with the derivation. If source text or an image is unclear, say so instead of guessing. Keep all delimiters and backslashes intact inside JSON string values.`;
       data = await runHybridJson<VerifyResult>({
         localPrompt,
         validate: (value): value is VerifyResult => {
@@ -253,7 +273,7 @@ export function useCortexVerify() {
           throw new Error("Cortex returned an invalid visual verification result.");
         }
         if (attempt.mode === "help") Object.assign(validated, selectHelpResult(validated, (attempt.level || "hint") as VerifyHelpLevel));
-        recordVerifyEvent(attempt, validated);
+        recordVerifyEvent(attempt, validated, options.topicId);
         if (cacheKey) { try { await saveCachedVerifyResult(userId, cacheKey, validated); } catch { /* Best-effort cache. */ } }
         setResult(validated);
         return validated;
@@ -281,7 +301,7 @@ export function useCortexVerify() {
         );
         if (localResult) {
           const response: VerifyResult = { ...localResult, execution: "browser-local-deterministic" };
-          recordVerifyEvent(attempt, response);
+          recordVerifyEvent(attempt, response, options.topicId);
           await remove(attempt.userId, attempt.id);
           if (cacheKey) { try { await saveCachedVerifyResult(userId, cacheKey, response); } catch { /* Best-effort cache. */ } }
           setResult(response);
