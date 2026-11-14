@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveVerifyHelpLevel, selectVerifyIntervention } from "./intervention-selector";
+import { resolveVerifyHelpLevel, selectVerifyIntervention, selectVerifyTeachingStrategy } from "./intervention-selector";
 import type { VerifyInterventionOutcome } from "./intervention-outcomes";
 
 function outcome(
@@ -96,4 +96,35 @@ describe("selectVerifyIntervention", () => {
     })).toBe("hint");
   });
 
+});
+
+
+describe("selectVerifyTeachingStrategy", () => {
+  it("requires repeated completed cycles and a meaningful within-topic advantage", () => {
+    const rows = [
+      outcome("vi_a_000001", "hint", 4, { teachingStrategy: "worked-example" }),
+      outcome("vi_a_000002", "hint", 8, { teachingStrategy: "worked-example" }),
+      outcome("vi_b_000001", "method", 25, { teachingStrategy: "guided-reconstruction" }),
+      outcome("vi_b_000002", "method", 28, { teachingStrategy: "guided-reconstruction" }),
+    ];
+    const result = selectVerifyTeachingStrategy(rows, {
+      subjectKey: "physics", topicId: "waves", curriculumTopicKey: "9702:4.2",
+    });
+    expect(result?.recommendedStrategy).toBe("guided-reconstruction");
+    expect(result?.advantage).toBe(20.5);
+  });
+
+  it("falls back for insufficient, mixed-topic or weak evidence", () => {
+    const rows = [
+      outcome("vi_a_000001", "hint", 4, { teachingStrategy: "worked-example" }),
+      outcome("vi_a_000002", "hint", 8, { teachingStrategy: "worked-example" }),
+      outcome("vi_b_000001", "method", 25, { teachingStrategy: "guided-reconstruction" }),
+    ];
+    expect(selectVerifyTeachingStrategy(rows, {
+      subjectKey: "physics", topicId: "waves", curriculumTopicKey: "9702:4.2",
+    })).toBeNull();
+    expect(selectVerifyTeachingStrategy(rows.map(row => ({ ...row, curriculumTopicKey: "other" })), {
+      subjectKey: "physics", topicId: "waves", curriculumTopicKey: "9702:4.2",
+    })).toBeNull();
+  });
 });
