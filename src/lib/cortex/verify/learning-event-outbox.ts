@@ -9,6 +9,7 @@ type VerifyLearningEvent = {
 
 const KEY_PREFIX = "shadecode:cortex:verify-learning-outbox:v1:";
 const MAX_PENDING = 100;
+const flushingUsers = new Set<string>();
 
 function keyFor(userId: string) {
   return KEY_PREFIX + userId;
@@ -40,31 +41,37 @@ export function enqueueVerifyLearningEvent(userId: string, event: VerifyLearning
 
 /** Deliver events idempotently through the authenticated canonical learning pipeline. */
 export async function flushVerifyLearningEvents(userId: string): Promise<void> {
-  if (typeof window === "undefined" || !navigator.onLine || !userId) return;
-  const events = read(userId);
-  for (const event of events) {
-    try {
-      const response = await fetch("/api/intelligence/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: "cortex-verify",
-          sourceEventId: event.sourceEventId,
-          type: "question.attempted",
-          subjectId: event.subjectId,
-          topicId: event.topicId,
-          attemptId: event.attemptId,
-          occurredAt: event.occurredAt,
-          metadata: event.metadata,
-        }),
-      });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok || payload?.persisted !== true || payload?.projectionPending === true) continue;
-      const remaining = read(userId).filter(item => item.sourceEventId !== event.sourceEventId);
-      write(userId, remaining);
-    } catch {
-      // Keep the event for the next online retry. Do not block marking.
-      return;
+  if (typeof window === "undefined" || !navigator.onLine || !userId || flushingUsers.has(userId)) return;
+  flushingUsers.add(userId);
+  try {
+    const events = read(userId);
+    for (const event of events) {
+      try {
+        const response = await fetch("/api/intelligence/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            source: "cortex-verify",
+            sourceEventId: event.sourceEventId,
+            type: "question.attempted",
+            subjectId: event.subjectId,
+            topicId: event.topicId,
+            attemptId: event.attemptId,
+            occurredAt: event.occurredAt,
+            metadata: event.metadata,
+          }),
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok || payload?.persisted !== true || payload?.projectionPending === true) continue;
+        const remaining = read(userId).filter(item => item.sourceEventId !== event.sourceEventId);
+        write(userId, remaining);
+      } catch {
+        // Keep the event for the next online retry. Do not block marking.
+        return;
+      }
     }
+  } finally {
+    flushingUsers.delete(userId);
   }
 }
