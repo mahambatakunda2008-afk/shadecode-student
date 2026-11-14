@@ -75,3 +75,14 @@ export function formatVerifyTeachingStrategy(
   };
   return `TEACHING STRATEGY: ${result.strategy} (${result.confidence} confidence; ${result.evidence}). ${result.reason} ${instructions[result.strategy]} Use a diagram, graph, table, simulation, or practical analogy only when it genuinely clarifies this specific concept; do not force visuals or infer a visual-learning preference.`;
 }
+
+/** Offline policy using only this account's local Verify cache. */
+export function recommendPrivateLocalVerifyTeachingStrategy(input: VerifyTeachingStrategyInput): VerifyTeachingStrategyResult {
+  const result = recommendVerifyTeachingStrategy(input);
+  return {
+    ...result,
+    evidence: result.evidence === "insufficient-history" ? "insufficient-history" : "private-local-estimate",
+    confidence: result.evidence === "verified-topic-history" ? "low" : result.confidence,
+    reason: result.evidence === "verified-topic-history" ? `Local estimate only. ${result.reason}` : result.reason,
+  };
+}
