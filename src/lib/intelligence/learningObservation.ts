@@ -20,6 +20,10 @@ export function learningEventToObservation(
 ): LearningObservation | null {
   if (!event.topicId) return null;
   if (event.metadata.aggregateOnly === true) return null;
+  // Self-awarded practical marks are useful learner reflections, not independently
+  // verified attainment. Keep them in the canonical event stream, but do not let
+  // them alter topic mastery until a provenance-aware evidence model exists.
+  if (event.metadata.selfAssessment === true) return null;
 
   const correct = readBoolean(event.metadata.correct);
   if (correct === undefined) return null;
