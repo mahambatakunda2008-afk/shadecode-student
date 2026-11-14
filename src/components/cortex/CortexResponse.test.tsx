@@ -182,4 +182,17 @@ $$c=\sqrt{a^2+b^2}$$`;
     expect((html.match(/class="katex-display"/g) || []).length).toBe(2);
   });
 
+  it("keeps display-math pipes and escaped currency markers inside their intended cells", () => {
+    const source = "| Type | Expression | Note |\n| --- | --- | --- |\n| Display | $$P(A|B)$$ | Conditional probability |\n| Price | \\$25 | Escaped currency marker |";
+    const blocks = parseCortexResponseBlocks(source);
+    expect(blocks[0]).toMatchObject({
+      type: "table",
+      rows: [
+        ["Type", "Expression", "Note"],
+        ["Display", "$$P(A|B)$$", "Conditional probability"],
+        ["Price", "\\$25", "Escaped currency marker"],
+      ],
+    });
+  });
+
 });
