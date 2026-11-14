@@ -3,6 +3,7 @@ type PendingIntervention = {
   subject: string;
   topic: string;
   level: "hint" | "method" | "solution";
+  teachingStrategy?: "guided-reconstruction" | "worked-example" | "retrieval-and-transfer" | "diagnostic-first";
   questionFingerprint: string;
   createdAt: string;
   linkedTransferFingerprints?: string[];
@@ -46,6 +47,7 @@ function write(userId: string, items: PendingIntervention[]) {
 export function recordVerifyIntervention(input: {
   userId: string; subject?: string; topic?: string; level: "hint" | "method" | "solution"; question?: string;
   id?: string; occurredAt?: string;
+  teachingStrategy?: "guided-reconstruction" | "worked-example" | "retrieval-and-transfer" | "diagnostic-first";
 }) {
   if (typeof window === "undefined" || !input.userId || !input.subject?.trim() || !input.topic?.trim() || !input.question?.trim()) return;
   const now = input.occurredAt || new Date().toISOString();
@@ -54,6 +56,7 @@ export function recordVerifyIntervention(input: {
     subject: input.subject.trim().slice(0, 100),
     topic: input.topic.trim().slice(0, 100),
     level: input.level,
+    ...(input.teachingStrategy ? { teachingStrategy: input.teachingStrategy } : {}),
     questionFingerprint: fingerprint(input.question.trim().replace(/\s+/g, " ").toLocaleLowerCase("en")),
     createdAt: now,
   };
@@ -67,7 +70,7 @@ export function recordVerifyIntervention(input: {
  */
 export function consumeVerifyIntervention(input: {
   userId: string; subject?: string; topic?: string; question?: string; occurredAt?: string;
-}): null | { interventionId: string; interventionLevel: string; interventionToAttemptHours: number; freshTransfer: boolean } {
+}): null | { interventionId: string; interventionLevel: string; interventionToAttemptHours: number; freshTransfer: boolean; teachingStrategy?: "guided-reconstruction" | "worked-example" | "retrieval-and-transfer" | "diagnostic-first" } {
   if (typeof window === "undefined" || !input.userId || !input.subject || !input.topic || !input.question?.trim()) return null;
   const items = read(input.userId);
   const subject = input.subject.trim().toLocaleLowerCase("en");
