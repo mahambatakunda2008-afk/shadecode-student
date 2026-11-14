@@ -7,7 +7,7 @@ import { useUser } from "@/contexts/UserContext";
 import { prepareMarkingResourceImport } from "@/lib/cortex/verify/marking-resource-import";
 import { getImportedMarkingResource, listImportedMarkingResources, saveImportedMarkingResource } from "@/lib/cortex/verify/marking-resource-import-store";
 import type { ImportedMarkingResource } from "@/lib/cortex/verify/marking-resource-import";
-import { extractImportedMarkingResource, type MarkingResourceExtraction } from "@/lib/cortex/verify/marking-resource-extraction";
+import { extractImportedMarkingResource, parsePdfPageSelection, type MarkingResourceExtraction } from "@/lib/cortex/verify/marking-resource-extraction";
 import { getMarkingResourceReviewDraft, saveMarkingResourceReviewDraft } from "@/lib/cortex/verify/marking-resource-review-store";
 import { extractImageLocally, extractPdfPagesLocally, isBrowserLocalOcrAvailable } from "@/lib/cortex/verify/web-local-extraction";
 import type { LocalVerifyExtraction } from "@/lib/cortex/verify/local-extraction-contract";
@@ -129,7 +129,7 @@ export default function MarkingResourceReviewWorkspace() {
 
   async function importAndExtract() {
     if (!user?.id || !file) return;
-    setBusy(true); setMessage(""); setExtraction(null); setCorrectedLines([]); setLocalOcr(null); setCorrectedRegions([]);
+    setBusy(true); setMessage(""); setExtraction(null); setCorrectedLines([]); setLocalOcr(null); setCorrectedRegions([]); setPdfOcrPages(""); setSelectedPdfReviewPage(1); setImageDimensions(null);
     try {
       const resource = await prepareMarkingResourceImport(user.id, {
         file, kind, boardId, qualificationId, level, subjectId, syllabusId, syllabusVersion,
@@ -175,6 +175,9 @@ export default function MarkingResourceReviewWorkspace() {
       const draft = await getMarkingResourceReviewDraft(user.id, id);
       const restoredFile = new File([saved.fileBlob], saved.fileName, { type: saved.mimeType });
       setFile(restoredFile);
+      setPdfOcrPages("");
+      setSelectedPdfReviewPage(1);
+      setImageDimensions(null);
       setResourceId(saved.id);
       setKind(saved.kind);
       setBoardId(saved.syllabusIdentity.boardId);
@@ -202,11 +205,12 @@ export default function MarkingResourceReviewWorkspace() {
 
   async function runPdfLocalOcr() {
     if (!file || !isPdf) return;
-    const pages = pdfOcrPages.split(",").map(value => Number(value.trim())).filter(Number.isInteger);
-    if (!pages.length || pages.some(page => page < 1) || new Set(pages).size !== pages.length) {
-      setMessage("Enter valid, unique PDF page numbers separated by commas, for example: 2, 4, 7.");
+    const selection = parsePdfPageSelection(pdfOcrPages, extraction?.pageCount || 0);
+    if (selection.error) {
+      setMessage(selection.error);
       return;
     }
+    const pages = selection.pages;
     setBusy(true);
     setMessage("");
     try {
@@ -282,7 +286,7 @@ export default function MarkingResourceReviewWorkspace() {
     <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
       <div className="mb-4 flex items-center gap-2"><FileText size={18} /><h2 className="font-bold">1. Resource and syllabus identity</h2></div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <label className="text-xs font-semibold">Resource file<input className={fieldClass} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.txt,application/pdf,image/jpeg,image/png,image/webp,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => { setFile(event.target.files?.[0] || null); setExtraction(null); setResourceId(""); }} /></label>
+        <label className="text-xs font-semibold">Resource file<input className={fieldClass} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.txt,application/pdf,image/jpeg,image/png,image/webp,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => { setFile(event.target.files?.[0] || null); setExtraction(null); setResourceId(""); setPdfOcrPages(""); setSelectedPdfReviewPage(1); setLocalOcr(null); setCorrectedRegions([]); setImageDimensions(null); }} /></label>
         <label className="text-xs font-semibold">Resource type<select className={fieldClass} value={kind} onChange={event => setKind(event.target.value as MarkingResourceKind)}>{kinds.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
         <label className="text-xs font-semibold">Exam board<input className={fieldClass} value={boardId} onChange={event => setBoardId(event.target.value)} /></label>
         <label className="text-xs font-semibold">Qualification<input className={fieldClass} value={qualificationId} onChange={event => setQualificationId(event.target.value)} /></label>
