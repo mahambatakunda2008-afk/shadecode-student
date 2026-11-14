@@ -305,3 +305,9 @@
     height: 36px;
   }
 }
+
+/* Calm layout: sections only render when they hold real data, so the grid adapts. */
+.dashboard-goal-streak-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+@media (max-width: 640px) { .dashboard-goal-streak-row { grid-template-columns: minmax(0, 1fr); } }
+.dashboard-momentum { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.dashboard-grid-single { grid-template-columns: minmax(0, 1fr); }
