@@ -10,7 +10,7 @@ data class NativeOfflineMarkingRubric(
     val reviewedAt: String, val verified: Boolean, val rights: NativeMarkingRights,
     val limitations: List<String>, val answer: String? = null, val numericAnswer: Double? = null,
     val tolerance: Double = 0.0, val acceptedAnswers: List<String> = emptyList(),
-    val criterion: String? = null, val criteria: List<NativeRubricCriterion> = emptyList(),
+    val criterion: String? = null, val criteria: List<NativeRubricCriterion> = emptyList(), val expectedUnit: String? = null,
 )
 data class NativeOfflineMarkStep(val description: String, val earnedMarks: Double, val availableMarks: Double, val matched: Boolean, val note: String)
 data class NativeOfflineMarkResult(
@@ -27,7 +27,7 @@ object NativeOfflineMarker {
         val steps = when (rubric.kind) {
             NativeOfflineRubricKind.EXACT_NUMBER -> {
                 val expected = rubric.numericAnswer ?: return null
-                val actual = parseNumber(studentAnswer) ?: return null
+                val actual = parseNumber(studentAnswer, rubric.expectedUnit) ?: return null
                 listOf(step(rubric.criterion!!, rubric.totalMarks, kotlin.math.abs(actual - expected) <= rubric.tolerance))
             }
             NativeOfflineRubricKind.MULTIPLE_CHOICE ->
@@ -92,10 +92,14 @@ object NativeOfflineMarker {
         description, if (matched) marks else 0.0, marks, matched,
         if (matched) "Matched an explicitly approved answer." else "No explicitly approved answer matched. Manual review may still award credit.",
     )
-    private fun parseNumber(value: String): Double? {
-        val cleaned = value.trim().replace(",", "")
-            .replace(Regex("(?i)\\s*(cm|mm|km|ms|kg|pa|hz|m|s|g|n|v|a|j|w)$"), "").trim()
-        return cleaned.toDoubleOrNull()?.takeIf { it.isFinite() }
+    private fun parseNumber(value: String, expectedUnit: String?): Double? {
+        val match = Regex("(?i)^\\s*([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:e[+-]?\\d+)?)\\s*([a-z]+)?\\s*$")
+            .matchEntire(value.replace(",", "")) ?: return null
+        val suppliedUnit = match.groupValues[2].takeIf { it.isNotBlank() }
+        val normalizedExpected = expectedUnit?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
+        // Never strip an arbitrary unit: 2 cm must not match a rubric expecting 2 m.
+        if (suppliedUnit != null && suppliedUnit.lowercase() != normalizedExpected) return null
+        return match.groupValues[1].toDoubleOrNull()?.takeIf { it.isFinite() }
     }
     private fun normalize(value: String) = value.trim().lowercase().replace(Regex("\\s+"), " ").trimEnd('.', ',', ';', ':', '!', '?')
     private fun containsApprovedPhrase(answer: String, phrase: String): Boolean {
