@@ -13,6 +13,7 @@ export type CortexAttempt = {
   topicId?: string;
   question?: string;
   level?: string;
+  levelExplicit?: boolean;
   studentAnswer?: string;
   imageDataUrl?: string | null;
   createdAt: string;
