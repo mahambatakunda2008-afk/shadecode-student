@@ -111,6 +111,7 @@ function recordVerifyEvent(attempt: CortexAttempt, result: VerifyResult, topicId
           interventionLevel: intervention.interventionLevel,
           interventionToAttemptHours: intervention.interventionToAttemptHours,
           freshTransfer: intervention.freshTransfer,
+          ...(intervention.teachingStrategy ? { teachingStrategy: intervention.teachingStrategy } : {}),
         } : {}),
       },
     });
@@ -206,6 +207,7 @@ ${buildVerifyLearnerContext(readVerifyLearnerModel(attempt.userId), { subject: a
       recordVerifyIntervention({
         userId: attempt.userId, subject: attempt.subject, topic: attempt.topicId,
         level: (adaptiveLevel || attempt.level || "hint") as HelpLevel, question: attempt.question,
+        teachingStrategy: data.teachingStrategy,
       });
     }
     if (!navigator.onLine) data.execution = "browser-local";
