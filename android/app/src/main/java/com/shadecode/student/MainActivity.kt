@@ -1542,7 +1542,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                 OutlinedTextField(value=region.annotation, onValueChange={value -> visualRegions=visualRegions.map { if(it.id==region.id) it.copy(annotation=value.take(1000)) else it }}, label={Text("Visual interpretation notes")}, modifier=Modifier.fillMaxWidth())
                                 val linkedLabels = region.linkedOcrRegionIndices.mapNotNull { extractionRegions.getOrNull(it)?.text?.takeIf { text -> text.isNotBlank() } }
                                 Text(if(linkedLabels.isEmpty()) "No OCR labels linked." else "Linked OCR labels: " + linkedLabels.joinToString(" · "), style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
-                                TextButton(onClick={visualRegions=visualRegions.filterNot{it.id==region.id}; visualCropBytes=visualCropBytes-region.id; visualCropPreviews=visualCropPreviews-region.id}) { Text("Remove region") }
+                                TextButton(onClick={visualRegions=visualRegions.filterNot{it.id==region.id}; selectedVisualRegionIds=selectedVisualRegionIds-region.id; cloudVerifyConsent=false; visualCropBytes=visualCropBytes-region.id; visualCropPreviews=visualCropPreviews-region.id}) { Text("Remove region") }
                             }
                         }
                         if(visualRegions.isNotEmpty()) Button(onClick={
@@ -1672,10 +1672,10 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                     Text("Your reviewed extraction becomes the working submitted to Cortex. Choose a mode and subject.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { verifyMode = "check"; verifyResult = null }, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { verifyMode = "check"; verifyResult = null; cloudVerifyConsent = false }, modifier = Modifier.weight(1f)) {
                             Text(if (verifyMode == "check") "✓ Mark Mode" else "Mark Mode")
                         }
-                        OutlinedButton(onClick = { verifyMode = "help"; verifyResult = null }, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { verifyMode = "help"; verifyResult = null; cloudVerifyConsent = false }, modifier = Modifier.weight(1f)) {
                             Text(if (verifyMode == "help") "✓ Help Mode" else "Help Mode")
                         }
                     }
