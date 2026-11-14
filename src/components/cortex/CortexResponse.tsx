@@ -17,20 +17,25 @@ export function normalizeCortexResponseText(source: string): string {
     const index = mathDelimiters.push(match) - 1;
     return "\\uE000" + index + "\\uE001";
   });
-  return protectedSource
-    .replace(/\r\n?/g, "\n")
-    .replace(/&#x([0-9a-f]+);/gi, (entity: string, hex: string) => decodeNumericEntity(entity, parseInt(hex, 16)))
-    .replace(/&#([0-9]+);/g, (entity: string, decimal: string) => decodeNumericEntity(entity, parseInt(decimal, 10)))
-    .replace(/&nbsp;|&#160;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    // Remove up to three transport-escaping layers from Markdown punctuation.
-    .replace(/\\([\\\`*_{}\[\]()#+.!|>~-])/g, "$1")
-    .replace(/\\([\\\`*_{}\[\]()#+.!|>~-])/g, "$1")
-    .replace(/\\([\\\`*_{}\[\]()#+.!|>~-])/g, "$1")
+  let normalized = protectedSource.replace(/\r\n?/g, "\n");
+  // Provider responses can arrive with HTML entities and Markdown punctuation
+  // escaped more than once (for example &amp;#x20; and \\\###). Unwrap a
+  // bounded number of layers, leaving protected mathematical expressions alone.
+  for (let pass = 0; pass < 6; pass++) {
+    const next = normalized
+      .replace(/&#x([0-9a-f]+);/gi, (entity: string, hex: string) => decodeNumericEntity(entity, parseInt(hex, 16)))
+      .replace(/&#([0-9]+);/g, (entity: string, decimal: string) => decodeNumericEntity(entity, parseInt(decimal, 10)))
+      .replace(/&nbsp;|&#160;/gi, " ")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;|&apos;/gi, "'")
+      .replace(/&amp;/gi, "&")
+      .replace(/\\([\\\`*_{}\[\]()#+.!|>~-])/g, "$1");
+    if (next === normalized) break;
+    normalized = next;
+  }
+  return normalized
     .replace(/\\uE000(\d+)\\uE001/g, (_, index: string) => mathDelimiters[Number(index)] ?? "")
     .trim();
 }
