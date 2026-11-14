@@ -42,6 +42,7 @@ export interface VerifyResult {
   finalAnswer?: string;
   content?: string;
   execution?: "browser-local" | "browser-local-deterministic" | "cloud" | "cached";
+  cachedFromExecution?: "browser-local" | "browser-local-deterministic" | "cloud";
 }
 
 const REQUEST_TIMEOUT_MS = 30_000;
