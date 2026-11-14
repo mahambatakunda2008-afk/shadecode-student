@@ -7,6 +7,7 @@ import { deriveSpacedRetrievalEvidence, type SpacedRetrievalEvidence } from "./s
 import { deriveEvidenceBasedReviewSuggestions, type EvidenceBasedReviewSuggestion } from "./review-suggestions";
 import { deriveReviewSessionActivity, type ReviewSessionActivity } from "./review-session-activity";
 import { deriveLearnerTopicState, type LearnerTopicState } from "@/lib/intelligence/learnerTopicState";
+import { deriveVerifyInterventionOutcomes, type VerifyInterventionOutcome } from "@/lib/cortex/verify/intervention-outcomes";
 
 export type EvidenceState = "available" | "insufficient_evidence" | "unavailable";
 
@@ -109,6 +110,12 @@ export interface CortexStudentContext {
     source: "cortex_events";
     items: EvidenceBasedReviewSuggestion[];
     interpretation: "evidence_backed_no_due_dates";
+  };
+  interventionOutcomes: {
+    state: EvidenceState;
+    source: "cortex_events";
+    items: VerifyInterventionOutcome[];
+    interpretation: "descriptive_not_causal";
   };
 }
 
@@ -298,6 +305,7 @@ export async function resolveAuthenticatedCortexStudentContext(
     recurringMistakes,
     spacedRetrieval,
   });
+  const interventionOutcomes = deriveVerifyInterventionOutcomes(mistakeEvents);
 
   return {
     schemaVersion: 1,
@@ -369,6 +377,12 @@ export async function resolveAuthenticatedCortexStudentContext(
       source: "cortex_events",
       items: reviewSuggestions,
       interpretation: "evidence_backed_no_due_dates",
+    },
+    interventionOutcomes: {
+      state: interventionOutcomes.length > 0 ? "available" : "insufficient_evidence",
+      source: "cortex_events",
+      items: interventionOutcomes,
+      interpretation: "descriptive_not_causal",
     },
   };
 }
