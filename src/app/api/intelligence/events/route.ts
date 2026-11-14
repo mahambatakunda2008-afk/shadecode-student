@@ -5,6 +5,7 @@ import { normalizeLearningEvent, type SupportedSourceEvent } from "@/lib/intelli
 import { projectLearningEvent } from "@/lib/intelligence/projectLearningEvent";
 import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
 import { resolveVerifiedCurriculumTopic } from "@/lib/curriculum/topic-mapping";
+import { sanitizeVerifyInterventionMetadata } from "@/lib/intelligence/verifyInterventionMetadata";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       topicId: asString(body.topicId),
       entityId: asString(body.entityId),
       attemptId: asString(body.attemptId),
-      metadata: safeMetadata(body.metadata),
+      metadata: sanitizeVerifyInterventionMetadata(safeMetadata(body.metadata), asString(body.type) ?? ""),
     };
 
     const curriculum = await resolveUserSystemCurriculum(user.id, input.subjectId);
