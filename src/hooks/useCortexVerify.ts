@@ -195,7 +195,11 @@ ${buildVerifyLearnerContext(readVerifyLearnerModel(attempt.userId), { subject: a
         (data.level === "hint" || data.level === "method" || data.level === "solution")
         ? data.level
         : null;
-      data = selectHelpResult(data, (adaptiveLevel || attempt.level || "hint") as VerifyHelpLevel) as VerifyResult;
+      const wasAdaptivelySelected = data.adaptiveSelection === true;
+      data = {
+        ...selectHelpResult(data, (adaptiveLevel || attempt.level || "hint") as VerifyHelpLevel),
+        ...(wasAdaptivelySelected ? { adaptiveSelection: true } : {}),
+      } as VerifyResult;
       recordVerifyIntervention({
         userId: attempt.userId, subject: attempt.subject, topic: attempt.topicId,
         level: (adaptiveLevel || attempt.level || "hint") as HelpLevel, question: attempt.question,
