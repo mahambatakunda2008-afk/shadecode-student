@@ -1723,7 +1723,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                         Spacer(Modifier.height(8.dp))
                         Text("Offline Help", fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Optional on-device text help. The first download is about 253 MB and needs internet and storage. After download, text-only help can run without sending your work to the cloud. This small model may make mistakes.",
+                            "Optional on-device text help. The first download is about 253 MB and needs internet and storage. It requires at least 2 GB device RAM and sufficient free memory. After download, text-only help can run without sending your work to the cloud. This small model may make mistakes.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall,
                         )
@@ -1790,7 +1790,13 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                                     append("Student working: ").append(editableText.ifBlank { "Not supplied" })
                                                 }
                                                 val result = withContext(Dispatchers.IO) {
-                                                    check(localModelRuntime.isReady("gemma-3-270m-it-q4")) { "The offline model could not be loaded. Check available device memory and try again." }
+                                                    val readiness = localModelManager.gemmaDeviceReadiness()
+                                                    check(readiness.supported) {
+                                                        readiness.reason ?: "This device does not currently meet the offline model memory requirements."
+                                                    }
+                                                    check(localModelRuntime.isReady("gemma-3-270m-it-q4")) {
+                                                        "The offline model could not be loaded. Close other apps and try again."
+                                                    }
                                                     localModelRuntime.generate("gemma-3-270m-it-q4", prompt, 320)
                                                 }
                                                 localHelpResult = result ?: "The local model could not produce a response. Try a shorter question or use online Help when available."
