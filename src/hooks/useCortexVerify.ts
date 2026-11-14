@@ -47,6 +47,7 @@ export interface VerifyResult {
   content?: string;
   execution?: "browser-local" | "browser-local-deterministic" | "cloud" | "cached";
   cachedFromExecution?: "browser-local" | "browser-local-deterministic" | "cloud";
+  adaptiveSelection?: boolean;
 }
 
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -143,7 +144,7 @@ async function sendAttemptNow(attempt: CortexAttempt) {
     if (attempt.topicId) fd.append("topicId", attempt.topicId);
     if (attempt.question) fd.append("question", attempt.question);
     if (attempt.studentAnswer) fd.append("studentAnswer", attempt.studentAnswer);
-    if (attempt.mode === "help" && attempt.level) fd.append("level", attempt.level);
+    if (attempt.mode === "help" && attempt.level) { fd.append("level", attempt.level); fd.append("levelExplicit", String(attempt.levelExplicit === true)); }
 
     const requestCloud = async (signal?: AbortSignal) => {
       const response = await fetchWithTimeout("/api/cortex/verify", { method: "POST", body: fd, signal });
@@ -228,6 +229,7 @@ export function useCortexVerify() {
     question?: string;
     studentAnswer?: string;
     level?: HelpLevel;
+    levelExplicit?: boolean;
     image?: File;
     offlineRubric?: OfflineVerifyRubric;
     /** Trusted downloaded/built-in question metadata; only numeric and keyed MC items are eligible. */
@@ -254,7 +256,7 @@ export function useCortexVerify() {
       // The cache stores a response and request fingerprint, never source images.
       const cacheKey = await createVerifyResultCacheKey({
         mode: options.mode, subject: options.subject, topicId: options.topicId, question: options.question,
-        studentAnswer: options.studentAnswer, level: options.level, image: options.image, visualEvidence,
+        studentAnswer: options.studentAnswer, level: options.level, levelExplicit: options.levelExplicit, image: options.image, visualEvidence,
       });
       const attempt: CortexAttempt = {
         id: `${Date.now()}-${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`,
@@ -265,6 +267,7 @@ export function useCortexVerify() {
         question: options.question?.trim() || undefined,
         studentAnswer: options.studentAnswer?.trim() || undefined,
         level: options.level,
+        levelExplicit: options.levelExplicit,
         imageDataUrl,
         createdAt: new Date().toISOString(),
         attempts: 0,
