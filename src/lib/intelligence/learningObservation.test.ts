@@ -61,6 +61,15 @@ describe("learningEventToObservation", () => {
     expect(learningEventToObservation(event("question_attempted", { correct: 2 }))).toBeNull();
   });
 
+  it("keeps self-assessed practical marks out of independently evidenced mastery", () => {
+    expect(learningEventToObservation(event("question_attempted", {
+      correct: true,
+      evidenceScore: 100,
+      selfAssessment: true,
+      practiceMode: "self_assessed_practical",
+    }))).toBeNull();
+  });
+
   it("does not project aggregate-only events", () => {
     expect(learningEventToObservation(event("question_attempted", {
       correct: true,
