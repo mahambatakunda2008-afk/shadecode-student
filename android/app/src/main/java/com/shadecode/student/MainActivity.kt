@@ -1699,7 +1699,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = cloudVerifyConsent, onCheckedChange = { cloudVerifyConsent = it })
-                        Text("I agree to send the question and reviewed text to Shadecode cloud AI. This requires internet; marking and help are not offline yet.", style = MaterialTheme.typography.bodySmall)
+                        Text("I agree to send the question, reviewed text and up to five saved visual crops (including my labels and notes) to Shadecode cloud AI. Images are sent only when I press the button. This requires internet; offline marking and help are not yet available for visual evidence.", style = MaterialTheme.typography.bodySmall)
                     }
                     Button(
                         onClick = {
@@ -1713,6 +1713,13 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                 scope.launch {
                                     try {
                                         val result = withContext(Dispatchers.IO) {
+                                            val visualEvidence = activeArtifactId?.let { artifactId ->
+                                                visualRegions.take(5).mapNotNull { region ->
+                                                    extractStore.loadVisualCrop(artifactId, region.id)?.let { bytes ->
+                                                        NativeVerifyVisualEvidence(region.label, region.annotation, bytes)
+                                                    }
+                                                }
+                                            }.orEmpty()
                                             verifyApi.submit(
                                                 session = session,
                                                 subject = chosen.name,
@@ -1721,6 +1728,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                                 question = verifyQuestion,
                                                 studentAnswer = editableText,
                                                 helpLevel = helpLevel,
+                                                visualEvidence = visualEvidence,
                                             )
                                         }
                                         verifyResult = result
@@ -1733,7 +1741,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                 }
                             }
                         },
-                        enabled = !verifying && cloudVerifyConsent && !processing && (editableText.isNotBlank() || verifyQuestion.isNotBlank()) && subjects.isNotEmpty(),
+                        enabled = !verifying && cloudVerifyConsent && !processing && (editableText.isNotBlank() || verifyQuestion.isNotBlank() || visualRegions.any { it.cropFile != null }) && subjects.isNotEmpty(),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(if (verifying) "Verifying…" else if (verifyMode == "check") "Mark my work" else "Help me understand")
