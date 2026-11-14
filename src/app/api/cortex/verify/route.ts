@@ -10,6 +10,7 @@ import { buildSharedVerifyLearnerContext, selectSharedVerifyIntervention } from 
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
 import { hasCompleteMathematicalMarkup, isCleanMathematicalAudit, isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
 import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
+import { resolveVerifyHelpLevel } from "@/lib/cortex/verify/intervention-selector";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -250,8 +251,12 @@ export async function POST(req: Request) {
 
     if (mode === "help") {
       const requestedLevel = String(formData.get("level") || "hint");
-      const level = adaptiveHelpLevel ?? requestedLevel;
-      if (!["hint", "method", "solution"].includes(level)) return NextResponse.json({ error: "Choose a valid help level." }, { status: 400 });
+      if (!["hint", "method", "solution"].includes(requestedLevel)) return NextResponse.json({ error: "Choose a valid help level." }, { status: 400 });
+      const level = resolveVerifyHelpLevel({
+        requestedLevel: requestedLevel as "hint" | "method" | "solution",
+        explicit: levelWasExplicitlyChosen,
+        recommendedLevel: adaptiveHelpLevel,
+      });
       if (!question && images.length === 0) return NextResponse.json({ error: "Add the question or a photo first." }, { status: 400 });
       const instruction = level === "hint"
         ? "Give one useful hint only. Do not provide the method, solution, final answer, or content that reveals them. Return the hint field only."
