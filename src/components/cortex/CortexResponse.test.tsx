@@ -34,4 +34,17 @@ describe("Cortex response formatting", () => {
     expect(blocks[1]).toMatchObject({ type: "quote", text: "A quoted point\nwith its continuation" });
   });
 
+  it("repairs provider-escaped Markdown and HTML entities in worked solutions", () => {
+    const sample = String.raw`\\### Part 1: Finding the Equation
+\\*\\*Identify the values\\*\\*: The centre is $(-3, 2)$.
+1\\. \\*\\*Substitute the values\\*\\*:&#x20;
+&#x20;   $(x + 3)^2 + (y - 2)^2 = 10$
+2\\. \\*\\*Simplify\\*\\*: The equation is ready.`;
+    const blocks = parseCortexResponseBlocks(sample);
+    expect(blocks[0]).toMatchObject({ type: "heading", text: "Part 1: Finding the Equation" });
+    expect(blocks[1]).toMatchObject({ type: "paragraph", text: "**Identify the values**: The centre is $(-3, 2)$." });
+    expect(blocks[2]).toMatchObject({ type: "list", ordered: true });
+    expect(blocks[2]).toMatchObject({ items: ["**Substitute the values**:\n$(x + 3)^2 + (y - 2)^2 = 10", "**Simplify**: The equation is ready."] });
+  });
+
 });
