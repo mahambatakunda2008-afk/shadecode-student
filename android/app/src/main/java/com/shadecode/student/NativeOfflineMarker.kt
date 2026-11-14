@@ -96,7 +96,7 @@ object NativeOfflineMarker {
     }
     private fun normalize(value: String) = value.trim().lowercase().replace(Regex("\\s+"), " ").trimEnd('.', ',', ';', ':', '!', '?')
     private fun containsApprovedPhrase(answer: String, phrase: String): Boolean {
-        val escaped = Regex.escape(normalize(phrase)).replace(" ", "\\s+")
+        val escaped = normalize(phrase).split(Regex("\\s+")).joinToString("\\\\s+") { Regex.escape(it) }
         return Regex("(?<![\\p{L}\\p{N}])" + escaped + "(?![\\p{L}\\p{N}])", RegexOption.IGNORE_CASE)
             .containsMatchIn(normalize(answer))
     }
