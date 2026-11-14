@@ -94,7 +94,8 @@ function recordVerifyEvent(attempt: CortexAttempt, result: VerifyResult, topicId
       occurredAt: new Date().toISOString(),
       metadata: {
         mode: "mark", score: result.score, evidenceScore: result.score,
-        correct: result.correct === true || result.score >= 99,
+        // A partial mark is not automatically a fully correct answer. When the marker does not supply a binary judgement, use a transparent 50% threshold for the auxiliary error-rate signal; the exact percentage remains the mastery evidence.
+        correct: typeof result.correct === "boolean" ? result.correct : result.score >= 50,
         confidence: typeof result.confidence === "number" ? result.confidence : null,
         misconceptionTags: misconceptionTags.join("; ").slice(0, 500),
       },
