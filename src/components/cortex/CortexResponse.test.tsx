@@ -98,5 +98,37 @@ describe("Cortex response formatting", () => {
     expect(html).toContain("<ul");
   });
 
+  it("renders aligned multi-line working and matrices in paragraphs, lists, and tables", () => {
+    const aligned = String.raw`$
+\\begin{aligned}
+2x + 3y &= 12 \\
+x - y &= 1
+\\end{aligned}
+$`;
+    const matrix = String.raw`\\begin{pmatrix}1 & 2 \\\\ 3 & 4\\end{pmatrix}`;
+    const source = [
+      "## Simultaneous equations",
+      aligned,
+      "1. Form the matrix " + "$" + matrix + "$",
+      "",
+      "| Step | Working |",
+      "| --- | --- |",
+      "| Determinant | $" + String.raw`ad-bc` + "$ |",
+    ].join("\\n");
+    const html = renderToStaticMarkup(<CortexResponse text={source} />);
+    expect(html).toContain("katex");
+    expect(html).toContain("aligned");
+    expect(html).toContain("pmatrix");
+    expect(html).toContain("<ol");
+    expect(html).toContain("<table");
+    expect((html.match(/class="katex/g) || []).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps separate display equations separate inside a long explanation", () => {
+    const source = "First derive the expression.\\n\\n$a^2+b^2=c^2$\\n\\nThen substitute the values.\\n\\n$c=\\sqrt{a^2+b^2}$";
+    const html = renderToStaticMarkup(<CortexResponse text={source} />);
+    expect((html.match(/role="math"/g) || []).length).toBe(2);
+    expect((html.match(/class="katex-display"/g) || []).length).toBe(2);
+  });
 
 });
