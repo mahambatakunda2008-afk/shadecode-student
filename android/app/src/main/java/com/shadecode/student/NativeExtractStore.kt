@@ -124,6 +124,17 @@ class NativeExtractStore(context: Context) {
     fun saveVisualRegions(id: String, regions: List<NativeVisualRegion>, cropBytes: Map<String, ByteArray>): NativeExtractArtifact {
         require(regions.size <= maxVisualRegions) { "Select no more than $maxVisualRegions visual regions." }
         val artifact = readById(id) ?: error("Save this extract before adding visual regions.")
+        val requestedCropBytes = regions.sumOf { region ->
+            val supplied = cropBytes[region.id]
+            if (supplied != null) supplied.size.toLong()
+            else {
+                val expectedName = id + "-" + region.id + ".webp"
+                if (region.cropFile == expectedName) File(cropDirectory, expectedName).takeIf { it.isFile }?.length() ?: 0L else 0L
+            }
+        }
+        require(requestedCropBytes <= 24L * 1024 * 1024) {
+            "Visual crops for one extract cannot exceed 24 MB. Remove some regions or select smaller crops."
+        }
         if (!cropDirectory.exists() && !cropDirectory.mkdirs()) error("Could not create private visual storage.")
         val safeRegions = regions.map { region ->
             require(region.id.matches(Regex("[a-fA-F0-9-]{36}"))) { "Invalid visual region identifier." }
