@@ -19,6 +19,7 @@ import {
 import { CortexEvent, CortexSnapshot } from "@/lib/cortex/types";
 import CurriculumProgressCard from '@/components/CurriculumProgressCard';
 import LearningJourney from '@/components/LearningJourney';
+import CortexResponse from "@/components/cortex/CortexResponse";
 
 interface CortexProps {
   userId: string;
@@ -431,16 +432,10 @@ export default function Cortex({ userId, trigger }: CortexProps) {
                   transition: "opacity 0.5s ease",
                 }}
               >
-                <p
-                  style={{
-                    fontSize: "12px",
-                    lineHeight: 1.6,
-                    color:
-                      index === 0 ? "var(--foreground)" : "var(--muted-foreground)",
-                  }}
-                >
-                  {insight.insight}
-                </p>
+                <CortexResponse
+                  text={insight.insight}
+                  className={index === 0 ? "text-xs leading-6" : "text-xs leading-6 opacity-80"}
+                />
               </div>
             ))
           )}
@@ -567,16 +562,10 @@ export default function Cortex({ userId, trigger }: CortexProps) {
                   transition: "opacity 0.5s ease",
                 }}
               >
-                <p
-                  style={{
-                    fontSize: "13px",
-                    lineHeight: 1.5,
-                    color:
-                      index === 0 ? "var(--foreground)" : "var(--muted-foreground)",
-                  }}
-                >
-                  {insight.insight}
-                </p>
+                <CortexResponse
+                  text={insight.insight}
+                  className={index === 0 ? "text-[13px] leading-6" : "text-[13px] leading-6 opacity-80"}
+                />
               </div>
             ))
           )}
