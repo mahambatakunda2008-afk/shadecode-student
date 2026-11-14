@@ -128,6 +128,7 @@ async function sendAttemptNow(attempt: CortexAttempt) {
     fd.append("mode", attempt.mode);
     fd.append("userId", attempt.userId);
     if (attempt.subject) fd.append("subject", attempt.subject);
+    if (attempt.topicId) fd.append("topicId", attempt.topicId);
     if (attempt.question) fd.append("question", attempt.question);
     if (attempt.studentAnswer) fd.append("studentAnswer", attempt.studentAnswer);
     if (attempt.mode === "help" && attempt.level) fd.append("level", attempt.level);
@@ -263,6 +264,7 @@ export function useCortexVerify() {
         fd.append("mode", attempt.mode);
         fd.append("userId", attempt.userId);
         fd.append("subject", attempt.subject || "General");
+        if (attempt.topicId) fd.append("topicId", attempt.topicId);
         fd.append("question", attempt.question || "");
         fd.append("studentAnswer", attempt.studentAnswer || "");
         if (imageDataUrl) { const imageResponse = await fetchWithTimeout(imageDataUrl); if (!imageResponse.ok) throw new Error("Could not prepare the selected source image."); fd.append("image", await imageResponse.blob(), options.image?.name || "source-image.jpg"); }
