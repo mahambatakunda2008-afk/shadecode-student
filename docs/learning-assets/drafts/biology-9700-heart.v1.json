@@ -1,0 +1,149 @@
+{
+  "asset_key": "biology-9700-heart",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "The mammalian heart",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "8",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus, 2028–2030, Version 1, September 2025, Topic 8, pp. 28–29. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 8.3.1, 8.3.2, 8.3.3, 8.3.4.",
+    "syllabus_outcome_codes": [
+      "8.3.1",
+      "8.3.2",
+      "8.3.3",
+      "8.3.4"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation, assessment review and accessibility review before import or publication.",
+      "Questions are original learning checks, not Cambridge past-paper questions or official mark schemes. Diagrams are original explanatory schematics, not photomicrographs."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Describe the external and internal structure of the mammalian heart.",
+      "Explain differences in wall thickness of atria and ventricles and of the left and right ventricles.",
+      "Describe the cardiac cycle, linking pressure changes during systole and diastole to valve opening and closing.",
+      "Explain the roles of the sinoatrial node, atrioventricular node and Purkyne tissue in the cardiac cycle."
+    ],
+    "sections": [
+      {
+        "heading": "External and internal structure",
+        "body": "The mammalian heart is enclosed by the pericardium and has four chambers: right and left atria above right and left ventricles. The septum separates the right and left sides and prevents mixing of blood. The venae cavae enter the right atrium; the pulmonary artery leaves the right ventricle. Pulmonary veins enter the left atrium; the aorta leaves the left ventricle. The atrioventricular valves are the tricuspid valve on the right and bicuspid (mitral) valve on the left. Semilunar valves guard the bases of the pulmonary artery and aorta."
+      },
+      {
+        "heading": "Valves and one-way flow",
+        "body": "Atrioventricular valves prevent backflow from ventricles into atria during ventricular systole. Tendinous cords attach the valve flaps to papillary muscles and prevent the flaps being forced inside out. Semilunar valves prevent blood returning from the aorta and pulmonary artery into ventricles during diastole. Valves open and close in response to pressure differences; they are not actively opened by muscles."
+      },
+      {
+        "heading": "Why chamber walls differ in thickness",
+        "body": "Atrial walls are relatively thin because atria push blood only a short distance into the ventricles at low pressure. Ventricular walls are thicker because they pump blood out of the heart. The right ventricle has a thinner wall than the left because it pumps blood to the nearby lungs at lower resistance and pressure. The left ventricle has the thickest wall because it pumps blood through the systemic circulation, which has greater resistance and requires higher pressure."
+      },
+      {
+        "heading": "The cardiac cycle: diastole and atrial systole",
+        "body": "During general diastole, atria and ventricles relax. Venous blood enters the atria and flows passively into the ventricles because atrial pressure exceeds ventricular pressure. Atrioventricular valves are open and semilunar valves are closed. Atrial systole follows: atria contract and raise atrial pressure, forcing the remaining blood into ventricles. Ventricles are still relaxed, and the atrioventricular valves remain open."
+      },
+      {
+        "heading": "The cardiac cycle: ventricular systole",
+        "body": "Ventricular systole begins when ventricles contract and ventricular pressure rises above atrial pressure. Atrioventricular valves close, preventing backflow into atria. When ventricular pressure exceeds pressure in the aorta and pulmonary artery, semilunar valves open and blood is ejected. As ventricles relax, ventricular pressure falls below arterial pressure and semilunar valves close. When ventricular pressure falls below atrial pressure, atrioventricular valves open and filling begins again."
+      },
+      {
+        "heading": "Initiation and coordination of the heartbeat",
+        "body": "The sinoatrial node (SAN) in the wall of the right atrium initiates a wave of electrical excitation that spreads across both atria, causing atrial systole. A layer of non-conducting tissue prevents the excitation wave passing directly to ventricles. The atrioventricular node (AVN) receives the excitation and delays it, allowing time for ventricular filling. The excitation then passes down conducting fibres in the septum and through Purkyne tissue in the ventricular walls, causing coordinated ventricular contraction from the apex upwards. Nervous and hormonal control is not required for this syllabus outcome."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Name the four chambers of the mammalian heart and state which receive blood from the lungs.",
+        "answer": "The chambers are right atrium, right ventricle, left atrium and left ventricle. The left atrium receives oxygenated blood from the lungs through the pulmonary veins.",
+        "mark_points": [
+          "Four chambers correctly named",
+          "Left atrium receives blood from lungs"
+        ]
+      },
+      {
+        "question": "Explain why the left ventricle has a thicker wall than the right ventricle.",
+        "answer": "The left ventricle pumps blood through the systemic circulation, which has greater resistance and requires higher pressure. The right ventricle pumps blood only to the lungs at lower pressure.",
+        "mark_points": [
+          "Left ventricle pumps to systemic circulation",
+          "Greater resistance / higher pressure needed",
+          "Right ventricle pumps to lungs at lower pressure"
+        ]
+      },
+      {
+        "question": "Describe the pressure changes and valve movements at the start of ventricular systole.",
+        "answer": "Ventricular contraction raises ventricular pressure above atrial pressure, closing the atrioventricular valves. When ventricular pressure rises above pressure in the aorta and pulmonary artery, semilunar valves open and blood is ejected.",
+        "mark_points": [
+          "Ventricular pressure rises",
+          "AV valves close when ventricular pressure exceeds atrial",
+          "Semilunar valves open when ventricular pressure exceeds arterial"
+        ]
+      },
+      {
+        "question": "Explain the role of the sinoatrial node in the cardiac cycle.",
+        "answer": "The sinoatrial node initiates an electrical excitation wave that spreads across both atria and causes atrial systole.",
+        "mark_points": [
+          "SAN initiates excitation",
+          "Excitation spreads across atria",
+          "Atrial systole follows"
+        ]
+      },
+      {
+        "question": "Explain why there is a delay at the atrioventricular node.",
+        "answer": "The AVN delays transmission of excitation to the ventricles, allowing the atria to complete contraction and the ventricles to fill before ventricular systole.",
+        "mark_points": [
+          "AVN delays excitation",
+          "Allows atrial contraction to finish",
+          "Allows ventricular filling"
+        ]
+      },
+      {
+        "question": "Describe how Purkyne tissue coordinates ventricular contraction.",
+        "answer": "Purkyne tissue conducts excitation through the ventricular walls, causing the ventricles to contract in a coordinated manner from the apex upwards.",
+        "mark_points": [
+          "Conducts excitation through ventricular walls",
+          "Coordinates ventricular contraction",
+          "Contraction proceeds from apex upwards"
+        ]
+      },
+      {
+        "question": "Describe the sequence of valve events as ventricles relax after ejection.",
+        "answer": "As ventricular pressure falls below arterial pressure, semilunar valves close. When ventricular pressure falls below atrial pressure, atrioventricular valves open and blood flows into the ventricles.",
+        "mark_points": [
+          "Semilunar valves close first",
+          "AV valves open when ventricular pressure falls below atrial pressure",
+          "Ventricular filling resumes"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/heart-structure.svg",
+        "alt": "Original labelled schematic of the four-chambered mammalian heart, septum, major blood vessels and atrioventricular and semilunar valves.",
+        "caption": "Mammalian heart: chambers, vessels and valves."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/cardiac-cycle.svg",
+        "alt": "Original pressure and valve-state timeline of atrial systole, ventricular systole and diastole, linking pressure differences to valve opening and closure.",
+        "caption": "Cardiac cycle: pressure changes drive valve movement."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/conduction-system.svg",
+        "alt": "Original heart conduction diagram showing sinoatrial node, atrioventricular node, conducting fibres and Purkyne tissue with excitation sequence.",
+        "caption": "Electrical coordination of the heartbeat."
+      }
+    ]
+  }
+}

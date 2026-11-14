@@ -1,0 +1,187 @@
+{
+  "asset_key": "biology-9700-circulatory-system",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "The mammalian circulatory system",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "8",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus, 2028–2030, Version 1, September 2025, Topic 8, pp. 28–29. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 8.1.1, 8.1.2, 8.1.3, 8.1.4, 8.1.5, 8.1.6, 8.1.7.",
+    "syllabus_outcome_codes": [
+      "8.1.1",
+      "8.1.2",
+      "8.1.3",
+      "8.1.4",
+      "8.1.5",
+      "8.1.6",
+      "8.1.7"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation, assessment review and accessibility review before import or publication.",
+      "Questions are original learning checks, not Cambridge past-paper questions or official mark schemes. Diagrams are original explanatory schematics, not photomicrographs."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "State that the mammalian circulatory system is a closed double circulation with heart, blood and named blood vessels.",
+      "Describe the functions of the pulmonary artery, pulmonary vein, aorta and vena cava.",
+      "Recognise arteries, veins and capillaries and make plan diagrams of arteries and veins in transverse and longitudinal section.",
+      "Relate muscular arteries, elastic arteries, veins and capillaries to their functions.",
+      "Recognise and draw red blood cells, monocytes, neutrophils and lymphocytes.",
+      "State that water is the main component of blood and tissue fluid and relate solvent action and high specific heat capacity to transport.",
+      "State the functions of tissue fluid and describe its formation in a capillary network."
+    ],
+    "sections": [
+      {
+        "heading": "Closed double circulation",
+        "body": "Mammals have a closed circulatory system: blood remains within the heart and blood vessels. It is a double circulation because blood passes through the heart twice during one complete circuit. The pulmonary circulation carries blood from the right side of the heart to the lungs and back to the left side. The systemic circulation carries blood from the left side of the heart to body tissues and back to the right side. This arrangement allows blood to be pumped to the lungs at lower pressure and to the body at higher pressure."
+      },
+      {
+        "heading": "The named vessels",
+        "body": "The pulmonary artery carries deoxygenated blood from the right ventricle to the lungs. The pulmonary vein carries oxygenated blood from the lungs to the left atrium. The aorta carries oxygenated blood from the left ventricle to the systemic circulation. The vena cava returns deoxygenated blood from the body to the right atrium. The pulmonary artery is an artery because it carries blood away from the heart, not because of its oxygen content."
+      },
+      {
+        "heading": "Arteries, arterioles, capillaries, venules and veins",
+        "body": "Arteries carry blood away from the heart and divide into smaller arterioles. Arterioles regulate blood flow into capillary networks by changing the diameter of their lumen. Capillaries have walls one endothelial cell thick and form networks close to body cells. Venules collect blood from capillaries and join to form veins, which return blood to the heart. The direction of flow, rather than oxygen content, distinguishes arteries from veins."
+      },
+      {
+        "heading": "Muscular arteries and elastic arteries",
+        "body": "Elastic arteries close to the heart have thick walls containing abundant elastic tissue. They stretch during ventricular systole and recoil during diastole, helping maintain pressure and smooth blood flow. Muscular arteries contain a prominent smooth muscle layer. Contraction and relaxation change lumen diameter and distribute blood to organs. Both have relatively thick walls to withstand high pressure; muscular arteries have a particularly important role in controlling distribution."
+      },
+      {
+        "heading": "Veins and capillaries",
+        "body": "Veins have a large lumen, relatively thin walls with less muscle and elastic tissue than arteries, and valves in many regions to reduce backflow at low pressure. Skeletal muscle contraction can compress veins and help return blood to the heart. Capillaries have a very narrow lumen and a wall one endothelial cell thick, giving a short diffusion distance. Their extensive branching provides a large surface area for exchange of substances between blood and tissue fluid."
+      },
+      {
+        "heading": "Blood cells: recognition and drawing",
+        "body": "Red blood cells are biconcave discs with no nucleus when mature in mammals. Their shape gives a large surface area to volume ratio and flexibility. Monocytes are large white blood cells with a kidney-shaped or indented nucleus. Neutrophils have a multi-lobed nucleus and granular cytoplasm. Lymphocytes have a large, rounded nucleus occupying much of the cell. In biological drawings, use clear single lines, correct proportions, no shading, and labels that identify visible structures rather than inferred functions."
+      },
+      {
+        "heading": "Water, blood and tissue fluid",
+        "body": "Water is the main component of blood plasma and tissue fluid. Its solvent action allows ions, glucose, amino acids, urea and other substances to be transported in solution. Its high specific heat capacity means a large amount of energy is required to change its temperature, helping distribute heat and limit rapid temperature changes. Tissue fluid is formed from blood plasma filtered out of capillaries at the arterial end. Cells exchange oxygen, nutrients and wastes with this fluid."
+      },
+      {
+        "heading": "Formation and return of tissue fluid",
+        "body": "At the arterial end of a capillary, hydrostatic blood pressure is high and forces water and small dissolved substances through gaps in the capillary wall. Red blood cells and most plasma proteins remain in the blood. As fluid leaves, hydrostatic pressure falls along the capillary. At the venous end, the blood's water potential is relatively low because plasma proteins remain, so water moves back into capillaries by osmosis. Excess tissue fluid enters lymphatic vessels and is eventually returned to the blood. Tissue fluid provides the immediate exchange medium between blood and body cells."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Explain why the mammalian circulation is described as closed and double.",
+        "answer": "Blood remains inside the heart and blood vessels, so the system is closed. Blood passes through the heart twice in one complete circuit, once in pulmonary circulation and once in systemic circulation.",
+        "mark_points": [
+          "Blood contained within vessels",
+          "Heart is passed through twice per circuit",
+          "Pulmonary and systemic circuits identified"
+        ]
+      },
+      {
+        "question": "State the direction and oxygenation of blood in the pulmonary artery and pulmonary vein.",
+        "answer": "The pulmonary artery carries deoxygenated blood from the right ventricle to the lungs. The pulmonary vein carries oxygenated blood from the lungs to the left atrium.",
+        "mark_points": [
+          "Pulmonary artery: right ventricle to lungs, deoxygenated",
+          "Pulmonary vein: lungs to left atrium, oxygenated"
+        ]
+      },
+      {
+        "question": "Explain how the structure of an elastic artery helps maintain blood flow.",
+        "answer": "Its elastic wall stretches as blood is forced into it during systole and recoils during diastole. Recoil maintains pressure and helps keep blood flowing between heartbeats.",
+        "mark_points": [
+          "Elastic fibres in wall",
+          "Stretch during systole",
+          "Recoil during diastole",
+          "Maintains pressure / smooths flow"
+        ]
+      },
+      {
+        "question": "Compare a muscular artery with a vein.",
+        "answer": "A muscular artery has a thicker wall with more smooth muscle and elastic tissue and a smaller lumen, enabling it to withstand and regulate high pressure. A vein has a thinner wall, a larger lumen and often valves, returning blood at low pressure.",
+        "mark_points": [
+          "Artery thicker wall / more muscle",
+          "Artery smaller lumen / high pressure",
+          "Vein thinner wall / larger lumen",
+          "Vein valves prevent backflow"
+        ]
+      },
+      {
+        "question": "Explain why capillaries are effective exchange surfaces.",
+        "answer": "Their walls are one endothelial cell thick, giving a short diffusion distance. Extensive branching gives a large surface area and narrow lumens bring blood close to cells.",
+        "mark_points": [
+          "One-cell-thick wall",
+          "Short diffusion distance",
+          "Large total surface area",
+          "Close to body cells"
+        ]
+      },
+      {
+        "question": "Describe two differences between a neutrophil and a lymphocyte as seen in a blood smear.",
+        "answer": "A neutrophil has a multi-lobed nucleus and granular cytoplasm. A lymphocyte has a large rounded nucleus that occupies most of the cell, leaving a thin rim of cytoplasm.",
+        "mark_points": [
+          "Neutrophil multi-lobed nucleus",
+          "Neutrophil granular cytoplasm",
+          "Lymphocyte large rounded nucleus",
+          "Lymphocyte little surrounding cytoplasm"
+        ]
+      },
+      {
+        "question": "Explain how tissue fluid is formed at the arterial end of a capillary.",
+        "answer": "High hydrostatic pressure forces water and small dissolved substances out through the capillary wall. Red blood cells and most plasma proteins remain in the capillary.",
+        "mark_points": [
+          "High hydrostatic pressure",
+          "Water and small solutes leave capillary",
+          "Blood cells / large plasma proteins remain"
+        ]
+      },
+      {
+        "question": "Explain why some tissue fluid returns to capillaries at their venous end.",
+        "answer": "Hydrostatic pressure has fallen along the capillary. Plasma proteins remain in the blood and lower its water potential, so water moves from tissue fluid into the capillary by osmosis.",
+        "mark_points": [
+          "Hydrostatic pressure decreases",
+          "Plasma proteins remain in blood",
+          "Blood water potential relatively low",
+          "Water returns by osmosis"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/double-circulation.svg",
+        "alt": "Original flow diagram of pulmonary and systemic double circulation, identifying heart chambers, lungs, body and named major vessels.",
+        "caption": "Closed double circulation: pulmonary and systemic routes."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/vessel-wall-comparison.svg",
+        "alt": "Original comparative schematic cross-sections of elastic artery, muscular artery, vein and capillary showing relative lumen and wall structure.",
+        "caption": "Blood vessel structure compared in transverse section."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/tissue-fluid-formation.svg",
+        "alt": "Original capillary exchange schematic showing filtration at the arterial end, osmotic return at the venous end and excess fluid entering lymphatic vessels.",
+        "caption": "Formation and return of tissue fluid."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/vessel-plan-diagrams.svg",
+        "alt": "Original paired plan schematics of artery and vein in transverse and longitudinal section, emphasizing tissue layers and lumen.",
+        "caption": "Artery and vein plan diagrams in transverse and longitudinal section."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/blood-cell-recognition.svg",
+        "alt": "Original schematic comparison of a mammalian red blood cell, monocyte, neutrophil and lymphocyte for recognition and biological drawing practice.",
+        "caption": "Recognising the four blood cell types in a smear."
+      }
+    ]
+  }
+}
