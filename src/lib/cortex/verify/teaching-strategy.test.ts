@@ -33,3 +33,18 @@ describe("recommendVerifyTeachingStrategy", () => {
     expect(formatVerifyTeachingStrategy(result)).toContain("infer a visual-learning preference");
   });
 });
+
+describe("recommendPrivateLocalVerifyTeachingStrategy", () => {
+  it("labels local topic history as an estimate, not verified shared evidence", () => {
+    const result = recommendPrivateLocalVerifyTeachingStrategy({ masteryScore: 38, attempts: 3 });
+    expect(result.strategy).toBe("worked-example");
+    expect(result.evidence).toBe("private-local-estimate");
+    expect(result.confidence).toBe("low");
+    expect(formatVerifyTeachingStrategy(result)).toContain("private-local-estimate");
+  });
+  it("starts with diagnosis when there is not enough local history", () => {
+    const result = recommendPrivateLocalVerifyTeachingStrategy({ masteryScore: 90, attempts: 1 });
+    expect(result.strategy).toBe("diagnostic-first");
+    expect(result.evidence).toBe("insufficient-history");
+  });
+});
