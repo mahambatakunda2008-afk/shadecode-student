@@ -19,11 +19,13 @@ import {
   togglePracticalAnswerPoint,
   type PracticalAttempt,
   type PracticalPracticeSet,
+  type PracticalQuestion,
+  type PracticalTask,
   type PracticeSkillRating,
 } from "@/lib/curriculum/practice/biology-practical-attempt";
 
-type Question = { id: string; marks: number; prompt: string; answer: string[]; data?: { columns: string[]; rows: (string | number)[][] } };
-type Task = { id: string; paper: "Paper 3" | "Paper 5"; title: string; format: string; skills: string[]; scenario: string; questions: Question[]; markingGuide?: { totalPracticeMarks: number; principle: string } };
+type Question = PracticalQuestion;
+type Task = PracticalTask & { markingGuide?: { totalPracticeMarks: number; principle: string } };
 type PracticeSet = PracticalPracticeSet & { title: string; subject: string; assessmentNotice: string; tasks: Task[] };
 
 const set = practiceData as PracticeSet;
