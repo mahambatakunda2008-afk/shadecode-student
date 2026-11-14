@@ -97,5 +97,6 @@ export function consumeVerifyIntervention(input: {
     interventionLevel: index.item.level,
     interventionToAttemptHours: Math.round(((attemptTime - interventionTime) / 3_600_000) * 10) / 10,
     freshTransfer,
+    ...(index.item.teachingStrategy ? { teachingStrategy: index.item.teachingStrategy } : {}),
   };
 }
