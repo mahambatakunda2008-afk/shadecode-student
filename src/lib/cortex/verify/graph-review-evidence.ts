@@ -50,7 +50,7 @@ function extractCandidateDetails(text: string, type: GraphReviewHintType): strin
 
 const RULES: Array<{ type: GraphReviewHintType; pattern: RegExp }> = [
   { type: "axis", pattern: /\b(?:x|y)[ -]?axis\b|\bhorizontal axis\b|\bvertical axis\b/i },
-  { type: "unit", pattern: /\b(?:units?|unit of|measured in|\bcm\b|\bmm\b|\bkm\b|\bms\^-?1\b|\bs\^-?1\b|\bmol\b|\bkg\b|\bnewtons?\b|\bvolts?\b|\bamperes?\b|(?:time|distance|length|mass|current|voltage|force|frequency)\s*[/|]\s*(?:m|s|kg|g|A|V|N|Hz))\b/i },
+  { type: "unit", pattern: /\b(?:units?|unit of|measured in|cm|mm|km|ms\^-?1|s\^-?1|mol|kg|newtons?|volts?|amperes?|(?:time|distance|length|mass|current|voltage|force|frequency)\s*[/|]\s*(?:m|s|kg|g|A|V|N|Hz))/i },
   { type: "scale", pattern: /\b(?:scale|scales|intervals?|each division|per square|per centimetre|per cm)\b/i },
   { type: "coordinate", pattern: /\bcoordinates?\b|\([+-]?\d+(?:\.\d+)?\s*,\s*[+-]?\d+(?:\.\d+)?\)/i },
   { type: "plot_instruction", pattern: /\b(?:plot|mark|draw|sketch|construct)\b.{0,60}\b(?:graph|curve|points?|axis|line)\b/i },
