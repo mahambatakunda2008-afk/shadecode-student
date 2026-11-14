@@ -42,10 +42,11 @@ function isTableDivider(line: string): boolean {
   return cells.length > 1 && cells.every(cell => /^:?-{3,}:?$/.test(cell));
 }
 
-function listMarker(line: string): { indent: number; ordered: boolean; text: string } | null {
+function listMarker(line: string): { indent: number; ordered: boolean; text: string; checked?: boolean } | null {
   const match = line.match(/^(\s*)(?:([-*+])|(\d{1,3})[.)])\s+(.+)$/);
   if (!match) return null;
-  return { indent: match[1].length, ordered: Boolean(match[3]), text: match[4] };
+  const task = match[4].match(/^\[([ xX])\]\s+(.+)$/);
+  return { indent: match[1].length, ordered: Boolean(match[3]), text: task ? task[2] : match[4], checked: task ? task[1].toLowerCase() === "x" : undefined };
 }
 
 function parseListAt(lines: string[], start: number, indent: number): { block: { type: "list"; ordered: boolean; items: ListItem[] }; next: number } {
@@ -138,9 +139,21 @@ export function parseCortexResponseBlocks(source: string): Block[] {
     if (/^\s*>/.test(line)) {
       flush();
       const quoteLines = [line.replace(/^\s*>\s?/, "")];
-      while (i + 1 < lines.length && /^\s*>/.test(lines[i + 1])) {
-        quoteLines.push(lines[++i].replace(/^\s*>\s?/, ""));
+      while (i + 1 < lines.length) {
+        const nextLine = lines[i + 1];
+        if (/^\s*>/.test(nextLine)) {
+          quoteLines.push(nextLine.replace(/^\s*>\s?/, ""));
+          i++;
+          continue;
+        }
+        if (/^ {2,}\S/.test(nextLine)) {
+          quoteLines.push(nextLine.trim());
+          i++;
+          continue;
+        }
+        break;
       }
+      blocks.push({ type: "quote", text: quoteLines.join("\n") });
       blocks.push({ type: "quote", text: quoteLines.join("\n") });
       continue;
     }
