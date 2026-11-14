@@ -47,19 +47,19 @@ export function selectHelpResult(value: unknown, level: VerifyHelpLevel): Verify
 /**
  * Mathematical Help must not silently accept provider output that has lost its
  * notation. Reject obvious equation lines unless they are enclosed in LaTeX
- * delimiters; the caller can then retry/fail safely instead of showing damage.
+ * delimiters; callers can fail safely instead of showing damaged mathematics.
  */
 export function hasCompleteMathematicalMarkup(value: string): boolean {
   const text = value.trim();
   if (!text) return false;
-  const hasMathDelimiters = /\\\\\\(|\\\\\\[|\\$/.test(text);
+  const hasMathDelimiters = text.includes("\\(") || text.includes("\\[") || text.includes("$");
   if (!hasMathDelimiters) return false;
 
-  const lines = text.split(/\\r?\\n/).map(line => line.trim()).filter(Boolean);
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
   const equationLike = lines.filter(line =>
-    /(?:=|≠|≤|≥|→|\\\\frac|\\\\sqrt|\\\\begin\\{(?:aligned|align|equation)|\\b(?:sin|cos|tan|log|ln)\\b)/i.test(line)
+    /(?:=|≠|≤|≥|→|\\frac|\\sqrt|\\begin\{(?:aligned|align|equation)|\b(?:sin|cos|tan|log|ln)\b)/i.test(line)
   );
   return equationLike.every(line =>
-    /\\\\\\(|\\\\\\)|\\\\\\[|\\\\\\]|\\$/.test(line)
+    line.includes("\\(") || line.includes("\\)") || line.includes("\\[") || line.includes("\\]") || line.includes("$")
   );
 }
