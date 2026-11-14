@@ -111,7 +111,7 @@ export function deriveRecurringMistakes(rows: MistakeEventRecord[]): RecurringMi
     const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata)
       ? data.metadata as Record<string, unknown>
       : {};
-    if (metadata.correct !== false) continue;
+    if (metadata.correct !== false || metadata.selfAssessment === true) continue;
 
     const subject = typeof data.subjectId === "string" ? data.subjectId.trim() : "";
     const topic = typeof data.topicId === "string" ? data.topicId.trim() : "";
