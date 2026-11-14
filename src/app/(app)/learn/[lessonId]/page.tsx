@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import katex from "katex";
-import "katex/dist/katex.min.css";
+import CortexResponse from "@/components/cortex/CortexResponse";
 import { createClient } from "@/lib/supabase/client";
 import {
   ArrowLeft, ArrowRight, BookOpen, Calculator, CheckCircle2, Clock,
@@ -70,23 +69,14 @@ function xpForDiff(d: string) { return d === "hard" ? 50 : d === "medium" ? 35 :
 // integral signs) instead of leaving raw notation like "x^{n+1}/(n+1)" as
 // literal text. Falls back to plain text if KaTeX can't parse it -- a
 // slightly-off expression should never take down the whole lesson.
-function renderMath(latex: string, key: string): ReactNode {
-  try {
-    const html = katex.renderToString(latex.trim(), { throwOnError: false, strict: false, displayMode: false });
-    return <span key={key} dangerouslySetInnerHTML={{ __html: html }} />;
-  } catch {
-    return <span key={key}>{latex}</span>;
-  }
-}
-
 function inline(text: string, key: string): ReactNode[] {
-  return text.split(/(\$\$[^$]+\$\$|\$[^$]+\$|\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) => {
-    const partKey = `${key}-${i}`;
-    if (part.startsWith("$$") && part.endsWith("$$")) return renderMath(part.slice(2, -2), partKey);
-    if (part.startsWith("$") && part.endsWith("$")) return renderMath(part.slice(1, -1), partKey);
-    if (part.startsWith("**")) return <strong key={partKey} style={{ color: "var(--foreground)", fontWeight: 750 }}>{part.slice(2, -2)}</strong>;
-    return <span key={partKey}>{part}</span>;
-  });
+  return [
+    <CortexResponse
+      key={key}
+      text={text}
+      className="!space-y-1 !text-sm !leading-7"
+    />,
+  ];
 }
 
 function sentenceChunks(text: string): string[] {
