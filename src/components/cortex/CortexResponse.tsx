@@ -21,7 +21,7 @@ function isTableDivider(line: string): boolean {
   return cells.length > 1 && cells.every(cell => /^:?-{3,}:?$/.test(cell));
 }
 
-function parseBlocks(source: string): Block[] {
+export function parseCortexResponseBlocks(source: string): Block[] {
   const lines = source.replace(/\r\n?/g, "\n").split("\n");
   const blocks: Block[] = [];
   let paragraph: string[] = [];
@@ -113,7 +113,7 @@ function InlineText({ text }: { text: string }) {
       if (html) return <span key={index} className={displayMath ? "my-3 block overflow-x-auto text-center" : "inline-block max-w-full align-middle"} dangerouslySetInnerHTML={{ __html: html }} />;
       return <code key={index}>{expression}</code>;
     }
-    if ((token.startsWith("**") && token.endsWith("**")) || (token.startsWith("__") && token.endsWith("__"))) return <strong key={index} className="font-bold text-[var(--foreground)]">{token.slice(2, -2)}</strong>;
+    const link = token.match(/^\\[([^\\]]+)\\]\\((https?:\\/\\/[^\\s)]+)\\)$/);\n    if (link) return <a key={index} href={link[2]} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--primary)] underline decoration-[var(--primary)]/40 underline-offset-2 hover:decoration-[var(--primary)]">{link[1]}</a>;\n    if ((token.startsWith("**") && token.endsWith("**")) || (token.startsWith("__") && token.endsWith("__"))) return <strong key={index} className="font-bold text-[var(--foreground)]">{token.slice(2, -2)}</strong>;
     if ((token.startsWith("*") && token.endsWith("*")) || (token.startsWith("_") && token.endsWith("_"))) return <em key={index}>{token.slice(1, -1)}</em>;
     if (token.startsWith("~~") && token.endsWith("~~")) return <del key={index}>{token.slice(2, -2)}</del>;
     if (token.startsWith("`") && token.endsWith("`")) return <code key={index} className="rounded-md border border-[var(--card-border)] bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[0.9em] text-[var(--foreground)]">{token.slice(1, -1)}</code>;
@@ -122,7 +122,7 @@ function InlineText({ text }: { text: string }) {
 }
 
 export default function CortexResponse({ text, className = "" }: { text: string; className?: string }) {
-  const blocks = parseBlocks(text || "");
+  const blocks = parseCortexResponseBlocks(text || "");
   return <div className={`cortex-response min-w-0 space-y-4 text-[15px] leading-7 text-[var(--foreground)] [overflow-wrap:anywhere] ${className}`}>
     {blocks.map((block, index) => {
       if (block.type === "heading") {
