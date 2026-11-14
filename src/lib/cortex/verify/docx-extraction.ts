@@ -32,7 +32,7 @@ function decodeXmlEntities(value: string): string {
 
 function paragraphXmlToText(paragraph: string): string {
   const pieces: string[] = [];
-  const tokens = paragraph.match(/<w:(?:t|tab|br|cr)\b[^>]*(?:\/>|>[\s\S]*?<\/w:t>)/gi) ?? [];
+  const tokens = paragraph.match(/<w:(?:t|tab|br|cr)\b[^>]*?(?:\/>|>[\s\S]*?<\/w:t>)/gi) ?? [];
   for (const token of tokens) {
     if (/^<w:tab\b/i.test(token)) pieces.push("\t");
     else if (/^<w:(?:br|cr)\b/i.test(token)) pieces.push(" ");
