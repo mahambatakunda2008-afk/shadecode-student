@@ -44,7 +44,7 @@ describe("Cortex response formatting", () => {
     expect(blocks[0]).toMatchObject({ type: "heading", text: "Part 1: Finding the Equation" });
     expect(blocks[1]).toMatchObject({ type: "paragraph", text: "**Identify the values**: The centre is $(-3, 2)$." });
     expect(blocks[2]).toMatchObject({ type: "list", ordered: true });
-    expect(blocks[2]).toMatchObject({ items: [{ text: "**Substitute the values**:\n$(x + 3)^2 + (y - 2)^2 = 10$" }, { text: "**Simplify**: The equation is ready." }] });
+    expect(blocks[2]).toMatchObject({ items: [{ text: "**Substitute the values**: \n$(x + 3)^2 + (y - 2)^2 = 10$" }, { text: "**Simplify**: The equation is ready." }] });
   });
 
   it("repairs Markdown punctuation after multiple transport-escaping layers", () => {
@@ -62,7 +62,7 @@ describe("Cortex response formatting", () => {
         { text: "Second step", children: [{ ordered: true, items: [{ text: "Nested calculation" }, { text: "Check the result" }] }] },
       ],
     });
-    const html = renderToStaticMarkup(<CortexResponse text={"1. First step\\n   - Supporting point\\n2. Second step"} />);
+    const html = renderToStaticMarkup(<CortexResponse text={"1. First step\n   - Supporting point\n2. Second step"} />);
     expect(html).toContain("<ol");
     expect(html).toContain("<ul");
   });
