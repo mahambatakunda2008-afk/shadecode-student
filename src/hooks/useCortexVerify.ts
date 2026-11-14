@@ -48,6 +48,8 @@ export interface VerifyResult {
   execution?: "browser-local" | "browser-local-deterministic" | "cloud" | "cached";
   cachedFromExecution?: "browser-local" | "browser-local-deterministic" | "cloud";
   adaptiveSelection?: boolean;
+  teachingStrategy?: "guided-reconstruction" | "worked-example" | "retrieval-and-transfer" | "diagnostic-first";
+  teachingStrategyConfidence?: "low" | "moderate";
 }
 
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -199,6 +201,7 @@ ${buildVerifyLearnerContext(readVerifyLearnerModel(attempt.userId), { subject: a
       data = {
         ...selectHelpResult(data, (adaptiveLevel || attempt.level || "hint") as VerifyHelpLevel),
         ...(wasAdaptivelySelected ? { adaptiveSelection: true } : {}),
+        ...(data.teachingStrategy ? { teachingStrategy: data.teachingStrategy, teachingStrategyConfidence: data.teachingStrategyConfidence } : {}),
       } as VerifyResult;
       recordVerifyIntervention({
         userId: attempt.userId, subject: attempt.subject, topic: attempt.topicId,
@@ -318,7 +321,11 @@ export function useCortexVerify() {
           throw new Error("Cortex returned an invalid visual verification result.");
         }
         if (attempt.mode === "help") {
-          Object.assign(validated, selectHelpResult(validated, resolvedHelpLevel));
+          const strategyMetadata = {
+            ...(validated.teachingStrategy ? { teachingStrategy: validated.teachingStrategy } : {}),
+            ...(validated.teachingStrategyConfidence ? { teachingStrategyConfidence: validated.teachingStrategyConfidence } : {}),
+          };
+          Object.assign(validated, selectHelpResult(validated, resolvedHelpLevel), strategyMetadata);
           recordVerifyIntervention({
             userId: attempt.userId, subject: attempt.subject, topic: attempt.topicId,
             level: resolvedHelpLevel as HelpLevel, question: attempt.question,
