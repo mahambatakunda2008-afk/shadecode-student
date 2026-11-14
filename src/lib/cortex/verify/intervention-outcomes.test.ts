@@ -73,7 +73,7 @@ describe("deriveVerifyInterventionOutcomes", () => {
     expect(deriveVerifyInterventionOutcomes(rows)[0].state).toBe("collecting_evidence");
     expect(deriveVerifyInterventionOutcomes(rows.map(row => ({
       ...row, data: { ...row.data, curriculumTopicKey: "" },
-    }))).toEqual([]);
+    }))).toEqual([]));
   });
 
   it("does not double-count duplicate questions within one attempt", () => {
