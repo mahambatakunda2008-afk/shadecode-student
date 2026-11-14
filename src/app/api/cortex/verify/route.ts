@@ -168,6 +168,7 @@ export async function POST(req: Request) {
     const imageFile = formData.get("image");
     const visualFiles = formData.getAll("visualEvidence").filter((item): item is File => item instanceof File && item.size > 0);
     if (visualFiles.length > 5) return NextResponse.json({ error: "Attach no more than five visual regions at a time." }, { status: 400 });
+    if (visualFiles.length > 0 && formData.get("visualEvidenceConsent") !== "true") return NextResponse.json({ error: "Confirm that you agree to send these visual regions to cloud AI." }, { status: 403 });
     const images: Array<{ data: string; mimeType: string }> = [];
     let totalImageBytes = 0;
     if (imageFile instanceof File && imageFile.size > 0) {
