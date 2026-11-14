@@ -15,7 +15,7 @@ export interface VerifyTeachingStrategyResult {
   strategy: VerifyTeachingStrategy;
   reason: string;
   confidence: "low" | "moderate";
-  evidence: "verified-topic-history" | "insufficient-history";
+  evidence: "verified-topic-history" | "private-local-estimate" | "insufficient-history";
 }
 
 /**
