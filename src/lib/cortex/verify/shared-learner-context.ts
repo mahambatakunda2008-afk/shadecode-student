@@ -1,5 +1,5 @@
 import type { CortexStudentContext } from "@/lib/cortex/student-context";
-import { selectVerifyIntervention } from "./intervention-selector";
+import { selectVerifyIntervention, selectVerifyTeachingStrategy } from "./intervention-selector";
 
 function normalize(value: string): string {
   return value.normalize("NFKC").toLocaleLowerCase("en").replace(/[^a-z0-9]+/g, " ").trim();
@@ -77,6 +77,31 @@ export function selectSharedVerifyIntervention(
     normalize(item.subjectKey) === subjectKey,
   );
   return selectVerifyIntervention(outcomes, {
+    subjectKey: topic.subjectKey,
+    topicId: topic.topicId,
+    curriculumTopicKey: topic.curriculumTopicKey,
+  });
+}
+
+
+/** Resolve an exploratory strategy recommendation for the exact verified topic. */
+export function selectSharedVerifyTeachingStrategy(
+  context: CortexStudentContext,
+  subject: string,
+  topicId: string,
+) {
+  const subjectKey = normalize(subject);
+  const topic = context.topics.items.find(item =>
+    normalize(item.subjectKey) === subjectKey &&
+    item.topicId === topicId &&
+    typeof item.curriculumTopicKey === "string" &&
+    item.curriculumTopicKey.length > 0,
+  );
+  if (!topic?.curriculumTopicKey) return null;
+  const outcomes = context.interventionOutcomes.items.filter(item =>
+    normalize(item.subjectKey) === subjectKey,
+  );
+  return selectVerifyTeachingStrategy(outcomes, {
     subjectKey: topic.subjectKey,
     topicId: topic.topicId,
     curriculumTopicKey: topic.curriculumTopicKey,
