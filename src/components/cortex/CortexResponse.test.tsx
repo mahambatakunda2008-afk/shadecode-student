@@ -28,4 +28,10 @@ describe("Cortex response formatting", () => {
     expect(html).not.toContain("<a ");
     expect(html).toContain("javascript:alert(1)");
   });
+  it("preserves intentional paragraph line breaks and multi-line quotations", () => {
+    const blocks = parseCortexResponseBlocks("First line\nSecond line\n\n> A quoted point\n> with its continuation");
+    expect(blocks[0]).toMatchObject({ type: "paragraph", text: "First line\nSecond line" });
+    expect(blocks[1]).toMatchObject({ type: "quote", text: "A quoted point\nwith its continuation" });
+  });
+
 });
