@@ -46,7 +46,7 @@ const MARKS_RE = /\[(\d+(?:\s*\+\s*\d+)*)\s*(?:marks?|mks?)\]/i;
 const MARKING_CODE_RE = /\b(?:B\d|M\d|A\d|C\d|E\d|FT|cao|oe|ecf)\b/gi;
 const DIAGRAM_RE = /\b(?:diagram|graph|sketch|figure|plot|circuit|label(?:led|ed)?)\b/i;
 const TABLE_RE = /\b(?:table|results|readings|record your|column headings)\b/i;
-const MATH_NOTATION_RE = /[=<>≤≥≈≠±×÷√∑∫∆Δθπ∞→↔∝·]|[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻₀₁₂₃₄₅₆₇₈₉]|\\b[A-Za-z]\\s*\\^\\s*\\d|\\b\\d+\\s*\\/\\s*\\d+|\\b[A-Za-z]\\s*[_^]\\s*[A-Za-z0-9]/;\n
+const MATH_NOTATION_RE = /[=<>≤≥≈≠±×÷√∑∫∆Δθπ∞→↔∝·⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻₀₁₂₃₄₅₆₇₈₉]|[0-9]+[/][0-9]+/;
 
 export type PdfTextLayoutItem = { x: number; width: number; text: string };
 
