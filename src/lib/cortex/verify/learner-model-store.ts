@@ -5,12 +5,16 @@ import {
   type VerifyLearningSignal,
 } from "./learner-model";
 
-const KEY = "shadecode:cortex:verify-learner-model:v1";
+const KEY_PREFIX = "shadecode:cortex:verify-learner-model:v1:";
 
-export function readVerifyLearnerModel(): VerifyLearnerModel {
-  if (typeof window === "undefined") return EMPTY_VERIFY_LEARNER_MODEL;
+function keyFor(userId: string) {
+  return KEY_PREFIX + encodeURIComponent(userId);
+}
+
+export function readVerifyLearnerModel(userId: string): VerifyLearnerModel {
+  if (typeof window === "undefined" || !userId) return EMPTY_VERIFY_LEARNER_MODEL;
   try {
-    const value = JSON.parse(localStorage.getItem(KEY) || "null") as Partial<VerifyLearnerModel> | null;
+    const value = JSON.parse(localStorage.getItem(keyFor(userId)) || "null") as Partial<VerifyLearnerModel> | null;
     if (!value || value.version !== 1 || !Array.isArray(value.topics)) return EMPTY_VERIFY_LEARNER_MODEL;
     return {
       version: 1,
@@ -25,8 +29,9 @@ export function readVerifyLearnerModel(): VerifyLearnerModel {
   } catch { return EMPTY_VERIFY_LEARNER_MODEL; }
 }
 
-export function recordVerifyLearningSignal(signal: VerifyLearningSignal): VerifyLearnerModel {
-  const next = learnFromVerifyResult(readVerifyLearnerModel(), signal);
-  try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* Private local learning must never block Verify. */ }
+export function recordVerifyLearningSignal(userId: string, signal: VerifyLearningSignal): VerifyLearnerModel {
+  if (!userId) return EMPTY_VERIFY_LEARNER_MODEL;
+  const next = learnFromVerifyResult(readVerifyLearnerModel(userId), signal);
+  try { localStorage.setItem(keyFor(userId), JSON.stringify(next)); } catch { /* Private local learning must never block Verify. */ }
   return next;
 }
