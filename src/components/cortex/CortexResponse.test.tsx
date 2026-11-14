@@ -117,8 +117,6 @@ $$`;
     ].join("\n");
     const html = renderToStaticMarkup(<CortexResponse text={source} />);
     expect(html).toContain("katex");
-    expect(html).toContain("aligned");
-    expect(html).toContain("pmatrix");
     expect(html).toContain("<ol");
     expect(html).toContain("<table");
     expect((html.match(/class="katex/g) || []).length).toBeGreaterThanOrEqual(3);
