@@ -1,0 +1,150 @@
+{
+  "asset_key": "biology-9700-water",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Water",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "2",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 2.4, syllabus pp. 18–20, learning outcomes 1. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "2.4.1"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Explain how hydrogen bonds form between water molecules.",
+      "Relate water's solvent action, high specific heat capacity and high latent heat of vaporisation to roles in living organisms."
+    ],
+    "sections": [
+      {
+        "heading": "Water molecule polarity",
+        "body": "A water molecule has two covalent O–H bonds and a bent shape. Oxygen is more electronegative than hydrogen, so the shared electrons are attracted more strongly towards oxygen. Oxygen carries a partial negative charge (δ−), while the hydrogen atoms carry partial positive charges (δ+). The unequal charge distribution makes water polar."
+      },
+      {
+        "heading": "Hydrogen bonding between water molecules",
+        "body": "The partially positive hydrogen atom of one water molecule is attracted to a lone pair/partially negative region around the oxygen atom of another water molecule. This intermolecular attraction is a hydrogen bond. The covalent O–H bonds are within a water molecule; hydrogen bonds form between separate water molecules. Individual hydrogen bonds are weak compared with covalent bonds, but many hydrogen bonds together influence water's physical properties."
+      },
+      {
+        "heading": "Solvent action",
+        "body": "Water is a polar solvent. Its partial charges attract ions and other polar molecules, allowing many of them to dissolve. Water molecules surround dissolved ions and help keep them dispersed. This allows dissolved substances such as mineral ions, glucose and urea to be transported in blood plasma, tissue fluid and plant transport fluids, and provides an aqueous medium for many metabolic reactions. Non-polar substances such as triglycerides do not dissolve readily in water."
+      },
+      {
+        "heading": "High specific heat capacity",
+        "body": "Specific heat capacity is the energy required to raise the temperature of a unit mass of a substance by one degree. Water has a high specific heat capacity because energy supplied is used partly to disrupt hydrogen bonds between water molecules; a relatively large energy input is needed to raise the temperature. Water therefore changes temperature relatively slowly. This helps stabilise the temperature of aquatic habitats and the water-rich tissues and fluids of organisms."
+      },
+      {
+        "heading": "High latent heat of vaporisation",
+        "body": "Latent heat of vaporisation is the energy required to change a liquid into a gas without a temperature change during the phase change. Water has a high latent heat of vaporisation because many hydrogen bonds must be disrupted for molecules to escape from the liquid. Evaporation therefore removes substantial energy from the surface. Evaporation of sweat cools mammals; evaporation of water from leaf surfaces during transpiration can cool plants."
+      },
+      {
+        "heading": "Syllabus boundary and connected ideas",
+        "body": "For Cambridge 9700 Topic 2.4, the specified properties are solvent action, high specific heat capacity and high latent heat of vaporisation. Cohesion, adhesion, surface tension, water as a metabolite and water as a habitat are useful wider biology ideas, but they are not listed as required properties in this Topic 2.4 learning outcome. They may be taught as clearly labelled enrichment or revisited where relevant elsewhere in the course; do not let them displace the three assessed properties."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Explain how hydrogen bonds form between water molecules.",
+        "answer": "Water is polar because oxygen attracts shared electrons more strongly than hydrogen. Oxygen has a partial negative charge and hydrogen has a partial positive charge. The partial positive hydrogen of one molecule is attracted to the partially negative oxygen of another molecule, forming a hydrogen bond.",
+        "mark_points": [
+          "Water molecule is polar",
+          "Oxygen δ− and hydrogen δ+",
+          "Attraction between H of one molecule and O of another",
+          "Intermolecular hydrogen bond"
+        ]
+      },
+      {
+        "question": "Explain why water is a useful solvent in organisms.",
+        "answer": "Water is polar; its partial charges attract ions and polar molecules, allowing them to dissolve. Dissolved substances can be transported in aqueous fluids and many metabolic reactions occur in aqueous solution.",
+        "mark_points": [
+          "Water is polar",
+          "Partial charges attract ions/polar molecules",
+          "Substances dissolve",
+          "Enables transport and/or reactions in solution"
+        ]
+      },
+      {
+        "question": "Explain how the high specific heat capacity of water helps aquatic organisms.",
+        "answer": "Hydrogen bonds absorb energy as they are disrupted, so a relatively large energy input is needed to raise water temperature. Water temperature changes slowly, reducing rapid temperature fluctuations in aquatic habitats.",
+        "mark_points": [
+          "Energy used to disrupt hydrogen bonds",
+          "Large energy input for temperature rise",
+          "Water temperature changes slowly",
+          "Aquatic habitat temperature is stabilised"
+        ]
+      },
+      {
+        "question": "Explain how evaporation of sweat cools a mammal.",
+        "answer": "Water molecules at the skin surface gain energy; the most energetic molecules escape as vapour, requiring energy to overcome attractions/hydrogen bonds. Energy is removed from the skin, lowering its temperature.",
+        "mark_points": [
+          "Water evaporates from skin",
+          "Energy needed for vaporisation/disruption of hydrogen bonds",
+          "Energy removed from skin",
+          "Skin/body surface cools"
+        ]
+      },
+      {
+        "question": "Distinguish between specific heat capacity and latent heat of vaporisation.",
+        "answer": "Specific heat capacity is the energy required to raise the temperature of a unit mass by one degree. Latent heat of vaporisation is the energy required to convert a liquid to gas without temperature change during the phase change.",
+        "mark_points": [
+          "Correct specific heat capacity definition",
+          "Correct latent heat of vaporisation definition",
+          "Distinguishes temperature rise from change of state"
+        ]
+      }
+    ],
+    "visual_tasks": [],
+    "common_mistakes": [
+      "Calling the O–H covalent bond a hydrogen bond.",
+      "Saying water is polar because it is linear; its bent shape and unequal electronegativity produce polarity.",
+      "Explaining high specific heat capacity only by saying water contains hydrogen bonds without linking them to energy absorption and slow temperature change.",
+      "Confusing specific heat capacity with latent heat of vaporisation.",
+      "Saying evaporation warms the surface; evaporation removes energy and cools it.",
+      "Treating cohesion, adhesion and surface tension as required Topic 2.4 outcomes rather than enrichment."
+    ],
+    "retrieval_check": {
+      "questions": [
+        "Which atom is partially negative in water?",
+        "Where do hydrogen bonds form?",
+        "Why can water dissolve ions?",
+        "What is specific heat capacity?",
+        "Why does water have a high specific heat capacity?",
+        "What is latent heat of vaporisation?",
+        "How does sweat evaporation cool the skin?"
+      ],
+      "answers": [
+        "Oxygen.",
+        "Between separate water molecules.",
+        "Water is polar and its partial charges attract ions.",
+        "Energy needed to raise the temperature of a unit mass by one degree.",
+        "Energy is used to disrupt hydrogen bonds, so substantial energy is needed for a temperature rise.",
+        "Energy needed to convert liquid to gas without temperature change during the phase change.",
+        "Energetic water molecules escape as vapour, removing energy from the skin."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025",
+        "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+        "use": "Controlling Topic 2.4 scope: hydrogen bonding, solvent action, high specific heat capacity and latent heat of vaporisation, syllabus p. 20."
+      }
+    ]
+  }
+}
