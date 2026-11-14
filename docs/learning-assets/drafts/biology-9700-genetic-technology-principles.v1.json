@@ -1,0 +1,238 @@
+{
+  "asset_key": "biology-9700-genetic-technology-principles",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Principles of genetic technology",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "19",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030, Topic 19, pp. 47–49.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "19.1.1",
+      "19.1.2",
+      "19.1.3",
+      "19.1.4",
+      "19.1.5",
+      "19.1.6",
+      "19.1.7",
+      "19.1.8",
+      "19.1.9",
+      "19.1.10",
+      "19.1.11"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Define recombinant DNA and explain genetic engineering.",
+      "Explain the different sources of genes used in genetic engineering.",
+      "Explain the roles of restriction endonucleases, ligase, plasmids, DNA polymerase and reverse transcriptase.",
+      "Explain promoter and fluorescent marker gene use.",
+      "Describe gene editing and PCR, including Taq polymerase.",
+      "Explain gel electrophoresis, microarrays and sequence databases."
+    ],
+    "sections": [
+      [
+        "Recombinant DNA",
+        "Recombinant DNA is DNA formed by joining DNA from different sources. It may contain a gene of interest inserted into a vector such as a plasmid. The DNA can then be introduced into a host cell so that it is copied and, if expression controls are suitable, transcribed and translated."
+      ],
+      [
+        "Genetic engineering",
+        "Genetic engineering is the deliberate manipulation of genetic material to modify specific characteristics of an organism. It may involve transferring a gene into an organism so that the gene is expressed. A successful transfer requires suitable DNA construction, delivery into cells and appropriate control of gene expression."
+      ],
+      [
+        "Sources of a gene for transfer",
+        "A desired gene may be cut from donor genomic DNA, synthesised from the mRNA of a donor using reverse transcriptase to make complementary DNA (cDNA), or synthesised chemically from nucleotides. cDNA made from mature mRNA lacks introns, which can be useful when expressing a eukaryotic gene in a prokaryote."
+      ],
+      [
+        "Restriction endonucleases",
+        "Restriction endonucleases recognise specific DNA base sequences and cut DNA at or near these recognition sites. The resulting fragments may have sticky ends or blunt ends. Cutting the donor DNA and vector with compatible restriction enzymes can create ends that can be joined."
+      ],
+      [
+        "DNA ligase and plasmids",
+        "DNA ligase joins DNA fragments by forming phosphodiester bonds in the sugar-phosphate backbone. A plasmid is a small circular DNA molecule in bacteria that can act as a vector. A plasmid used as a vector is cut open, joined to the gene and introduced into suitable host cells."
+      ],
+      [
+        "DNA polymerase and reverse transcriptase",
+        "DNA polymerase synthesises DNA using a template strand and nucleotides. It is used in DNA replication and PCR. Reverse transcriptase synthesises DNA using RNA as a template, allowing cDNA to be made from mature mRNA."
+      ],
+      [
+        "Promoters and expression",
+        "A promoter is a DNA sequence where RNA polymerase and associated transcription machinery bind to begin transcription. A transferred gene may need a promoter recognised by the host organism; a gene without a functional promoter may be present but not expressed at a useful level."
+      ],
+      [
+        "Marker genes",
+        "Marker genes help identify cells that have taken up genetic material or confirm gene expression. A marker gene may code for a fluorescent protein. Fluorescence under the appropriate illumination indicates expression of the marker, but does not automatically prove that the desired protein is functional."
+      ],
+      [
+        "Gene editing",
+        "Gene editing is genetic engineering that inserts, deletes or replaces DNA at specific sites in a genome. The intended change is targeted to a selected sequence, but unintended edits or effects may occur and need to be assessed. Do not assume every edit adds DNA from another species."
+      ],
+      [
+        "PCR: ingredients and denaturation",
+        "PCR amplifies a selected DNA region in vitro. The reaction contains template DNA, primers, free DNA nucleotides, buffer and a thermostable DNA polymerase such as Taq. Heating separates the two DNA strands by breaking hydrogen bonds; this is denaturation."
+      ],
+      [
+        "PCR: annealing and extension",
+        "The mixture is cooled so primers anneal to complementary sequences flanking the target. At the extension temperature, Taq polymerase adds nucleotides to the primers, synthesising new strands. Repeated cycles of denaturation, annealing and extension amplify the target DNA exponentially in ideal conditions."
+      ],
+      [
+        "Gel electrophoresis",
+        "DNA fragments are loaded into wells in an agarose gel. DNA is negatively charged and moves towards the positive electrode in an electric field. Smaller fragments generally move through the gel more easily and travel further in a given time than larger fragments. A DNA ladder provides fragment-size references."
+      ],
+      [
+        "Microarrays",
+        "A microarray contains many known single-stranded DNA probes fixed at defined positions. Labelled cDNA from a sample hybridises to complementary probes. Fluorescence at a spot indicates that complementary sequence is present; signal intensity can provide information about relative abundance of the corresponding mRNA, allowing gene-expression comparisons."
+      ],
+      [
+        "Sequence and protein databases",
+        "Databases store nucleotide sequences of genes and genomes and amino-acid sequences and structures of proteins. They allow researchers to compare sequences, identify genes, predict protein features, investigate evolutionary relationships, share data and avoid repeating work. Database matches are evidence that must be interpreted, not automatic proof of function."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Define recombinant DNA.",
+        "answer": "DNA formed by joining DNA from different sources.",
+        "mark_points": [
+          "DNA joined",
+          "Different sources"
+        ]
+      },
+      {
+        "question": "Define genetic engineering.",
+        "answer": "The deliberate manipulation of genetic material to modify specific characteristics of an organism.",
+        "mark_points": [
+          "Deliberate manipulation",
+          "Genetic material",
+          "Modify characteristics"
+        ]
+      },
+      {
+        "question": "State three possible sources of a gene for transfer.",
+        "answer": "The gene can be extracted from donor DNA, synthesised from donor mRNA using reverse transcriptase, or synthesised chemically from nucleotides.",
+        "mark_points": [
+          "Extracted DNA",
+          "Synthesised from mRNA/cDNA",
+          "Chemically synthesised"
+        ]
+      },
+      {
+        "question": "Explain the role of a restriction endonuclease.",
+        "answer": "It recognises a specific DNA sequence and cuts DNA at or near that site, producing fragments with compatible ends.",
+        "mark_points": [
+          "Recognises specific sequence",
+          "Cuts DNA",
+          "Compatible ends"
+        ]
+      },
+      {
+        "question": "Explain the role of DNA ligase in making recombinant DNA.",
+        "answer": "It joins DNA fragments by forming phosphodiester bonds in the sugar-phosphate backbone.",
+        "mark_points": [
+          "Joins fragments",
+          "Forms phosphodiester bonds"
+        ]
+      },
+      {
+        "question": "Why may a promoter need to be transferred with a gene?",
+        "answer": "The host needs a promoter recognised by its transcription machinery so RNA polymerase can initiate transcription of the transferred gene.",
+        "mark_points": [
+          "Promoter recognised by host",
+          "Enables transcription"
+        ]
+      },
+      {
+        "question": "What does fluorescence from a marker gene show, and what does it not necessarily show?",
+        "answer": "It shows that the marker gene is being expressed; it does not by itself prove that the desired protein is correctly produced or functional.",
+        "mark_points": [
+          "Marker expression",
+          "Not proof of desired protein function"
+        ]
+      },
+      {
+        "question": "State the three stages of a PCR cycle.",
+        "answer": "Denaturation, primer annealing and extension by DNA polymerase.",
+        "mark_points": [
+          "Denaturation",
+          "Annealing",
+          "Extension"
+        ]
+      },
+      {
+        "question": "Explain why Taq polymerase is used in PCR.",
+        "answer": "It is thermostable and remains functional after the high temperatures used to denature DNA, so fresh enzyme is not needed each cycle.",
+        "mark_points": [
+          "Thermostable",
+          "Withstands denaturation temperature"
+        ]
+      },
+      {
+        "question": "Explain why smaller DNA fragments move further in gel electrophoresis.",
+        "answer": "They pass more easily through the pores of the gel matrix and therefore migrate faster towards the positive electrode.",
+        "mark_points": [
+          "Move through gel pores more easily",
+          "Migrate further/faster"
+        ]
+      },
+      {
+        "question": "How can a microarray be used to compare gene expression between two tissues?",
+        "answer": "Label cDNA made from each tissue's mRNA with distinguishable fluorescent labels, hybridise to the probe array and compare fluorescence at each gene-specific spot.",
+        "mark_points": [
+          "cDNA from mRNA",
+          "Hybridisation to probes",
+          "Compare fluorescence"
+        ]
+      },
+      {
+        "question": "Give two benefits of nucleotide and protein sequence databases.",
+        "answer": "They allow sequence comparison and gene/protein identification, help predict structure or function, support evolutionary analysis and enable data sharing.",
+        "mark_points": [
+          "Two valid benefits"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/recombinant-dna-construction.svg",
+        "alt": "recombinant dna construction",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/gene-source-routes.svg",
+        "alt": "gene source routes",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/plasmid-vector.svg",
+        "alt": "plasmid vector",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/promoter-marker-expression.svg",
+        "alt": "promoter marker expression",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/pcr-cycle.svg",
+        "alt": "pcr cycle",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/gel-electrophoresis.svg",
+        "alt": "gel electrophoresis",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/microarray-analysis.svg",
+        "alt": "microarray analysis",
+        "type": "svg"
+      }
+    ]
+  }
+}
