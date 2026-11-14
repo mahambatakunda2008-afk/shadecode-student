@@ -76,18 +76,90 @@ export function learnFromVerifyResult(
   return { version: 1, topics, updatedAt: occurredAt };
 }
 
+export type VerifyPracticeRecommendation = {
+  subject: string;
+  topic: string;
+  masteryEstimate: number;
+  daysSincePractice: number;
+  priority: number;
+  action: "reteach" | "guided-retry" | "transfer-practice" | "spaced-retrieval";
+  reason: string;
+};
+
+function daysSince(isoDate: string, now: number): number {
+  const timestamp = Date.parse(isoDate);
+  return Number.isFinite(timestamp) ? Math.max(0, (now - timestamp) / 86_400_000) : 0;
+}
+
+/**
+ * Rank the next topics to practise using weakness, forgetting risk and recurring
+ * error evidence. This is a transparent scheduling heuristic, not a diagnosis.
+ */
+export function recommendVerifyPractice(
+  model: VerifyLearnerModel,
+  options: { subject?: string; now?: string; limit?: number } = {},
+): VerifyPracticeRecommendation[] {
+  const now = options.now && Number.isFinite(Date.parse(options.now)) ? Date.parse(options.now) : Date.now();
+  const subject = options.subject?.trim().toLocaleLowerCase("en");
+  return model.topics
+    .filter(item => !subject || item.subject.toLocaleLowerCase("en") === subject)
+    .map(item => {
+      const ageDays = daysSince(item.lastPracticedAt, now);
+      const mastery = Math.max(0, Math.min(100, item.masteryEstimate));
+      const misconceptionTotal = Object.values(item.misconceptionCounts).reduce((sum, count) => sum + Math.max(0, count), 0);
+      const recurringSignal = Math.min(1, misconceptionTotal / Math.max(2, item.attempts * 2));
+      const reviewInterval = mastery < 50 ? 1 : mastery < 70 ? 3 : mastery < 85 ? 7 : 14;
+      const forgettingRisk = Math.min(1, ageDays / reviewInterval);
+      const weakness = (100 - mastery) / 100;
+      const priority = Math.round((weakness * 0.6 + forgettingRisk * 0.25 + recurringSignal * 0.15) * 100);
+      const action: VerifyPracticeRecommendation["action"] = mastery < 45
+        ? "reteach"
+        : mastery < 65 || recurringSignal >= 0.5
+          ? "guided-retry"
+          : mastery < 85
+            ? "transfer-practice"
+            : "spaced-retrieval";
+      const recurring = Object.entries(item.misconceptionCounts).sort((a, b) => b[1] - a[1])[0];
+      const reason = mastery < 50
+        ? "Low recent mastery evidence"
+        : recurring && recurring[1] >= 2
+          ? `Recurring error: ${recurring[0]}`
+          : ageDays >= reviewInterval
+            ? "Due for spaced review"
+            : "Build retention with a fresh transfer question";
+      return {
+        subject: item.subject, topic: item.topic, masteryEstimate: mastery,
+        daysSincePractice: Math.round(ageDays * 10) / 10, priority, action, reason,
+      };
+    })
+    .sort((a, b) => b.priority - a.priority || b.daysSincePractice - a.daysSincePractice)
+    .slice(0, Math.max(1, options.limit ?? 5));
+}
+
 /** Compact context that changes the next explanation or practice choice. */
-export function buildVerifyLearnerContext(model: VerifyLearnerModel): string {
+export function buildVerifyLearnerContext(
+  model: VerifyLearnerModel,
+  options: { subject?: string; now?: string } = {},
+): string {
   if (!model.topics.length) return "VERIFY LEARNER MODEL: no marked attempts recorded yet.";
-  const lines = model.topics.slice(0, 12).map(item => {
+  const relevantTopics = model.topics.filter(item =>
+    !options.subject || item.subject.toLocaleLowerCase("en") === options.subject.trim().toLocaleLowerCase("en"),
+  );
+  const lines = relevantTopics.slice(0, 12).map(item => {
     const recurring = Object.entries(item.misconceptionCounts)
       .sort((a, b) => b[1] - a[1]).slice(0, 3)
       .map(([tag, count]) => `${tag} (${count}x)`).join(", ");
     return `- ${item.subject} / ${item.topic}: estimated mastery ${item.masteryEstimate}%, ${item.attempts} marked attempt(s), recent scores ${item.recentScores.join("/") || "none"}${recurring ? `; recurring error signals: ${recurring}` : ""}`;
   });
+  const recommendations = recommendVerifyPractice(model, options);
+  const priorityLines = recommendations.map((item, index) =>
+    `${index + 1}. ${item.subject} / ${item.topic}: ${item.action}; priority ${item.priority}/100; ${item.reason}; last practised ${item.daysSincePractice} day(s) ago.`,
+  );
   return [
     "PRIVATE STUDENT LEARNER MODEL (heuristic evidence, not ground truth):",
     ...lines,
-    "Adapt the next explanation to recurring errors. Revisit weak areas with a fresh question, not the identical question. Increase difficulty only when recent evidence supports it. Ask the student to retry a misconception before revealing the full solution. Do not claim mastery from one attempt.",
+    "NEXT PRACTICE PRIORITIES (use these to choose the next fresh task when the student asks to practise):",
+    ...(priorityLines.length ? priorityLines : ["- No marked evidence for this subject yet. Start with a short diagnostic question."]),
+    "Adapt the next explanation to recurring errors. Prefer the highest-priority relevant topic, then generate a new question testing the same skill rather than repeating an identical question. Reteach before increasing difficulty when mastery evidence is weak. Use spaced retrieval for stronger topics. Ask the student to attempt a misconception again before revealing the full solution. Do not claim mastery from one attempt.",
   ].join("\n");
 }
