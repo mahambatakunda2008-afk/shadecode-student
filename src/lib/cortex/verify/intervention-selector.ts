@@ -87,3 +87,48 @@ export function resolveVerifyHelpLevel(input: {
   if (input.explicit) return input.requestedLevel;
   return input.recommendedLevel ?? input.requestedLevel;
 }
+
+
+export type VerifyTeachingStrategy = "guided-reconstruction" | "worked-example" | "retrieval-and-transfer" | "diagnostic-first";
+
+/**
+ * Exploratory within-learner strategy selector. It compares completed cycles
+ * for the exact verified topic and only adapts after two cycles per strategy.
+ */
+export function selectVerifyTeachingStrategy(
+  outcomes: VerifyInterventionOutcome[],
+  options: { subjectKey: string; topicId: string; curriculumTopicKey: string },
+): { recommendedStrategy: VerifyTeachingStrategy; advantage: number; cycles: Record<VerifyTeachingStrategy, number> } | null {
+  const eligible = new Map(outcomes.filter(item =>
+    normalizeSubjectKey(item.subjectKey) === normalizeSubjectKey(options.subjectKey) &&
+    item.topicId === options.topicId &&
+    item.curriculumTopicKey === options.curriculumTopicKey &&
+    item.teachingStrategy !== null &&
+    item.state !== "collecting_evidence" &&
+    item.scoreChange !== null &&
+    item.baselineAttempts >= 2 &&
+    item.transferAttempts >= 2 &&
+    item.interpretation === "descriptive_not_causal" &&
+    Number.isFinite(item.scoreChange),
+  ).map(item => [item.interventionId, item] as const));
+
+  const strategies: VerifyTeachingStrategy[] = [
+    "guided-reconstruction", "worked-example", "retrieval-and-transfer", "diagnostic-first",
+  ];
+  const cycles = Object.fromEntries(strategies.map(strategy => [strategy, 0])) as Record<VerifyTeachingStrategy, number>;
+  const totals = Object.fromEntries(strategies.map(strategy => [strategy, 0])) as Record<VerifyTeachingStrategy, number>;
+  for (const item of eligible.values()) {
+    if (!item.teachingStrategy) continue;
+    cycles[item.teachingStrategy] += 1;
+    totals[item.teachingStrategy] += item.scoreChange!;
+  }
+  const compared = strategies.filter(strategy => cycles[strategy] >= 2);
+  if (compared.length < 2) return null;
+  const means = compared.map(strategy => ({
+    strategy,
+    mean: totals[strategy] / cycles[strategy],
+  })).sort((a, b) => b.mean - a.mean);
+  const advantage = Math.round((means[0].mean - means[1].mean) * 10) / 10;
+  if (advantage < 10) return null;
+  return { recommendedStrategy: means[0].strategy, advantage, cycles };
+}
