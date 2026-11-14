@@ -198,7 +198,7 @@ ${buildVerifyLearnerContext(readVerifyLearnerModel(attempt.userId), { subject: a
       data = selectHelpResult(data, (adaptiveLevel || attempt.level || "hint") as VerifyHelpLevel) as VerifyResult;
       recordVerifyIntervention({
         userId: attempt.userId, subject: attempt.subject, topic: attempt.topicId,
-        level: (attempt.level || "hint") as HelpLevel, question: attempt.question,
+        level: (adaptiveLevel || attempt.level || "hint") as HelpLevel, question: attempt.question,
       });
     }
     if (!navigator.onLine) data.execution = "browser-local";
