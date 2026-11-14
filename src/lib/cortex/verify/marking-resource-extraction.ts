@@ -119,7 +119,7 @@ export function identifyMarkingStructure(lines: MarkingResourceTextLine[]): Mark
     const codes = text.match(MARKING_CODE_RE);
     if (codes) markers.push({ type: "marking_code", value: [...new Set(codes.map(code => code.toUpperCase()))].join(", "), page: item.page, line: item.line });
     if (DIAGRAM_RE.test(text)) markers.push({ type: "diagram_reference", value: text, page: item.page, line: item.line });
-    if (TABLE_RE.test(text) || text.includes("\\t")) markers.push({ type: "table_hint", value: text, page: item.page, line: item.line });
+    if (TABLE_RE.test(text) || text.includes("\t")) markers.push({ type: "table_hint", value: text, page: item.page, line: item.line });
   }
   return markers;
 }
