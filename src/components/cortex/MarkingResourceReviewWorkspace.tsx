@@ -98,7 +98,8 @@ export default function MarkingResourceReviewWorkspace() {
   const [extraction, setExtraction] = useState<MarkingResourceExtraction | null>(null);
   const [correctedLines, setCorrectedLines] = useState<Array<{ page: number; line: number; text: string }>>([]);
   const [localOcr, setLocalOcr] = useState<LocalVerifyExtraction | null>(null);
-  const [correctedRegions, setCorrectedRegions] = useState<LocalVerifyExtraction["regions"]>([]);\n  const [manualVisualRegions, setManualVisualRegions] = useState<ManualVisualRegion[]>([]);
+  const [correctedRegions, setCorrectedRegions] = useState<LocalVerifyExtraction["regions"]>([]);
+  const [manualVisualRegions, setManualVisualRegions] = useState<ManualVisualRegion[]>([]);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [busy, setBusy] = useState(false);
