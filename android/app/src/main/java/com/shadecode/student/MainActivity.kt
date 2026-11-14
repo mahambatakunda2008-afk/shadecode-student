@@ -1738,7 +1738,9 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                             try {
                                                 withContext(Dispatchers.IO) {
                                                     localModelManager.downloadGemma270m { downloaded, _ ->
-                                                        localModelDownloadBytes = downloaded
+                                                        scope.launch(Dispatchers.Main) {
+                                                            localModelDownloadBytes = downloaded
+                                                        }
                                                     }
                                                 }
                                                 localModelInstalled = true
