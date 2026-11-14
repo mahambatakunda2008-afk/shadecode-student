@@ -52,4 +52,20 @@ describe("Cortex response formatting", () => {
     expect(normalizeCortexResponseText("\\\\*\\\\*Important\\\\*\\\\*")).toBe("**Important**");
   });
 
+  it("preserves nested ordered and unordered list structure", () => {
+    const blocks = parseCortexResponseBlocks("1. First step\\n   - Supporting point\\n   - Another point\\n2. Second step\\n   1. Nested calculation\\n   2. Check the result");
+    expect(blocks[0]).toMatchObject({
+      type: "list",
+      ordered: true,
+      items: [
+        { text: "First step", children: [{ ordered: false, items: [{ text: "Supporting point" }, { text: "Another point" }] }] },
+        { text: "Second step", children: [{ ordered: true, items: [{ text: "Nested calculation" }, { text: "Check the result" }] }] },
+      ],
+    });
+    const html = renderToStaticMarkup(<CortexResponse text={"1. First step\\n   - Supporting point\\n2. Second step"} />);
+    expect(html).toContain("<ol");
+    expect(html).toContain("<ul");
+  });
+
+
 });
