@@ -6,7 +6,7 @@ describe("Cortex response formatting", () => {
   it("keeps headings, paragraphs and separate ordered steps structured", () => {
     const blocks = parseCortexResponseBlocks("## Method\nUse the equation first.\n\n1. Substitute the values.\n2. Simplify the expression.");
     expect(blocks.map(block => block.type)).toEqual(["heading", "paragraph", "list"]);
-    expect(blocks[2]).toMatchObject({ ordered: true, items: ["Substitute the values.", "Simplify the expression."] });
+    expect(blocks[2]).toMatchObject({ ordered: true, items: [{ text: "Substitute the values." }, { text: "Simplify the expression." }] });
   });
 
   it("recognises tables and fenced working without flattening them into prose", () => {
