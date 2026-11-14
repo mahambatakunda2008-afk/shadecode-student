@@ -101,11 +101,22 @@ class NativeLocalModelManager(private val context: Context) {
         try {
             val response = connection.responseCode
             val append = offset > 0L && response == HttpURLConnection.HTTP_PARTIAL
+            var expectedTotalBytes: Long? = null
             if (append) {
                 val contentRange = connection.getHeaderField("Content-Range").orEmpty()
-                check(contentRange.startsWith("bytes $offset-")) {
-                    "Model server returned an invalid resume range."
+                val match = CONTENT_RANGE_PATTERN.matchEntire(contentRange)
+                    ?: error("Model server returned an invalid resume range.")
+                val rangeStart = match.groupValues[1].toLong()
+                val rangeEnd = match.groupValues[2].toLong()
+                val rangeTotal = match.groupValues[3].toLong()
+                check(rangeStart == offset && rangeEnd >= rangeStart && rangeTotal > rangeEnd) {
+                    "Model server returned a mismatched resume range."
                 }
+                val rangeLength = rangeEnd - rangeStart + 1L
+                check(connection.contentLengthLong < 0L || connection.contentLengthLong == rangeLength) {
+                    "Model server returned an inconsistent resume length."
+                }
+                expectedTotalBytes = rangeTotal
             } else {
                 check(response == HttpURLConnection.HTTP_OK) {
                     "GGUF download failed: HTTP $response"
@@ -115,7 +126,7 @@ class NativeLocalModelManager(private val context: Context) {
             }
 
             val remaining = connection.contentLengthLong
-            val total = if (remaining >= 0L) offset + remaining else -1L
+            val total = expectedTotalBytes ?: if (remaining >= 0L) offset + remaining else -1L
             check(total <= GEMMA_MAX_BYTES) { "GGUF asset exceeds the safe download limit" }
             var downloaded = offset
             connection.inputStream.use { input ->
@@ -136,6 +147,9 @@ class NativeLocalModelManager(private val context: Context) {
             }
             check(partial.length() in GEMMA_MIN_BYTES..GEMMA_MAX_BYTES) {
                 "GGUF asset is incomplete or exceeds the safe download limit. Retry to resume."
+            }
+            check(expectedTotalBytes == null || partial.length() == expectedTotalBytes) {
+                "GGUF download ended before the server's advertised file length. Retry to resume."
             }
             try {
                 verifySha256(partial, GEMMA_SHA256)
@@ -185,6 +199,7 @@ class NativeLocalModelManager(private val context: Context) {
         private const val GEMMA_MIN_BYTES = 240L * 1024L * 1024L
         // The catalog's 250 MB estimate leaves room for metadata while preventing runaway downloads.
         private const val GEMMA_MAX_BYTES = 400L * 1024L * 1024L
+        private val CONTENT_RANGE_PATTERN = Regex("^bytes (\\d+)-(\\d+)/(\\d+)$")
         private const val BUFFER_SIZE = 64 * 1024
     }
 }
