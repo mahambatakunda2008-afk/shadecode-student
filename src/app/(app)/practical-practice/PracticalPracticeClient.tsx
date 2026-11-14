@@ -377,7 +377,8 @@ export default function PracticalPracticeClient() {
       const evidenceScore = hasSelfAwardedMark && question.marks > 0
         ? Math.round((selfAwardedMark / question.marks) * 100)
         : undefined;
-      const skillEvidence = getPracticalQuestionSkills(task, question.id)
+      const practiceQuestion = task.questions.find((item) => item.id === question.id);
+      const skillEvidence = (practiceQuestion ? getPracticalQuestionSkills(task, practiceQuestion) : [])
         .map((skill) => `${skill}:${attempt.skillRatings[`${task.id}::${skill}`] ?? "unrated"}`)
         .join("; ")
         .slice(0, 500);
