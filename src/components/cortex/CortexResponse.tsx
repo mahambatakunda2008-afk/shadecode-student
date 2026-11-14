@@ -13,7 +13,7 @@ type Block =
   | { type: "rule" };
 
 function splitTableRow(line: string): string[] {
-  return line.trim().replace(/^\\|/, "").replace(/\\|$/, "").split("|").map(cell => cell.trim());
+  return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(cell => cell.trim());
 }
 
 function isTableDivider(line: string): boolean {
@@ -22,7 +22,7 @@ function isTableDivider(line: string): boolean {
 }
 
 function parseBlocks(source: string): Block[] {
-  const lines = source.replace(/\\r\\n?/g, "\\n").split("\\n");
+  const lines = source.replace(/\r\n?/g, "\n").split("\n");
   const blocks: Block[] = [];
   let paragraph: string[] = [];
   let code: string[] = [];
@@ -36,9 +36,9 @@ function parseBlocks(source: string): Block[] {
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
     const line = raw.trimEnd();
-    if (/^\\s*```/.test(line)) {
+    if (/^\s*```/.test(line)) {
       flush();
-      if (inCode) blocks.push({ type: "code", text: code.join("\\n") });
+      if (inCode) blocks.push({ type: "code", text: code.join("\n") });
       code = [];
       inCode = !inCode;
       continue;
@@ -59,20 +59,20 @@ function parseBlocks(source: string): Block[] {
       continue;
     }
 
-    const heading = line.match(/^\\s{0,3}(#{1,4})\\s+(.+)$/);
+    const heading = line.match(/^\s{0,3}(#{1,4})\s+(.+)$/);
     if (heading) { flush(); blocks.push({ type: "heading", level: heading[1].length, text: heading[2] }); continue; }
-    if (/^\\s*(---+|\\*\\*\\*|___+)\\s*$/.test(line)) { flush(); blocks.push({ type: "rule" }); continue; }
-    if (/^\\s*>/.test(line)) { flush(); blocks.push({ type: "quote", text: line.replace(/^\\s*>\\s?/, "") }); continue; }
+    if (/^\s*(---+|\*\*\*|___+)\s*$/.test(line)) { flush(); blocks.push({ type: "rule" }); continue; }
+    if (/^\s*>/.test(line)) { flush(); blocks.push({ type: "quote", text: line.replace(/^\s*>\s?/, "") }); continue; }
 
-    const bullet = line.match(/^\\s*[-*+]\\s+(.+)$/);
-    const numbered = line.match(/^\\s*(\\d{1,3})[.)]\\s+(.+)$/);
+    const bullet = line.match(/^\s*[-*+]\s+(.+)$/);
+    const numbered = line.match(/^\s*(\d{1,3})[.)]\s+(.+)$/);
     if (bullet || numbered) {
       flush();
       const ordered = !!numbered;
       const items = [bullet?.[1] || numbered?.[2] || ""];
       while (i + 1 < lines.length) {
         const next = lines[i + 1];
-        const match = ordered ? next.match(/^\\s*\\d{1,3}[.)]\\s+(.+)$/) : next.match(/^\\s*[-*+]\\s+(.+)$/);
+        const match = ordered ? next.match(/^\s*\d{1,3}[.)]\s+(.+)$/) : next.match(/^\s*[-*+]\s+(.+)$/);
         if (!match) break;
         items.push(match[1]);
         i++;
@@ -83,7 +83,7 @@ function parseBlocks(source: string): Block[] {
     paragraph.push(line.trim());
   }
   flush();
-  if (inCode && code.length) blocks.push({ type: "code", text: code.join("\\n") });
+  if (inCode && code.length) blocks.push({ type: "code", text: code.join("\n") });
   return blocks;
 }
 
@@ -102,11 +102,11 @@ function renderMath(expression: string, display: boolean) {
 }
 
 function InlineText({ text }: { text: string }) {
-  const pattern = /(\\$\\$[\\s\\S]+?\\$\\$|\\$[^\\n$]+\\$|\\\\\\([\\s\\S]+?\\\\\\)|\\\\\\[[\\s\\S]+?\\\\\\]|\\*\\*[^*]+\\*\\*|__[^_]+__|\\*[^*]+\\*|_[^_]+_|~~[^~]+~~|`[^`]+`)/g;
+  const pattern = /(\$\$[\s\S]+?\$\$|\$[^\n$]+\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]|\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_|~~[^~]+~~|`[^`]+`)/g;
   const tokens = text.split(pattern).filter(Boolean);
   return <>{tokens.map((token, index) => {
-    const displayMath = token.startsWith("$$") && token.endsWith("$$") || token.startsWith("\\\\[") && token.endsWith("\\\\]");
-    const inlineMath = token.startsWith("$") && token.endsWith("$") || token.startsWith("\\\\(") && token.endsWith("\\\\)");
+    const displayMath = token.startsWith("$$") && token.endsWith("$$") || token.startsWith("\\[") && token.endsWith("\\]");
+    const inlineMath = token.startsWith("$") && token.endsWith("$") || token.startsWith("\\(") && token.endsWith("\\)");
     if (displayMath || inlineMath) {
       const expression = displayMath ? token.slice(2, -2) : token.startsWith("$") ? token.slice(1, -1) : token.slice(2, -2);
       const html = renderMath(expression, displayMath);
