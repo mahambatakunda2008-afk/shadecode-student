@@ -28,7 +28,7 @@ export function parseCortexResponseBlocks(source: string): Block[] {
   let code: string[] = [];
   let inCode = false;
   const flush = () => {
-    const text = paragraph.join(" ").trim();
+    const text = paragraph.join("\n").trim();
     if (text) blocks.push({ type: "paragraph", text });
     paragraph = [];
   };
@@ -62,7 +62,15 @@ export function parseCortexResponseBlocks(source: string): Block[] {
     const heading = line.match(/^\s{0,3}(#{1,4})\s+(.+)$/);
     if (heading) { flush(); blocks.push({ type: "heading", level: heading[1].length, text: heading[2] }); continue; }
     if (/^\s*(---+|\*\*\*|___+)\s*$/.test(line)) { flush(); blocks.push({ type: "rule" }); continue; }
-    if (/^\s*>/.test(line)) { flush(); blocks.push({ type: "quote", text: line.replace(/^\s*>\s?/, "") }); continue; }
+    if (/^\s*>/.test(line)) {
+      flush();
+      const quoteLines = [line.replace(/^\s*>\s?/, "")];
+      while (i + 1 < lines.length && /^\s*>/.test(lines[i + 1])) {
+        quoteLines.push(lines[++i].replace(/^\s*>\s?/, ""));
+      }
+      blocks.push({ type: "quote", text: quoteLines.join("\n") });
+      continue;
+    }
 
     const bullet = line.match(/^\s*[-*+]\s+(.+)$/);
     const numbered = line.match(/^\s*(\d{1,3})[.)]\s+(.+)$/);
@@ -140,11 +148,11 @@ export default function CortexResponse({ text, className = "" }: { text: string;
           {block.items.map((item, itemIndex) => <li key={itemIndex} className="ps-1 leading-7"><InlineText text={item} /></li>)}
         </List>;
       }
-      if (block.type === "quote") return <blockquote key={index} className="border-s-[3px] border-[var(--primary)] bg-[var(--muted)]/70 px-4 py-3 text-[var(--muted-foreground)]"><InlineText text={block.text} /></blockquote>;
+      if (block.type === "quote") return <blockquote key={index} className="whitespace-pre-wrap border-s-[3px] border-[var(--primary)] bg-[var(--muted)]/70 px-4 py-3 text-[var(--muted-foreground)]"><InlineText text={block.text} /></blockquote>;
       if (block.type === "table") return <div key={index} className="max-w-full overflow-x-auto rounded-xl border border-[var(--card-border)]"><table className="w-full min-w-[420px] border-collapse text-left text-sm"><thead className="bg-[var(--muted)]"><tr>{block.rows[0]?.map((cell, cellIndex) => <th key={cellIndex} className="border-b border-[var(--card-border)] px-3 py-2.5 font-bold text-[var(--foreground)]"><InlineText text={cell} /></th>)}</tr></thead><tbody>{block.rows.slice(1).map((row, rowIndex) => <tr key={rowIndex} className="even:bg-[var(--muted)]/50">{row.map((cell, cellIndex) => <td key={cellIndex} className="border-b border-[var(--card-border)] px-3 py-2.5 align-top last:border-0"><InlineText text={cell} /></td>)}</tr>)}</tbody></table></div>;
       if (block.type === "code") return <pre key={index} className="max-w-full overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--muted)] p-4 font-mono text-xs leading-6 text-[var(--foreground)]"><code>{block.text}</code></pre>;
       if (block.type === "rule") return <hr key={index} className="border-[var(--card-border)]" />;
-      return <p key={index} className="whitespace-pre-wrap leading-7"><InlineText text={block.text} /></p>;
+      return <p key={index} className="whitespace-pre-line leading-7"><InlineText text={block.text} /></p>;
     })}
   </div>;
 }
