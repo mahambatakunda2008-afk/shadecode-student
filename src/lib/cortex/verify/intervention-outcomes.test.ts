@@ -51,6 +51,19 @@ describe("deriveVerifyInterventionOutcomes", () => {
     }]);
   });
 
+  it("ignores stale baseline attempts outside the 30-day comparison window", () => {
+    const result = deriveVerifyInterventionOutcomes([
+      event({ attemptId: "old-1", score: 10, at: "2026-09-01T08:00:00.000Z" }),
+      event({ attemptId: "old-2", score: 10, at: "2026-09-02T08:00:00.000Z" }),
+      event({ attemptId: "follow-1", score: 90, at: "2026-11-14T11:00:00.000Z", interventionId: "vi_abc123_1234567" }),
+      event({ attemptId: "follow-2", score: 90, at: "2026-11-14T12:00:00.000Z", interventionId: "vi_abc123_1234567" }),
+    ]);
+    expect(result[0]).toMatchObject({
+      state: "collecting_evidence", baselineAttempts: 0, transferAttempts: 2,
+      baselineScore: null, transferScore: 90, scoreChange: null,
+    });
+  });
+
   it("keeps one follow-up in collecting state and does not claim improvement", () => {
     const result = deriveVerifyInterventionOutcomes([
       event({ attemptId: "baseline-1", score: 30, at: "2026-11-14T09:00:00.000Z" }),
