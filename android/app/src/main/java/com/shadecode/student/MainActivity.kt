@@ -1268,6 +1268,21 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
     val scope = rememberCoroutineScope()
     val extractStore = remember { NativeExtractStore(context) }
     val verifyApi = remember { NativeVerifyApi() }
+    val localModelManager = remember { NativeLocalModelManager(context) }
+    val localModelRuntime = remember { runCatching { LlamaCppRuntime(context) }.getOrNull() }
+    var localModelInstalled by remember { mutableStateOf(false) }
+    var localModelDownloading by remember { mutableStateOf(false) }
+    var localModelDownloadBytes by remember { mutableStateOf(0L) }
+    var localHelpRunning by remember { mutableStateOf(false) }
+    var localHelpResult by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        localModelInstalled = withContext(Dispatchers.IO) {
+            localModelManager.isInstalled(NativeLocalModelCatalog.models.first { it.id == "gemma-3-270m-it-q4" })
+        }
+    }
+    DisposableEffect(localModelRuntime) {
+        onDispose { localModelRuntime?.close() }
+    }
     var verifyMode by remember { mutableStateOf("check") }
     var helpLevel by remember { mutableStateOf("hint") }
     var verifyQuestion by remember { mutableStateOf("") }
@@ -1704,6 +1719,97 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     Text(if (helpLevel == level) "✓ " + level.replaceFirstChar { it.uppercase() } else level.replaceFirstChar { it.uppercase() })
                                 }
                             }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text("Offline Help", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Optional on-device text help. The first download is about 253 MB and needs internet and storage. After download, text-only help can run without sending your work to the cloud. This small model may make mistakes.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        if (!localModelInstalled) {
+                            Button(
+                                onClick = {
+                                    if (!localModelDownloading) {
+                                        localModelDownloading = true
+                                        localModelDownloadBytes = 0L
+                                        localHelpResult = null
+                                        scope.launch {
+                                            try {
+                                                withContext(Dispatchers.IO) {
+                                                    localModelManager.downloadGemma270m { downloaded, _ ->
+                                                        localModelDownloadBytes = downloaded
+                                                    }
+                                                }
+                                                localModelInstalled = true
+                                                verifyMessage = "Offline Help model downloaded and integrity-checked."
+                                            } catch (error: Exception) {
+                                                verifyMessage = error.message ?: "Could not download the offline model."
+                                            } finally {
+                                                localModelDownloading = false
+                                            }
+                                        }
+                                    }
+                                },
+                                enabled = !localModelDownloading,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(if (localModelDownloading) "Downloading offline model…" else "Download offline Help model")
+                            }
+                            if (localModelDownloading) {
+                                val downloadedMb = localModelDownloadBytes / (1024 * 1024)
+                                Text("$downloadedMb MB downloaded. Keep Shadecode open until the download finishes.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        } else {
+                            Button(
+                                onClick = {
+                                    val chosen = subjects.firstOrNull { it.id == verifySubjectId }
+                                    if (chosen == null) {
+                                        verifyMessage = "Choose one of your enrolled subjects."
+                                    } else if (verifyQuestion.isBlank() && editableText.isBlank()) {
+                                        verifyMessage = "Add a question or reviewed working before requesting offline help."
+                                    } else if (localModelRuntime == null) {
+                                        verifyMessage = "The on-device inference runtime could not be loaded on this device."
+                                    } else {
+                                        localHelpRunning = true
+                                        localHelpResult = null
+                                        verifyMessage = "Preparing on-device Help…"
+                                        scope.launch {
+                                            try {
+                                                val prompt = buildString {
+                                                    append("You are Cortex, a careful study tutor. Work offline. ")
+                                                    append("Subject: ").append(chosen.name).append(". ")
+                                                    append("Study level: ").append(profile.studyLevel).append(". ")
+                                                    append("Assistance level: ").append(helpLevel).append(". ")
+                                                    append("Do not invent syllabus facts. If information is missing, say so. ")
+                                                    append("For hint, give only a small next step. For method, explain the approach without revealing the final answer. ")
+                                                    append("For solution, give a concise worked explanation. ")
+                                                    append("Question: ").append(verifyQuestion.ifBlank { "Not supplied" }).append("\n")
+                                                    append("Student working: ").append(editableText.ifBlank { "Not supplied" })
+                                                }
+                                                val result = withContext(Dispatchers.IO) {
+                                                    localModelRuntime.isReady("gemma-3-270m-it-q4")
+                                                    localModelRuntime.generate("gemma-3-270m-it-q4", prompt, 320)
+                                                }
+                                                localHelpResult = result ?: "The local model could not produce a response. Try a shorter question or use online Help when available."
+                                                verifyMessage = "Generated on this device. No question, working or image was sent to Shadecode cloud AI."
+                                            } catch (error: Exception) {
+                                                verifyMessage = error.message ?: "Offline Help could not run."
+                                            } finally {
+                                                localHelpRunning = false
+                                            }
+                                        }
+                                    }
+                                },
+                                enabled = !localHelpRunning && !localModelDownloading,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(if (localHelpRunning) "Thinking on this device…" else "Get offline help")
+                            }
+                        }
+                        localHelpResult?.let { result ->
+                            Text("On-device guidance", fontWeight = FontWeight.SemiBold)
+                            Text(result, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(Modifier.height(8.dp))
