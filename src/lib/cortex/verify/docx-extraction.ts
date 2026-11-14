@@ -150,8 +150,8 @@ export async function extractDocxText(file: Blob): Promise<{ text: string; engin
   return {
     text,
     engine: "shadecode-docx-wordprocessingml-v1",
-    tableCount: (xml.match(/<w:tbl\\b/gi) ?? []).length,
-    imageCount: (xml.match(/<(?:a:blip|v:imagedata)\\b/gi) ?? []).length,
-    chartCount: (xml.match(/<c:chart\\b/gi) ?? []).length,
+    tableCount: (xml.match(/<w:tbl\b/gi) ?? []).length,
+    imageCount: (xml.match(/<(?:a:blip|v:imagedata)\b/gi) ?? []).length,
+    chartCount: (xml.match(/<c:chart\b/gi) ?? []).length,
   };
 }
