@@ -70,6 +70,8 @@ describe("Cortex response formatting", () => {
     expect(normalizeCortexResponseText(display)).toBe(display);
     const html = renderToStaticMarkup(<CortexResponse text={inline + "\n\n" + display} />);
     expect(html.match(/class="katex/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(html).toContain('role="math"');
+    expect(html).toContain('class="my-3 block max-w-full overflow-x-auto');
   });
 
   it("renders completed and pending Markdown task items", () => {
