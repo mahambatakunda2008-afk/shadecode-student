@@ -169,6 +169,7 @@ class NativeOfflineRubricStore(context: Context) {
                 .put("tolerance", rubric.tolerance)
                 .put("acceptedAnswers", JSONArray(rubric.acceptedAnswers))
                 .put("criterion", rubric.criterion)
+                .put("expectedUnit", rubric.expectedUnit)
                 .put("criteria", JSONArray().apply {
                     rubric.criteria.forEach { criterion ->
                         put(JSONObject()
@@ -214,6 +215,7 @@ class NativeOfflineRubricStore(context: Context) {
                 acceptedAnswers = strings(json.optJSONArray("acceptedAnswers")),
                 criterion = json.optString("criterion").takeIf { it.isNotBlank() && it != "null" },
                 criteria = criteria,
+                expectedUnit = json.optString("expectedUnit").takeIf { it.isNotBlank() && it != "null" },
             ),
         )
     }.getOrNull()
