@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { MessageSquare, Lightbulb, List, AlertCircle, BookOpen, Send, ChevronDown, ChevronUp, RefreshCw, Zap, Globe, Eye, GraduationCap } from "lucide-react";
+import CortexResponse from "@/components/cortex/CortexResponse";
 import { TutoringSession, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle, LessonContext } from "@/lib/socratic/types";
 import { generateSocraticResponse, TutoringRequest } from "@/lib/socratic/tutoringEngine";
 
@@ -438,7 +439,7 @@ function MessageBubble({ message }: { message: TutoringMessage }) {
             </span>
           </div>
         )}
-        <p style={{ fontSize: "14px", lineHeight: 1.5, margin: 0 }}>{message.content}</p>
+        {isTutor ? <CortexResponse text={message.content} className="!space-y-2 !text-sm !leading-6" /> : <p style={{ fontSize: "14px", lineHeight: 1.5, margin: 0, whiteSpace: "pre-wrap" }}>{message.content}</p>}
       </div>
     </div>
   );
