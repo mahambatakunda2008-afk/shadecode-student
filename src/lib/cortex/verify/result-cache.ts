@@ -70,7 +70,7 @@ export async function getCachedVerifyResult(userId: string, cacheKey: string): P
       const records = (request.result as CachedVerifyResult[]).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       for (const record of records) {
         if (record.expiresAt <= now) store.delete(record.id);
-        else if (!found && record.cacheKey === cacheKey) found = { ...record.result, execution: "cached" };
+        else if (!found && record.cacheKey === cacheKey) found = { ...record.result, cachedFromExecution: record.result.execution || "cloud", execution: "cached" };
       }
     };
     request.onerror = () => reject(request.error || new Error("Could not read Verify result cache"));
@@ -88,7 +88,7 @@ export async function saveCachedVerifyResult(userId: string, cacheKey: string, r
     const id = userId + ":" + cacheKey;
     store.put({
       id, userId, cacheKey,
-      result: { ...result, execution: result.execution === "browser-local-deterministic" ? result.execution : "cloud" },
+      result: { ...result, execution: result.execution || "cloud" },
       createdAt: new Date(now).toISOString(), expiresAt: now + CACHE_TTL_MS,
     } satisfies CachedVerifyResult);
     const request = store.index("userId").getAll(userId);
