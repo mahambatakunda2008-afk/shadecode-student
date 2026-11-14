@@ -1,5 +1,6 @@
 package com.shadecode.student
 
+import android.app.ActivityManager
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,6 +13,32 @@ import java.security.MessageDigest
 /** Optional GGUF asset acquisition. Inference remains behind NativeLocalModelRuntime. */
 class NativeLocalModelManager(private val context: Context) {
     data class DownloadResult(val model: NativeLocalModelSpec, val file: File, val bytes: Long)
+
+    data class DeviceReadiness(
+        val supported: Boolean,
+        val totalRamMb: Long,
+        val availableRamMb: Long,
+        val reason: String? = null,
+    )
+
+    suspend fun gemmaDeviceReadiness(): DeviceReadiness = withContext(Dispatchers.IO) {
+        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val memory = ActivityManager.MemoryInfo()
+        manager.getMemoryInfo(memory)
+        val totalMb = memory.totalMem / (1024L * 1024L)
+        val availableMb = memory.availMem / (1024L * 1024L)
+        when {
+            totalMb < GEMMA_MIN_RAM_MB -> DeviceReadiness(
+                false, totalMb, availableMb,
+                "This device has ${totalMb} MB RAM. Offline Help needs a device with at least ${GEMMA_MIN_RAM_MB} MB RAM."
+            )
+            availableMb < GEMMA_MIN_AVAILABLE_RAM_MB -> DeviceReadiness(
+                false, totalMb, availableMb,
+                "Only ${availableMb} MB RAM is currently available. Close other apps and try again."
+            )
+            else -> DeviceReadiness(true, totalMb, availableMb)
+        }
+    }
 
     suspend fun isInstalled(model: NativeLocalModelSpec): Boolean = withContext(Dispatchers.IO) {
         // Only Gemma currently has a wired downloader, checksum, and runtime path.
@@ -153,6 +180,8 @@ class NativeLocalModelManager(private val context: Context) {
         private const val GEMMA_FILE = "gemma-3-270m-it-q4_k_m.gguf"
         private const val GEMMA_URL = "https://huggingface.co/gguf-org/gemma-3-270m-it-gguf/resolve/main/gemma-3-270m-it-q4_k_m.gguf?download=true"
         private const val GEMMA_SHA256 = "55aed1673d2f3014a739732c659c4995fc57abf6e4e9c68462fb2ceee820ea2f"
+        private const val GEMMA_MIN_RAM_MB = 2048L
+        private const val GEMMA_MIN_AVAILABLE_RAM_MB = 450L
         private const val GEMMA_MIN_BYTES = 240L * 1024L * 1024L
         // The catalog's 250 MB estimate leaves room for metadata while preventing runaway downloads.
         private const val GEMMA_MAX_BYTES = 400L * 1024L * 1024L
