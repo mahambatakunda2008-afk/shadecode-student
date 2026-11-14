@@ -118,7 +118,6 @@ export function deriveVerifyInterventionOutcomes(rows: EventRow[]): VerifyInterv
       event.data.topicId === topic &&
       event.data.curriculumTopicKey === topicKey &&
       event.metadata.interventionLevel === level &&
-      (strategy === null ? event.metadata.teachingStrategy === undefined : event.metadata.teachingStrategy === strategy) &&
       (strategy === null ? event.metadata.teachingStrategy === undefined : event.metadata.teachingStrategy === strategy),
     );
     const inferredInterventionTime = Math.min(...sameTopic.map(event => {
@@ -155,7 +154,6 @@ export function deriveVerifyInterventionOutcomes(rows: EventRow[]): VerifyInterv
       topicId: topic,
       curriculumTopicKey: topicKey,
       interventionLevel: level,
-      teachingStrategy: strategy,
       teachingStrategy: strategy,
       state,
       baselineAttempts: baseline.length,
