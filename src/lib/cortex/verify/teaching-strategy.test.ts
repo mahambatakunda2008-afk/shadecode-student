@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatVerifyTeachingStrategy, recommendVerifyTeachingStrategy } from "./teaching-strategy";
+import { formatVerifyTeachingStrategy, recommendVerifyTeachingStrategy, recommendPrivateLocalVerifyTeachingStrategy } from "./teaching-strategy";
 
 describe("recommendVerifyTeachingStrategy", () => {
   it("starts diagnostically when topic evidence is insufficient", () => {
