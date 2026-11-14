@@ -83,7 +83,7 @@ async function currentUserId() {
 
 function recordVerifyEvent(attempt: CortexAttempt, result: VerifyResult, topicId?: string) {
   if (attempt.mode === "check" && typeof result.score === "number") {
-    const misconceptionTags = (result.marksBreakdown || []).map(item => item.criterion.trim()).filter(Boolean).slice(0, 8);
+    const misconceptionTags = (result.marksBreakdown || []).filter(item => item.marksLost > 0).map(item => (item.note || item.criterion).trim()).filter(Boolean).slice(0, 8);
     recordVerifyLearningSignal({ subject: attempt.subject || "General", topic: topicId || "General practice", score: result.score, correct: result.correct, misconceptionTags });
     if (navigator.onLine) {
       void fetch("/api/intelligence/events", {
