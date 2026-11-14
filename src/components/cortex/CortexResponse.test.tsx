@@ -59,6 +59,15 @@ describe("Cortex response formatting", () => {
     expect(normalizeCortexResponseText("\\\\*\\\\*Important\\\\*\\\\*")).toBe("**Important**");
   });
 
+  it("preserves LaTeX inline and display delimiters while unescaping Markdown", () => {
+    const inline = String.raw\`Use \\(\\frac{1}{2}\\) as the exact value.\`;
+    const display = String.raw\`\\[x^2 + y^2 = r^2\\]\`;
+    expect(normalizeCortexResponseText(inline)).toBe(String.raw\`Use \\(\\frac{1}{2}\\) as the exact value.\`);
+    expect(normalizeCortexResponseText(display)).toBe(String.raw\`\\[x^2 + y^2 = r^2\\]\`);
+    const html = renderToStaticMarkup(<CortexResponse text={inline + "\\n\\n" + display} />);
+    expect(html.match(/class="katex/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+
   it("renders completed and pending Markdown task items", () => {
     const source = "- [x] Identify the values\n- [ ] Check the units";
     const blocks = parseCortexResponseBlocks(source);
