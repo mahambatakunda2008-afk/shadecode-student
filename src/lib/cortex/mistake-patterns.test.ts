@@ -3,7 +3,7 @@ import { deriveRecurringMistakes, deriveRepeatedTopicErrors } from "./mistake-pa
 
 const event = (attemptId: string, correct: boolean, topicId = "Differentiation", subjectId = "Mathematics") => ({
   type: "question_attempted",
-  data: { attemptId, topicId, subjectId, occurredAt: "2026-11-12T10:00:00.000Z", metadata: { correct } },
+  data: { attemptId, topicId, curriculumTopicKey: topicId, subjectId, occurredAt: "2026-11-12T10:00:00.000Z", metadata: { correct } },
 });
 
 describe("deriveRepeatedTopicErrors", () => {
@@ -34,7 +34,7 @@ describe("deriveRepeatedTopicErrors", () => {
       event("exam-1", false, "Functions", "Mathematics"),
       event("exam-2", false, "Functions", "Physics"),
       event("exam-3", true, "Functions", "Mathematics"),
-      { type: "question_attempted", data: { attemptId: "exam-4", topicId: "Functions", metadata: { correct: false } } },
+      { type: "question_attempted", data: { attemptId: "exam-4", topicId: "Functions", curriculumTopicKey: "functions", metadata: { correct: false } } },
     ])).toEqual([]);
   });
 
@@ -45,6 +45,7 @@ describe("deriveRepeatedTopicErrors", () => {
         attemptId,
         subjectId: "Biology",
         topicId: "Practical skills",
+        curriculumTopicKey: "practical-skills",
         metadata: { correct: false, selfAssessment: true, practiceMode: "self_assessed_practical" },
       },
     });
@@ -57,7 +58,7 @@ describe("deriveRepeatedTopicErrors", () => {
   it("ignores events without explicit correctness evidence", () => {
     expect(deriveRepeatedTopicErrors([{
       type: "question_attempted",
-      data: { attemptId: "exam-1", subjectId: "Mathematics", topicId: "Functions", metadata: {} },
+      data: { attemptId: "exam-1", subjectId: "Mathematics", topicId: "Functions", curriculumTopicKey: "functions", metadata: {} },
     }])).toEqual([]);
   });
 });
@@ -70,6 +71,7 @@ describe("deriveRecurringMistakes", () => {
         attemptId,
         subjectId: "Biology",
         topicId: "Practical skills",
+        curriculumTopicKey: "practical-skills",
         metadata: { correct: false, selfAssessment: true, mistakeId: "weak-evaluation" },
       },
     });
@@ -86,6 +88,7 @@ describe("deriveRecurringMistakes", () => {
         attemptId,
         subjectId: "Mathematics",
         topicId: "Differentiation",
+        curriculumTopicKey: "differentiation",
         occurredAt: "2026-11-12T10:00:00.000Z",
         metadata: { correct: false, mistakeId },
       },
