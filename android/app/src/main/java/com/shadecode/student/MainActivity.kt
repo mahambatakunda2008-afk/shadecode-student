@@ -1609,7 +1609,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                     Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         value = editableText,
-                        onValueChange = { editableText = it; cloudVerifyConsent = false }, 
+                        onValueChange = { editableText = it; cloudVerifyConsent = false; localHelpResult = null }, 
                         label = { Text("Extracted text") },
                         placeholder = { Text("OCR text appears here. You can edit it.") },
                         modifier = Modifier.fillMaxWidth().height(240.dp),
@@ -1699,13 +1699,13 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                     Spacer(Modifier.height(8.dp))
                     Text("Subject", fontWeight = FontWeight.SemiBold)
                     subjects.forEach { subject ->
-                        TextButton(onClick = { verifySubjectId = subject.id; cloudVerifyConsent = false }, modifier = Modifier.fillMaxWidth()) {
+                        TextButton(onClick = { verifySubjectId = subject.id; cloudVerifyConsent = false; localHelpResult = null }, modifier = Modifier.fillMaxWidth()) {
                             Text((if (verifySubjectId == subject.id) "● " else "○ ") + subject.name)
                         }
                     }
                     OutlinedTextField(
                         value = verifyQuestion,
-                        onValueChange = { verifyQuestion = it; cloudVerifyConsent = false },
+                        onValueChange = { verifyQuestion = it; cloudVerifyConsent = false; localHelpResult = null },
                         label = { Text("Question (recommended)") },
                         placeholder = { Text("Type or paste the original question") },
                         modifier = Modifier.fillMaxWidth(),
@@ -1715,7 +1715,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                         Text("Help level", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             listOf("hint", "method", "solution").forEach { level ->
-                                OutlinedButton(onClick = { helpLevel = level; verifyResult = null; cloudVerifyConsent = false }, modifier = Modifier.weight(1f)) {
+                                OutlinedButton(onClick = { helpLevel = level; verifyResult = null; cloudVerifyConsent = false; localHelpResult = null }, modifier = Modifier.weight(1f)) {
                                     Text(if (helpLevel == level) "✓ " + level.replaceFirstChar { it.uppercase() } else level.replaceFirstChar { it.uppercase() })
                                 }
                             }
@@ -1779,7 +1779,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                                 val prompt = buildString {
                                                     append("You are Cortex, a careful study tutor. Work offline. ")
                                                     append("Subject: ").append(chosen.name).append(". ")
-                                                    append("Study level: ").append(profile.studyLevel).append(". ")
+                                                    append("Study level: not supplied. Do not assume a board or syllabus. ")
                                                     append("Assistance level: ").append(helpLevel).append(". ")
                                                     append("Do not invent syllabus facts. If information is missing, say so. ")
                                                     append("For hint, give only a small next step. For method, explain the approach without revealing the final answer. ")
@@ -1788,7 +1788,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                                     append("Student working: ").append(editableText.ifBlank { "Not supplied" })
                                                 }
                                                 val result = withContext(Dispatchers.IO) {
-                                                    localModelRuntime.isReady("gemma-3-270m-it-q4")
+                                                    check(localModelRuntime.isReady("gemma-3-270m-it-q4")) { "The offline model could not be loaded. Check available device memory and try again." }
                                                     localModelRuntime.generate("gemma-3-270m-it-q4", prompt, 320)
                                                 }
                                                 localHelpResult = result ?: "The local model could not produce a response. Try a shorter question or use online Help when available."
