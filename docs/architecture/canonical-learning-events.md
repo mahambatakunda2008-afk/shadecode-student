@@ -1,7 +1,7 @@
 # Canonical Learning Events
 
 **Status:** implemented foundation + authenticated durable ingress + idempotent persistence + shared mastery transition  
-**Updated:** 2026-09-02
+**Updated:** 2026-11-14
 
 Shadecode Student uses one normalized learning-event contract between product actions and Cortex/Student Intelligence. The canonical contract is shared platform infrastructure for Discovery, Student and Campus.
 
@@ -23,7 +23,7 @@ Learning observation / shared mastery transition
 Cortex context + recommendations
 ```
 
-The browser emitter is a delivery mechanism, not a second source of truth. When offline or when delivery fails, events remain in a bounded local queue and retry after reconnect.
+The browser emitter is a delivery mechanism, not a second source of truth. When offline or when delivery fails, events remain in bounded, owner-scoped local queues and retry on reconnect, app focus, page restoration, and visibility restoration. Cortex Verify has a dedicated compact outbox; the app-wide sync lifecycle drains it even after the learner leaves Verify. Events are removed only after durable persistence and a completed projection response. Per-user flush guards prevent overlapping drains.
 
 ### Learn compatibility bridge
 
@@ -62,7 +62,7 @@ The canonical event RPC is intentionally **persistence-only**. It authenticates 
 
 The score transition is now centralized in `src/lib/intelligence/masteryTransition.ts`. Both `src/lib/cortex/learningState.ts` and `src/lib/topicMastery/blend.ts` use the same 70/30 history/evidence EMA rule. This removes the previous disagreement where Cortex applied a difficulty-adjusted binary formula while production exam mastery used a separate EMA formula.
 
-The richer Cortex dimensions (retention, confidence, stability, exposure, error rate, response speed, prerequisite health, recent improvement and uncertainty) are reduced by the same pure `reduceLearningObservation` function. Their coefficients are deliberately conservative heuristics and remain candidates for future calibration rather than claims of validated psychometrics.
+The richer Cortex dimensions (retention, confidence, stability, exposure, error rate, response speed, prerequisite health, recent improvement and uncertainty) are reduced by the same pure `reduceLearningObservation` function. Their coefficients are deliberately conservative heuristics and remain candidates for future calibration rather than claims of validated psychometrics. Self-assessed practical marks remain durable learner-reflection events but are excluded from independently demonstrated topic mastery and recurring-error diagnoses until a provenance-aware skill-evidence model exists. Aggregate-only events and events without explicit correctness are also excluded from mastery projection.
 
 The `projectTopicMastery` function projects the already-reduced state into the durable `topic_mastery` shape without recomputing mastery. The production exam marking route continues to use the compatibility `blendMastery` projection for existing exam behavior while the richer reducer is available for new evidence-driven integrations.
 
@@ -78,6 +78,8 @@ The Learn completion bridge also covers offline progress that later syncs to 100
 
 - Learn: lesson-view evidence is wired; lesson completion now has a durable compatibility bridge; question-level coverage still requires call-site audit.
 - Exam Simulation: aggregate completion and final graded question-attempt evidence are emitted through the canonical helper. Each question event carries correctness and score metadata and uses deterministic exam/question identity.
+- Cortex Verify: scored Mark Mode attempts emit compact, account-scoped events through a dedicated outbox. The outbox stores no raw answers or images and retries until persistence and projection are confirmed. Private device-side learner adaptation remains separate from shared durable evidence.
+- Practical Practice: self-awarded marks are recorded as explicitly self-assessed evidence. They do not currently update independently demonstrated mastery or recurring-mistake patterns.
 - Project Studio: existing event integrations are present and should remain on the canonical ingress.
 - Primary: first activity must use this same evidence spine rather than creating a separate Primary analytics contract.
 
