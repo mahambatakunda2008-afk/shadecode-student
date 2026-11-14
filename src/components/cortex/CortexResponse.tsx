@@ -5,8 +5,14 @@ import katex from "katex";
 
 /** Normalize common provider-side Markdown/HTML escaping before parsing. */
 export function normalizeCortexResponseText(source: string): string {
-  return source
-    .replace(/\r\n?/g, "\n")
+  // Protect LaTeX delimiters while repairing transport-escaped Markdown.
+  const mathDelimiters: string[] = [];
+  const protectedSource = source.replace(/\\+\(([\\s\\S]*?)\\+\)|\\+\[([\\s\\S]*?)\\+\]/g, (_match, roundBody: string | undefined, squareBody: string | undefined) => {
+    const index = mathDelimiters.push(roundBody !== undefined ? "\\\\(" + roundBody + "\\\\)" : "\\\\[" + (squareBody ?? "") + "\\\\]") - 1;
+    return "\\uE000" + index + "\\uE001";
+  });
+  return protectedSource
+    .replace(/\\r\\n?/g, "\\n")
     .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
     .replace(/&#([0-9]+);/g, (_, decimal: string) => String.fromCodePoint(parseInt(decimal, 10)))
     .replace(/&nbsp;|&#160;/gi, " ")
@@ -19,9 +25,9 @@ export function normalizeCortexResponseText(source: string): string {
     .replace(/\\([\\\`*_{}\[\]()#+.!|>~-])/g, "$1")
     .replace(/\\([\\\`*_{}\[\]()#+.!|>~-])/g, "$1")
     .replace(/\\([\\\`*_{}\[\]()#+.!|>~-])/g, "$1")
+    .replace(/\\uE000(\d+)\\uE001/g, (_, index: string) => mathDelimiters[Number(index)] ?? "")
     .trim();
 }
-
 type ListItem = { text: string; checked?: boolean; children?: { ordered: boolean; items: ListItem[] }[] };
 
 type Block =
