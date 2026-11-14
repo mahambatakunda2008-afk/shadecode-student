@@ -109,12 +109,17 @@ export function deriveVerifyInterventionOutcomes(rows: EventRow[]): VerifyInterv
     const topic = String(first.data.topicId);
     const topicKey = String(first.data.curriculumTopicKey);
     const level = first.metadata.interventionLevel as VerifyInterventionOutcome["interventionLevel"];
+    const strategy = ["guided-reconstruction", "worked-example", "retrieval-and-transfer", "diagnostic-first"].includes(String(first.metadata.teachingStrategy))
+      ? first.metadata.teachingStrategy as NonNullable<VerifyInterventionOutcome["teachingStrategy"]>
+      : null;
     // Do not merge links across subjects or curriculum topic identities.
     const sameTopic = linkedEvents.filter(event =>
       event.data.subjectId === subject &&
       event.data.topicId === topic &&
       event.data.curriculumTopicKey === topicKey &&
-      event.metadata.interventionLevel === level &&\n      (strategy === null ? event.metadata.teachingStrategy === undefined : event.metadata.teachingStrategy === strategy),
+      event.metadata.interventionLevel === level &&
+      (strategy === null ? event.metadata.teachingStrategy === undefined : event.metadata.teachingStrategy === strategy) &&
+      (strategy === null ? event.metadata.teachingStrategy === undefined : event.metadata.teachingStrategy === strategy),
     );
     const inferredInterventionTime = Math.min(...sameTopic.map(event => {
       const time = Date.parse(occurredAt(event.data, event.row)!);
@@ -149,7 +154,9 @@ export function deriveVerifyInterventionOutcomes(rows: EventRow[]): VerifyInterv
       subjectKey: subject,
       topicId: topic,
       curriculumTopicKey: topicKey,
-      interventionLevel: level,\n      teachingStrategy: strategy,
+      interventionLevel: level,
+      teachingStrategy: strategy,
+      teachingStrategy: strategy,
       state,
       baselineAttempts: baseline.length,
       transferAttempts: transfer.length,
