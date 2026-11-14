@@ -77,3 +77,13 @@ export function selectVerifyIntervention(
     interpretation: "descriptive_not_causal",
   };
 }
+
+/** Explicit learner choice always wins; otherwise use evidence or the requested default. */
+export function resolveVerifyHelpLevel(input: {
+  requestedLevel: "hint" | "method" | "solution";
+  explicit: boolean;
+  recommendedLevel?: "hint" | "method" | "solution" | null;
+}): "hint" | "method" | "solution" {
+  if (input.explicit) return input.requestedLevel;
+  return input.recommendedLevel ?? input.requestedLevel;
+}
