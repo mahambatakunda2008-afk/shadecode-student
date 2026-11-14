@@ -29,6 +29,11 @@ const base = {
     items: [{ subjectKey: "Physics", topicId: "Waves", priority: "high", reason: "repeated_errors", distinctAttempts: 2, incorrectResponses: 3, lastObservedAt: null, observedMedianIntervalDays: null, evidenceState: "evidence_backed_suggestion" }],
     interpretation: "evidence_backed_no_due_dates",
   },
+  interventionOutcomes: {
+    state: "available", source: "cortex_events",
+    items: [{ interventionId: "vi_abc123_1234567", subjectKey: "Physics", topicId: "Waves", curriculumTopicKey: "physics-waves", interventionLevel: "method", state: "improving", baselineAttempts: 2, transferAttempts: 2, baselineScore: 45, transferScore: 75, scoreChange: 30, observedAt: "2026-11-14T12:00:00.000Z", interpretation: "descriptive_not_causal" }],
+    interpretation: "descriptive_not_causal",
+  },
 } as unknown as CortexStudentContext;
 
 describe("shared Verify learner context", () => {
@@ -36,6 +41,8 @@ describe("shared Verify learner context", () => {
     const context = buildSharedVerifyLearnerContext(base, "Physics");
     expect(context).toContain("Waves");
     expect(context).toContain("unit-conversion");
+    expect(context).toContain("intervention follow-up for Waves");
+    expect(context).toContain("not proof the intervention caused the change");
     expect(context).not.toContain("Curriculum objective 2.1");
     expect(context).not.toContain("Algebra");
     expect(context).not.toContain("Curriculum objective");
@@ -46,6 +53,7 @@ describe("shared Verify learner context", () => {
     expect(context).toContain("Algebra");
     expect(context).not.toContain("Waves");
     expect(context).not.toContain("unit-conversion");
+    expect(context).not.toContain("intervention follow-up");
   });
 
   it("bounds the prompt context", () => {
