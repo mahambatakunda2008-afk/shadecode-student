@@ -62,7 +62,7 @@ The canonical event RPC is intentionally **persistence-only**. It authenticates 
 
 The score transition is now centralized in `src/lib/intelligence/masteryTransition.ts`. Both `src/lib/cortex/learningState.ts` and `src/lib/topicMastery/blend.ts` use the same 70/30 history/evidence EMA rule. This removes the previous disagreement where Cortex applied a difficulty-adjusted binary formula while production exam mastery used a separate EMA formula.
 
-The richer Cortex dimensions (retention, confidence, stability, exposure, error rate, response speed, prerequisite health, recent improvement and uncertainty) are reduced by the same pure `reduceLearningObservation` function. Their coefficients are deliberately conservative heuristics and remain candidates for future calibration rather than claims of validated psychometrics. Self-assessed practical marks remain durable learner-reflection events but are excluded from independently demonstrated topic mastery and recurring-error diagnoses until a provenance-aware skill-evidence model exists. Aggregate-only events and events without explicit correctness are also excluded from mastery projection.
+The richer Cortex dimensions (retention, confidence, stability, exposure, error rate, response speed, prerequisite health, recent improvement and uncertainty) are reduced by the same pure `reduceLearningObservation` function. Their coefficients are deliberately conservative heuristics and remain candidates for future calibration rather than claims of validated psychometrics. Self-assessed practical marks remain durable learner-reflection events but are excluded from independently demonstrated topic mastery and recurring-error diagnoses until a provenance-aware skill-evidence model exists. Both repeated-topic-error and stable-mistake detectors enforce this boundary. They also require a non-empty `curriculumTopicKey` resolved from the learner's verified curriculum; free-text topic labels alone cannot create shared recurring diagnoses. Aggregate-only events and events without explicit correctness are also excluded from mastery projection.
 
 The `projectTopicMastery` function projects the already-reduced state into the durable `topic_mastery` shape without recomputing mastery. The production exam marking route continues to use the compatibility `blendMastery` projection for existing exam behavior while the richer reducer is available for new evidence-driven integrations.
 
@@ -78,7 +78,7 @@ The Learn completion bridge also covers offline progress that later syncs to 100
 
 - Learn: lesson-view evidence is wired; lesson completion now has a durable compatibility bridge; question-level coverage still requires call-site audit.
 - Exam Simulation: aggregate completion and final graded question-attempt evidence are emitted through the canonical helper. Each question event carries correctness and score metadata and uses deterministic exam/question identity.
-- Cortex Verify: scored Mark Mode attempts emit compact, account-scoped events through a dedicated outbox. The outbox stores no raw answers or images and retries until persistence and projection are confirmed. Private device-side learner adaptation remains separate from shared durable evidence.
+- Cortex Verify: scored Mark Mode attempts emit compact, account-scoped events through a dedicated outbox. The outbox stores no raw answers or images and retries until persistence and projection are confirmed. Shared recurring-error evidence is restricted to distinct attempts with a verified curriculum topic key. Private device-side learner adaptation remains separate from shared durable evidence. The current closed-loop limitation is explicit: Help Mode interventions are not yet linked to a subsequent fresh Mark Mode attempt, so Cortex cannot yet measure whether a particular hint, method or reteaching intervention improved later performance. The local learner model currently ranks topics heuristically from marked attempts; it is not a validated intervention-effect model.
 - Practical Practice: self-awarded marks are recorded as explicitly self-assessed evidence. They do not currently update independently demonstrated mastery or recurring-mistake patterns.
 - Project Studio: existing event integrations are present and should remain on the canonical ingress.
 - Primary: first activity must use this same evidence spine rather than creating a separate Primary analytics contract.
@@ -100,6 +100,7 @@ Before marking the evidence spine production-complete:
 
 ## Next engineering pass
 
+- link Help Mode interventions to subsequent fresh Mark Mode attempts using privacy-minimal intervention identifiers, then compare later evidence on the same verified topic without counting repeated identical questions as transfer;
 - audit Learn question/quiz evidence and the sync revision protocol against all local-first stores;
 - add authenticated/offline/replay E2E coverage;
 - migrate the Learn completion call site from the compatibility bridge to direct canonical emission when the route can safely carry the canonical event contract;
