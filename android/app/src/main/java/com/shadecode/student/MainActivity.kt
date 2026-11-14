@@ -1594,7 +1594,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                     Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         value = editableText,
-                        onValueChange = { editableText = it },
+                        onValueChange = { editableText = it; cloudVerifyConsent = false }, 
                         label = { Text("Extracted text") },
                         placeholder = { Text("OCR text appears here. You can edit it.") },
                         modifier = Modifier.fillMaxWidth().height(240.dp),
@@ -1684,13 +1684,13 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                     Spacer(Modifier.height(8.dp))
                     Text("Subject", fontWeight = FontWeight.SemiBold)
                     subjects.forEach { subject ->
-                        TextButton(onClick = { verifySubjectId = subject.id }, modifier = Modifier.fillMaxWidth()) {
+                        TextButton(onClick = { verifySubjectId = subject.id; cloudVerifyConsent = false }, modifier = Modifier.fillMaxWidth()) {
                             Text((if (verifySubjectId == subject.id) "● " else "○ ") + subject.name)
                         }
                     }
                     OutlinedTextField(
                         value = verifyQuestion,
-                        onValueChange = { verifyQuestion = it },
+                        onValueChange = { verifyQuestion = it; cloudVerifyConsent = false },
                         label = { Text("Question (recommended)") },
                         placeholder = { Text("Type or paste the original question") },
                         modifier = Modifier.fillMaxWidth(),
@@ -1700,7 +1700,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                         Text("Help level", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             listOf("hint", "method", "solution").forEach { level ->
-                                OutlinedButton(onClick = { helpLevel = level; verifyResult = null }, modifier = Modifier.weight(1f)) {
+                                OutlinedButton(onClick = { helpLevel = level; verifyResult = null; cloudVerifyConsent = false }, modifier = Modifier.weight(1f)) {
                                     Text(if (helpLevel == level) "✓ " + level.replaceFirstChar { it.uppercase() } else level.replaceFirstChar { it.uppercase() })
                                 }
                             }
