@@ -14,6 +14,16 @@ describe("Cortex response formatting", () => {
     expect(blocks.map(block => block.type)).toEqual(["table", "code"]);
   });
 
+  it("renders raw LaTeX environments as display mathematics", () => {
+    const source = String.raw`\begin{aligned}
+2x + 3y &= 12 \\
+x - y &= 1
+\end{aligned}`;
+    const html = renderToStaticMarkup(<CortexResponse text={source} />);
+    expect(html).toContain('role="math"');
+    expect(html).toContain('class="katex-display"');
+    expect(html).toContain("2x");
+  });
   it("renders mathematical notation and safe web links", () => {
     const html = renderToStaticMarkup(
       <CortexResponse text={"The result is $F=ma$. See [the syllabus](https://example.com/syllabus)."} />,
