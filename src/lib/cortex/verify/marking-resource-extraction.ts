@@ -98,7 +98,7 @@ function normalizePageText(page: number, text: string): MarkingResourceTextLine[
   return text
     .replace(/\r/g, "")
     .split("\n")
-    .map(line => line.replace(/[\t\u00a0 ]+/g, " ").trim())
+    .map(line => line.replace(/[\u00a0 ]+/g, " ").replace(/\t+/g, "\t").trim())
     .filter(Boolean)
     .map((line, index) => ({ page, line: index + 1, text: line }));
 }
@@ -200,7 +200,7 @@ export async function extractImportedMarkingResource(
         }
         const pageText = [...buckets.entries()]
           .sort((a, b) => b[0] - a[0])
-          .map(([, parts]) => parts.sort((a, b) => a.x - b.x).map(part => part.text).join(" ").replace(/\s+/g, " ").trim())
+          .map(([, parts]) => joinPdfTextItemsByLayout(parts))
           .filter(Boolean)
           .join("\n");
         if (!pageText.trim()) {
