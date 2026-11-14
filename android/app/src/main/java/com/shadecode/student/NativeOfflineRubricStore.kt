@@ -34,6 +34,22 @@ class NativeOfflineRubricStore(context: Context) {
         }
     }
 
+    /** Imports a bounded version-1 JSON pack; malformed or partly invalid packs are rejected in full. */
+    @Synchronized
+    fun installPackJson(jsonText: String): Boolean {
+        if (jsonText.toByteArray(Charsets.UTF_8).size !in 1..maxFileBytes) return false
+        val entries = runCatching {
+            val root = JSONObject(jsonText)
+            if (root.optInt("schemaVersion") != 1) return false
+            val array = root.optJSONArray("entries") ?: return false
+            if (array.length() !in 1..maxEntries) return false
+            (0 until array.length()).map { index ->
+                decodeEntry(array.getJSONObject(index)) ?: return false
+            }
+        }.getOrNull() ?: return false
+        return installPack(entries)
+    }
+
     /** Installs one explicitly reviewed rubric. Invalid or uncleared content is rejected. */
     @Synchronized
     fun install(entry: NativeOfflineRubricEntry): Boolean {
