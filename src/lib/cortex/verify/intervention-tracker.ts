@@ -29,7 +29,10 @@ function read(userId: string): PendingIntervention[] {
       item && typeof item.id === "string" && typeof item.subject === "string" &&
       typeof item.topic === "string" && ["hint", "method", "solution"].includes(item.level) &&
       typeof item.questionFingerprint === "string" && typeof item.createdAt === "string",
-    ).slice(-20) : [];
+    ).filter(item => {
+      const createdAt = Date.parse(item.createdAt);
+      return Number.isFinite(createdAt) && Date.now() - createdAt <= 14 * 86_400_000;
+    }).slice(-20) : [];
   } catch { return []; }
 }
 
