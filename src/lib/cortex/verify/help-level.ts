@@ -56,18 +56,18 @@ export function hasCompleteMathematicalMarkup(value: string): boolean {
   // Remove only complete, paired math spans. Any equation-like material left
   // outside those spans is damaged/unprotected notation and must be rejected.
   const withoutMath = text
-    .replace(/\\\\\\[[\\s\\S]*?\\\\\\]/g, " ")
-    .replace(/\\\\\\([\\s\\S]*?\\\\\\)/g, " ")
-    .replace(/\\$\\$[\\s\\S]*?\\$\\$/g, " ")
-    .replace(/\\$(?!\\$)[^\\n$]+?\\$/g, " ");
+    .replace(/\\\[[\s\S]*?\\\]/g, " ")
+    .replace(/\\\([\s\S]*?\\\)/g, " ")
+    .replace(/\$\$[\s\S]*?\$\$/g, " ")
+    .replace(/\$(?!\$)[^\n$]+?\$/g, " ");
 
   const hasMath = withoutMath !== text;
   if (!hasMath) return false;
 
   // An unmatched delimiter is a strong signal that the provider truncated or
   // corrupted the expression before it reached KaTeX.
-  if (/\\\\\\[|\\\\\\]|\\\\\\(|\\\\\\)|\\$/.test(withoutMath)) return false;
+  if (/\\\[|\\\]|\\\(|\\\)|\$\$?/.test(withoutMath)) return false;
 
-  const unprotectedEquation = /(?:=|≠|≤|≥|→|\\\\frac|\\\\sqrt|\\\\begin\\s*\\{|\\b(?:sin|cos|tan|log|ln)\\b)/i;
+  const unprotectedEquation = /(?:=|≠|≤|≥|→|\\(?:frac|sqrt|begin)\b|\b(?:sin|cos|tan|log|ln)\b)/i;
   return !unprotectedEquation.test(withoutMath);
 }
