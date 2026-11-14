@@ -4,6 +4,8 @@ import { getReviewer } from "@/lib/exam/curated/reviewAccess";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My classes · Shadecode Teacher" };
 
+const TEACHING_ROLES = ["teacher", "tutor", "administrator", "staff"] as const;
+
 type InstitutionMembership = {
   institution_id: string;
   membership_role: string;
@@ -43,7 +45,8 @@ export default async function TeacherClassesPage() {
     .from("platform_institution_members")
     .select("institution_id,membership_role,status")
     .eq("user_id", reviewer.user.id)
-    .eq("status", "active");
+    .eq("status", "active")
+    .in("membership_role", [...TEACHING_ROLES]);
 
   const { data: groupRows, error: groupMembershipError } = await reviewer.supabase
     .from("platform_group_members")
