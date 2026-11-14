@@ -115,8 +115,8 @@ type StructuredVerifyResult = Record<string, unknown> & {
   retakeReason?: string;
 };
 
-async function runStructured(prompt: string, image?: { data: string; mimeType: string }): Promise<StructuredVerifyResult> {
-  const providers = [() => gemini(prompt, image), () => openAI(prompt, image)];
+async function runStructured(prompt: string, images: Array<{ data: string; mimeType: string }> = []): Promise<StructuredVerifyResult> {
+  const providers = [() => gemini(prompt, images), () => openAI(prompt, images)];
   let lastError: unknown;
   for (const provider of providers) {
     try {
