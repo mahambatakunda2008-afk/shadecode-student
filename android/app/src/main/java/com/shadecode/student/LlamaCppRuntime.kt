@@ -33,7 +33,7 @@ class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
         val modelPath = modelManager.modelFile(model).absolutePath
         synchronized(nativeLock) {
             if (!nativeIsLoaded() && !nativeLoad(modelPath)) return@synchronized null
-            nativeGenerate(prompt.take(MAX_PROMPT_CHARS), maxTokens.coerceIn(16, 512))
+            nativeGenerate(formatGemmaPrompt(prompt).take(MAX_PROMPT_CHARS), maxTokens.coerceIn(16, 512))
                 ?.trim()
                 ?.takeIf { it.isNotBlank() }
         }
@@ -55,6 +55,8 @@ class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
     private external fun nativeIsLoaded(): Boolean
     private external fun nativeGenerate(prompt: String, maxTokens: Int): String?
     private external fun nativeUnload()
+
+    private fun formatGemmaPrompt(prompt: String): String = "<start_of_turn>user\n$prompt<end_of_turn>\n<start_of_turn>model\n"
 
     companion object { private const val MAX_PROMPT_CHARS = 12_000 }
 }
