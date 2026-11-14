@@ -51,6 +51,22 @@ class NativeOfflineRubricStore(context: Context) {
         return writeEntries(entries)
     }
 
+    /** Installs a complete reviewed pack atomically; one invalid entry rejects the whole pack. */
+    @Synchronized
+    fun installPack(pack: List<NativeOfflineRubricEntry>): Boolean {
+        if (pack.isEmpty() || pack.size > maxEntries || pack.any { !isValidEntry(it) }) return false
+        val packKeys = pack.map { Triple(it.subjectId, it.syllabusIdentity, it.questionId) }
+        if (packKeys.distinct().size != packKeys.size) return false
+        val merged = readEntries().associateBy {
+            Triple(it.subjectId, it.syllabusIdentity, it.questionId)
+        }.toMutableMap()
+        pack.forEach { entry ->
+            merged[Triple(entry.subjectId, entry.syllabusIdentity, entry.questionId)] = entry
+        }
+        if (merged.size > maxEntries) return false
+        return writeEntries(merged.values.toList())
+    }
+
     @Synchronized
     fun remove(subjectId: String, syllabusIdentity: String, questionId: String): Boolean {
         val entries = readEntries().toMutableList()
