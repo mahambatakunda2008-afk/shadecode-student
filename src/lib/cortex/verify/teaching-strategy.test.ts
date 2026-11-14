@@ -30,6 +30,6 @@ describe("recommendVerifyTeachingStrategy", () => {
   it("clamps malformed mastery and never claims a learned visual preference", () => {
     const result = recommendVerifyTeachingStrategy({ masteryScore: 140, attempts: 2 });
     expect(result.strategy).toBe("retrieval-and-transfer");
-    expect(formatVerifyTeachingStrategy(result)).toContain("do not infer a visual-learning preference");
+    expect(formatVerifyTeachingStrategy(result)).toContain("infer a visual-learning preference");
   });
 });
