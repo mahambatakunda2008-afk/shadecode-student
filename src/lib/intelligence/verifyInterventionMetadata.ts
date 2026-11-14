@@ -3,6 +3,7 @@ export type VerifyInterventionMetadata = {
   interventionLevel?: "hint" | "method" | "solution";
   interventionToAttemptHours?: number;
   freshTransfer?: boolean;
+  teachingStrategy?: "guided-reconstruction" | "worked-example" | "retrieval-and-transfer" | "diagnostic-first";
 };
 
 /**
@@ -16,7 +17,7 @@ export function sanitizeVerifyInterventionMetadata(
 ): Record<string, string | number | boolean | null> | undefined {
   if (!metadata) return metadata;
   const output = { ...metadata };
-  const keys = ["interventionId", "interventionLevel", "interventionToAttemptHours", "freshTransfer"];
+  const keys = ["interventionId", "interventionLevel", "interventionToAttemptHours", "freshTransfer", "teachingStrategy"];
   if (eventType !== "question.attempted") {
     keys.forEach(key => delete output[key]);
     return output;
@@ -29,7 +30,8 @@ export function sanitizeVerifyInterventionMetadata(
   const valid = typeof id === "string" && /^vi_[a-z0-9_-]{6,80}$/i.test(id) &&
     (level === "hint" || level === "method" || level === "solution") &&
     typeof hours === "number" && Number.isFinite(hours) && hours >= 0 && hours <= 336 &&
-    typeof transfer === "boolean";
+    typeof transfer === "boolean" &&
+    (output.teachingStrategy === undefined || ["guided-reconstruction", "worked-example", "retrieval-and-transfer", "diagnostic-first"].includes(String(output.teachingStrategy)));
 
   if (!valid) {
     keys.forEach(key => delete output[key]);
