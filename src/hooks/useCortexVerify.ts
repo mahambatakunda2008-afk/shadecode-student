@@ -295,7 +295,7 @@ export function useCortexVerify() {
         fd.append("question", attempt.question || "");
         fd.append("studentAnswer", attempt.studentAnswer || "");
         if (imageDataUrl) { const imageResponse = await fetchWithTimeout(imageDataUrl); if (!imageResponse.ok) throw new Error("Could not prepare the selected source image."); fd.append("image", await imageResponse.blob(), options.image?.name || "source-image.jpg"); }
-        if (attempt.mode === "help" && attempt.level) fd.append("level", attempt.level);
+        if (attempt.mode === "help" && attempt.level) { fd.append("level", attempt.level); fd.append("levelExplicit", String(attempt.levelExplicit === true)); }
         fd.append("visualEvidenceConsent", "true");
         visualEvidence.forEach(({ file, label, annotation }) => {
           fd.append("visualEvidence", file, file.name || "visual-evidence.webp");
@@ -305,14 +305,19 @@ export function useCortexVerify() {
         const data = await response.json().catch(() => null);
         if (!response.ok || !data || typeof data !== "object") throw new Error(data?.error || "Cortex could not assess the visual evidence.");
         const validated = data as VerifyResult;
-        if (attempt.mode === "help" ? !isValidHelpResult(validated, (attempt.level || "hint") as VerifyHelpLevel) : !isValidVerifyMarkResult(validated)) {
+        const adaptiveLevel = validated.adaptiveSelection === true &&
+          (validated.level === "hint" || validated.level === "method" || validated.level === "solution")
+          ? validated.level
+          : null;
+        const resolvedHelpLevel = (adaptiveLevel || attempt.level || "hint") as VerifyHelpLevel;
+        if (attempt.mode === "help" ? !isValidHelpResult(validated, resolvedHelpLevel) : !isValidVerifyMarkResult(validated)) {
           throw new Error("Cortex returned an invalid visual verification result.");
         }
         if (attempt.mode === "help") {
-          Object.assign(validated, selectHelpResult(validated, (attempt.level || "hint") as VerifyHelpLevel));
+          Object.assign(validated, selectHelpResult(validated, resolvedHelpLevel));
           recordVerifyIntervention({
             userId: attempt.userId, subject: attempt.subject, topic: attempt.topicId,
-            level: (attempt.level || "hint") as HelpLevel, question: attempt.question,
+            level: resolvedHelpLevel as HelpLevel, question: attempt.question,
           });
         }
         recordVerifyEvent(attempt, validated, options.topicId);
