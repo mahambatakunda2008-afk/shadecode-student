@@ -10,6 +10,7 @@ export type CortexAttempt = {
   userId: string;
   mode: 'check' | 'help';
   subject?: string;
+  topicId?: string;
   question?: string;
   level?: string;
   studentAnswer?: string;
