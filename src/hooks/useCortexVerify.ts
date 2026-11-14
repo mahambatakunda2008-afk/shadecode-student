@@ -232,7 +232,7 @@ export function useCortexVerify() {
       // Reuse an exact, owner-scoped result before spending another model call.
       // The cache stores a response and request fingerprint, never source images.
       const cacheKey = await createVerifyResultCacheKey({
-        mode: options.mode, subject: options.subject, question: options.question,
+        mode: options.mode, subject: options.subject, topicId: options.topicId, question: options.question,
         studentAnswer: options.studentAnswer, level: options.level, image: options.image, visualEvidence,
       });
       const attempt: CortexAttempt = {
