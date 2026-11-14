@@ -57,3 +57,28 @@ export function buildSharedVerifyLearnerContext(
   const rendered = useful.join("\n");
   return rendered.length > maxChars ? rendered.slice(0, Math.max(0, maxChars - 1)) + "…" : rendered;
 }
+
+
+/** Resolve a recommendation only against the exact active verified topic. */
+export function selectSharedVerifyIntervention(
+  context: CortexStudentContext,
+  subject: string,
+  topicId: string,
+) {
+  const subjectKey = normalize(subject);
+  const topic = context.topics.items.find(item =>
+    normalize(item.subjectKey) === subjectKey &&
+    item.topicId === topicId &&
+    typeof item.curriculumTopicKey === "string" &&
+    item.curriculumTopicKey.length > 0,
+  );
+  if (!topic?.curriculumTopicKey) return null;
+  const outcomes = context.interventionOutcomes.items.filter(item =>
+    normalize(item.subjectKey) === subjectKey,
+  );
+  return selectVerifyIntervention(outcomes, {
+    subjectKey: topic.subjectKey,
+    topicId: topic.topicId,
+    curriculumTopicKey: topic.curriculumTopicKey,
+  });
+}
