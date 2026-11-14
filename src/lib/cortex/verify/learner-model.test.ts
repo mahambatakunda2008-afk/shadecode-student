@@ -39,7 +39,7 @@ describe("Cortex Verify learner model", () => {
       subject: "Mathematics", topic: "Algebra", score: 35, misconceptionTags: ["Sign error"],
     });
     expect(buildVerifyLearnerContext(model)).toContain("recurring error signals");
-    expect(buildVerifyLearnerContext(model)).toContain("fresh question");
+    expect(buildVerifyLearnerContext(model)).toContain("new question testing the same skill");
   });
   it("prioritizes weak topics and applies spaced review to stronger topics", () => {
     const now = "2026-11-14T12:00:00.000Z";
@@ -66,7 +66,7 @@ describe("Cortex Verify learner model", () => {
     const context = buildVerifyLearnerContext(model, { subject: "Physics", now: "2026-11-14T12:00:00.000Z" });
     expect(context).toContain("NEXT PRACTICE PRIORITIES");
     expect(context).toContain("Physics / Waves");
-    expect(context).toContain("reteach");
+    expect(context).toContain("guided-retry");
   });
 
   it("does not leak another subject into a subject-filtered practice context", () => {
