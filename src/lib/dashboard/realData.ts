@@ -42,3 +42,17 @@ export function welcomeLine(opts: { hour: number; loading: boolean; daysSinceLes
   if (opts.daysSinceLesson !== null && opts.daysSinceLesson >= 2) return "Welcome back — let's pick up where you left off.";
   return `${tod}.`;
 }
+
+/**
+ * True only when we can positively say the learner has not started: no lesson
+ * attempts, no exam results and nothing recommended yet. While data is still
+ * loading or failed we make no claim either way.
+ */
+export function isNewLearner(input: {
+  loaded: boolean;
+  lessonCount: number;
+  examCount: number;
+  recommendationCount: number;
+}): boolean {
+  return input.loaded && input.lessonCount === 0 && input.examCount === 0 && input.recommendationCount === 0;
+}

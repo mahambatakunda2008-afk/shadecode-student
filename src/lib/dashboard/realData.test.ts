@@ -44,3 +44,20 @@ describe("daysSinceLastLesson / welcomeLine", () => {
     expect(welcomeLine({ hour: 14, loading: true, daysSinceLesson: null })).toBe("Good afternoon, welcome back");
   });
 });
+
+import { isNewLearner } from "./realData";
+
+describe("isNewLearner", () => {
+  const base = { loaded: true, lessonCount: 0, examCount: 0, recommendationCount: 0 };
+  it("is true only with loaded data and no activity at all", () => {
+    expect(isNewLearner(base)).toBe(true);
+  });
+  it("makes no claim while data is loading or failed", () => {
+    expect(isNewLearner({ ...base, loaded: false })).toBe(false);
+  });
+  it("is false once there is any lesson, exam or recommendation", () => {
+    expect(isNewLearner({ ...base, lessonCount: 1 })).toBe(false);
+    expect(isNewLearner({ ...base, examCount: 1 })).toBe(false);
+    expect(isNewLearner({ ...base, recommendationCount: 1 })).toBe(false);
+  });
+});
