@@ -43,8 +43,9 @@ export function deriveRepeatedTopicErrors(
 
     const subject = typeof data.subjectId === "string" ? data.subjectId.trim() : "";
     const topic = typeof data.topicId === "string" ? data.topicId.trim() : "";
+    const curriculumTopicKey = typeof data.curriculumTopicKey === "string" ? data.curriculumTopicKey.trim() : "";
     const attemptId = typeof data.attemptId === "string" ? data.attemptId.trim() : "";
-    if (!subject || !topic || !attemptId) continue;
+    if (!subject || !topic || !curriculumTopicKey || !attemptId) continue;
 
     const subjectKey = subject.toLocaleLowerCase();
     const topicKey = topic.toLocaleLowerCase();
@@ -115,8 +116,9 @@ export function deriveRecurringMistakes(rows: MistakeEventRecord[]): RecurringMi
     const subject = typeof data.subjectId === "string" ? data.subjectId.trim() : "";
     const topic = typeof data.topicId === "string" ? data.topicId.trim() : "";
     const attemptId = typeof data.attemptId === "string" ? data.attemptId.trim() : "";
+    const curriculumTopicKey = typeof data.curriculumTopicKey === "string" ? data.curriculumTopicKey.trim() : "";
     const mistakeId = typeof metadata.mistakeId === "string" ? metadata.mistakeId.trim() : "";
-    if (!subject || !topic || !attemptId || !mistakeId) continue;
+    if (!subject || !topic || !curriculumTopicKey || !attemptId || !mistakeId) continue;
 
     const key = `${subject.toLocaleLowerCase()}\u0000${topic.toLocaleLowerCase()}\u0000${mistakeId}`;
     const existing = groups.get(key) ?? {
