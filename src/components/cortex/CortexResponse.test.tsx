@@ -44,7 +44,7 @@ describe("Cortex response formatting", () => {
     expect(blocks[0]).toMatchObject({ type: "heading", text: "Part 1: Finding the Equation" });
     expect(blocks[1]).toMatchObject({ type: "paragraph", text: "**Identify the values**: The centre is $(-3, 2)$." });
     expect(blocks[2]).toMatchObject({ type: "list", ordered: true });
-    expect(blocks[2]).toMatchObject({ items: ["**Substitute the values**:\n$(x + 3)^2 + (y - 2)^2 = 10", "**Simplify**: The equation is ready."] });
+    expect(blocks[2]).toMatchObject({ items: ["**Substitute the values**:\n$(x + 3)^2 + (y - 2)^2 = 10$", "**Simplify**: The equation is ready."] });
   });
 
 });
