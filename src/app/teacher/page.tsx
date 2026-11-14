@@ -8,9 +8,11 @@ export const metadata = { title: "Teacher portal · Shadecode Student" };
 
 export default async function TeacherHome() {
   const reviewer = (await getReviewer())!;
-  const [lessons, { data: rows }] = await Promise.all([
+  const [lessons, { data: rows }, institutionMemberships, groupMemberships] = await Promise.all([
     loadLessonItems(reviewer.supabase),
     reviewer.supabase.from("content_reviews").select("question_id,verdict,reviewer_id").limit(10000),
+    reviewer.supabase.from("platform_institution_members").select("institution_id").eq("user_id", reviewer.user.id).eq("status", "active"),
+    reviewer.supabase.from("platform_group_members").select("group_id").eq("user_id", reviewer.user.id).eq("status", "active"),
   ]);
 
   const items = [...questionItems(), ...lessons];
@@ -36,15 +38,44 @@ export default async function TeacherHome() {
 
   const totalLeft = cards.reduce((n, c) => n + (c.total - c.reviewed), 0);
 
+  const institutionCount = institutionMemberships.error ? null : institutionMemberships.data?.length ?? 0;
+  const groupCount = groupMemberships.error ? null : groupMemberships.data?.length ?? 0;
+
   return (
-    <div className="space-y-6">
-      <section className="space-y-1">
-        <h1 className="text-xl font-semibold">Teacher portal</h1>
-        <p className="text-sm text-[var(--muted-foreground)]">
-          {totalLeft > 0 ? `${totalLeft} items are waiting for your review.` : "You have reviewed everything available. Thank you."}
+    <div className="space-y-8">
+      <header className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">Shadecode Teacher</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Your teaching workspace</h1>
+        <p className="max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">
+          Your classes, teaching resources and content review work, connected to the same learning platform your students use.
         </p>
+      </header>
+
+      <section className="grid gap-3 sm:grid-cols-3" aria-label="Teaching overview">
+        <Link href="/teacher/classes" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 transition hover:border-[var(--primary)]">
+          <p className="text-xs text-[var(--muted-foreground)]">Teaching groups</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{groupCount ?? "—"}</p>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">View your classes</p>
+        </Link>
+        <Link href="/teacher/classes" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 transition hover:border-[var(--primary)]">
+          <p className="text-xs text-[var(--muted-foreground)]">Institutions</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{institutionCount ?? "—"}</p>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">Manage your school context</p>
+        </Link>
+        <Link href="/teacher/tutorials" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 transition hover:border-[var(--primary)]">
+          <p className="text-xs text-[var(--muted-foreground)]">Tutorials awaiting review</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{tutorialsWaiting ?? 0}</p>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">Open Tutorial Studio</p>
+        </Link>
       </section>
 
+      <section className="space-y-3">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">Content review</h2>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            {totalLeft > 0 ? `${totalLeft} items are waiting for your review.` : "You have reviewed everything available. Thank you."}
+          </p>
+        </div>
       <Link
         href="/teacher/tutorials/review"
         className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm transition hover:border-[var(--primary)]"
@@ -76,6 +107,7 @@ export default async function TeacherHome() {
             </Link>
           );
         })}
+      </section>
       </section>
     </div>
   );
