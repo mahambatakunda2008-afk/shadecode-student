@@ -113,8 +113,9 @@ function InlineText({ text }: { text: string }) {
       if (html) return <span key={index} className={displayMath ? "my-3 block overflow-x-auto text-center" : "inline-block max-w-full align-middle"} dangerouslySetInnerHTML={{ __html: html }} />;
       return <code key={index}>{expression}</code>;
     }
-    const link = token.match(/^\\[([^\\]]+)\\]\\((https?:\\/\\/[^\\s)]+)\\)$/);
-    if (link) return <a key={index} href={link[2]} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--primary)] underline decoration-[var(--primary)]/40 underline-offset-2 hover:decoration-[var(--primary)]">{link[1]}</a>;\n    if ((token.startsWith("**") && token.endsWith("**")) || (token.startsWith("__") && token.endsWith("__"))) return <strong key={index} className="font-bold text-[var(--foreground)]">{token.slice(2, -2)}</strong>;
+    const link = token.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (link) return <a key={index} href={link[2]} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--primary)] underline decoration-[var(--primary)]/40 underline-offset-2 hover:decoration-[var(--primary)]">{link[1]}</a>;
+    if ((token.startsWith("**") && token.endsWith("**")) || (token.startsWith("__") && token.endsWith("__"))) return <strong key={index} className="font-bold text-[var(--foreground)]">{token.slice(2, -2)}</strong>;
     if ((token.startsWith("*") && token.endsWith("*")) || (token.startsWith("_") && token.endsWith("_"))) return <em key={index}>{token.slice(1, -1)}</em>;
     if (token.startsWith("~~") && token.endsWith("~~")) return <del key={index}>{token.slice(2, -2)}</del>;
     if (token.startsWith("`") && token.endsWith("`")) return <code key={index} className="rounded-md border border-[var(--card-border)] bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[0.9em] text-[var(--foreground)]">{token.slice(1, -1)}</code>;
