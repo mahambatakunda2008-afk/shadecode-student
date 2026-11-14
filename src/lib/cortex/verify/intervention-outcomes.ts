@@ -6,6 +6,7 @@ export interface VerifyInterventionOutcome {
   topicId: string;
   curriculumTopicKey: string;
   interventionLevel: "hint" | "method" | "solution";
+  teachingStrategy: "guided-reconstruction" | "worked-example" | "retrieval-and-transfer" | "diagnostic-first" | null;
   state: InterventionOutcomeState;
   baselineAttempts: number;
   transferAttempts: number;
@@ -113,7 +114,7 @@ export function deriveVerifyInterventionOutcomes(rows: EventRow[]): VerifyInterv
       event.data.subjectId === subject &&
       event.data.topicId === topic &&
       event.data.curriculumTopicKey === topicKey &&
-      event.metadata.interventionLevel === level,
+      event.metadata.interventionLevel === level &&\n      (strategy === null ? event.metadata.teachingStrategy === undefined : event.metadata.teachingStrategy === strategy),
     );
     const inferredInterventionTime = Math.min(...sameTopic.map(event => {
       const time = Date.parse(occurredAt(event.data, event.row)!);
@@ -148,7 +149,7 @@ export function deriveVerifyInterventionOutcomes(rows: EventRow[]): VerifyInterv
       subjectKey: subject,
       topicId: topic,
       curriculumTopicKey: topicKey,
-      interventionLevel: level,
+      interventionLevel: level,\n      teachingStrategy: strategy,
       state,
       baselineAttempts: baseline.length,
       transferAttempts: transfer.length,
