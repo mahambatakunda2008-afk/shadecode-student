@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -13,6 +14,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -70,6 +73,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -1287,6 +1291,12 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
     var rawOcr by remember { mutableStateOf("") }
     var editableText by remember { mutableStateOf("") }
     var extractionRegions by remember { mutableStateOf<List<NativeExtractRegion>>(emptyList()) }
+    var visualRegions by remember { mutableStateOf<List<NativeVisualRegion>>(emptyList()) }
+    var visualCropBytes by remember { mutableStateOf<Map<String, ByteArray>>(emptyMap()) }
+    var visualLabel by remember { mutableStateOf("Diagram or graph") }
+    var visualAnnotation by remember { mutableStateOf("") }
+    var dragStart by remember { mutableStateOf<Offset?>(null) }
+    var dragEnd by remember { mutableStateOf<Offset?>(null) }
     var extractionEngine by remember { mutableStateOf<String?>(null) }
     var redactionTerms by remember { mutableStateOf("") }
     var processing by remember { mutableStateOf(false) }
@@ -1323,6 +1333,8 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
             rawOcr = ""
             editableText = ""
             extractionRegions = emptyList()
+            visualRegions = emptyList()
+            visualCropBytes = emptyMap()
             extractionEngine = null
             processing = true
             message = "Reading image locally…"
@@ -1423,35 +1435,93 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                     )
                     imagePreview?.let { preview ->
                         Spacer(Modifier.height(12.dp))
-                        Box(Modifier.fillMaxWidth().height(220.dp)) {
-                            Image(
-                                bitmap = preview,
-                                contentDescription = "Preview of the selected source image with OCR regions",
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier.fillMaxSize(),
+                        Box(Modifier.fillMaxWidth().height(260.dp).pointerInput(preview) {
+                            detectDragGestures(
+                                onDragStart = { dragStart = it; dragEnd = it },
+                                onDrag = { change, amount -> change.consume(); dragEnd = (dragEnd ?: change.position) + amount },
+                                onDragEnd = {
+                                    val startPoint = dragStart
+                                    val endPoint = dragEnd
+                                    if (startPoint != null && endPoint != null) {
+                                        val scale = minOf(size.width / preview.width.toFloat(), size.height / preview.height.toFloat())
+                                        val rw = preview.width * scale
+                                        val rh = preview.height * scale
+                                        val ox = (size.width - rw) / 2f
+                                        val oy = (size.height - rh) / 2f
+                                        val l = (minOf(startPoint.x, endPoint.x) - ox).coerceIn(0f, rw)
+                                        val t = (minOf(startPoint.y, endPoint.y) - oy).coerceIn(0f, rh)
+                                        val r = (maxOf(startPoint.x, endPoint.x) - ox).coerceIn(0f, rw)
+                                        val b = (maxOf(startPoint.y, endPoint.y) - oy).coerceIn(0f, rh)
+                                        if (r-l >= 12f && b-t >= 12f) {
+                                            val bitmap = preview.asAndroidBitmap()
+                                            val x = (l/scale).toInt().coerceIn(0, bitmap.width-1)
+                                            val y = (t/scale).toInt().coerceIn(0, bitmap.height-1)
+                                            val w = (r/scale).toInt().coerceIn(x+1, bitmap.width)-x
+                                            val h = (b/scale).toInt().coerceIn(y+1, bitmap.height)-y
+                                            val regionId = UUID.randomUUID().toString()
+                                            val crop = Bitmap.createBitmap(bitmap, x, y, w, h)
+                                            val output = java.io.ByteArrayOutputStream()
+                                            crop.compress(Bitmap.CompressFormat.WEBP_LOSSY, 88, output)
+                                            crop.recycle()
+                                            val bytes = output.toByteArray()
+                                            if (bytes.size <= 4*1024*1024) {
+                                                visualRegions = visualRegions + NativeVisualRegion(
+                                                    regionId, visualLabel.ifBlank { "Visual evidence" }.take(100), visualAnnotation.take(1000),
+                                                    (l/rw).coerceIn(0f,1f), (t/rh).coerceIn(0f,1f), (r/rw).coerceIn(0f,1f), (b/rh).coerceIn(0f,1f),
+                                                    null, emptyList()
+                                                )
+                                                visualCropBytes = visualCropBytes + (regionId to bytes)
+                                                message = "Visual crop added locally. Save the extract, then save its visual evidence."
+                                            } else message = "That crop exceeds 4 MB. Select a smaller area."
+                                        }
+                                    }
+                                    dragStart = null
+                                    dragEnd = null
+                                }
                             )
+                        }) {
+                            Image(bitmap = preview, contentDescription = "Drag to select a diagram, graph, table or other visual evidence", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
                             Canvas(Modifier.fillMaxSize()) {
                                 val scale = minOf(size.width / preview.width, size.height / preview.height)
-                                val renderedWidth = preview.width * scale
-                                val renderedHeight = preview.height * scale
-                                val offsetX = (size.width - renderedWidth) / 2f
-                                val offsetY = (size.height - renderedHeight) / 2f
+                                val rw = preview.width * scale
+                                val rh = preview.height * scale
+                                val ox = (size.width-rw)/2f
+                                val oy = (size.height-rh)/2f
                                 extractionRegions.forEach { region ->
-                                    val left = offsetX + region.left.coerceIn(0f, 1f) * renderedWidth
-                                    val top = offsetY + region.top.coerceIn(0f, 1f) * renderedHeight
-                                    val right = offsetX + region.right.coerceIn(0f, 1f) * renderedWidth
-                                    val bottom = offsetY + region.bottom.coerceIn(0f, 1f) * renderedHeight
-                                    if (right > left && bottom > top) {
-                                        drawRect(
-                                            color = ShadePrimary.copy(alpha = 0.9f),
-                                            topLeft = Offset(left, top),
-                                            size = Size(right - left, bottom - top),
-                                            style = Stroke(width = 2.dp.toPx()),
-                                        )
-                                    }
+                                    val l=ox+region.left*rw; val t=oy+region.top*rh; val r=ox+region.right*rw; val b=oy+region.bottom*rh
+                                    if(r>l && b>t) drawRect(ShadePrimary, Offset(l,t), Size(r-l,b-t), style=Stroke(2.dp.toPx()))
                                 }
+                                visualRegions.forEach { region ->
+                                    val l=ox+region.left*rw; val t=oy+region.top*rh; val r=ox+region.right*rw; val b=oy+region.bottom*rh
+                                    drawRect(ShadeAccent, Offset(l,t), Size(r-l,b-t), style=Stroke(3.dp.toPx()))
+                                }
+                                val a=dragStart; val z=dragEnd
+                                if(a!=null && z!=null) drawRect(ShadeAccent, Offset(minOf(a.x,z.x),minOf(a.y,z.y)), Size(kotlin.math.abs(z.x-a.x),kotlin.math.abs(z.y-a.y)), style=Stroke(3.dp.toPx()))
                             }
                         }
+                        Text("Drag to capture a visual region. Blue outlines are OCR text; purple outlines are your selections.", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall)
+                        OutlinedTextField(value=visualLabel, onValueChange={visualLabel=it}, label={Text("New region label")}, singleLine=true, modifier=Modifier.fillMaxWidth())
+                        OutlinedTextField(value=visualAnnotation, onValueChange={visualAnnotation=it}, label={Text("Diagram notes: labels, arrows, connections")}, modifier=Modifier.fillMaxWidth())
+                        visualRegions.forEach { region ->
+                            Column(Modifier.fillMaxWidth().background(ShadeSurfaceVariant, RoundedCornerShape(12.dp)).padding(10.dp)) {
+                                Text(region.label, fontWeight=FontWeight.SemiBold)
+                                Text(region.annotation.ifBlank { "No annotation yet." }, style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                TextButton(onClick={visualRegions=visualRegions.filterNot{it.id==region.id}; visualCropBytes=visualCropBytes-region.id}) { Text("Remove region") }
+                            }
+                        }
+                        if(visualRegions.isNotEmpty()) Button(onClick={
+                            val artifactId=activeArtifactId
+                            if(artifactId==null) message="Save this extract first, then save visual evidence."
+                            else scope.launch {
+                                try {
+                                    val updated=withContext(Dispatchers.IO){extractStore.saveVisualRegions(artifactId,visualRegions,visualCropBytes)}
+                                    visualRegions=updated.visualRegions
+                                    visualCropBytes=emptyMap()
+                                    savedArtifacts=withContext(Dispatchers.IO){extractStore.list()}
+                                    message="Saved " + updated.visualRegions.size + " visual region(s) privately on this device."
+                                } catch(error:Exception){message=error.message ?: "Could not save visual evidence."}
+                            }
+                        }, enabled=activeArtifactId!=null, modifier=Modifier.fillMaxWidth()){Text("Save visual evidence on this device")}
                         if (extractionRegions.isNotEmpty()) {
                             Text(
                                 "Outlined areas show where the on-device OCR engine found text.",
@@ -1706,6 +1776,8 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     editableText = artifact.editedText
                                     extractionEngine = artifact.extractionEngine
                                     extractionRegions = artifact.extractionRegions
+                                    visualRegions = artifact.visualRegions
+                                    visualCropBytes = emptyMap()
                                     redactionTerms = ""
                                     verifyResult = null
                                     scope.launch {
