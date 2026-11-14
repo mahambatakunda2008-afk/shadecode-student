@@ -6,7 +6,7 @@ export interface VerifyInterventionOutcome {
   topicId: string;
   curriculumTopicKey: string;
   interventionLevel: "hint" | "method" | "solution";
-  teachingStrategy: "guided-reconstruction" | "worked-example" | "retrieval-and-transfer" | "diagnostic-first" | null;
+  teachingStrategy?: "guided-reconstruction" | "worked-example" | "retrieval-and-transfer" | "diagnostic-first" | null;
   state: InterventionOutcomeState;
   baselineAttempts: number;
   transferAttempts: number;
