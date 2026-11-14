@@ -76,6 +76,15 @@ describe("buildDeterministicLessonFallback", () => {
   });
 
 
+  it("prefers the most specific curated topic when a request contains a broader topic phrase", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Mathematics AS Level 9709",
+      "Please explain integration by parts in detail",
+    );
+
+    expect(lesson?.title).toContain("Integration by parts");
+  });
+
   it("matches common subject spelling variants (math/maths)", () => {
     expect(buildDeterministicLessonFallback("math", "Trigonometric Identities")).not.toBeNull();
     expect(buildDeterministicLessonFallback("Maths", "trigonometric identities")).not.toBeNull();
@@ -124,9 +133,150 @@ describe("buildDeterministicLessonFallback", () => {
     expect(persistableBlocks.every((block) => typeof block.type === "string")).toBe(true);
   });
 
-  it("returns null for a topic with no hand-authored fallback", () => {
-    expect(buildDeterministicLessonFallback("Mathematics", "Quadratic equations")).toBeNull();
-    expect(buildDeterministicLessonFallback("Biology", "Cell structure")).toBeNull();
+  it("serves the original Pure Mathematics sequences and series lesson offline without subject leakage", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Pure Mathematics (9709)",
+      "Teach me sequences and series",
+    );
+
+    expect(lesson?.title).toContain("Sequences and series");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(16);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "diagram")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.content.includes("|r| < 1"))).toBe(true);
+    expect(buildDeterministicLessonFallback("Physics (9702)", "Sequences and series")).toBeNull();
   });
 
+  it("accepts short sequences and series requests", () => {
+    expect(buildDeterministicLessonFallback("Maths AS Level 9709", "Sequences")?.title).toContain("Sequences and series");
+    expect(buildDeterministicLessonFallback("Mathematics", "Series")?.title).toContain("Sequences and series");
+  });
+
+  it("returns null for a topic with no hand-authored fallback", () => {
+    expect(buildDeterministicLessonFallback("Mathematics", "Quadratic equations")).toBeNull();
+    expect(buildDeterministicLessonFallback("Biology", "Cell structure")).not.toBeNull();
+    expect(buildDeterministicLessonFallback("Biology", "Biological molecules")).not.toBeNull();
+  });
+
+
+  it("serves the book-informed Physics kinematics pilot when offline fallback is needed", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Cambridge International AS Level Physics (9702)",
+      "Teach me kinematics",
+    );
+
+    expect(lesson?.title).toContain("Kinematics");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(buildDeterministicLessonFallback("Mathematics", "Kinematics")).toBeNull();
+  });
+
+  it("serves the original momentum and impulse lesson offline and keeps it Physics-only", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Cambridge International AS Level Physics (9702)",
+      "Teach me momentum and impulse",
+    );
+
+    expect(lesson?.title).toContain("Momentum and impulse");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(14);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "diagram")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.content.includes("kg m s"))).toBe(true);
+    expect(buildDeterministicLessonFallback("Mathematics (9709)", "Momentum")).toBeNull();
+  });
+
+  it("recognises impulse as an alias for the same momentum lesson", () => {
+    expect(
+      buildDeterministicLessonFallback("Physics (9702)", "Please explain impulse in detail")?.title,
+    ).toContain("Momentum and impulse");
+  });
+
+  it("serves the original accelerated-motion lesson offline and keeps it Physics-only", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Cambridge International AS Level Physics (9702)",
+      "Teach me accelerated motion",
+    );
+
+    expect(lesson?.title).toContain("Accelerated motion");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.content.includes("stopping displacement"))).toBe(true);
+    expect(buildDeterministicLessonFallback("Mathematics", "Accelerated motion")).toBeNull();
+  });
+
+  it("serves the book-informed Pure Mathematics algebra pilot without leaking it to other subjects", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Pure Mathematics (9709)",
+      "Algebra",
+    );
+
+    expect(lesson?.title).toContain("Algebra");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(buildDeterministicLessonFallback("Physics (9702)", "Algebra")).toBeNull();
+  });
+
+  it("serves the original Pure Mathematics logarithms lesson offline without leaking it to other subjects", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Pure Mathematics (9709)",
+      "Teach me logarithms and exponential functions",
+    );
+
+    expect(lesson?.title).toContain("Logarithms and exponential functions");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(14);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "diagram")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(buildDeterministicLessonFallback("Physics (9702)", "Logarithms and exponential functions")).toBeNull();
+  });
+
+  it("accepts short logarithms and exponential-functions topic requests", () => {
+    expect(buildDeterministicLessonFallback("Pure Mathematics (9709)", "Logarithms")?.title).toContain("Logarithms and exponential functions");
+    expect(buildDeterministicLessonFallback("Maths AS Level 9709", "Exponential functions")?.title).toContain("Logarithms and exponential functions");
+  });
+
+
+  it("serves the original trigonometric-equations lesson offline and isolates it to Mathematics", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Pure Mathematics (9709)",
+      "Please teach me trigonometric equations",
+    );
+
+    expect(lesson?.title).toContain("Trigonometric equations");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(15);
+    expect(lesson?.blocks.some((block) => block.type === "diagram")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(buildDeterministicLessonFallback("Physics (9702)", "Trigonometric equations")).toBeNull();
+  });
+
+  it("does not substitute a foundational lesson for a specialised neighbouring topic", () => {
+    expect(buildDeterministicLessonFallback("Computer Science", "Binary search tree traversal")).toBeNull();
+    expect(buildDeterministicLessonFallback("Chemistry", "Dative covalent bonding")).toBeNull();
+    expect(buildDeterministicLessonFallback("Physics", "Kirchhoff laws in electric circuits")).toBeNull();
+    expect(buildDeterministicLessonFallback("Biology", "Calvin cycle in photosynthesis")?.title).toContain("Photosynthesis");
+  });
+
+  it("returns null when one request asks for two distinct curated lessons", () => {
+    expect(
+      buildDeterministicLessonFallback(
+        "Mathematics AS Level 9709",
+        "Compare integration by parts and integration by substitution",
+      ),
+    ).toBeNull();
+  });
+
+  it("does not treat aliases for the same authored lesson as ambiguous", () => {
+    expect(
+      buildDeterministicLessonFallback("Mathematics AS Level 9709", "Please explain sequences and series in detail")?.title,
+    ).toContain("Sequences and series");
+  });
+
+  it("accepts the short trig-equations alias and common Maths spelling", () => {
+    expect(buildDeterministicLessonFallback("Maths AS Level 9709", "Trig equations")?.title).toContain("Trigonometric equations");
+  });
 });

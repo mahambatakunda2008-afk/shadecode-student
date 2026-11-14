@@ -2,7 +2,7 @@ import { createGenerationJob, getActiveGenerationJobs, getGenerationJob, getGene
 import { offlineStorage } from "@/lib/offline/storage";
 import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
 import { getLocalCurriculumGrounding, readLocalCurriculumGrounding, readLocalCurriculumGroundingData } from "@/lib/cortex/localCurriculumGrounding";
-import { readOfflineCurriculumPack, buildOfflineCurriculumScope } from "@/lib/cortex/offlineCurriculumPack";
+import { readOfflineCurriculumPack, readOfflineCurriculumPackDurable, writeOfflineCurriculumPack, buildOfflineCurriculumScope } from "@/lib/cortex/offlineCurriculumPack";
 import { readLocalLearnerMemory, buildLocalLearnerContext, rememberLocalTopic } from "@/lib/cortex/localLearnerMemory";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
@@ -166,9 +166,13 @@ function resolvedRequest(job: GenerationJob<LessonGenerationInput>) {
   if (request.broadTopic) request.depth = "deep";
   return request;
 }
-function localContext(job: GenerationJob<LessonGenerationInput>) {
+async function localContext(job: GenerationJob<LessonGenerationInput>) {
   const request = resolvedRequest(job);
-  const pack = readOfflineCurriculumPack(job.request.subject, job.request.examBoard, job.request.level);
+  const pack = await readOfflineCurriculumPackDurable(job.request.subject, job.request.examBoard, job.request.level)
+    ?? readOfflineCurriculumPack(job.request.subject, job.request.examBoard, job.request.level);
+  // The existing synchronous lesson generator still reads the v2 localStorage
+  // mirror. Rehydrate it from IndexedDB so old callers and offline recovery agree.
+  if (pack) writeOfflineCurriculumPack(pack);
   const cachedGrounding = readLocalCurriculumGrounding(job.request.subject, request.topic) || readLocalCurriculumGrounding(job.request.subject, resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject }).topic);
   const curriculum = buildOfflineCurriculumScope(pack, request.topic);
   const memory = buildLocalLearnerContext(readLocalLearnerMemory());
@@ -204,7 +208,7 @@ function validateResult(result: LessonGenerationResult, request: ReturnType<type
   return { ...result, blocks: normalized };
 }
 async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, generated?: LessonGenerationResult) {
-  const context = localContext(job);
+  const context = await localContext(job);
   const request = resolvedRequest(job);
   const local = generated ?? generateLocalLesson(job.request.subject, job.request.prompt, context);
   const validated = validateResult(local, request);
@@ -303,10 +307,10 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: s
   request.broadTopic = request.broadTopic || isBroadTopic(request.topic);
   if (request.broadTopic) request.depth = "deep";
 
-  const context = localContext(job);
+  const context = await localContext(job);
   const resolved = buildResolvedLessonPrompt(request);
   const crossDeviceMemory = await readCrossDeviceLearnerMemory(token, job.request.subject, request.topic);
-  const learnerContext = [localContext(job), crossDeviceMemory].filter(Boolean).join("\n\n");
+  const learnerContext = [context, crossDeviceMemory].filter(Boolean).join("\n\n");
   const sectionCount = request.broadTopic ? 6 : 4;
   const sectionPlan = request.broadTopic
     ? [
@@ -860,10 +864,11 @@ async function runJob(
     // An authenticated online learner must get a real Cortex generation attempt first;
     // the section API itself returns the curated lesson if its provider chain fails.
     // This keeps the fast recovery path from silently replacing successful AI teaching.
+    const fastRecoveryContext = await localContext(job);
     if (
       isBrowser() &&
       shouldUseFastVerifiedCurriculumRecovery({ online, hasSessionToken: Boolean(token) }) &&
-      hasLocalLessonFallback(job.request.subject, job.request.prompt, localContext(job))
+      hasLocalLessonFallback(job.request.subject, job.request.prompt, fastRecoveryContext)
     ) {
       try {
         updateGenerationJob(job.id, {
@@ -871,7 +876,7 @@ async function runJob(
           progress: 10,
           error: "Cortex is using verified curriculum recovery while online generation is unavailable or warming up.",
         });
-        const local = generateLocalLesson(job.request.subject, job.request.prompt, localContext(job));
+        const local = generateLocalLesson(job.request.subject, job.request.prompt, fastRecoveryContext);
         if (local.blocks.length >= 10) {
           const localFallback: LessonGenerationResult = {
             id: local.id,
@@ -982,7 +987,7 @@ async function runJob(
   } catch (error) {
     // Use the latest stored job because section generation updates its checkpoint in storage.
     const currentJob = (getGenerationJob(job.id) ?? job) as GenerationJob<LessonGenerationInput>;
-    const message = errorMessage(error); const context = localContext(currentJob as GenerationJob<LessonGenerationInput>);
+    const message = errorMessage(error); const context = await localContext(currentJob as GenerationJob<LessonGenerationInput>);
     const failureClass = classifyCortexExecutionFailure(error);
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
       hasVerifiedData: isBrowser() && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context),

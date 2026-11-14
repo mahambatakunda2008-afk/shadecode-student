@@ -1,5 +1,16 @@
 # Shadecode Student curated knowledge library
 
+**Structured subject discovery register:** [subject-discovery-register.csv](./subject-discovery-register.csv) records catalogue evidence separately from syllabus verification. It includes 62 discovery records across Cambridge Lower Secondary, IGCSE, O Level and AS & A Level, plus ZIMSEC O Level/A Level historical-code leads. Historical evidence is explicitly not current-syllabus verification; every entry must be resolved to the applicable official syllabus before topic coverage is claimed.
+
+**Programme-wide source and coverage tracking:** use [the curriculum resource register](./resource-register.md) for official ZIMSEC/Cambridge sources, supplementary OER and rights checks, and [the coverage ledger template](./coverage-ledger-template.csv) to track every syllabus topic at topic/subtopic level. The template contains discovery seeds only; blank topic rows mean the official syllabus has not yet been fully inventoried. Do not report those entries as mapped or verified.
+
+
+**First official syllabus inventory:** [Cambridge AS & A Level Physics 9702 (2025–2027)](./cambridge-9702-2025-2027-topic-inventory.csv) records all 25 official topic titles, AS/A Level scope, source pages and assessment context. Topic titles are verified against Cambridge's official PDF; detailed subtopic/learning-outcome extraction, practical-skill mapping, lesson review and offline packaging remain pending. Do not treat this topic-level inventory as completed syllabus coverage.
+
+**Physics AS subtopic structure:** [9702 AS subtopic index](./cambridge-9702-2025-2027-as-subtopic-index.csv) records 31 section identifiers and official subtopic titles for topics 1–11. It is a structural index only; outcome-level teaching coverage remains unverified.
+
+**Physics practical skills:** [9702 practical skills inventory](./cambridge-9702-2025-2027-practical-skills.csv) separates Paper 3 laboratory skills from Paper 5 planning, analysis and evaluation. These assessment skills must be taught and practised explicitly, not assumed to be covered by theory lessons.
+
 ## Purpose
 Build a dependable, offline-capable knowledge layer for cases where a model is unavailable, slow, or produces unreliable work. A curated lesson is authored and checked content, not a generated response and not a copied textbook chapter.
 
@@ -9,6 +20,101 @@ Build a dependable, offline-capable knowledge layer for cases where a model is u
 - Do not ingest or redistribute textbook pages, figures, answer keys, or end-of-chapter questions wholesale.
 - Record the source edition and exact syllabus mapping separately from the authored content.
 - Do not label content verified until calculations, terminology, syllabus scope, diagrams, and answers have been reviewed independently.
+
+## Programme-wide coverage mandate
+
+**Product requirement: comprehensive ZIMSEC and Cambridge secondary-school coverage, across all relevant high-school levels and subjects.** The current curated modules are small runtime pilots and must never be mistaken for broad curriculum coverage.
+
+### Programme and level coverage
+
+Maintain separate, versioned curriculum maps rather than assuming similarly named subjects or levels are interchangeable.
+
+| Programme track | Coverage target | Required mapping |
+|---|---|---|
+| Zimbabwe national pathway (ZIMSEC) | Secondary Forms 1–4, including the applicable junior-secondary learning stages and O Level syllabuses; A Level Forms 5–6 where offered | Official subject syllabus, syllabus/examination code, examination year, topic/subtopic, practical/coursework/oral requirements, assessment objectives, paper structure and allowed resources |
+| Cambridge pathway | Lower Secondary where relevant to a learner's entry point; Cambridge IGCSE/O Level; AS Level; full A Level | Exact Cambridge syllabus code and examination year, topic/subtopic, practical/coursework/oral requirements, assessment objectives, paper structure and allowed resources |
+| School-specific and mixed pathways | Learners taking a mixture of boards, levels or subject options | Per-learner subject/level/board selection, with explicit mapping for shared concepts and separate board-specific expectations |
+
+The pathway labels above define the product's intended reach, not a claim that every subject or stage has already been mapped. Confirm each level and subject against current official documentation before marking it available or verified. Do not assume ZIMSEC and Cambridge syllabuses are equivalent because the subject names match.
+
+### Subject catalogue and personalisation
+
+Build a discoverable subject catalogue that can expand without hard-coding only Mathematics and Physics. Candidate subject families to audit against the actual offerings for each programme include languages and literature; Mathematics and additional/further mathematics where applicable; Biology, Chemistry, Physics and other sciences; Computer Science/ICT; Geography; History; Commerce/business/economics/accounting; agriculture; and practical, technical, creative and vocational subjects. This is an audit queue, not a statement that every listed subject exists at every level or under both boards.
+
+Each subject entry must state its supported board, level, syllabus year, language, topic coverage, assessment modes, practical/resource requirements and confidence status. Onboarding and settings must let learners select their actual board, level, subjects and examination year. The app must not show a subject as fully supported merely because a single lesson or a generic AI response exists. Optional/specialist subject modules should be shown only when relevant to the learner's selections, while still remaining discoverable in subject settings.
+
+### Minimum completion criteria for each subject-level-syllabus version
+
+1. **Syllabus inventory:** every official topic and subtopic is accounted for, with a coverage state: not started, outlined, authored, checked, syllabus-mapped, or verified.
+2. **Learning pathway:** prerequisites, ordered lessons, objectives, vocabulary, examples, misconceptions, retrieval practice and spaced review.
+3. **Assessment readiness:** original exam-style questions across relevant difficulty levels; step-by-step marking guidance; command words; common lost-mark patterns; and explicit mapping to assessment objectives.
+4. **Subject-specific modes:** required graphs, labelled diagrams, map work, source analysis, essays, programming, calculations, experiments, practical skills, coursework or oral work, as appropriate to the syllabus. Text-only lessons are insufficient where visual or practical assessment is required.
+5. **Answer quality:** independently checked calculations, units, accepted alternatives, mark allocations and explanations. Tests can catch regressions but do not replace subject-expert review.
+6. **Offline readiness:** versioned downloadable lessons and eligible openly licensed or authorised resources, with integrity checks, clear storage size, update management and a graceful no-network learning path. A runtime fallback is not itself an offline content pack.
+7. **Coverage transparency:** a learner/guardian/teacher can see exactly what is covered, what remains incomplete, the syllabus year, and when content was last checked.
+8. **Release gate:** no subject/level is advertised as comprehensive until all official syllabus items are mapped, required assessment modes are represented, answer checks and independent review are complete, and offline behaviour has been tested.
+
+
+### Practical-skills training is a first-class learning mode
+
+**Core product principle:** Shadecode must teach learners how to perform, interpret and communicate subject work, not only how to recall theory or answer written examination questions. Practical-skills training is a required part of curriculum coverage wherever the syllabus assesses experimental, investigative, field, technical, creative, performance, oral, programming or other applied competencies. It is not an optional enrichment feature and must not be reduced to a few theory notes or exam questions.
+
+#### Physics 9702: concrete requirement
+
+For Cambridge AS & A Level Physics 9702 (2025–2027), theory lessons alone are insufficient. The product must prepare learners for both:
+- **Paper 3, Advanced Practical Skills:** hands-on apparatus work, manipulation, measurement and observation, recording results, tables, graph construction, analysis, conclusions and evaluation.
+- **Paper 5, Planning, Analysis and Evaluation:** defining variables, designing a repeatable method, selecting apparatus, explaining controls and safety, planning data collection, analysing data, estimating uncertainty, drawing conclusions and evaluating limitations/improvements.
+
+The syllabus recommends that at least 20% of course time is spent on practical work. Shadecode's progress model should therefore track practical competence and practice activity separately from theory-topic completion. A learner must not be shown as fully prepared for 9702 because they completed all theory lessons or a bank of multiple-choice questions.
+
+#### Required learning experiences
+
+For every practical or applied skill required by a syllabus, design an appropriate combination of the following. The exact mix must follow the subject and assessment mode; do not force a laboratory template onto non-laboratory subjects.
+
+1. **Demonstration and orientation:** identify apparatus, tools, materials, software or field methods; explain purpose, safe handling, setup and limitations.
+2. **Guided practice:** provide sequenced tasks in which the learner makes decisions and performs steps, rather than only reading a description of a procedure.
+3. **Independent investigation:** give a question or objective, require a method, variables, observations/data, analysis and a justified conclusion.
+4. **Data and evidence handling:** support structured observations, tables, units, significant figures, graphs, diagrams, calculations, uncertainty and evidence-based interpretation where relevant.
+5. **Feedback on method as well as result:** assess setup, choice of method, control of variables, precision, repeatability, safety, reasoning and communication, not only the final numerical answer.
+6. **Reflection and improvement:** ask learners to identify limitations, explain sources of error, propose realistic improvements and justify how those changes improve evidence quality.
+7. **Assessment rehearsal:** provide original tasks that reflect the relevant practical, coursework, fieldwork, oral, performance or project assessment objectives and mark criteria without copying protected examination material.
+
+#### Access modes: real equipment, low-cost alternatives and simulation
+
+- **Real practical work is preferred where the syllabus requires hands-on competence.** A simulation or video must never be presented as equivalent to physically manipulating apparatus when the assessment expects the learner to do so.
+- **Low-cost/local-material pathways** may help learners practise safely where school laboratories are limited. Each activity must identify required materials, substitutions, hazards, supervision needs and what competency it can and cannot demonstrate. Never recommend unsafe home experiments or mains-electricity work.
+- **Interactive simulations and virtual labs** can teach setup decisions, variable control, prediction, data interpretation and repeatable experimentation, especially before or after a real practical. Label these as simulated practice and record them separately from completed physical practical work.
+- **Offline support** should include downloadable instructions, blank results tables, graph paper/templates, apparatus diagrams, datasets for analysis practice and locally runnable simulations where feasible. Sync records and content updates when connectivity returns; core practice should not depend on a live AI call.
+- **Teacher/school support** should allow practical activities to be assigned, observed or signed off where direct evidence is needed. A learner's self-reported completion must not be confused with teacher-verified practical performance.
+
+#### Product and data requirements
+
+Practical training must be represented in the content model and learner experience, not hidden inside prose. Each practical/applied activity should carry, as applicable:
+- board, qualification, level, subject, syllabus code and examination-year version;
+- topic/subtopic and assessment component/objective;
+- competency and observable success criteria;
+- activity mode: physical, low-cost physical, simulated, data-analysis or teacher-observed;
+- prerequisites, apparatus/materials, setup, procedure and safety/supervision notes;
+- variables, expected observations, data schema, units and recording template;
+- graph/diagram/calculation requirements and analysis prompts;
+- conclusion, uncertainty, evaluation and improvement prompts;
+- feedback/marking rubric, accepted alternatives and common errors;
+- evidence state: assigned, attempted, self-reported complete, teacher-observed, checked or verified;
+- offline availability, content version, provenance and review history.
+
+Track at least three distinct progress dimensions: **theory understanding**, **practical/applied skill**, and **assessment readiness**. Do not collapse them into one completion percentage. For Physics, record Paper 3 and Paper 5 readiness separately. For other subjects, derive the applied-skill categories from the actual syllabus rather than assuming they have Physics-style practical papers.
+
+#### Release and quality gates
+
+A subject-level-syllabus version cannot be labelled comprehensive until its practical/applied requirements have been inventoried and each requirement has an appropriate learning experience, assessment rehearsal, feedback method and evidence status. For 9702, verify the Paper 3 and Paper 5 skill map independently against the complete official syllabus before marking the practical component covered. Automated tests may validate calculations, content structure and offline behavior, but they do not replace a qualified subject teacher's review of procedures, safety, assessment alignment and practical rubrics.
+
+### Content provenance and resource rights
+
+Use current official ZIMSEC and Cambridge syllabuses and assessment documentation as the mapping authority, recording document title, version/year, URL or source reference, and date checked. Use supplied books to guide teaching sequence and explanations, but create original explanations, examples and exam-style questions. Include past papers, mark schemes, diagrams or textbook-derived material in an offline pack only when the licence, copyright exception or permission permits the intended distribution. Do not scrape and redistribute copyrighted books or papers wholesale. Where redistribution is not permitted, provide lawful source links and let users import files they are entitled to use.
+
+### Coverage ledger and rollout order
+
+Track completion at the atomic topic/subtopic level, not merely by the number of lesson files. First establish the official syllabus inventory for every selected programme/level/subject; then prioritise high-enrolment core subjects and exam-critical gaps; then expand to electives and practical/technical subjects. Keep ZIMSEC and Cambridge coverage separate in reporting, and publish a truthful coverage percentage based on mapped syllabus items rather than authored lesson count.
 
 ## Teaching structure observed in the supplied materials
 The Oxford Pure Mathematics book's introductory pages describe objectives, prerequisite checks (Before you start), worked examples, graded exercises from basic to exam standard, real-world links, chapter summaries, glossary and concise answers. Use these as pedagogical cues, not as a template to copy verbatim.
@@ -36,14 +142,349 @@ Never imply a higher status than the evidence supports.
 
 ## Pilot content
 - `src/lib/cortex/curatedContent/physics-kinematics.ts`: original introductory kinematics lesson. Draft only until independently checked against the exact Cambridge Physics syllabus version and the relevant coursebook chapter.
+- `src/lib/cortex/curatedContent/physics-accelerated-motion.ts`: original lesson on acceleration, velocity-time graphs, constant-acceleration equations, free fall and projectile components. Draft only until independently checked against the exact Cambridge Physics syllabus version and relevant coursebook chapter.
 - `src/lib/cortex/curatedContent/pure-mathematics-algebra.ts`: original algebra lesson on modulus, polynomial division, remainder theorem and factor theorem. Draft only until independently checked against the exact Cambridge 9709 syllabus year and the relevant Pure 2/3 chapter coverage.
+- `src/lib/cortex/curatedContent/pure-mathematics-logs-exponentials.ts`: original lesson on logarithm meaning and laws, exponential/logarithmic graphs, solving equations and domain restrictions. Draft only until independently checked against the exact Cambridge 9709 syllabus year and relevant chapter coverage.
+- `src/lib/cortex/curatedContent/pure-mathematics-trigonometric-equations.ts`: original lesson on reference angles, quadrant signs, periods, and equations with multiple angles. Draft only until independently checked against the exact Cambridge 9709 syllabus year and relevant chapter coverage.
 
-Neither pilot is connected to runtime fallback retrieval yet. Integration requires syllabus mapping, content review, answer tests, suitable diagram coverage, and lookup tests confirming that unrelated requests cannot receive the wrong lesson.
+## Runtime integration status
+
+The original pilot modules are wired into deterministic lesson fallback retrieval:
+- `physics|kinematics` serves the original kinematics lesson for Physics requests, including syllabus-coded labels such as Cambridge 9702.
+- `physics|accelerated motion` serves an original accelerated-motion lesson with worked calculations, graph reasoning, free-fall conventions and projectile components.
+- `mathematics|algebra` serves the original algebra lesson for Mathematics/Pure Mathematics requests, including syllabus-coded labels such as Cambridge 9709.
+- `mathematics|logarithms and exponential functions` serves the original logarithms lesson for Mathematics/Pure Mathematics requests. Its graph sketch instructions, worked examples, practice and subject-isolation tests are wired into deterministic fallback retrieval. Short requests using `logarithms` or `exponential functions` also resolve to this lesson.
+- `mathematics|trigonometric equations` serves an original lesson on solving sine, cosine and tangent equations over a stated interval; `trig equations` is also an accepted short alias. Multiple-angle examples explicitly transform the interval before solving.
+- The fallback tests cover positive retrieval, required teaching structure, and subject isolation.
+
+**Important:** runtime availability is not a verification claim. Both modules remain drafts. The Mathematics PDF is image-based and its contents were read with OCR, so its detailed syllabus mapping still needs manual checking. The deterministic fallback modules are bundled with the application code, so these two lessons do not require an AI/network call once the app shell and JavaScript bundle are available locally. This is still not a complete downloadable, versioned curriculum pack.
+
+Offline packs now also carry optional `provenance` metadata: verification status (`unreviewed`, `content-checked`, `syllabus-mapped`, or `verified`), source title/edition, syllabus authority/year, author, reviewer, review date, and review notes. Legacy packs without this metadata normalize to `unreviewed`, never to verified. The prompt context explicitly distinguishes content checking from syllabus mapping and instructs the model not to upgrade a pack's status. This is metadata enforcement at the context boundary, not proof that someone has actually completed a review; a `verified` value must only be assigned after both content review and exact syllabus mapping have genuinely happened. Unit tests cover legacy packs, source details, status distinctions, and absent packs.
+
+The pack store now exposes async `readOfflineCurriculumPackDurable` and `writeOfflineCurriculumPackDurable` APIs backed by the existing IndexedDB `records` store, with the v2 localStorage pack retained as a backwards-compatible mirror and lazy migration source. The lesson-generation recovery path now reads packs asynchronously from IndexedDB first, rehydrates the legacy localStorage mirror for existing synchronous consumers, and the curriculum-grounding cache writes packs to both stores. This is an incremental browser-runtime integration, not proof of device-level reliability: quota failures, private browsing, Android WebView lifecycle behaviour, and actual offline cold-start still require browser/PWA and Android WebView testing. The existing synchronous localStorage functions remain for compatibility.
+
+## Source mapping for the first pilots
+
+| Pilot | Source-derived scope | Status |
+|---|---|---|
+| Physics kinematics | *Physics for Cambridge International AS & A Level Coursebook*, syllabus 9702 (examination from 2022): speed, distance/displacement, scalar/vector, velocity, displacement-time graphs, vector operations. | draft; runtime connected |
+| Physics accelerated motion | Same coursebook: acceleration, equations of motion, experimental measurement, gravity and projectiles. Lesson content is original and uses standard ideal-model assumptions explicitly. | draft; runtime connected |
+| Physics momentum and impulse | Original lesson on signed momentum, impulse, force-time graph area, conservation of momentum, and one-dimensional collisions. Guided by the supplied Cambridge International AS & A Level Physics coursebook topic sequence; exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |
+| Pure Mathematics algebra | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition, syllabus 9709: modulus, sketching modulus graphs, polynomial division, remainder theorem, factor theorem. The book's contents place this in Chapter 1. | draft; runtime connected |
+| Pure Mathematics logarithms and exponentials | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition: topic heading visible in the OCR-read contents. Detailed chapter coverage and exact syllabus-year mapping are not yet independently verified. | draft; runtime connected |
+| Pure Mathematics differentiation | Original authored starter covering derivative meaning, first principles, power and chain rules, tangents and stationary points. Exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |
+| Pure Mathematics sequences and series | Original authored starter covering arithmetic/geometric nth terms and finite sums, plus the convergence condition for an infinite geometric series. Exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |
+| Pure Mathematics trigonometric equations | Original authored starter covering reference angles, quadrant signs, periods, exact-angle solution sets and multiple-angle interval handling. Exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |
+
+The lessons use original explanations and examples. The source books guide scope and teaching sequence; textbook prose, figures and end-of-chapter questions are not copied into the app.
+
+
+
+### Pure Mathematics logarithms/exponentials validation (draft)
+
+The automated checks evaluate the product, quotient and power laws numerically; substitute candidate solutions into exponential and logarithmic equations; reject zero/negative logarithm arguments; check graph coordinates and asymptotes; and guard against the false rule that a logarithm of a sum equals a sum of logarithms. They are regression checks for the authored examples, not independent mathematical review or syllabus verification; the lesson remains a draft.
+
+### Pure Mathematics algebra expansion (draft)
+
+The algebra pilot now has a stepwise modulus-graph routine, a worked sketch of \`y = |x² − 4|\` with its piecewise definition, and a polynomial-division example with a non-zero remainder. The practice set includes a second division calculation and explicit checks by expanding \`P(x) = D(x)Q(x) + R(x)\`. Tests verify the division identities at multiple values and check modulus-graph roots and the reflected central value. These are arithmetic/structure checks, not independent examiner review or exact current-syllabus verification; the lesson remains a draft.
 
 ## Next curation queue
-1. Extract the Physics book's contents and map kinematics to the current Cambridge syllabus.
+1. Map the Physics kinematics and accelerated-motion lessons to the exact current Cambridge syllabus and have a second reviewer check every numerical answer.
 2. Inspect the Oxford Pure Mathematics contents and create a syllabus map for Pure 2 and Pure 3.
-3. Expand the Mathematics pilot to include modulus graph sketches and further polynomial-division examples, with answer checks.
-4. Add tests that recompute every numerical answer and reject topic drift.
-5. Add a runtime registry only after each entry passes review and tests.
-6. Add local retrieval and download packaging, with versioning and a visible distinction between curated content and AI-generated content.
+3. Independently check the logarithms/exponentials worked answers and map the lesson to the exact current Cambridge 9709 syllabus before upgrading its status.
+4. Extend the Mathematics pilot with further Pure 2/Pure 3 topics only after checking the supplied book contents and current syllabus map.
+5. Expand automated answer checks to every numerical result and add topic-drift checks.
+6. Independently review the differentiation starter, verify all worked answers, and map it to the exact current 9709 syllabus before changing its draft status.
+7. Independently review the sequences/series starter, verify each formula and answer, and map it to the exact current 9709 syllabus before changing its draft status.
+8. Independently review the trigonometric-equations starter, verify every solution set and map it to the exact current 9709 syllabus before changing its draft status.
+9. Add a runtime registry only after each entry passes independent content review and exact syllabus mapping.
+10. Add local retrieval and download packaging, with versioning and a visible distinction between curated content and AI-generated content.
+
+
+### Pure Mathematics differentiation starter (draft)
+
+Added an original teaching sequence on derivative meaning, first principles for x², polynomial differentiation, the chain rule, tangent equations and stationary-point classification. A learner-drawn curve/tangent prompt is included. Regression tests cover the numerical examples and lesson structure. This is a draft, not a claim of exact syllabus coverage or independent examiner approval.
+
+
+### Pure Mathematics sequences and series starter (draft)
+
+Added original instruction on arithmetic and geometric nth terms, finite sums, convergence of infinite geometric series, and a learner-drawn terms/partial-sums sketch. Numerical regression tests and runtime matching checks cover the authored examples and subject isolation. This remains draft content until independent mathematical review and exact syllabus mapping are complete.
+
+
+### Pure Mathematics trigonometric equations starter (draft)
+
+Added original instruction for solving sine, cosine and tangent equations over a stated interval, using reference angles and quadrant signs, and handling multiple-angle equations by transforming the interval before solving. The learner-drawn quadrant guide and automated checks cover representative exact-angle solutions. This remains draft content until independent mathematical review and exact syllabus mapping are complete.
+
+
+### Physics momentum and impulse starter (draft)
+
+Added an original offline lesson covering signed momentum, impulse as change in momentum, force-time graph area, one-dimensional conservation of momentum, collisions, and why longer stopping time reduces average force. The worked examples state a positive direction and carry signs through the calculation; practice answers are included. Runtime retrieval tests cover the topic and subject isolation. These checks do not replace independent physics review or exact current-syllabus mapping, so the lesson remains a draft.
+
+### Chemistry 9701 practical-skills mapping (pilot stage)
+
+The [9701 practical-skills register](./cambridge-9701-2025-2027-practical-skills.csv) tracks the current Chemistry 9701 (2025–2027) practical pilots against Paper 3 and Paper 5 skill areas. It records which areas have an initial authored lesson, which remain unbuilt, and which still require line-by-line confirmation against the official syllabus. It is deliberately **not** marked as an exhaustive or syllabus-verified practical inventory.
+
+The exact [official 9701 syllabus PDF for 2025–2027](https://www.cambridgeinternational.org/Images/664563-2025-2027-syllabus.pdf) is the controlling source. Its practical assessment section (PDF pages 58–73) distinguishes Paper 3 Advanced Practical Skills from Paper 5 Planning, Analysis and Evaluation. Paper 3 includes an observational problem using unknown substances, with qualitative-analysis notes supplied in the examination paper, and quantitative work involving a titration or measurement such as time, temperature, mass or gas volume. It expects suitable presentation of data/observations, analysis, calculations, conclusions and, where asked, comments on accuracy, errors and changes. Paper 5 is written, assesses planning, analysis, conclusions and evaluation, and may require a structured investigation design, hypothesis, diagrams/flow charts/tables/equations, or analysis of supplied data. The syllabus recommends at least 20% of course time in practical work, excluding demonstrations, and explicitly warns that extensive supervised laboratory experience is necessary for Paper 5 preparation.
+
+Current authored pilots:
+- **Quantitative analysis/titration:** [chemistry-practical-titration.ts](../../src/lib/cortex/curatedContent/chemistry-practical-titration.ts) covers volumetric apparatus, titre technique, concordance, mole/concentration calculations, uncertainty prompts and common procedural errors.
+- **Qualitative analysis:** [chemistry-practical-qualitative.ts](../../src/lib/cortex/curatedContent/chemistry-practical-qualitative.ts) introduces systematic cation, anion and gas testing, observations versus inferences, confirmatory evidence and safety cautions.
+- **Paper 5 planning and evaluation:** [chemistry-practical-planning.ts](../../src/lib/cortex/curatedContent/chemistry-practical-planning.ts) teaches problem definition, variables, hypotheses, apparatus/method design, data planning, safety, analysis, conclusions and evaluation using an original reaction-rate example.
+
+These are original teaching pilots, not copied Cambridge material. The qualitative test coverage is not a replacement for the complete official test table. The planning module is a preparation framework, not an official mark scheme or a guarantee of complete Paper 5 coverage. A lesson, a simulation or a worked dataset does not establish hands-on laboratory competence. Before calling 9701 practical coverage complete, map every applicable official skill and test, review reagent hazards and disposal, check calculations and accepted observations independently, and validate the learning activities against the exact 2025–2027 syllabus. Keep the 2028–2030 syllabus separate.
+
+
+## Biology 9700 practical pilot: microscopy and specimen observations
+
+Syllabus version: Cambridge International AS & A Level Biology 9700, 2025-2027, Version 1 (published September 2022). Keep this distinct from 2028-2030.
+
+Official syllabus: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf
+Official qualification page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-biology-9700/
+
+Paper 3 is a timetabled laboratory practical. It assesses manipulation, measurement and observation; presentation of data and observations; and analysis, conclusions and evaluation. Candidates may prepare slides, use a light microscope, observe specimens, present observations, analyse data and make deductions or conclusions. Paper 5 is a written planning, analysis and evaluation examination, but candidates still need extensive supervised laboratory experience. The syllabus recommends at least 20% of course time doing practical work individually or in small groups. Demonstrations and simulations do not count towards that recommendation.
+
+Original module: src/lib/cortex/curatedContent/biology-practical-microscopy.ts
+Fallback aliases: microscopy, microscope, biological drawings and specimen observation.
+Test: src/lib/cortex/curatedContent/biology-practical-microscopy.test.ts
+Register: docs/curriculum/cambridge-9700-2025-2027-practical-skills.csv
+
+The module covers slide preparation, safe focusing sequence, total magnification, actual-size calculations and unit conversion, observation versus inference, biological drawings, representative sampling and evidence recording. It is an introductory skill module, not a complete Paper 3 syllabus map. Register rows remain pending line-by-line verification and content review. Digital lessons and simulations cannot certify microscope handling or replace supervised work with real specimens and equipment.
+
+
+### Biology Paper 5 planning pilot
+
+Original module: src/lib/cortex/curatedContent/biology-practical-planning.ts
+Test: src/lib/cortex/curatedContent/biology-practical-planning.test.ts
+Fallback aliases: experimental planning, planning and evaluation, Paper 5, and planning analysis and evaluation.
+
+The lesson teaches problem definition, independent/dependent/control variables, hypotheses, repeatable methods, sampling and replication, table design, graphs, calculations and statistics, evidence-based conclusions, and evaluation. The worked contexts are original teaching examples, not prescribed Cambridge practicals. The Paper 5 register rows now point to this starter but remain pending detailed line-by-line syllabus verification and independent content review. This written lesson does not replace supervised practical laboratory work.
+
+
+### Biology 9700 theory pilot: cell structure
+
+Original module: src/lib/cortex/curatedContent/biology-cell-structure.ts
+Test: src/lib/cortex/curatedContent/biology-cell-structure.test.ts
+Runtime fallback aliases: cell structure, cells, prokaryotic and eukaryotic cells, and organelles.
+
+The starter introduces prokaryotic and eukaryotic cells; organelle structure and function; plant, animal and bacterial cell comparisons; cell specialisation and differentiation; microscopy magnification and resolution; and original worked calculations and practice. This is a first Topic 1 teaching pilot, not complete Biology 9700 topic coverage. Full topic/subtopic mapping, assessment mapping, diagrams, independent review and offline content packaging remain outstanding.
+
+
+### Biology 9700 theory pilot: biological molecules
+
+Original module: src/lib/cortex/curatedContent/biology-biological-molecules.ts
+Test: src/lib/cortex/curatedContent/biology-biological-molecules.test.ts
+Runtime fallback aliases: biological molecules, carbohydrates, lipids, proteins and water.
+
+The module covers water properties, condensation and hydrolysis, monosaccharides, disaccharides and polysaccharides, triglycerides, saturated and unsaturated fatty acids, phospholipids, amino acids and protein structure, biological molecule food tests, original worked comparisons and practice. It is a Topic 2 starter, not a complete topic/subtopic inventory. Full syllabus mapping, independently checked detail, visual teaching assets, review and offline content packaging remain outstanding.
+
+
+### Biology 9700 theory pilot: enzymes (Topic 3)
+
+Original module: `src/lib/cortex/curatedContent/biology-enzymes.ts`
+Test: `src/lib/cortex/curatedContent/biology-enzymes.test.ts`
+Runtime fallback aliases: enzymes, enzyme action and enzyme activity.
+
+The starter covers biological catalysis, active sites and the induced-fit model, activation energy, effects of temperature and pH, substrate and enzyme concentration, denaturation, initial-rate interpretation and controlled enzyme investigations. Worked data and practice prompts are original. This is a Topic 3 teaching starter, not a complete subtopic inventory or independently reviewed syllabus sign-off. Energy-profile and rate-curve visual assets, exact syllabus mapping, independent scientific review and offline pack integration remain outstanding.
+
+
+### Biology 9700 theory pilot: cell membranes and transport (Topic 4)
+
+Original module: `src/lib/cortex/curatedContent/biology-membranes-transport.ts`
+Test: `src/lib/cortex/curatedContent/biology-membranes-transport.test.ts`
+Runtime fallback aliases: cell membranes, membrane transport and transport across membranes.
+
+The starter covers the fluid mosaic model, phospholipids, membrane proteins and cholesterol, simple and facilitated diffusion, osmosis and water potential, active transport, co-transport, endocytosis and exocytosis, and surface area-to-volume ratio. The examples and practice prompts are original. This is a Topic 4 teaching starter, not a complete subtopic inventory or independently reviewed syllabus sign-off. A proper labelled membrane diagram, transport visualisations, exact syllabus mapping, independent scientific review and offline pack integration remain outstanding.
+
+
+### Biology 9700 theory pilot: the mitotic cell cycle (Topic 5)
+
+Original module: `src/lib/cortex/curatedContent/biology-mitotic-cell-cycle.ts`
+Test: `src/lib/cortex/curatedContent/biology-mitotic-cell-cycle.test.ts`
+Runtime fallback aliases: mitotic cell cycle, mitosis and cell cycle.
+
+The starter covers interphase (G1, S and G2), chromosome and sister-chromatid terminology, prophase, metaphase, anaphase, telophase, cytokinesis in plant and animal cells, the role of mitosis in growth and repair, and cell-cycle checkpoints. It includes original chromosome-number reasoning and practice prompts. This is a Topic 5 teaching starter, not a complete subtopic inventory or independently reviewed syllabus sign-off. A labelled mitosis diagram/animation, exact syllabus mapping, independent scientific review and offline pack integration remain outstanding.
+
+
+## Biology 9700 Topic 6 teaching pilot: nucleic acids and protein synthesis
+
+- Version scope: Cambridge International AS & A Level Biology 9700, 2025–2027 syllabus only. The 2028–2030 syllabus is a separate version and must be mapped independently.
+- Original module: `src/lib/cortex/curatedContent/biology-nucleic-acids-protein-synthesis.ts`.
+- Offline fallback aliases: nucleic acids, protein synthesis, DNA replication, transcription and translation.
+- Test: `src/lib/cortex/curatedContent/biology-nucleic-acids-protein-synthesis.test.ts`.
+- Teaching scope: nucleotide components and DNA/RNA differences; phosphodiester bonds; antiparallel complementary DNA strands; semi-conservative replication; transcription; mRNA codons; tRNA anticodons; ribosome and peptide-bond formation; polypeptide sequence and protein function.
+- This is an original starter lesson, not a complete topic 6 syllabus inventory. Exact learning-outcome mapping, sequence/diagram assets, specialist review, assessment-question validation and downloadable-pack integration remain outstanding. Strand-direction examples and biological terminology require independent review before verified status.
+- No textbook passages, diagrams, questions or answer keys have been copied.
+
+
+## Biology 9700 Topic 7 teaching pilot: transport in plants
+
+- Version scope: Cambridge International AS & A Level Biology 9700, 2025–2027 syllabus only. Do not mix with the separate 2028–2030 syllabus.
+- Original module: `src/lib/cortex/curatedContent/biology-transport-in-plants.ts`.
+- Offline fallback aliases: transport in plants, transpiration, xylem and phloem.
+- Test: `src/lib/cortex/curatedContent/biology-transport-in-plants.test.ts`.
+- Teaching scope: root hair uptake; osmosis and mineral-ion absorption; apoplast, symplast and endodermis/Casparian strip; xylem adaptation; cohesion-tension; transpiration and stomatal control; potometer interpretation and its limitations; phloem structure; sources, sinks and mass flow.
+- This is an original teaching pilot, not a complete Topic 7 learning-outcome inventory. Detailed official syllabus mapping, labelled transport diagrams, practical data/graph tasks, specialist review and offline pack integration remain outstanding. Potometer and transport explanations require independent subject review.
+- No textbook passages, diagrams, questions or answer keys have been copied.
+
+
+### Biology 9700 Topic 8: transport in mammals (original teaching pilot)
+
+- Module: `src/lib/cortex/curatedContent/biology-transport-in-mammals.ts`.
+- Runtime aliases: `transport in mammals`, `mammalian circulation`, `the heart`, `blood vessels`, and `tissue fluid`, restricted to Biology requests.
+- The original lesson introduces the double circulation, route of blood through chambers and valves, cardiac cycle and cardiac output, artery/vein/capillary adaptations, plasma and formed elements, red-cell and haemoglobin function, the oxygen dissociation curve and Bohr effect, tissue-fluid formation and lymph return.
+- A labelled route-of-blood drawing task and comparison table are included as teaching prompts. The diagram prompt is not a rendered anatomical illustration; a properly labelled, accessible heart/circulation visual remains outstanding.
+- Automated tests check core coverage, practice content, alias retrieval and subject isolation.
+- Status: original teaching pilot, draft. It is not a complete line-by-line syllabus map or independent subject-expert verification. Confirm every subtopic and assessment demand against the exact Cambridge 9700 2025–2027 syllabus before upgrading status. Physical circulatory practicals, diagram assessment, independent review and versioned offline-pack integration remain outstanding.
+- The lesson is authored independently. No textbook passages, diagrams, or past-paper questions are reproduced.
+
+
+### Biology 9700 Topic 9: gas exchange (2025–2027 syllabus pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, Version 1, September 2022, for examinations 2025–2027. Topic 9 is an AS topic. Official source: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (section 9.1, PDF page 29).
+- Scope follows the seven learning outcomes in section 9.1: human gas-exchange structures; distribution of cartilage, ciliated epithelium, goblet cells, alveolar squamous epithelium, smooth muscle and capillaries; recognition of these tissues in slides and micrographs; recognition of trachea, bronchi, bronchioles and alveoli; plan diagrams of transverse sections of trachea and bronchus; roles of ciliated cells, goblet cells and mucous glands; functions of cartilage, smooth muscle, elastic fibres and squamous epithelium; and diffusion between alveolar air and capillary blood.
+- Module: `src/lib/cortex/curatedContent/biology-gas-exchange.ts`.
+- Runtime aliases: `gas exchange`, `human gas exchange system`, `alveoli`, `trachea and bronchi`, and `gas exchange in humans`, restricted to Biology requests.
+- Original lesson includes airway pathway, tissue distribution and function, mucociliary clearance, bronchiole smooth muscle, alveolar exchange adaptations, partial-pressure gradients, micrograph identification, and explicit plan-diagram drawing practice for trachea and bronchus transverse sections.
+- Automated tests check the official subject strands, diagram/practice prompts, alias retrieval and subject isolation.
+- Status: draft teaching pilot with section-level syllabus scope checked against the official 2025–2027 PDF. Detailed sub-outcome review, independent Biology teacher review, actual accessible labelled diagrams/micrograph practice, and offline pack integration remain outstanding. A text drawing prompt is not a rendered anatomical diagram.
+- All explanations and questions are original; no protected syllabus illustrations, coursebook figures or examination questions are reproduced.
+
+### Topic 8 review note
+
+A second pass against section 8 of the same official syllabus identified additional required strands not present in the first mammalian transport draft. The Topic 8 module has now been extended to include arterioles and venules, monocytes and neutrophils, water's solvent action and high specific heat capacity, sinoatrial node, atrioventricular node and Purkyne tissue, carbonic anhydrase, haemoglobinic acid, carbaminohaemoglobin, plasma transport of carbon dioxide and the chloride shift. Regression tests now check these terms. The topic remains a draft pending detailed mapping and independent review.
+
+
+### Biology 9700 Topic 10: infectious diseases and antibiotics (2025–2027 pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, Version 1, September 2022, examinations 2025–2027. Official syllabus: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (sections 10.1–10.2).
+- Scope: infectious disease and pathogens; named diseases and agents (cholera, malaria, TB and HIV); transmission routes; biological, social and economic factors in prevention/control; penicillin action and why antibiotics do not affect viruses; antibiotic resistance and ways to reduce its impact. The syllabus does not require a detailed malaria parasite life cycle.
+- Module: `src/lib/cortex/curatedContent/biology-infectious-diseases.ts`.
+- Runtime aliases: infectious diseases, cholera, malaria, tuberculosis, HIV, antibiotics and antibiotic resistance, restricted to Biology requests.
+- Test: `src/lib/cortex/curatedContent/biology-infectious-diseases.test.ts`.
+- Original teaching content includes pathogen classification, faecal-oral cholera transmission, mosquito-vector malaria transmission, airborne TB transmission (and the M. bovis animal/food context), specific HIV exposure routes and prevention, public-health and socioeconomic controls, penicillin's peptidoglycan target, viral differences, resistance by natural selection and gene transfer, stewardship and applied evaluation.
+- Status: draft teaching pilot. The transmission-route flowchart is a drawing prompt, not a rendered diagram. Independent Biology teacher review, detailed learning-outcome mapping, current public-health source review, accessible diagrams, question validation and offline-pack integration remain outstanding. This is educational content, not clinical advice.
+- All explanations and questions are original. No textbook passages, protected figures, or past-paper questions are reproduced.
+
+
+### Biology 9700 Topic 11: immunity (2025–2027 pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, Version 1, September 2022, examinations 2025–2027. Official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (section 11, PDF page 31). The official subject page lists separate 2025–2027 and 2028–2030 syllabus versions: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-biology-9700/.
+- Scope: 11.1 phagocytes (macrophages and neutrophils), antigens and self/non-self antigens, primary immune response involving macrophages, B-lymphocytes/plasma cells and T-helper/T-killer cells, memory cells and secondary response. 11.2 antibody structure/function, hybridoma production, monoclonal antibody diagnosis/treatment, active/passive and natural/artificial immunity, vaccines and vaccination programmes.
+- Module: `src/lib/cortex/curatedContent/biology-immunity.ts`.
+- Runtime aliases: immunity, immune system, phagocytosis, antibodies, monoclonal antibodies, vaccination and active/passive immunity, restricted to Biology requests.
+- Test: `src/lib/cortex/curatedContent/biology-immunity.test.ts`.
+- Original lesson includes phagocytosis sequence, antigen presentation, clonal selection/expansion, primary and secondary response, antibody structure-function links, hybridoma outline, diagnostic/therapeutic uses, immunity classifications, vaccination and community-level transmission effects. It includes antibody-response graph and immune-sequence drawing prompts, not rendered biological diagrams.
+- Status: draft teaching pilot, not a complete independently verified lesson pack. Detailed outcome-by-outcome assessment mapping, accessible labelled diagrams and graph assets, independent Biology teacher review, validation of monoclonal antibody examples and offline-pack integration remain outstanding.
+- All explanations and questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+### CI regression follow-up
+
+The Topic 10 CI run identified two existing coverage-test issues in addition to the new Topic 10 assertion: the Topic 10 test expected the full spelling of `Mycobacterium bovis` where the lesson initially abbreviated it as `M. bovis`, and the Topic 7 test requested the missing natural-language alias `water transport in plants`. The lesson now spells out the species and the fallback alias has been added. Re-run the full workflow on the latest head before treating these corrections as verified.
+
+
+### Biology 9700 Topic 12: energy and respiration (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, Version 1, September 2022, examinations 2025–2027. Official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (Topic 12, PDF pages 32–34). The official subject page lists a separate 2028–2030 syllabus; this pilot is explicitly scoped to 2025–2027.
+- Scope checked against sections 12.1 and 12.2. Section 12.1 includes energy needs (active transport, movement, anabolic reactions), ATP features and synthesis by substrate-linked phosphorylation and chemiosmosis, relative substrate energy values, RQ definition/calculation, and simple respirometer investigations to determine RQ. Section 12.2 includes locations and stages of aerobic respiration, glycolysis, link reaction, Krebs cycle, NAD/FAD, oxidative phosphorylation and chemiosmosis, mitochondrial structure/function, mammalian lactate and yeast ethanol fermentation, relative aerobic/anaerobic energy yield, flooded-rice adaptations, yeast redox-indicator investigations (DCPIP and methylene blue), and respirometer investigations of temperature effects.
+- Module: `src/lib/cortex/curatedContent/biology-energy-respiration.ts`.
+- Runtime aliases: energy and respiration, energy, respiration, aerobic respiration, anaerobic respiration, glycolysis, link reaction, Krebs cycle, oxidative phosphorylation, respiratory quotient, respirometers, fermentation and ATP, restricted to Biology requests.
+- Test: `src/lib/cortex/curatedContent/biology-energy-respiration.test.ts`.
+- Original lesson includes energy-use cases, ATP structure and synthesis, substrate comparison, worked RQ calculations, respirometer design and controls, all four aerobic stages and locations, mitochondrial structure/function, anaerobic pathways, rice aerenchyma, yeast redox-indicator investigations and practical evaluation. Diagram blocks are drawing prompts, not rendered diagrams or micrograph assets.
+- Scope guardrails: the syllabus does not expect a detailed total ATP yield from aerobic glucose respiration or detailed identities of electron carriers/ATP synthase. The lesson avoids presenting a single total ATP figure as a required fact.
+- Status: draft teaching pilot. Detailed outcome-by-outcome traceability, independent Biology teacher review, accessible mitochondrial/respirometer diagrams and micrograph exercises, practical safety review, validation of calculations and offline-pack integration remain outstanding.
+- All explanations, examples and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+### Biology 9700 Topic 13: photosynthesis (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027. Official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (Topic 13, PDF pages 35–36). Do not silently mix the separate 2028–2030 syllabus into this pilot.
+- Scope checked against 13.1 and 13.2. Section 13.1 covers chloroplast structure in diagrams/electron micrographs; ATP and reduced NADP transfer between stages; thylakoid and stroma locations; chlorophyll a/b, carotene and xanthophyll; absorption/action spectra; pigment chromatography and Rf; cyclic and non-cyclic photophosphorylation; proton movement and ATP synthase; the three Calvin-cycle stages; and specified uses of GP and TP. Section 13.2 covers light intensity, CO₂ concentration and temperature as limiting factors, plus chloroplast-suspension redox-indicator investigations and whole-plant investigations.
+- Module: `src/lib/cortex/curatedContent/biology-photosynthesis.ts`.
+- Runtime aliases: photosynthesis, light-dependent stage, light-independent stage, Calvin cycle, photophosphorylation, chloroplast pigments, limiting factors and chromatography, restricted to Biology requests.
+- Test: `src/lib/cortex/curatedContent/biology-photosynthesis.test.ts`.
+- Original lesson includes chloroplast drawing/micrograph prompts, spectra interpretation, chromatography and worked Rf calculation, pathway comparisons, photolysis, Calvin-cycle flow diagram, limiting-factor graph interpretation, DCPIP/methylene-blue investigations, whole-plant practical design, controls, evaluation and exam-style data interpretation. Diagram blocks are drawing prompts, not rendered assets.
+- Scope guardrails: detailed identities of individual electron carriers and ATP synthase structure are not required. The lesson stays within specified Calvin-cycle product routes and does not add unsupported C4 pathway content.
+- Status: draft teaching pilot. Detailed outcome-by-outcome traceability, independent Biology teacher review, accessible chloroplast diagrams and micrograph assets, practical safety review and offline-pack integration remain outstanding.
+- All explanations, examples and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+### Biology 9700 Topic 14: homeostasis (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027. Official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (Topic 14, PDF pages 37–38). The official qualification page lists a separate 2028–2030 syllabus; this pilot is explicitly scoped to 2025–2027.
+- Scope checked against 14.1 and 14.2. Mammalian outcomes include homeostasis and negative feedback; urea production by liver deamination; kidney structure; identification of the specified nephron parts; ultrafiltration and selective reabsorption; structure-function links for Bowman's capsule and proximal convoluted tubule; hypothalamus, posterior pituitary, ADH, aquaporins and collecting ducts in osmoregulation; glucagon cell signalling via a G-protein, adenylyl cyclase, cAMP, PKA and enzyme cascade; insulin/glucagon blood-glucose control; and glucose test strips/biosensors using glucose oxidase and peroxidase. Plant outcomes include stomatal aperture, daily rhythms, guard-cell structure/function, and ABA with calcium ions as a second messenger during water stress.
+- Module: `src/lib/cortex/curatedContent/biology-homeostasis.ts`.
+- Runtime aliases: homeostasis, negative feedback, kidney, nephron, ultrafiltration, osmoregulation, ADH, blood glucose, glucagon, insulin, stomata, guard cells and abscisic acid, restricted to Biology requests.
+- Test: `src/lib/cortex/curatedContent/biology-homeostasis.test.ts`.
+- Original lesson includes kidney/nephron and feedback-loop drawing prompts, ADH and glucagon pathway diagrams, worked explanations, glucose sensor principles, guard-cell mechanisms, ABA signalling, practice and integrated exam-style transfer. Diagram blocks are drawing prompts, not rendered anatomical assets or micrographs.
+- Scope guardrails: this is not a full thermoregulation lesson; the syllabus introduction identifies core temperature as a regulated variable, but the detailed 14.1 outcomes mapped here focus on kidney/water balance and blood glucose. Detailed renal physiology beyond the named structures and processes is not presented as a required outcome.
+- Status: draft teaching pilot. Detailed outcome-by-outcome traceability, independent Biology teacher review, accessible kidney/nephron and guard-cell diagrams/micrographs, practical and medical-context review, and offline-pack integration remain outstanding.
+- All explanations, examples and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+### Biology 9700 Topic 15: control and coordination (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027. Official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (Topic 15, PDF pages 39–40). Do not mix in outcomes from the separate 2028–2030 syllabus without a new mapping review.
+- Scope checked against 15.1 and 15.2. Mammalian outcomes include endocrine features using ADH, glucagon and insulin; comparison of nervous and endocrine systems; sensory, motor and intermediate neurones; receptor-cell signalling using a human taste-bud chemoreceptor; resting potential, action potential, refractory period, saltatory conduction and impulse frequency; cholinergic synapse structure/function and calcium; neuromuscular junction, T-tubules and sarcoplasmic reticulum; striated muscle ultrastructure, sarcomeres and sliding-filament contraction with troponin, tropomyosin, calcium and ATP. Plant outcomes include Venus flytrap rapid response, auxin-stimulated proton pumping and cell-wall acidification, and gibberellin-stimulated alpha-amylase production in barley germination.
+- Module: `src/lib/cortex/curatedContent/biology-control-coordination.ts`.
+- Runtime aliases: control and coordination, nervous/endocrine systems, sensory/motor neurones, action potential, saltatory conduction, synapse, neuromuscular junction, sarcomere/sliding filament, Venus flytrap, auxin, gibberellin and barley germination, restricted to Biology requests.
+- Test: `src/lib/cortex/curatedContent/biology-control-coordination.test.ts`.
+- Original lesson includes neurone and synapse diagrams, taste-receptor signalling, action-potential graphs, sarcomere/micrograph interpretation prompts, cross-bridge cycle, plant response diagrams, practice and integrated exam-style transfer. Diagram blocks are drawing prompts, not rendered histology or micrograph assets.
+- Scope guardrails: detailed molecular mechanisms beyond the stated learning outcomes are not treated as mandatory. The Venus flytrap explanation stays at the level of stimulus, electrical response and rapid trap closure; the auxin and gibberellin sections stay within the specified mechanisms.
+- Status: draft teaching pilot. Detailed outcome-by-outcome traceability, independent Biology teacher review, accessible neurone/synapse/sarcomere diagrams and micrograph assets, and offline-pack integration remain outstanding.
+- All explanations, examples and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+### Biology 9700 Topic 16: inheritance (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027, Topic 16, sections 16.1–16.3, official syllabus PDF pages 41–42: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf
+- 16.1 coverage: haploid/diploid, homologous chromosomes, need for reduction division, chromosome and nuclear events through the eight named meiotic stages, photomicrograph/diagram recognition, crossing over, independent assortment and random fertilisation.
+- 16.2 coverage: gene/locus/allele and inheritance vocabulary; monohybrid and dihybrid crosses; dominance, codominance, multiple alleles, sex linkage, autosomal linkage, epistasis and test crosses; chi-squared calculation and interpretation; gene-to-protein-to-phenotype examples TYR/tyrosinase/albinism, HBB/haemoglobin/sickle cell anaemia, F8/factor VIII/haemophilia, HTT/huntingtin/Huntington's disease; Le/le alleles and gibberellin synthesis in stem elongation.
+- 16.3 coverage: structural and regulatory genes, inducible and repressible enzymes, lac operon (without cAMP detail), eukaryotic transcription factors, and gibberellin-triggered DELLA repressor breakdown.
+- Module: `src/lib/cortex/curatedContent/biology-inheritance.ts`.
+- Runtime aliases include inheritance, meiosis, crossing over, independent assortment, Punnett squares, monohybrid/dihybrid crosses, codominance, multiple alleles, sex linkage, autosomal linkage, epistasis, test crosses, chi-squared, named gene-condition examples, lac operon, gene control and gibberellin stem elongation. All routes are Biology-scoped.
+- Test: `src/lib/cortex/curatedContent/biology-inheritance.test.ts`.
+- Original teaching includes meiosis stage drawing/recognition prompts, monohybrid and dihybrid Punnett-square workflows, linked-chromosome crossover diagrams, sex-linked crosses, worked chi-squared calculation and decision, lac-operon diagrams and an integrated exam-style question. Diagram prompts are not supplied micrographs or official exam diagrams.
+- Important scope guardrails: no memorisation of epistasis phenotype ratios is required; cAMP is not required for the lac operon; the chi-squared formula is provided in the examination; expected ratios must be derived from the stated cross and assumptions. The 9:3:3:1 ratio is not a universal dihybrid answer.
+- Status: draft teaching pilot. Outcome-by-outcome teacher review, external validation of worked genetic examples and statistical interpretation, original accessible meiosis/operon diagrams, and offline-pack integration remain outstanding.
+- All explanations and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+
+### Biology 9700 Topic 17: selection and evolution (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027, Topic 17, sections 17.1–17.3, official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf
+- 17.1 variation: genetic and environmental contributions; continuous and discontinuous variation and their genetic basis; comparing two sample means with the supplied t-test formula; null hypothesis and significance interpretation.
+- 17.2 natural and artificial selection: overproduction, competition and differential reproductive success; directional, stabilising and disruptive selection; genetic drift, founder effect and bottleneck; antibiotic resistance; Hardy–Weinberg allele/genotype calculations and assumptions; selective breeding principles and examples in disease-resistant wheat/rice, hybrid maize and dairy cattle.
+- 17.3 evolution: gene-pool changes across generations; DNA sequence evidence for evolutionary relationships; allopatric speciation through geographical separation and sympatric speciation through ecological or behavioural isolation.
+- Module: `src/lib/cortex/curatedContent/biology-selection-evolution.ts`.
+- Runtime aliases include variation, t-test, selection patterns, genetic drift, founder/bottleneck effects, Hardy–Weinberg, selective breeding, speciation and evolutionary relationships. All routes are Biology-scoped. The existing antibiotic-resistance alias remains mapped to the infectious-diseases lesson, which also teaches the mechanism of resistance.
+- Test: `src/lib/cortex/curatedContent/biology-selection-evolution.test.ts`.
+- Original teaching includes variation-distribution drawing prompts, t-test decision workflow, selection curves, Hardy–Weinberg worked calculation, evolutionary-tree interpretation and original integrated practice.
+- Scope guardrails: use the t-test formula and critical values supplied by the examination question; do not infer causation solely from statistical significance. Hardy–Weinberg equations are supplied and depend on stated equilibrium assumptions.
+- Status: draft teaching pilot. Independent Biology teacher review, verification of statistical worked examples against the current syllabus support materials, accessible original diagrams and offline-pack integration remain outstanding.
+- All explanations and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+
+### Biology 9700 Topic 18: classification, biodiversity and conservation (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027, Topic 18, sections 18.1–18.3, official syllabus PDF pages 44–46: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf
+- 18.1 classification: biological, morphological and ecological species concepts; Archaea, Bacteria and Eukarya; prokaryotic differences limited to membrane lipids, ribosomal RNA and cell-wall composition; Eukarya hierarchy and kingdoms Protoctista, Fungi, Plantae and Animalia; virus classification by DNA/RNA and single-/double-stranded genome.
+- 18.2 biodiversity: ecosystem, species and genetic levels; ecosystem and niche definitions; random sampling; frame quadrats, line and belt transects, mark-release-recapture and Lincoln index; Spearman's rank and Pearson's linear correlation; Simpson's index of diversity and interpretation.
+- 18.3 conservation: extinction threats; reasons to maintain biodiversity; zoos, botanic gardens, protected areas, frozen zoos and seed banks; IVF, embryo transfer and surrogacy; invasive alien species control; IUCN and CITES roles.
+- Module: `src/lib/cortex/curatedContent/biology-classification-biodiversity.ts`.
+- Test: `src/lib/cortex/curatedContent/biology-classification-biodiversity.test.ts`.
+- Runtime aliases cover classification, domains, kingdoms, virus classification, field sampling, population estimation, correlations, Simpson's index, conservation methods and organisations. All routes are Biology-scoped.
+- Original learning assets include taxonomy and transect drawing prompts, quadrat density and Lincoln-index calculations, sampling assumptions, correlation interpretation, Simpson-index comparison and integrated fieldwork/conservation practice.
+- Scope guardrails: statistical formulae and the Lincoln index are supplied by the examination; use the exact formula version provided. Simpson's index conventions can differ, so interpret direction using the Cambridge formula supplied. Correlation does not establish causation.
+- Status: draft teaching pilot. Independent Biology teacher review, validation of all worked calculations against the exact examination formulae, accessible original diagrams, local fieldwork resource design and offline-pack integration remain outstanding.
+- All explanations and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+
+### Biology 9700 Topic 19: genetic technology (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027, Topic 19, sections 19.1–19.3, official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf
+- 19.1 principles: recombinant DNA and genetic engineering; gene sources (donor DNA, cDNA made from mRNA, chemical synthesis); restriction endonucleases, DNA ligase, plasmid vectors, DNA polymerase and reverse transcriptase; promoters and fluorescent marker genes; gene editing by insertion, deletion or replacement; PCR and Taq polymerase; gel electrophoresis; microarrays; nucleotide, amino-acid and protein-structure databases.
+- 19.2 medicine: recombinant human insulin, factor VIII and adenosine deaminase; genetic screening examples BRCA1/BRCA2, Huntington's disease and cystic fibrosis; gene therapy examples ADA-SCID and inherited retinal disease; social and ethical considerations of screening and therapy.
+- 19.3 agriculture: genetic engineering in food production, including GM salmon, herbicide-resistant soybean and insect-resistant cotton; evaluation of social and ethical implications.
+- Module: `src/lib/cortex/curatedContent/biology-genetic-technology.ts`.
+- Test: `src/lib/cortex/curatedContent/biology-genetic-technology.test.ts`.
+- Runtime aliases cover genetic engineering, recombinant DNA, gene transfer, restriction enzymes, plasmids, gene editing, PCR, electrophoresis, microarrays, databases, medical applications and the named agricultural examples. All routes are Biology-scoped.
+- Original learning assets include plasmid cloning, PCR-cycle, gel-electrophoresis and microarray drawing prompts, alongside original explanations, practice and an integrated exam-style question. These are text prompts, not rendered scientific diagrams.
+- Scope guardrails: distinguish reverse transcriptase (RNA-templated cDNA synthesis) from DNA polymerase; distinguish gene presence from gene expression; BRCA variants alter risk rather than guaranteeing cancer; distinguish somatic therapy from heritable germline editing; evaluate each GMO by its specific trait and context.
+- Status: draft teaching pilot. Independent Biology teacher review, outcome-by-outcome traceability, scientific review of gene-therapy examples and ethical framing, accessible original diagrams, and offline-pack integration remain outstanding.
+- All explanations and questions are original. No textbook passages, protected figures or past-paper questions are reproduced.

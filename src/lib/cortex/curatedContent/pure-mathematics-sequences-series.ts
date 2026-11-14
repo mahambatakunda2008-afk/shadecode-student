@@ -1,0 +1,32 @@
+import type { LessonQualityBlock } from "../lessonQuality";
+
+/**
+ * Original Pure Mathematics sequences and series starter.
+ * Draft only: exact syllabus-year mapping and independent review remain due.
+ */
+export const PURE_MATHEMATICS_SEQUENCES_SERIES_STARTER: {
+  title: string;
+  blocks: LessonQualityBlock[];
+} = {
+  title: "Sequences and series: arithmetic and geometric patterns",
+  blocks: [
+    { type: "objective", title: "Learning objectives", content: "By the end, you should be able to distinguish a sequence from a series, identify arithmetic and geometric patterns, find a general term, calculate finite sums, and decide when an infinite geometric series has a finite sum." },
+    { type: "prior", title: "Before you start", content: "You should be confident with positive and negative numbers, powers, algebraic substitution and rearranging simple equations. A sequence is an ordered list of terms. A series is the sum of terms from a sequence. Do not confuse the nth term with the sum of the first n terms." },
+    { type: "definition", title: "Arithmetic sequences", content: "An arithmetic sequence has a constant difference between consecutive terms. If the first term is a and the common difference is d, its nth term is u_n = a + (n - 1)d. The factor n - 1 appears because the first term has had zero steps of size d added to it." },
+    { type: "example", title: "Worked example: arithmetic nth term", content: "Consider 7, 11, 15, 19, ... The first term is a = 7 and the common difference is d = 4. Therefore u_n = 7 + 4(n - 1) = 4n + 3. The 12th term is u_12 = 4(12) + 3 = 51. Check the rule at n = 1: it gives 7, as required." },
+    { type: "formula", title: "Sum of an arithmetic series", content: "For the first n terms of an arithmetic sequence, S_n = n/2 [2a + (n - 1)d]. If the last term l is known, the equivalent form is S_n = n(a + l)/2. The second form is the number of terms multiplied by the average of the first and last terms." },
+    { type: "example", title: "Worked example: arithmetic sum", content: "Find the sum of the first 12 terms of 7, 11, 15, ... The 12th term is 51, so S_12 = 12(7 + 51)/2 = 6 × 58 = 348. Using the other formula gives 12/2 [2(7) + 11(4)] = 6(58) = 348, which independently confirms the result." },
+    { type: "definition", title: "Geometric sequences", content: "A geometric sequence has a constant ratio between consecutive terms, provided the preceding term is non-zero. If the first term is a and common ratio is r, then u_n = ar^(n - 1). A negative ratio produces alternating signs; a ratio between zero and one in magnitude produces terms whose magnitudes decrease." },
+    { type: "example", title: "Worked example: geometric nth term", content: "Consider 3, 6, 12, 24, ... Each term is multiplied by 2, so a = 3 and r = 2. The nth term is u_n = 3 × 2^(n - 1). The sixth term is 3 × 2^5 = 96. Check that n = 1 gives 3 × 2^0 = 3." },
+    { type: "formula", title: "Sum of a finite geometric series", content: "For r not equal to 1, the sum of the first n terms is S_n = a(1 - r^n)/(1 - r). An equivalent form is a(r^n - 1)/(r - 1). If r = 1, every term equals a, so S_n = na; do not substitute r = 1 into the quotient formula." },
+    { type: "example", title: "Worked example: finite geometric sum", content: "Find 3 + 6 + 12 + 24 + 48 + 96. Here a = 3, r = 2 and n = 6. S_6 = 3(1 - 2^6)/(1 - 2) = 3(1 - 64)/(-1) = 189. Directly adding the six terms also gives 189." },
+    { type: "concept", title: "Infinite geometric series", content: "An infinite geometric series has a finite sum only when the common ratio satisfies |r| < 1. In that case, S_infinity = a/(1 - r). The condition matters: if |r| is at least 1 and a is non-zero, the terms do not approach zero, so the infinite sum does not converge to a finite value." },
+    { type: "example", title: "Worked example: convergent series", content: "Find 8 + 4 + 2 + 1 + ... The first term is 8 and r = 1/2. Since |1/2| < 1, the series converges and S_infinity = 8/(1 - 1/2) = 16. The partial sums approach 16 from below; no finite partial sum is exactly 16." },
+    { type: "diagram", title: "Draw the terms and partial sums", content: "sequence-sketch: On a number line, mark the terms 8, 4, 2, 1, 1/2, ... to show them approaching zero. Separately sketch partial sums 8, 12, 14, 15, 15.5, ... approaching the horizontal level y = 16. Label the distinction between individual terms and accumulated sums. This is a learner-drawn prompt, not a supplied image." },
+    { type: "checkpoint", title: "Choose the right model", content: "For 5, 9, 13, 17, ... identify whether the pattern is arithmetic or geometric and state its common difference or ratio. Then do the same for 5, 15, 45, 135, ... Explain why checking the difference and checking the ratio are different tests." },
+    { type: "misconception", title: "Common mistakes", content: "Do not use the arithmetic formula for a geometric sequence. In u_n = a + (n - 1)d and u_n = ar^(n - 1), the first term is obtained by setting n = 1. A series sum is not the same as its nth term. For an infinite geometric series, check |r| < 1 before using S_infinity = a/(1 - r)." },
+    { type: "practice", title: "Practice ladder with answers", content: "1. Find the 20th term of 2, 5, 8, ... Answer: a = 2, d = 3, so u_20 = 2 + 19(3) = 59. 2. Find the sum of the first 10 terms of 2, 5, 8, ... Answer: u_10 = 29, so S_10 = 10(2 + 29)/2 = 155. 3. Find the 7th term of 4, 12, 36, ... Answer: u_7 = 4 × 3^6 = 2916. 4. Find 6 + 3 + 1.5 + ... Answer: r = 1/2, so S_infinity = 6/(1 - 1/2) = 12. 5. Does 2 + 4 + 8 + ... have a finite infinite sum? Answer: no, because r = 2 and |r| is not less than 1." },
+    { type: "exam", title: "Exam method", content: "Write down a, d or r and n before selecting a formula. For an arithmetic sum, calculate the last term carefully if using S_n = n(a + l)/2. For a geometric infinite sum, state the convergence condition before calculating. Keep exact fractions where possible and substitute the answer back into the nth-term rule to check the index." },
+    { type: "summary", title: "The pattern to retain", content: "Arithmetic sequences add a constant difference; geometric sequences multiply by a constant ratio. Their nth terms are a + (n - 1)d and ar^(n - 1). Use the matching finite-sum formula for each pattern. An infinite geometric series has sum a/(1 - r) only when |r| < 1. Always distinguish terms from sums and check the index." },
+  ],
+};

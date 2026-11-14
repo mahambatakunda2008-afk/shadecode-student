@@ -1,5 +1,5 @@
 import type { OfflineCurriculumPack } from "@/lib/cortex/offlineCurriculumPack";
-import { writeOfflineCurriculumPack } from "@/lib/cortex/offlineCurriculumPack";
+import { writeOfflineCurriculumPack, writeOfflineCurriculumPackDurable } from "@/lib/cortex/offlineCurriculumPack";
 
 const CACHE_PREFIX = "shadecode:cortex:curriculum-grounding:v2:";
 const MAX_CONTEXT_CHARS = 24000;
@@ -49,7 +49,11 @@ export function writeLocalCurriculumGrounding(subject: string, topic: string, da
       promptContext: data.promptContext.slice(0, MAX_CONTEXT_CHARS),
       cachedAt: new Date().toISOString(),
     }));
-    if (data.pack?.subject) writeOfflineCurriculumPack(data.pack);
+    if (data.pack?.subject) {
+      writeOfflineCurriculumPack(data.pack);
+      // Keep legacy synchronous readers working while persisting the durable copy.
+      void writeOfflineCurriculumPackDurable(data.pack);
+    }
   } catch {}
 }
 
@@ -57,7 +61,10 @@ export async function getLocalCurriculumGrounding(subject: string, topic: string
   const cached = readLocalCurriculumGrounding(subject, topic);
   if (cached) {
     const cachedData = readLocalCurriculumGroundingData(subject, topic);
-    if (cachedData?.pack) writeOfflineCurriculumPack(cachedData.pack);
+    if (cachedData?.pack) {
+      writeOfflineCurriculumPack(cachedData.pack);
+      await writeOfflineCurriculumPackDurable(cachedData.pack);
+    }
     return cached;
   }
   if (typeof window === "undefined" || !navigator.onLine) return null;
@@ -74,6 +81,7 @@ export async function getLocalCurriculumGrounding(subject: string, topic: string
       resolvedTopic: typeof data.resolvedTopic === "string" ? data.resolvedTopic : undefined,
       pack: data.pack,
     });
+    if (data.pack?.subject) await writeOfflineCurriculumPackDurable(data.pack);
     return data.promptContext.slice(0, MAX_CONTEXT_CHARS);
   } catch { return null; }
 }
