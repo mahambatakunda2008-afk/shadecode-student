@@ -21,7 +21,7 @@ export function selectVerifyIntervention(
   outcomes: VerifyInterventionOutcome[],
   options: { subjectKey: string; topicId: string; curriculumTopicKey?: string },
 ): VerifyInterventionSelection | null {
-  const eligible = outcomes.filter(item =>
+  const eligibleById = new Map(outcomes.filter(item =>
     item.subjectKey === options.subjectKey &&
     item.topicId === options.topicId &&
     (!options.curriculumTopicKey || item.curriculumTopicKey === options.curriculumTopicKey) &&
@@ -29,8 +29,10 @@ export function selectVerifyIntervention(
     item.scoreChange !== null &&
     item.baselineAttempts >= 2 &&
     item.transferAttempts >= 2 &&
-    item.interpretation === "descriptive_not_causal",
-  );
+    item.interpretation === "descriptive_not_causal" &&
+    Number.isFinite(item.scoreChange),
+  ).map(item => [item.interventionId, item] as const));
+  const eligible = [...eligibleById.values()];
   const curriculumKeys = [...new Set(eligible.map(item => item.curriculumTopicKey))];
   // Never combine evidence from multiple syllabus topic identities.
   if (curriculumKeys.length !== 1) return null;
