@@ -74,4 +74,14 @@ describe("selectVerifyIntervention", () => {
     ];
     expect(selectVerifyIntervention(rows, { subjectKey: "physics", topicId: "waves" })).toBeNull();
   });
+  it("does not count a duplicated intervention cycle twice", () => {
+    const hint = outcome("vi_hint_000001", "hint", 4);
+    const method = outcome("vi_method_0001", "method", 35);
+    expect(selectVerifyIntervention([
+      hint, hint,
+      method,
+      outcome("vi_method_0002", "method", 36),
+    ], { subjectKey: "physics", topicId: "waves" })).toBeNull();
+  });
+
 });
