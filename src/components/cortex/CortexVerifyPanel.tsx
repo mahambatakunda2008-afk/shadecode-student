@@ -78,7 +78,7 @@ export default function CortexVerifyPanel() {
       const evidence = regions.filter(region => region.crop instanceof Blob && region.crop.size > 0).slice(0, 5).map((region, index) => {
         const mime = region.crop!.type || "image/webp";
         const extension = mime === "image/png" ? "png" : mime === "image/jpeg" ? "jpg" : "webp";
-        const linkedOcrText = (draft.localOcr?.regions || []).filter(ocrRegion => region.linkedOcrRegionIds?.includes(ocrRegion.id)).map(ocrRegion => ocrRegion.text).filter(Boolean).join(" | ");
+        const linkedOcrText = (draft?.localOcr?.regions || []).filter(ocrRegion => region.linkedOcrRegionIds?.includes(ocrRegion.id)).map(ocrRegion => ocrRegion.text).filter(Boolean).join(" | ");
         const notes = [region.annotation || "", linkedOcrText ? `Linked OCR labels: ${linkedOcrText}` : ""].filter(Boolean).join("\n");
         return { file: new File([region.crop!], `visual-region-${index + 1}.${extension}`, { type: mime }), label: region.label || "Visual region", annotation: notes };
       });
