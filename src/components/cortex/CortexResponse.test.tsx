@@ -159,17 +159,16 @@ $$`;
   });
 
   it("keeps separate display equations separate in a long explanation", () => {
-    const source = `First derive the expression.
+    const source = String.raw`First derive the expression.
 
-$a^2+b^2=c^2$
+$$a^2+b^2=c^2$$
 
 Then substitute the values.
 
-$c=\\sqrt{a^2+b^2}$
-`;
+$$c=\sqrt{a^2+b^2}$$`;
     const html = renderToStaticMarkup(<CortexResponse text={source} />);
-    expect((html.match(/role=\"math\"/g) || []).length).toBe(2);
-    expect((html.match(/class=\"katex-display\"/g) || []).length).toBe(2);
+    expect((html.match(/role="math"/g) || []).length).toBe(2);
+    expect((html.match(/class="katex-display"/g) || []).length).toBe(2);
   });
 
 });
