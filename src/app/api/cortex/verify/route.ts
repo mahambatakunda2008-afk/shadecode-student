@@ -78,7 +78,7 @@ async function withTimeout<T>(promise: Promise<T>, ms = PROVIDER_TIMEOUT_MS): Pr
   }
 }
 
-async function gemini(prompt: string, image?: { data: string; mimeType: string }) {
+async function gemini(prompt: string, images: Array<{ data: string; mimeType: string }> = []) {
   let lastError: unknown;
   for (const key of GEMINI_KEYS) {
     const client = new GoogleGenerativeAI(key);
@@ -86,7 +86,7 @@ async function gemini(prompt: string, image?: { data: string; mimeType: string }
       try {
         const model = client.getGenerativeModel({ model: modelName, generationConfig: { responseMimeType: "application/json", maxOutputTokens: 5000 } });
         const parts: any[] = [prompt];
-        if (image) parts.push({ inlineData: image });
+        images.forEach((image) => parts.push({ inlineData: image }));
         const result = await withTimeout(model.generateContent(parts));
         return { text: result.response.text(), provider: "gemini", model: modelName };
       } catch (error) { lastError = error; }
@@ -95,11 +95,11 @@ async function gemini(prompt: string, image?: { data: string; mimeType: string }
   throw lastError instanceof Error ? lastError : new Error("No Gemini provider available");
 }
 
-async function openAI(prompt: string, image?: { data: string; mimeType: string }) {
+async function openAI(prompt: string, images: Array<{ data: string; mimeType: string }> = []) {
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw new Error("OpenAI provider is not configured");
   const content: any[] = [{ type: "text", text: prompt }];
-  if (image) content.push({ type: "image_url", image_url: { url: `data:${image.mimeType};base64,${image.data}` } });
+  images.forEach((image) => content.push({ type: "image_url", image_url: { url: `data:${image.mimeType};base64,${image.data}` } }));
   const response = await withTimeout(fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -166,17 +166,36 @@ export async function POST(req: Request) {
     const question = String(formData.get("question") || "").trim();
     const studentAnswer = String(formData.get("studentAnswer") || "").trim();
     const imageFile = formData.get("image");
-
-    let image: { data: string; mimeType: string } | undefined;
+    const visualFiles = formData.getAll("visualEvidence").filter((item): item is File => item instanceof File && item.size > 0);
+    if (visualFiles.length > 5) return NextResponse.json({ error: "Attach no more than five visual regions at a time." }, { status: 400 });
+    const images: Array<{ data: string; mimeType: string }> = [];
+    let totalImageBytes = 0;
     if (imageFile instanceof File && imageFile.size > 0) {
       if (!imageFile.type.startsWith("image/")) return NextResponse.json({ error: "Please upload an image file." }, { status: 400 });
       if (imageFile.size > MAX_IMAGE_BYTES) return NextResponse.json({ error: "That photo is too large. Try a smaller image." }, { status: 413 });
-      image = { data: Buffer.from(await imageFile.arrayBuffer()).toString("base64"), mimeType: imageFile.type };
+      totalImageBytes += imageFile.size;
+      images.push({ data: Buffer.from(await imageFile.arrayBuffer()).toString("base64"), mimeType: imageFile.type });
     }
+    const visualContexts = formData.getAll("visualEvidenceContext").slice(0, 5).map((value) => {
+      if (typeof value !== "string") return "";
+      try {
+        const parsed = JSON.parse(value) as { label?: unknown; annotation?: unknown };
+        return [typeof parsed.label === "string" ? parsed.label.slice(0, 100) : "Visual region", typeof parsed.annotation === "string" ? parsed.annotation.slice(0, 1000) : ""].filter(Boolean).join(": ");
+      } catch { return "Unlabelled visual region"; }
+    });
+    for (const file of visualFiles) {
+      if (!["image/webp", "image/png", "image/jpeg"].includes(file.type)) return NextResponse.json({ error: "Visual evidence must be WEBP, PNG or JPEG." }, { status: 400 });
+      if (file.size > MAX_IMAGE_BYTES) return NextResponse.json({ error: "Each visual crop must be 4 MB or smaller." }, { status: 413 });
+      totalImageBytes += file.size;
+      if (totalImageBytes > 8 * 1024 * 1024) return NextResponse.json({ error: "Combined image evidence must be 8 MB or smaller. Select fewer or smaller regions." }, { status: 413 });
+      images.push({ data: Buffer.from(await file.arrayBuffer()).toString("base64"), mimeType: file.type });
+    }
+    const visualContext = visualContexts.length ? "\\nVisual evidence supplied by the student (labels/notes are student-provided, not verified):\\n" + visualContexts.map((item, index) => (index + 1) + ". " + item).join("\\n") : "";
+    const evidencePrompt = (prompt: string) => prompt + visualContext;
 
     if (mode === "check") {
-      if (!question && !studentAnswer && !image) return NextResponse.json({ error: "Add a question, your working, or a photo first." }, { status: 400 });
-      const result = await runStructured(checkPrompt(subject, question, studentAnswer), image);
+      if (!question && !studentAnswer && images.length === 0) return NextResponse.json({ error: "Add a question, your working, or a photo first." }, { status: 400 });
+      const result = await runStructured(evidencePrompt(checkPrompt(subject, question, studentAnswer)), images);
       if (result.needsRetake) return NextResponse.json({ needsRetake: true, retakeReason: result.retakeReason || "I could not read the work clearly enough." }, { status: 422 });
       if (!validCheck(result)) return NextResponse.json({ error: "Cortex returned an unverified assessment. No score was recorded. Please try again." }, { status: 502 });
       return NextResponse.json(result);
@@ -185,14 +204,14 @@ export async function POST(req: Request) {
     if (mode === "help") {
       const level = String(formData.get("level") || "hint");
       if (!["hint", "method", "solution"].includes(level)) return NextResponse.json({ error: "Choose a valid help level." }, { status: 400 });
-      if (!question && !image) return NextResponse.json({ error: "Add the question or a photo first." }, { status: 400 });
+      if (!question && images.length === 0) return NextResponse.json({ error: "Add the question or a photo first." }, { status: 400 });
       const instruction = level === "hint"
         ? "Give one useful hint only. Do not provide the method, solution, final answer, or content that reveals them. Return the hint field only."
         : level === "method"
           ? "Explain the relevant method and next steps, but do not provide the final answer or a complete worked solution. Return the method field only."
           : "Give a complete worked solution because the student explicitly requested it. Return the solution and finalAnswer fields where appropriate.";
       const prompt = `You are Cortex, an educational tutor. Subject: ${subject}. Question: ${question || "Read the question from the image."} Student's attempt: ${studentAnswer || "The student has not provided an attempt yet."} Help level: ${level}. ${instruction} Keep explanations student-friendly, curriculum-aware and explicit about uncertainty. Return ONLY valid JSON with the requested help-level field.`;
-      const result = await runStructured(prompt, image);
+      const result = await runStructured(evidencePrompt(prompt), images);
       const helpLevel = level as VerifyHelpLevel;
       if (!isValidHelpResult(result, helpLevel)) return NextResponse.json({ error: "Cortex returned incomplete help for the selected level. Please try again." }, { status: 502 });
       return NextResponse.json(selectHelpResult(result, helpLevel));
