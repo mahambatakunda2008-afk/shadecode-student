@@ -15,6 +15,7 @@ import PaperStudyLauncher from "./PaperStudyLauncher";
 import LearnBrainStatus from "./LearnBrainStatus";
 import ShadeNetKnowledgeSearch from "./ShadeNetKnowledgeSearch";
 import GeographyRevisionKit from "./GeographyRevisionKit";
+import NextTopicSuggestion from "./components/NextTopicSuggestion";
 import { normalizeSubjectKey } from "@/lib/academic/subjectContract";
 import { getLearningMode, setLearningMode, type LearningMode } from "@/lib/learningMode";
 
@@ -343,6 +344,15 @@ export default function LearnPageResilient() {
                   </select>
                   {!subjects.length && <p className="mt-2 text-sm leading-5 text-[var(--muted-foreground)]">Subject list is not synced yet. Reconnect or refresh your profile.</p>}
                 </div>
+                <NextTopicSuggestion
+                  enabled={!offline && !loading && !topic.trim()}
+                  token={token}
+                  onPick={(step) => {
+                    const match = subjects.find((s) => normalizeSubjectKey(s.name) === normalizeSubjectKey(step.subject));
+                    if (match) setSubject(match.name);
+                    setTopic(step.topic);
+                  }}
+                />
                 <div>
                   <div className="mb-2 flex items-center justify-between gap-3"><label htmlFor="learn-topic" className="block text-sm font-bold tracking-wide text-[var(--muted-foreground)]">02 / Topic or problem</label><span className="text-xs tabular-nums text-[var(--muted-foreground)]">{topic.length}/500</span></div>
                   <textarea id="learn-topic" value={topic} onChange={e => setTopic(e.target.value)} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void generate(); }} rows={3} maxLength={500} placeholder="e.g. Coordinate geometry: circles, completing the square, and exam questions…" className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-4 py-3.5 text-[15px] leading-6 text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)] transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" />
