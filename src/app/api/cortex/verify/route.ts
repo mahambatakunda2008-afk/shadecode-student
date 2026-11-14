@@ -228,13 +228,15 @@ Keep explanations student-friendly and curriculum-aware. Return ONLY valid JSON 
         // Independently audit the completed derivation against the original
         // question. This catches contradictions between working and finalAnswer.
         const auditPrompt = `Act as an independent Cambridge Mathematics examiner. Audit this worked solution without rewriting it.
-Original question: ${question || "Read from the supplied image."}
+Original question: ${question || "Read the question from the supplied image evidence."}
 Worked solution: ${solutionText}
 Claimed final answer: ${typeof result.finalAnswer === "string" ? result.finalAnswer : "(not separately supplied)"}
 Return ONLY JSON: {"consistent":true,"issues":[]}
-Set consistent=false if any substitution, arithmetic, sign, coordinate, exponent, equation, or final answer is wrong, missing, or contradicts another line. Recalculate independently from the original question. Do not accept a final answer merely because it repeats the solution. If the question is ambiguous or cannot be independently checked, set consistent=false and explain why in issues.`;
-        const audit = await runStructured(auditPrompt);
-        if (audit.consistent !== true || !Array.isArray(audit.issues)) {
+Set consistent=false if any substitution, arithmetic, sign, coordinate, exponent, equation, or final answer is wrong, missing, or contradicts another line. Recalculate independently from the original question and any supplied image evidence. Do not accept a final answer merely because it repeats the solution. If the question is ambiguous or cannot be independently checked, set consistent=false and explain why in issues.`;
+        // Include the original image evidence as well. Without it, image-only
+        // questions cannot be independently audited and must not be guessed.
+        const audit = await runStructured(auditPrompt, images);
+        if (audit.consistent !== true || !Array.isArray(audit.issues) || audit.issues.length > 0) {
           return NextResponse.json({ error: "Cortex detected a possible mathematical inconsistency and withheld this solution. Please try again." }, { status: 502 });
         }
       }
