@@ -1,0 +1,257 @@
+{
+  "asset_key": "biology-9700-factors-affecting-enzyme-action",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Factors that affect enzyme action",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "3",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 3, syllabus p. 21. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 3.2.1–3.2.4.",
+    "syllabus_outcome_codes": [
+      "3.2.1",
+      "3.2.2",
+      "3.2.3",
+      "3.2.4"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Investigate and explain effects of temperature, pH, enzyme concentration, substrate concentration and inhibitor concentration on enzyme reaction rate.",
+      "Interpret Vmax and Km and use Km to compare enzyme affinity for substrates.",
+      "Explain reversible competitive and non-competitive inhibition.",
+      "Investigate immobilised and free enzymes using alginate and state advantages of enzyme immobilisation."
+    ],
+    "sections": [
+      {
+        "heading": "What determines enzyme reaction rate?",
+        "body": "Reaction rate depends on how frequently enzyme and substrate molecules form productive enzyme–substrate complexes and how quickly these complexes produce products. Temperature, pH, enzyme concentration, substrate concentration and inhibitor concentration can all affect measured rate. When investigating one factor, keep the others controlled."
+      },
+      {
+        "heading": "Temperature",
+        "body": "As temperature rises from a low value, enzyme and substrate molecules gain kinetic energy and move faster. More frequent successful collisions increase the rate, up to an optimum temperature. Above the optimum, bonds and interactions maintaining the enzyme's three-dimensional structure are disrupted; the active site changes shape and the enzyme becomes denatured. Fewer substrate molecules bind productively and rate falls, often sharply. Denaturation is not simply the enzyme being 'used up'; it is a structural change that reduces function. At low temperatures, activity is slower but the enzyme is not usually denatured."
+      },
+      {
+        "heading": "pH and buffer solutions",
+        "body": "Each enzyme has a pH range in which it works and an optimum pH. Changes in pH alter the ionisation and charge of amino-acid side chains, which can disrupt ionic and hydrogen bonding and change the active site's shape or charge. At extreme pH, the enzyme may be denatured. Buffer solutions resist changes in pH when small amounts of acid or alkali are added. Use a buffer of known pH in each reaction mixture so that pH remains controlled during the investigation."
+      },
+      {
+        "heading": "Enzyme concentration",
+        "body": "When substrate is present in excess, increasing enzyme concentration provides more active sites. More enzyme–substrate complexes can form at the same time, so the initial rate increases approximately in proportion to enzyme concentration. This relationship only holds while substrate is not limiting and other conditions remain constant. If substrate becomes limiting, adding more enzyme has little or no further effect on rate."
+      },
+      {
+        "heading": "Substrate concentration",
+        "body": "At low substrate concentration, many active sites are unoccupied. Increasing substrate concentration increases the frequency of successful collisions and the rate rises. At high substrate concentration, active sites are occupied most of the time and the enzyme is saturated. The rate approaches a maximum, Vmax; adding more substrate then has little further effect because enzyme concentration becomes the limiting factor. The saturation curve is not a straight line across the full range."
+      },
+      {
+        "heading": "Inhibitor concentration",
+        "body": "An inhibitor reduces enzyme activity. Increasing inhibitor concentration generally reduces the rate, provided other conditions are held constant. The effect depends on the inhibitor's mechanism: competitive inhibitors compete for the active site, while non-competitive inhibitors bind elsewhere and alter catalytic activity. A reversible inhibitor can dissociate, so its effect is not necessarily permanent."
+      },
+      {
+        "heading": "Vmax and Michaelis–Menten constant Km",
+        "body": "Vmax is the maximum reaction rate approached when the enzyme is saturated with substrate under the specified conditions. The Michaelis–Menten constant, Km, is the substrate concentration at which the rate is one-half of Vmax for the simple Michaelis–Menten model. Km is derived from the rate-versus-substrate-concentration relationship. A lower Km means half-maximal rate is reached at a lower substrate concentration and is commonly interpreted as higher apparent affinity of the enzyme for that substrate; a higher Km indicates lower apparent affinity. Compare Km values only with appropriate care, under comparable conditions and for the relevant kinetic model."
+      },
+      {
+        "heading": "Competitive reversible inhibition",
+        "body": "A competitive inhibitor has a shape and chemical properties that allow it to bind reversibly to the enzyme's active site. It competes with substrate for the same site, reducing the chance that substrate binds at a given substrate concentration. Increasing substrate concentration can outcompete the inhibitor. In the simple model, apparent Km increases because more substrate is needed to reach half Vmax, while Vmax can still be reached at sufficiently high substrate concentration."
+      },
+      {
+        "heading": "Non-competitive reversible inhibition",
+        "body": "A non-competitive inhibitor binds reversibly at a site other than the active site. Its binding changes the enzyme's shape or catalytic function so that substrate binding may still occur but catalysis is reduced. Increasing substrate concentration does not overcome this inhibition in the simple pure non-competitive model. Vmax decreases because fewer enzyme molecules are functioning effectively; Km remains unchanged in the pure non-competitive case. Real inhibitors can show mixed behaviour, but the syllabus comparison is the standard reversible competitive versus non-competitive distinction."
+      },
+      {
+        "heading": "Investigating inhibition",
+        "body": "To investigate inhibitor concentration, use a range of inhibitor concentrations while keeping enzyme concentration, substrate concentration, pH, temperature, total volume and reaction timing constant. Include a no-inhibitor control. Measure initial rates rather than only final product amounts. If comparing competitive and non-competitive inhibitors, vary substrate concentration as well and interpret the pattern relative to Vmax and Km."
+      },
+      {
+        "heading": "Immobilised enzymes in alginate",
+        "body": "An enzyme can be immobilised by trapping it in beads of calcium alginate. Sodium alginate is mixed with enzyme solution and droplets are added to calcium chloride; calcium ions cross-link the alginate and form gel beads containing the enzyme. The enzyme is retained in the beads while small substrate and product molecules diffuse in and out. Compare equal enzyme quantities in immobilised and free forms using the same substrate concentration, temperature, pH, volumes and reaction time."
+      },
+      {
+        "heading": "Advantages and limitations of immobilisation",
+        "body": "Immobilised enzymes can be separated from the product and reused, reducing enzyme costs. The product is less likely to be contaminated with enzyme, and the process can be run continuously in a column. Immobilisation can improve enzyme stability and make process control easier. However, diffusion of substrate into and product out of beads can reduce the observed rate; immobilisation may alter enzyme activity, and beads can be damaged or become clogged. The advantages depend on the enzyme and process."
+      },
+      {
+        "heading": "Planning a fair enzyme investigation",
+        "body": "State the independent variable and a measurable dependent variable, such as initial oxygen production per minute or time for a fixed amount of starch to disappear. Control temperature using a water bath, pH using buffer, and volumes/concentrations of all other reactants. Define how rate will be calculated, repeat measurements, use a suitable range of values and include a control. For alginate comparisons, standardise bead size and number, total enzyme loading and mixing. Identify hazards and follow local practical risk assessments."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Explain the effect of increasing temperature on enzyme activity, including what happens above the optimum.",
+        "answer": "Below the optimum, molecules gain kinetic energy and successful collisions become more frequent, increasing rate. Above the optimum, interactions maintaining the enzyme's shape are disrupted, changing the active site and denaturing the enzyme, so rate falls.",
+        "mark_points": [
+          "Increased kinetic energy below optimum",
+          "More successful collisions / enzyme–substrate complexes",
+          "Optimum reached",
+          "Above optimum bonds/interactions disrupted",
+          "Active site changes / denaturation and rate falls"
+        ]
+      },
+      {
+        "question": "Explain why buffer solutions are used when investigating the effect of pH on enzyme activity.",
+        "answer": "Buffers resist changes in pH when small amounts of acid or alkali are produced or added. This keeps pH at the selected value so that the independent variable is controlled and the effect of pH can be compared fairly.",
+        "mark_points": [
+          "Buffers resist pH change",
+          "Maintain selected pH during reaction",
+          "Control variable / fair test"
+        ]
+      },
+      {
+        "question": "Describe the effect of increasing enzyme concentration when substrate is in excess.",
+        "answer": "More enzyme molecules provide more active sites, so more enzyme–substrate complexes can form simultaneously and initial rate increases approximately in proportion to enzyme concentration, while substrate remains in excess.",
+        "mark_points": [
+          "More enzyme molecules / active sites",
+          "More simultaneous enzyme–substrate complexes",
+          "Initial rate increases",
+          "Substrate must remain in excess"
+        ]
+      },
+      {
+        "question": "Explain why increasing substrate concentration eventually stops increasing reaction rate.",
+        "answer": "At high substrate concentration, active sites are occupied most of the time and the enzyme is saturated. The rate approaches Vmax, so enzyme concentration limits the rate and additional substrate has little effect.",
+        "mark_points": [
+          "Active sites become occupied",
+          "Enzyme saturation",
+          "Rate approaches Vmax",
+          "Enzyme concentration becomes limiting"
+        ]
+      },
+      {
+        "question": "Define Vmax and Km. Explain how Km can be used to compare enzyme affinity.",
+        "answer": "Vmax is the maximum rate approached when the enzyme is saturated with substrate. Km is the substrate concentration at half Vmax in the Michaelis–Menten model. A lower Km indicates that half-maximal rate is reached at a lower substrate concentration and is commonly interpreted as higher apparent substrate affinity.",
+        "mark_points": [
+          "Vmax defined as maximum rate at saturation",
+          "Km is substrate concentration at half Vmax",
+          "Lower Km reaches half-maximal rate at lower substrate concentration",
+          "Lower Km indicates higher apparent affinity (under comparable conditions)"
+        ]
+      },
+      {
+        "question": "Explain the effect of a reversible competitive inhibitor on enzyme activity and on Km and Vmax.",
+        "answer": "The inhibitor binds reversibly to the active site and competes with substrate. More substrate can outcompete it. In the simple model, apparent Km increases while Vmax is unchanged because sufficiently high substrate concentration can still saturate the enzyme.",
+        "mark_points": [
+          "Binds active site reversibly",
+          "Competes with substrate",
+          "Increasing substrate can overcome inhibition",
+          "Apparent Km increases",
+          "Vmax unchanged in simple competitive model"
+        ]
+      },
+      {
+        "question": "Explain the effect of a reversible pure non-competitive inhibitor on enzyme activity and on Km and Vmax.",
+        "answer": "The inhibitor binds at a site other than the active site and reduces catalytic activity. Increasing substrate does not overcome pure non-competitive inhibition. Vmax decreases, while Km remains unchanged in the pure non-competitive model.",
+        "mark_points": [
+          "Binds away from active site",
+          "Reduces catalytic activity / effective active enzyme",
+          "Not overcome by increasing substrate",
+          "Vmax decreases",
+          "Km unchanged for pure non-competitive inhibition"
+        ]
+      },
+      {
+        "question": "Describe how to compare an immobilised enzyme in alginate with the same free enzyme.",
+        "answer": "Prepare alginate beads containing a measured amount of enzyme and a free-enzyme sample containing the same enzyme amount. React each with the same substrate concentration, volume, pH and temperature. Measure initial rate using the same method and repeat. Keep bead number/size and mixing consistent.",
+        "mark_points": [
+          "Immobilised enzyme trapped in calcium alginate beads",
+          "Same enzyme amount in free and immobilised samples",
+          "Same substrate, pH, temperature, volume and timing",
+          "Measure initial rate with same method",
+          "Repeat and standardise bead size/number/mixing"
+        ]
+      },
+      {
+        "question": "State three advantages of immobilised enzymes in industrial processes.",
+        "answer": "They can be separated from products and reused; products are less likely to be contaminated by enzyme; and they can be used in continuous-flow systems. Immobilisation may also improve stability and process control.",
+        "mark_points": [
+          "Can be separated and reused",
+          "Less enzyme contamination of product",
+          "Can be used in continuous processes",
+          "Any additional valid advantage such as improved stability/control"
+        ]
+      },
+      {
+        "question": "A reaction has Vmax = 80 arbitrary units per minute. Estimate the rate at Km in the Michaelis–Menten model.",
+        "answer": "At Km, the rate is one-half Vmax. The rate is therefore 40 arbitrary units per minute.",
+        "mark_points": [
+          "Recognises rate at Km = 0.5 Vmax",
+          "Correct calculation: 40 arbitrary units per minute"
+        ]
+      }
+    ],
+    "visual_tasks": [],
+    "common_mistakes": [
+      "Saying high temperature always increases rate; rate falls above the optimum due to denaturation.",
+      "Confusing low-temperature slowing with denaturation.",
+      "Failing to use buffer solutions when testing pH.",
+      "Saying enzyme concentration always increases rate even when substrate is limiting.",
+      "Assuming the substrate saturation curve remains linear at high substrate concentration.",
+      "Confusing Vmax with Km; Km is a substrate concentration, not a rate.",
+      "Saying competitive inhibition permanently destroys the enzyme.",
+      "Claiming pure non-competitive inhibition can be overcome by adding more substrate.",
+      "Treating all real inhibitors as perfectly pure competitive or non-competitive cases.",
+      "Ignoring diffusion limitations when interpreting immobilised enzyme rates."
+    ],
+    "retrieval_check": {
+      "questions": [
+        "What happens to the active site above an enzyme's optimum temperature?",
+        "Why is a buffer used?",
+        "When does increasing enzyme concentration increase rate?",
+        "What is enzyme saturation?",
+        "What is Vmax?",
+        "What is Km in the Michaelis–Menten model?",
+        "Where does a competitive inhibitor bind?",
+        "Where does a pure non-competitive inhibitor bind?",
+        "Which parameter changes in pure competitive inhibition?",
+        "Give two advantages of immobilisation."
+      ],
+      "answers": [
+        "The active site changes shape as the enzyme denatures.",
+        "To resist pH changes and maintain a constant pH.",
+        "When substrate is in excess and other factors are controlled.",
+        "Active sites are occupied most of the time.",
+        "Maximum rate approached at substrate saturation.",
+        "Substrate concentration at half Vmax.",
+        "At the active site.",
+        "At a site other than the active site.",
+        "Apparent Km increases; Vmax is unchanged.",
+        "Enzyme can be reused and product is less contaminated; continuous processing is possible."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030",
+        "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+        "use": "Controlling Topic 3.2 outcomes 1–4, syllabus p. 21."
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/enzymes/substrate-saturation.svg",
+        "caption": "Conceptual Michaelis–Menten saturation curve showing Vmax and Km.",
+        "alt": "Initial rate rises with substrate concentration and approaches Vmax; Km is marked at half Vmax."
+      },
+      {
+        "path": "/learning-assets/biology/9700/enzymes/inhibitor-effects.svg",
+        "caption": "Conceptual comparison of competitive and pure non-competitive inhibition.",
+        "alt": "Rate curves show competitive inhibition reaching the same Vmax at higher substrate concentration and pure non-competitive inhibition reaching a lower Vmax."
+      }
+    ]
+  }
+}
