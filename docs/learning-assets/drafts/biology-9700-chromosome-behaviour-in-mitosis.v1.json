@@ -1,0 +1,145 @@
+{
+  "asset_key": "biology-9700-chromosome-behaviour-in-mitosis",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Chromosome behaviour in mitosis",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "5",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 5, syllabus syllabus p. 25, learning outcomes 5.2.1–5.2.2. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "5.2.1",
+      "5.2.2"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced.",
+      "Microscopy and practical activities require local risk assessment, suitable equipment and teacher supervision."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Describe chromosome behaviour and the associated changes to the nuclear envelope, cell surface membrane and spindle during mitosis in plant and animal cells.",
+      "Interpret photomicrographs, diagrams and microscope slides to identify prophase, metaphase, anaphase and telophase."
+    ],
+    "sections": [
+      {
+        "heading": "What mitosis must achieve",
+        "body": "Mitosis separates the two copies of each replicated chromosome so that each daughter nucleus receives one copy of every chromosome. The sequence is prophase, metaphase, anaphase and telophase. The spindle positions and separates chromosomes. The nuclear envelope breaks down and reforms, while the cell surface membrane remains the boundary of the cell. Cytokinesis follows mitosis and divides the cytoplasm."
+      },
+      {
+        "heading": "Prophase",
+        "body": "During prophase, chromosomes become shorter, thicker and visible as they condense. Each replicated chromosome consists of two sister chromatids joined at a centromere. The nucleolus disappears and the nuclear envelope breaks down. A spindle forms as microtubules organise between opposite poles of the cell. In animal cells, centrioles move towards opposite poles; higher plant cells generally form a spindle without centrioles."
+      },
+      {
+        "heading": "Metaphase",
+        "body": "During metaphase, chromosomes attach to spindle microtubules through kinetochores at their centromeres. The chromosomes line up at the equator of the cell, forming the metaphase plate. Each sister chromatid is attached to spindle microtubules from the opposite pole. This arrangement helps ensure that each future daughter nucleus receives one copy of each chromosome."
+      },
+      {
+        "heading": "Anaphase",
+        "body": "During anaphase, the centromeres divide and sister chromatids separate. Spindle microtubules shorten and move the daughter chromosomes towards opposite poles. Once separated, each former chromatid is regarded as an individual chromosome. The two groups of chromosomes should therefore be equivalent, so each pole receives one copy of each chromosome."
+      },
+      {
+        "heading": "Telophase",
+        "body": "During telophase, chromosomes reach opposite poles and begin to decondense. A nuclear envelope reforms around each set of chromosomes and nucleoli reappear. The spindle breaks down. Two genetically identical nuclei are formed, each with the same chromosome number as the original nucleus before DNA replication."
+      },
+      {
+        "heading": "Cytokinesis: animal and plant cells",
+        "body": "Cytokinesis is division of the cytoplasm after nuclear division. In animal cells, a contractile ring of actin and myosin forms a cleavage furrow; the cell surface membrane is drawn inwards until the cell separates into two daughter cells. In plant cells, the rigid cell wall prevents a cleavage furrow. Golgi-derived vesicles gather at the equator and fuse to form a cell plate, which develops into the new cell surface membranes and the cell wall between the daughter cells."
+      },
+      {
+        "heading": "Recognising stages in micrographs",
+        "body": "Identify the arrangement of chromosomes rather than relying only on the apparent size or shape of the cell. Condensed chromosomes that are not yet aligned indicate prophase. Chromosomes arranged along the equator indicate metaphase. Two groups moving towards opposite poles indicate anaphase. Two chromosome groups with new nuclei forming indicate telophase. A clear cleavage furrow or cell plate indicates cytokinesis, not a separate stage of mitosis."
+      },
+      {
+        "heading": "Plant versus animal mitosis",
+        "body": "The chromosome movements and four main stages of mitosis are fundamentally the same in plant and animal cells. The most visible difference at the end is cytokinesis: animal cells pinch inwards by a cleavage furrow, while plant cells build a cell plate that becomes a new partition. Do not claim that plant cells lack a spindle or that all animal cells use a cell plate."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Describe chromosome behaviour during metaphase.",
+        "answer": "Chromosomes attach to spindle microtubules at their kinetochores and line up at the equator of the cell. Sister chromatids are attached to spindle microtubules from opposite poles.",
+        "mark_points": [
+          "Chromosomes attach to spindle via kinetochores / centromere region",
+          "Chromosomes line up at the equator",
+          "Sister chromatids attached to opposite poles"
+        ]
+      },
+      {
+        "question": "Explain what happens to chromosomes during anaphase.",
+        "answer": "Centromeres divide and sister chromatids separate. Spindle microtubules shorten, moving the daughter chromosomes towards opposite poles of the cell.",
+        "mark_points": [
+          "Centromeres divide",
+          "Sister chromatids separate",
+          "Spindle microtubules shorten / pull chromosomes",
+          "Chromosomes move to opposite poles"
+        ]
+      },
+      {
+        "question": "A micrograph shows two groups of chromosomes at opposite ends of a cell, with new nuclear envelopes forming. Identify the stage and justify your answer.",
+        "answer": "Telophase. Chromosomes have reached opposite poles and nuclear envelopes are reforming around each group.",
+        "mark_points": [
+          "Telophase",
+          "Chromosomes at opposite poles",
+          "Nuclear envelopes reforming"
+        ]
+      },
+      {
+        "question": "Compare cytokinesis in plant and animal cells.",
+        "answer": "In animal cells, a contractile ring produces a cleavage furrow that constricts the cell surface membrane. In plant cells, vesicles fuse at the equator to form a cell plate, which develops into new membranes and a cell wall.",
+        "mark_points": [
+          "Animal: cleavage furrow / membrane constriction",
+          "Animal: contractile ring",
+          "Plant: vesicles fuse at equator / cell plate forms",
+          "Plant: cell plate develops into new membranes and cell wall"
+        ]
+      },
+      {
+        "question": "Explain how mitosis produces two genetically identical nuclei.",
+        "answer": "DNA is replicated before mitosis so each chromosome has two sister chromatids. The chromatids attach to spindle microtubules and separate to opposite poles. Each pole receives one copy of every chromosome, and a nuclear envelope forms around each set.",
+        "mark_points": [
+          "DNA replicated before mitosis",
+          "Sister chromatids formed",
+          "Chromatids separate to opposite poles",
+          "Each pole receives one copy of each chromosome",
+          "New nuclei form"
+        ]
+      },
+      {
+        "question": "A student identifies a cell with chromosomes aligned across its equator as anaphase. Explain the correction.",
+        "answer": "The cell is in metaphase because chromosomes are aligned at the equator. In anaphase, centromeres divide and sister chromatids move towards opposite poles.",
+        "mark_points": [
+          "Correct stage is metaphase",
+          "Equatorial alignment identifies metaphase",
+          "Anaphase involves chromatid separation / movement to poles"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/mitotic-cell-cycle/mitosis-stages.svg",
+        "alt": "Four-panel diagram showing prophase, metaphase, anaphase and telophase with chromosome positions, spindle fibres and nuclear envelope changes.",
+        "caption": "The four main stages of mitosis."
+      },
+      {
+        "path": "/learning-assets/biology/9700/mitotic-cell-cycle/plant-animal-cytokinesis.svg",
+        "alt": "Side-by-side diagram comparing an animal cell cleavage furrow with a plant cell plate forming during cytokinesis.",
+        "caption": "How animal and plant cells divide their cytoplasm."
+      }
+    ]
+  }
+}
