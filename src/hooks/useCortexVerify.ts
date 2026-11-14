@@ -214,8 +214,6 @@ export function useCortexVerify() {
     /** Locally stored diagram/graph crops. Never queued for later upload. */
     visualEvidence?: Array<{ file: File; label: string; annotation?: string }>;
     visualEvidenceConsent?: boolean;
-    /** Verified syllabus topic key when available. */
-    topicId?: string;
   }) => {
     setLoading(true); setError(null); setResult(null);
     try {
