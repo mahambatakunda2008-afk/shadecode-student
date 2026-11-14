@@ -1,3 +1,8 @@
+"use client";
+
+import React from "react";
+import katex from "katex";
+
 /** Normalize common provider-side Markdown/HTML escaping before parsing. */
 export function normalizeCortexResponseText(source: string): string {
   return source
