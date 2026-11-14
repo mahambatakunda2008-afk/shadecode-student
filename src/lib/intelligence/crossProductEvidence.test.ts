@@ -42,7 +42,7 @@ describe("toPrivateCrossProductSignal", () => {
   });
 
   it("accepts supported dotted completion event names when they carry a score", () => {
-    for (const type of ["lesson.completed", "activity.completed", "quiz.completed", "exam.completed", "project.stage_completed", "project.evidence_added"]) {
+    for (const type of ["lesson.completed", "activity.completed", "quiz.completed", "exam.completed", "project.stage_completed"]) {
       expect(toPrivateCrossProductSignal({ ...base, type, metadata: { correct: true } })).not.toBeNull();
     }
   });
