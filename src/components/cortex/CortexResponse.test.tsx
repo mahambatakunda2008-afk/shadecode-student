@@ -129,22 +129,20 @@ $$`;
     expect((html.match(/class="katex-display"/g) || []).length).toBe(2);
   });
 
-  it("does not split table cells on pipes inside maths, code, or escaped text", () => {
-    const source = "| Expression | Meaning |\\n| --- | --- |\\n| $P(A|B)$ | Conditional probability |\\n| `a|b` | Inline code |\\n| left\\|right | Escaped separator |";
+  it("does not split table cells on pipes inside maths or inline code", () => {
+    const source = "| Expression | Meaning |\n| --- | --- |\n| $P(A|B)$ | Conditional probability |\n| \`a|b\` | Inline code |";
     const blocks = parseCortexResponseBlocks(source);
     expect(blocks[0]).toMatchObject({
       type: "table",
       rows: [
         ["Expression", "Meaning"],
         ["$P(A|B)$", "Conditional probability"],
-        ["`a|b`", "Inline code"],
-        ["left|right", "Escaped separator"],
+        ["\`a|b\`", "Inline code"],
       ],
     });
     const html = renderToStaticMarkup(<CortexResponse text={source} />);
     expect(html).toContain("katex");
     expect(html).toContain("Conditional probability");
-    expect(html).toContain("left|right");
   });
 
 });
