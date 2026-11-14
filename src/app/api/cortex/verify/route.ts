@@ -170,10 +170,9 @@ export async function POST(req: Request) {
     if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
     const subject = subjectAccess.subject;
     const question = String(formData.get("question") || "").trim();
-    // The browser's compact learner model is an offline/failure fallback only.
-    // Prefer authenticated, syllabus-scoped evidence shared by Learn, Exam Sim,
-    // and other learning surfaces whenever the canonical context is available.
-    let learnerContext = String(formData.get("learnerContext") || "").slice(0, 3000);
+    // Cloud prompts use only server-resolved, authenticated learner evidence.
+    // Never trust client-supplied learner context as prompt instructions.
+    let learnerContext = "No prior learner signals.";
     try {
       const curriculum = await resolveUserSystemCurriculum(user.id, subject, bearerToken || undefined);
       const verifiedSyllabusId = curriculum.resolved.status === "resolved"
