@@ -350,7 +350,7 @@ export default function PracticalPracticeClient() {
   const updateRating = (taskId: string, skill: string, rating: PracticeSkillRating) => {
     setAttempt((current) => ratePracticalSkill(set, current, taskId, skill, rating));
   };
-  const revealQuestionGuidance = (task: { id: string; title: string; paper: "Paper 3" | "Paper 5"; questions: Array<{ id: string }> }, question: { id: string }) => {
+  const revealQuestionGuidance = (task: Task, question: Question) => {
     const key = task.id + "::" + question.id;
     const answer = attempt.answers[key]?.trim() ?? "";
     if (answer) {
