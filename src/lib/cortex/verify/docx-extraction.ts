@@ -30,21 +30,41 @@ function decodeXmlEntities(value: string): string {
     .replace(/&#x([\da-f]+);/gi, (_, code: string) => String.fromCodePoint(parseInt(code, 16)));
 }
 
-/** Converts WordprocessingML body XML to readable text without treating it as a rubric. */
+function paragraphXmlToText(paragraph: string): string {
+  const pieces: string[] = [];
+  const tokens = paragraph.match(/<w:(?:t|tab|br|cr)\\b[^>]*(?:\\/>|>[\\s\\S]*?<\\/w:t>)/gi) ?? [];
+  for (const token of tokens) {
+    if (/^<w:tab\\b/i.test(token)) pieces.push("\\t");
+    else if (/^<w:(?:br|cr)\\b/i.test(token)) pieces.push(" ");
+    else pieces.push(decodeXmlEntities(token.replace(/^<w:t\\b[^>]*>/i, "").replace(/<\\/w:t>$/i, "")));
+  }
+  return pieces.join("").replace(/ +/g, " ").replace(/^ +| +$/g, "");
+}
+
+/** Converts WordprocessingML paragraphs and table cells to readable text without treating them as a rubric. */
 export function docxXmlToText(xml: string): string {
-  const body = xml.match(/<w:body\b[^>]*>([\s\S]*?)<\/w:body>/i)?.[1] ?? xml;
-  const paragraphs = body.match(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/gi) ?? [];
-  const output = paragraphs.map(paragraph => {
-    const pieces: string[] = [];
-    const tokens = paragraph.match(/<w:(?:t|tab|br|cr)\b[^>]*(?:\/>|>[\s\S]*?<\/w:t>)/gi) ?? [];
-    for (const token of tokens) {
-      if (/^<w:tab\b/i.test(token)) pieces.push("\t");
-      else if (/^<w:(?:br|cr)\b/i.test(token)) pieces.push(" ");
-      else pieces.push(decodeXmlEntities(token.replace(/^<w:t\b[^>]*>/i, "").replace(/<\/w:t>$/i, "")));
+  const body = xml.match(/<w:body\\b[^>]*>([\\s\\S]*?)<\\/w:body>/i)?.[1] ?? xml;
+  const blocks = body.match(/<w:tbl\\b[^>]*>[\\s\\S]*?<\\/w:tbl>|<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/gi) ?? [];
+  const output: string[] = [];
+
+  for (const block of blocks) {
+    if (/^<w:tbl\\b/i.test(block)) {
+      const rows = block.match(/<w:tr\\b[^>]*>[\\s\\S]*?<\\/w:tr>/gi) ?? [];
+      for (const row of rows) {
+        const cells = row.match(/<w:tc\\b[^>]*>[\\s\\S]*?<\\/w:tc>/gi) ?? [];
+        const values = cells.map(cell => {
+          const paragraphs = cell.match(/<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/gi) ?? [];
+          return paragraphs.map(paragraphXmlToText).filter(Boolean).join(" / ");
+        });
+        if (values.some(Boolean)) output.push(`| ${values.join(" | ")} |`);
+      }
+    } else {
+      const paragraph = paragraphXmlToText(block);
+      if (paragraph) output.push(paragraph);
     }
-    return pieces.join("").replace(/ +/g, " ").replace(/^ +| +$/g, "");
-  }).filter(Boolean);
-  return output.join("\n").slice(0, DOCX_MAX_TEXT_CHARS);
+  }
+
+  return output.join("\\n").slice(0, DOCX_MAX_TEXT_CHARS);
 }
 
 export async function extractDocxText(file: Blob): Promise<{ text: string; engine: string }> {
