@@ -283,13 +283,14 @@ function renderMath(expression: string, display: boolean) {
 }
 
 function InlineText({ text }: { text: string }) {
-  const pattern = /(\$\$[\s\S]+?\$\$|\$[^\n$]+\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]|\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_|~~[^~]+~~|`[^`]+`)/g;
+  const pattern = /(\$\$[\s\S]+?\$\$|\$[^\n$]+\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]|\\\\begin\\{(aligned|align\\*?|gather\\*?|equation\\*?|split|cases|matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix)\\}[\s\S]+?\\\\end\\{\\2\\}|\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_|~~[^~]+~~|`[^`]+`)/g;
   const tokens = text.split(pattern).filter(Boolean);
   return <>{tokens.map((token, index) => {
-    const displayMath = token.startsWith("$$") && token.endsWith("$$") || token.startsWith("\\[") && token.endsWith("\\]");
-    const inlineMath = token.startsWith("$") && token.endsWith("$") || token.startsWith("\\(") && token.endsWith("\\)");
+    const environmentMath = token.startsWith("\\begin{");
+    const displayMath = environmentMath || (token.startsWith("$") && token.endsWith("$")) || (token.startsWith("\\[") && token.endsWith("\\]"));
+    const inlineMath = (token.startsWith("$") && token.endsWith("$")) || (token.startsWith("\\(") && token.endsWith("\\)"));
     if (displayMath || inlineMath) {
-      const expression = displayMath ? token.slice(2, -2) : token.startsWith("$") ? token.slice(1, -1) : token.slice(2, -2);
+      const expression = environmentMath ? token : displayMath ? token.slice(2, -2) : token.startsWith("$") ? token.slice(1, -1) : token.slice(2, -2);
       const html = renderMath(expression, displayMath);
       if (html) return displayMath
         ? <span key={index} className="my-3 block max-w-full overflow-x-auto overscroll-x-contain py-1 text-center" role="math" dangerouslySetInnerHTML={{ __html: html }} />
