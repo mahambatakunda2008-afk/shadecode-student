@@ -12,6 +12,10 @@ export type VerifyInterventionSelection = {
 
 const LEVELS = ["hint", "method", "solution"] as const;
 
+function normalizeSubjectKey(value: string): string {
+  return value.normalize("NFKC").toLocaleLowerCase("en");
+}
+
 /**
  * Select a teaching approach only when repeated, completed interventions
  * provide a clear within-student, same-topic signal. This is an exploratory
@@ -22,7 +26,7 @@ export function selectVerifyIntervention(
   options: { subjectKey: string; topicId: string; curriculumTopicKey?: string },
 ): VerifyInterventionSelection | null {
   const eligibleById = new Map(outcomes.filter(item =>
-    item.subjectKey === options.subjectKey &&
+    normalizeSubjectKey(item.subjectKey) === normalizeSubjectKey(options.subjectKey) &&
     item.topicId === options.topicId &&
     (!options.curriculumTopicKey || item.curriculumTopicKey === options.curriculumTopicKey) &&
     item.state !== "collecting_evidence" &&
