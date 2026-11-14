@@ -227,7 +227,8 @@ export async function extractImportedMarkingResource(
       if (regionsTruncated) {
         warnings.push(`Text-region coordinates were capped at ${MAX_EXTRACTED_REGIONS.toLocaleString()} items for memory safety. Some later regions are not available for precise visual alignment.`);
       }
-      warnings.push("PDF text extraction does not interpret diagrams, plotted graphs, handwriting, shading or visual mark annotations. Review those regions against the original pages.");\n      warnings.push("Mathematical expressions are retained as extracted text and positioned regions, but superscripts, subscripts, stacked fractions, roots and equation layout may be flattened or reordered. Verify every mathematical expression against the original page before using it as marking evidence.");
+      warnings.push("PDF text extraction does not interpret diagrams, plotted graphs, handwriting, shading or visual mark annotations. Review those regions against the original pages.");
+      warnings.push("Mathematical expressions are retained as extracted text and positioned regions, but superscripts, subscripts, stacked fractions, roots and equation layout may be flattened or reordered. Verify every mathematical expression against the original page before using it as marking evidence.");
       warnings.push("Wide horizontal gaps between PDF text fragments are retained as tab-separated layout hints. These are heuristic column boundaries, not a reconstructed table; verify them against the page preview.");
       return result(resource, {
         format: "pdf",
