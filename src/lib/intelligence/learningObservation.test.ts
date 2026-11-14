@@ -46,6 +46,17 @@ describe("learningEventToObservation", () => {
     });
   });
 
+  it("preserves partial marks as a graded evidence score", () => {
+    expect(learningEventToObservation(event("question_attempted", {
+      correct: true,
+      evidenceScore: 42,
+    }))).toMatchObject({
+      topicId: "waves",
+      correct: true,
+      evidenceScore: 42,
+    });
+  });
+
   it("does not interpret arbitrary numeric values as booleans", () => {
     expect(learningEventToObservation(event("question_attempted", { correct: 2 }))).toBeNull();
   });
