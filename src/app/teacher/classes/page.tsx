@@ -52,7 +52,8 @@ export default async function TeacherClassesPage() {
     .from("platform_group_members")
     .select("group_id,membership_role,status")
     .eq("user_id", reviewer.user.id)
-    .eq("status", "active");
+    .eq("status", "active")
+    .in("membership_role", [...TEACHING_ROLES]);
 
   const institutionMemberships = (institutionRows ?? []) as InstitutionMembership[];
   const groupMemberships = (groupRows ?? []) as GroupMembership[];
