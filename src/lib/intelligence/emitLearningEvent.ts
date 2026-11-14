@@ -162,13 +162,24 @@ export async function emitLearningEvent(input: LearningEventInput): Promise<bool
 export function installLearningEventSync(): () => void {
   if (typeof window === "undefined") return () => undefined;
   const flush = () => {
+    if (document.visibilityState === "hidden") return;
     void flushLearningEvents();
     void flushDiscoveryProgress();
   };
+  const flushOnVisible = () => {
+    if (document.visibilityState === "visible") flush();
+  };
   window.addEventListener("online", flush);
-  void flushLearningEvents();
-  void flushDiscoveryProgress();
-  return () => window.removeEventListener("online", flush);
+  window.addEventListener("focus", flush);
+  window.addEventListener("pageshow", flush);
+  document.addEventListener("visibilitychange", flushOnVisible);
+  flush();
+  return () => {
+    window.removeEventListener("online", flush);
+    window.removeEventListener("focus", flush);
+    window.removeEventListener("pageshow", flush);
+    document.removeEventListener("visibilitychange", flushOnVisible);
+  };
 }
 
 export function lessonViewedEvent(lessonId: string, subject?: string, topic?: string) {
