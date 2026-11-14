@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import CortexResponse, { parseCortexResponseBlocks } from "./CortexResponse";
+import CortexResponse, { normalizeCortexResponseText, parseCortexResponseBlocks } from "./CortexResponse";
 
 describe("Cortex response formatting", () => {
   it("keeps headings, paragraphs and separate ordered steps structured", () => {
@@ -45,6 +45,11 @@ describe("Cortex response formatting", () => {
     expect(blocks[1]).toMatchObject({ type: "paragraph", text: "**Identify the values**: The centre is $(-3, 2)$." });
     expect(blocks[2]).toMatchObject({ type: "list", ordered: true });
     expect(blocks[2]).toMatchObject({ items: ["**Substitute the values**:\n$(x + 3)^2 + (y - 2)^2 = 10$", "**Simplify**: The equation is ready."] });
+  });
+
+  it("repairs Markdown punctuation after multiple transport-escaping layers", () => {
+    expect(normalizeCortexResponseText("\\\\### Part 2")).toBe("### Part 2");
+    expect(normalizeCortexResponseText("\\\\*\\\\*Important\\\\*\\\\*")).toBe("**Important**");
   });
 
 });
