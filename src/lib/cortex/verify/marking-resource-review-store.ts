@@ -1,12 +1,15 @@
 import type { MarkingResourceExtraction } from "./marking-resource-extraction";
 import type { LocalVerifyExtraction } from "./local-extraction-contract";
 
+export type ManualVisualRegion = { id: string; page: number; x: number; y: number; width: number; height: number; label: string; };
+
 export type MarkingResourceReviewDraft = {
   resourceId: string;
   ownerId: string;
   extraction: MarkingResourceExtraction;
   correctedLines: Array<{ page: number; line: number; text: string }>;
   localOcr?: LocalVerifyExtraction;
+  manualVisualRegions?: ManualVisualRegion[];
   savedAt: string;
 };
 
