@@ -294,7 +294,7 @@ function InlineText({ text }: { text: string }) {
       const html = renderMath(expression, displayMath);
       if (html) return displayMath
         ? <span key={index} className="my-3 block max-w-full overflow-x-auto overscroll-x-contain py-1 text-center" role="math" dangerouslySetInnerHTML={{ __html: html }} />
-        : <span key={index} className="inline-block max-w-full align-middle" dangerouslySetInnerHTML={{ __html: html }} />;
+        : <span key={index} className="inline-block max-w-full overflow-x-auto align-middle" dangerouslySetInnerHTML={{ __html: html }} />;
       return <code key={index}>{expression}</code>;
     }
     const linkStart = token.startsWith("[") ? token.indexOf("](") : -1;
@@ -327,8 +327,13 @@ export default function CortexResponse({ text, className = "" }: { text: string;
   return <div className={`cortex-response min-w-0 space-y-4 text-[15px] leading-7 text-[var(--foreground)] [overflow-wrap:anywhere] ${className}`}>
     {blocks.map((block, index) => {
       if (block.type === "heading") {
-        const Tag = block.level <= 2 ? "h4" : "h5";
-        return <Tag key={index} className="pt-2 text-base font-bold leading-6 text-[var(--foreground)]"><InlineText text={block.text} /></Tag>;
+        const major = block.level <= 2;
+        const Tag = major ? "h4" : "h5";
+        return <Tag key={index} className={major
+          ? "pt-3 text-lg font-bold leading-7 tracking-tight text-[var(--foreground)] sm:text-xl"
+          : "pt-2 text-base font-semibold leading-6 text-[var(--foreground)]"}>
+          <InlineText text={block.text} />
+        </Tag>;
       }
       if (block.type === "list") return <ResponseList key={index} ordered={block.ordered} items={block.items} />;
       if (block.type === "quote") return <blockquote key={index} className="whitespace-pre-wrap border-s-[3px] border-[var(--primary)] bg-[var(--muted)]/70 px-4 py-3 text-[var(--muted-foreground)]"><InlineText text={block.text} /></blockquote>;
