@@ -29,7 +29,10 @@ function extractCandidateDetails(text: string, type: GraphReviewHintType): strin
     }
   }
   if (type === "axis") {
-    for (const match of text.matchAll(AXIS_LABEL_RE)) {
+    const axisSegments = text.split(/\\s+and\\s+the\\s+(?=[xy][ -]?axis\\b)/i);
+    for (const segment of axisSegments) {
+      const match = segment.match(/\\b([xy])[ -]?axis\\b(?:\\s*(?:labelled|labeled|is|:)?\\s*([^.;]{1,60}))?/i);
+      if (!match) continue;
       const label = match[2]?.trim();
       details.push(label ? `${match[1].toUpperCase()}-axis label candidate: ${label}` : `${match[1].toUpperCase()}-axis reference`);
     }
