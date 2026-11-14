@@ -125,6 +125,7 @@ async function sendAttemptNow(attempt: CortexAttempt) {
       fd.append("image", await res.blob(), "upload.jpg");
     }
     fd.append("mode", attempt.mode);
+    fd.append("learnerContext", buildVerifyLearnerContext(readVerifyLearnerModel()).slice(0, 3000));
     fd.append("userId", attempt.userId);
     if (attempt.subject) fd.append("subject", attempt.subject);
     if (attempt.question) fd.append("question", attempt.question);
@@ -258,6 +259,7 @@ export function useCortexVerify() {
       if (visualEvidence.length) {
         const fd = new FormData();
         fd.append("mode", attempt.mode);
+        fd.append("learnerContext", buildVerifyLearnerContext(readVerifyLearnerModel()).slice(0, 3000));
         fd.append("userId", attempt.userId);
         fd.append("subject", attempt.subject || "General");
         fd.append("question", attempt.question || "");
