@@ -11,6 +11,7 @@ import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContra
 import { hasCompleteMathematicalMarkup, isCleanMathematicalAudit, isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
 import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
 import { resolveVerifyHelpLevel } from "@/lib/cortex/verify/intervention-selector";
+import { formatVerifyTeachingStrategy, recommendVerifyTeachingStrategy, type VerifyTeachingStrategyResult } from "@/lib/cortex/verify/teaching-strategy";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -170,6 +171,7 @@ export async function POST(req: Request) {
     const requestedTopicId = String(formData.get("topicId") || "").trim();
     const levelWasExplicitlyChosen = formData.get("levelExplicit") === "true";
     let adaptiveHelpLevel: "hint" | "method" | "solution" | null = null;
+    let teachingStrategy: VerifyTeachingStrategyResult | null = null;
     const subjectAccess = await resolveLearnerSubject(supabase, user.id, requestedSubject, requestedSubjectId || undefined);
     if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
     const subject = subjectAccess.subject;
@@ -201,6 +203,29 @@ export async function POST(req: Request) {
         || sharedContext.reviewSuggestions.state === "available";
       if (hasSharedEvidence || sharedContext.interventionOutcomes.items.length) {
         learnerContext = buildSharedVerifyLearnerContext(sharedContext, subject, 3000);
+      }
+      // Select a teaching move only from the exact active verified topic. This is
+      // a pedagogical heuristic, not a learned preference or a marking signal.
+      if (requestedTopicId) {
+        const topicEvidence = sharedContext.topics.items.find(item =>
+          item.topicId === requestedTopicId &&
+          item.subjectKey.trim().toLocaleLowerCase("en") === subject.trim().toLocaleLowerCase("en") &&
+          typeof item.curriculumTopicKey === "string" && item.curriculumTopicKey.length > 0
+        );
+        if (topicEvidence) {
+          const repeated = sharedContext.mistakes.repeatedTopicErrors.find(item =>
+            item.topicId === requestedTopicId && item.subjectKey.trim().toLocaleLowerCase("en") === subject.trim().toLocaleLowerCase("en")
+          );
+          const recurring = sharedContext.mistakes.recurringMistakes.filter(item =>
+            item.topicId === requestedTopicId && item.subjectKey.trim().toLocaleLowerCase("en") === subject.trim().toLocaleLowerCase("en")
+          );
+          teachingStrategy = recommendVerifyTeachingStrategy({
+            masteryScore: topicEvidence.masteryScore,
+            attempts: topicEvidence.attempts,
+            repeatedIncorrectResponses: repeated?.incorrectResponses ?? 0,
+            recurringMistakeCount: recurring.length,
+          });
+        }
       }
       // Only auto-select when the learner has not explicitly chosen a level.
       // The selector requires an exact, verified topic identity and repeated outcomes.
@@ -263,7 +288,8 @@ export async function POST(req: Request) {
         : level === "method"
           ? "Explain the relevant method and next steps, but do not provide the final answer or a complete worked solution. Return the method field only."
           : "Give a complete worked solution because the student explicitly requested it. Return the solution and finalAnswer fields where appropriate.";
-      const prompt = `You are Cortex, an expert ${subject} teacher producing a mathematically precise, fully readable worked explanation. Subject: ${subject}. Question: ${question || "Read the question from the image."} Student attempt: ${studentAnswer || "The student has not provided an attempt yet."} Help level: ${level}. ${instruction}\n\nPrivate learner context: ${learnerContext || "No prior learner signals."} Adapt your explanation to recurring errors and avoid repeating the same question when a fresh transfer question can test the same skill. Do not assume the learner has mastered or failed a concept solely from this context.
+      const teachingInstruction = teachingStrategy ? formatVerifyTeachingStrategy(teachingStrategy) : "TEACHING STRATEGY: diagnostic-first (low confidence; insufficient-history). Start with one brief diagnostic prompt, then adapt to the response. Do not assume a preferred learning style. Use visuals only when they genuinely clarify the concept.";
+      const prompt = `You are Cortex, an expert ${subject} teacher producing a mathematically precise, fully readable worked explanation. Subject: ${subject}. Question: ${question || "Read the question from the image."} Student attempt: ${studentAnswer || "The student has not provided an attempt yet."} Help level: ${level}. ${instruction}\n\n${teachingInstruction}\n\nPrivate learner context: ${learnerContext || "No prior learner signals."} Adapt your explanation to recurring errors and avoid repeating the same question when a fresh transfer question can test the same skill. Do not assume the learner has mastered or failed a concept solely from this context.
 
 FORMATTING RULES (mandatory): Write every mathematical expression using valid LaTeX delimiters: use \\( ... \\) for inline mathematics and \\[ ... \\] for standalone/display mathematics. Never leave equations, variables, subscripts, superscripts, fractions, roots, coordinates or operators as unformatted plain-text fragments. Use valid LaTeX such as \\frac{a}{b}, \\sqrt{10}, x_{B}, r^2, and \\begin{aligned}...\\end{aligned}. Keep each complete expression inside its delimiters. Do not split a mathematical expression across ordinary prose lines. Define every symbol before using it, preserve all signs and brackets, and show substitutions in complete equations. Use numbered steps with one clear operation per step. End with a clearly labelled final answer. Before returning, independently check every substitution, arithmetic operation, sign, coordinate, exponent and final result; the finalAnswer must agree exactly with the worked solution. If the question image is unclear or a symbol cannot be read confidently, state the uncertainty and do not guess. Never omit mathematical symbols to make the prose shorter.
 
@@ -295,6 +321,7 @@ Set consistent=false if any substitution, arithmetic, sign, coordinate, exponent
       return NextResponse.json({
         ...selectHelpResult(result, helpLevel),
         ...(adaptiveHelpLevel ? { adaptiveSelection: true } : {}),
+        ...(teachingStrategy ? { teachingStrategy: teachingStrategy.strategy, teachingStrategyConfidence: teachingStrategy.confidence } : { teachingStrategy: "diagnostic-first", teachingStrategyConfidence: "low" }),
       });
     }
 
