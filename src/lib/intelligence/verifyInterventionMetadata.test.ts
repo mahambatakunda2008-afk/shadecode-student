@@ -14,6 +14,17 @@ describe("sanitizeVerifyInterventionMetadata", () => {
     expect(sanitizeVerifyInterventionMetadata(metadata, "question.attempted")).toEqual(metadata);
   });
 
+  it("preserves only a supported delivered teaching strategy", () => {
+    const metadata = {
+      interventionId: "vi_m2abc_xyz123", interventionLevel: "method",
+      interventionToAttemptHours: 2, freshTransfer: true,
+      teachingStrategy: "guided-reconstruction", evidenceScore: 75,
+    };
+    expect(sanitizeVerifyInterventionMetadata(metadata, "question.attempted")).toEqual(metadata);
+    const invalid = sanitizeVerifyInterventionMetadata({ ...metadata, teachingStrategy: "visual-learner" }, "question.attempted");
+    expect(invalid).toEqual({ evidenceScore: 75 });
+  });
+
   it("removes malformed or incomplete intervention links without dropping score evidence", () => {
     const result = sanitizeVerifyInterventionMetadata({
       interventionId: "not-a-valid-id",
