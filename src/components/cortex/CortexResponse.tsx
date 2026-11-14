@@ -92,9 +92,17 @@ export function parseCortexResponseBlocks(source: string): Block[] {
       while (i + 1 < lines.length) {
         const next = lines[i + 1];
         const match = ordered ? next.match(/^\s*\d{1,3}[.)]\s+(.+)$/) : next.match(/^\s*[-*+]\s+(.+)$/);
-        if (!match) break;
-        items.push(match[1]);
-        i++;
+        if (match) {
+          items.push(match[1]);
+          i++;
+          continue;
+        }
+        if (/^\s{2,}\S/.test(next)) {
+          items[items.length - 1] += "\n" + next.trim();
+          i++;
+          continue;
+        }
+        break;
       }
       blocks.push({ type: "list", ordered, items });
       continue;
@@ -156,7 +164,7 @@ export default function CortexResponse({ text, className = "" }: { text: string;
       if (block.type === "list") {
         const List = block.ordered ? "ol" : "ul";
         return <List key={index} className={`space-y-2.5 pl-6 marker:font-bold marker:text-[var(--primary)] ${block.ordered ? "list-decimal" : "list-disc"}`}>
-          {block.items.map((item, itemIndex) => <li key={itemIndex} className="ps-1 leading-7"><InlineText text={item} /></li>)}
+          {block.items.map((item, itemIndex) => <li key={itemIndex} className="whitespace-pre-line ps-1 leading-7"><InlineText text={item} /></li>)}
         </List>;
       }
       if (block.type === "quote") return <blockquote key={index} className="whitespace-pre-wrap border-s-[3px] border-[var(--primary)] bg-[var(--muted)]/70 px-4 py-3 text-[var(--muted-foreground)]"><InlineText text={block.text} /></blockquote>;
