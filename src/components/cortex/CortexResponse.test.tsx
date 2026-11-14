@@ -60,11 +60,11 @@ describe("Cortex response formatting", () => {
   });
 
   it("preserves LaTeX inline and display delimiters while unescaping Markdown", () => {
-    const inline = String.raw\`Use \\(\\frac{1}{2}\\) as the exact value.\`;
-    const display = String.raw\`\\[x^2 + y^2 = r^2\\]\`;
-    expect(normalizeCortexResponseText(inline)).toBe(String.raw\`Use \\(\\frac{1}{2}\\) as the exact value.\`);
-    expect(normalizeCortexResponseText(display)).toBe(String.raw\`\\[x^2 + y^2 = r^2\\]\`);
-    const html = renderToStaticMarkup(<CortexResponse text={inline + "\\n\\n" + display} />);
+    const inline = "Use \\(\\frac{1}{2}\\) as the exact value.";
+    const display = "\\[x^2 + y^2 = r^2\\]";
+    expect(normalizeCortexResponseText(inline)).toBe(inline);
+    expect(normalizeCortexResponseText(display)).toBe(display);
+    const html = renderToStaticMarkup(<CortexResponse text={inline + "\n\n" + display} />);
     expect(html.match(/class="katex/g)?.length).toBeGreaterThanOrEqual(2);
   });
 
