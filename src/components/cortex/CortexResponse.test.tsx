@@ -99,13 +99,13 @@ describe("Cortex response formatting", () => {
   });
 
   it("renders aligned multi-line working and matrices in paragraphs, lists, and tables", () => {
-    const aligned = String.raw\`$$
+    const aligned = String.raw`$$
 \begin{aligned}
 2x + 3y &= 12 \\
 x - y &= 1
 \end{aligned}
-$$\`;
-    const matrix = String.raw\`\begin{pmatrix}1 & 2 \\ 3 & 4\end{pmatrix}\`;
+$$`;
+    const matrix = String.raw`\begin{pmatrix}1 & 2 \\ 3 & 4\end{pmatrix}`;
     const source = [
       "## Simultaneous equations",
       aligned,
@@ -113,7 +113,7 @@ $$\`;
       "",
       "| Step | Working |",
       "| --- | --- |",
-      "| Determinant | $" + String.raw\`ad-bc\` + "$ |",
+      "| Determinant | $" + String.raw`ad-bc` + "$ |",
     ].join("\n");
     const html = renderToStaticMarkup(<CortexResponse text={source} />);
     expect(html).toContain("katex");
