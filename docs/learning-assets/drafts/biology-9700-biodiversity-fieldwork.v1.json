@@ -1,0 +1,203 @@
+{
+  "asset_key": "biology-9700-biodiversity-fieldwork",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Biodiversity: sampling, field methods and data",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "18",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030, Topic 18, pp. 46–47.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "18.2.1",
+      "18.2.2",
+      "18.2.3",
+      "18.2.4",
+      "18.2.5",
+      "18.2.6"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Define ecosystem and niche and explain the three levels of biodiversity.",
+      "Justify random sampling and select suitable field methods.",
+      "Use quadrats, transects and the Lincoln index appropriately.",
+      "Interpret Spearman and Pearson correlation.",
+      "Calculate and interpret Simpson’s index using the supplied convention."
+    ],
+    "sections": [
+      [
+        "Ecosystem and niche",
+        "An ecosystem consists of a community of organisms and the abiotic environment with which they interact. A niche is the role of a species, including conditions it tolerates, resources it uses and interactions. Habitat is where an organism lives; niche describes how it lives and functions."
+      ],
+      [
+        "Three levels of biodiversity",
+        "Biodiversity can be assessed as the variety of ecosystems and habitats, the number of species and their relative abundance, and genetic variation within each species. A species count alone misses evenness and genetic diversity."
+      ],
+      [
+        "Richness and relative abundance",
+        "Species richness is the number of species present. Relative abundance describes how common each species is compared with others. Two sites can have equal richness but different biodiversity if one is dominated by a single species."
+      ],
+      [
+        "Random sampling",
+        "Random placement reduces selection bias and gives locations across the study area a chance of selection. Generate coordinates or use a sampling frame. Many samples improve reliability; random sampling does not remove every source of error."
+      ],
+      [
+        "Frame quadrats",
+        "Quadrats estimate abundance or percentage cover of organisms that do not move rapidly. Place them at random coordinates, identify organisms consistently and count individuals or estimate cover. Use a suitable quadrat size and enough replicates."
+      ],
+      [
+        "Line and belt transects",
+        "A line transect records species touching or occurring at set points along a line, revealing change along a gradient. A belt transect samples a strip, often using contiguous or regularly spaced quadrats, and gives abundance across a wider band."
+      ],
+      [
+        "Lincoln index",
+        "Capture and mark a first sample, release individuals and allow them to mix. Capture a second sample and record total caught and marked individuals recaptured. Estimated N = (number marked first × total caught second) ÷ marked recaptured. The formula is supplied in the examination."
+      ],
+      [
+        "Lincoln-index assumptions",
+        "Assumptions include a closed population during sampling, retained marks, marking that does not affect survival or recapture, random mixing and similar capture probability. Violations can bias the estimate."
+      ],
+      [
+        "Spearman and Pearson",
+        "Spearman’s rank correlation tests association between two ranked variables and can detect a monotonic relationship. Pearson’s linear correlation measures strength and direction of a linear relationship between paired quantitative variables. Correlation does not demonstrate causation."
+      ],
+      [
+        "Correlation coefficients",
+        "A coefficient near +1 indicates strong positive association, near −1 strong negative association, and near 0 little or no association of the measured type. Significance depends on sample size and a critical value; non-significance does not prove no relationship."
+      ],
+      [
+        "Simpson’s index",
+        "Use the supplied formula and convention. In the common form D = 1 − Σ[n(n−1)]/[N(N−1)], higher values indicate greater diversity because species are more numerous and/or abundance is more even. Check the formula in the question because alternative conventions exist."
+      ],
+      [
+        "Fieldwork quality",
+        "Define the sampling area and method before collecting data. Use adequate replicates, consistent identification criteria, calibrated equipment and units. Minimise trampling and disturbance, obtain permission and follow local safety procedures."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Define an ecosystem.",
+        "answer": "A community of organisms and the abiotic environment with which they interact.",
+        "mark_points": [
+          "Community of organisms",
+          "Abiotic environment / interactions"
+        ]
+      },
+      {
+        "question": "Define the niche of a species.",
+        "answer": "Its role in an ecosystem, including resource use, environmental tolerances and interactions with other organisms.",
+        "mark_points": [
+          "Role in ecosystem",
+          "Resources / tolerances / interactions"
+        ]
+      },
+      {
+        "question": "Name the three levels of biodiversity.",
+        "answer": "Ecosystem/habitat diversity, species diversity and genetic diversity within species.",
+        "mark_points": [
+          "Ecosystem diversity",
+          "Species diversity",
+          "Genetic diversity"
+        ]
+      },
+      {
+        "question": "Explain why random sampling is important when using quadrats.",
+        "answer": "It reduces selection bias because each location has a chance of selection, making the sample more representative.",
+        "mark_points": [
+          "Reduces selection bias",
+          "Chance of selection / representativeness"
+        ]
+      },
+      {
+        "question": "Choose a suitable method to investigate changes in plant species along a shore from low to high tide.",
+        "answer": "Use a line transect to record species at points along the shore, or a belt transect with quadrats to measure abundance across the gradient.",
+        "mark_points": [
+          "Transect follows gradient",
+          "Consistent recording"
+        ]
+      },
+      {
+        "question": "A first sample contains 80 marked animals. In the second sample, 50 are caught, of which 10 are marked. Estimate population size.",
+        "answer": "N = (80 × 50) ÷ 10 = 400 animals.",
+        "mark_points": [
+          "Correct substitution",
+          "400 animals"
+        ]
+      },
+      {
+        "question": "State two assumptions of mark-release-recapture.",
+        "answer": "The population is closed during sampling and marks are retained without affecting survival or recapture; random mixing and equal catchability are also valid.",
+        "mark_points": [
+          "Two valid assumptions"
+        ]
+      },
+      {
+        "question": "When is a belt transect more informative than a line transect?",
+        "answer": "When abundance and distribution across a strip are needed, rather than only organisms touching a single line.",
+        "mark_points": [
+          "Samples a band",
+          "Abundance across strip"
+        ]
+      },
+      {
+        "question": "Distinguish Spearman’s rank correlation from Pearson’s linear correlation.",
+        "answer": "Spearman uses ranked data to test a monotonic association; Pearson uses paired quantitative data to measure a linear association.",
+        "mark_points": [
+          "Ranked / monotonic",
+          "Quantitative / linear"
+        ]
+      },
+      {
+        "question": "A Pearson coefficient is −0.92. Interpret it.",
+        "answer": "There is a strong negative linear association between the variables; this does not establish that one causes the other.",
+        "mark_points": [
+          "Strong negative",
+          "Linear association",
+          "Correlation is not causation"
+        ]
+      },
+      {
+        "question": "Explain why two habitats with the same species richness may have different biodiversity.",
+        "answer": "Their species may have different relative abundances; a habitat dominated by one species has lower evenness and may have a lower diversity index.",
+        "mark_points": [
+          "Same species count",
+          "Different abundance/evenness"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/biodiversity-levels.svg",
+        "alt": "biodiversity levels",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/random-quadrat-sampling.svg",
+        "alt": "random quadrat sampling",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/transect-methods.svg",
+        "alt": "transect methods",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/mark-release-recapture.svg",
+        "alt": "mark release recapture",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/simpson-diversity.svg",
+        "alt": "simpson diversity",
+        "type": "svg"
+      }
+    ]
+  }
+}
