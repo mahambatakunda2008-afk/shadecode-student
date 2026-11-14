@@ -1293,6 +1293,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
     var extractionRegions by remember { mutableStateOf<List<NativeExtractRegion>>(emptyList()) }
     var visualRegions by remember { mutableStateOf<List<NativeVisualRegion>>(emptyList()) }
     var visualCropBytes by remember { mutableStateOf<Map<String, ByteArray>>(emptyMap()) }
+    var visualCropPreviews by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
     var visualLabel by remember { mutableStateOf("Diagram or graph") }
     var visualAnnotation by remember { mutableStateOf("") }
     var visualOcrLinks by remember { mutableStateOf<Set<Int>>(emptySet()) }
@@ -1336,6 +1337,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
             extractionRegions = emptyList()
             visualRegions = emptyList()
             visualCropBytes = emptyMap()
+            visualCropPreviews = emptyMap()
             extractionEngine = null
             processing = true
             message = "Reading image locally…"
@@ -1516,9 +1518,17 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                         }
                         visualRegions.forEach { region ->
                             Column(Modifier.fillMaxWidth().background(ShadeSurfaceVariant, RoundedCornerShape(12.dp)).padding(10.dp)) {
-                                Text(region.label, fontWeight=FontWeight.SemiBold)
-                                Text(region.annotation.ifBlank { "No annotation yet." }, style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
-                                TextButton(onClick={visualRegions=visualRegions.filterNot{it.id==region.id}; visualCropBytes=visualCropBytes-region.id}) { Text("Remove region") }
+                                val cropPreview = visualCropPreviews[region.id]
+                                if (cropPreview != null) {
+                                    Image(bitmap=cropPreview, contentDescription=region.label, modifier=Modifier.fillMaxWidth().height(170.dp), contentScale=ContentScale.Fit)
+                                } else {
+                                    Text(if (region.cropFile == null) "No saved crop preview." else "Saved crop preview unavailable on this device.", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall)
+                                }
+                                OutlinedTextField(value=region.label, onValueChange={value -> visualRegions=visualRegions.map { if(it.id==region.id) it.copy(label=value.take(100)) else it }}, label={Text("Region label")}, singleLine=true, modifier=Modifier.fillMaxWidth())
+                                OutlinedTextField(value=region.annotation, onValueChange={value -> visualRegions=visualRegions.map { if(it.id==region.id) it.copy(annotation=value.take(1000)) else it }}, label={Text("Visual interpretation notes")}, modifier=Modifier.fillMaxWidth())
+                                val linkedLabels = region.linkedOcrRegionIndices.mapNotNull { extractionRegions.getOrNull(it)?.text?.takeIf { text -> text.isNotBlank() } }
+                                Text(if(linkedLabels.isEmpty()) "No OCR labels linked." else "Linked OCR labels: " + linkedLabels.joinToString(" · "), style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                TextButton(onClick={visualRegions=visualRegions.filterNot{it.id==region.id}; visualCropBytes=visualCropBytes-region.id; visualCropPreviews=visualCropPreviews-region.id}) { Text("Remove region") }
                             }
                         }
                         if(visualRegions.isNotEmpty()) Button(onClick={
@@ -1529,6 +1539,9 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     val updated=withContext(Dispatchers.IO){extractStore.saveVisualRegions(artifactId,visualRegions,visualCropBytes)}
                                     visualRegions=updated.visualRegions
                                     visualCropBytes=emptyMap()
+                                    visualCropPreviews=updated.visualRegions.mapNotNull { region ->
+                                        extractStore.loadVisualCrop(artifactId, region.id)?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()?.let { region.id to it } }
+                                    }.toMap()
                                     savedArtifacts=withContext(Dispatchers.IO){extractStore.list()}
                                     message="Saved " + updated.visualRegions.size + " visual region(s) privately on this device."
                                 } catch(error:Exception){message=error.message ?: "Could not save visual evidence."}
@@ -1790,14 +1803,19 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     extractionRegions = artifact.extractionRegions
                                     visualRegions = artifact.visualRegions
                                     visualCropBytes = emptyMap()
+                                    visualCropPreviews = emptyMap()
                                     redactionTerms = ""
                                     verifyResult = null
                                     scope.launch {
-                                        imagePreview = withContext(Dispatchers.IO) {
-                                            extractStore.loadSourceImage(artifact.id)?.let { bytes ->
-                                                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
-                                            }
+                                        val restored = withContext(Dispatchers.IO) {
+                                            val source = extractStore.loadSourceImage(artifact.id)?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }
+                                            val crops = artifact.visualRegions.mapNotNull { region ->
+                                                extractStore.loadVisualCrop(artifact.id, region.id)?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()?.let { region.id to it } }
+                                            }.toMap()
+                                            source to crops
                                         }
+                                        imagePreview = restored.first
+                                        visualCropPreviews = restored.second
                                         message = buildString {
                                             append(if (imagePreview != null) "Loaded saved extract and its private source image." else "Loaded saved text. This older extract has no saved source image.")
                                             artifact.extractionEngine?.let { append(" OCR engine: ").append(it).append(".") }
