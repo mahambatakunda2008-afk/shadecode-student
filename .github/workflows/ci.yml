@@ -76,9 +76,10 @@ jobs:
             exception when raise_exception then
               if sqlerrm = 'expected trigger to reject protected transition' then raise; end if;
             end;
-          end $;
+          end $assert$;
           SQL
 
+  verify:
     name: Typecheck, lint, test, build
     runs-on: ubuntu-latest
     timeout-minutes: 15
