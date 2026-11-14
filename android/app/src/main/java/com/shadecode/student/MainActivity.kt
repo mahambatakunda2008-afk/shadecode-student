@@ -1295,6 +1295,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
     var visualCropBytes by remember { mutableStateOf<Map<String, ByteArray>>(emptyMap()) }
     var visualLabel by remember { mutableStateOf("Diagram or graph") }
     var visualAnnotation by remember { mutableStateOf("") }
+    var visualOcrLinks by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var dragStart by remember { mutableStateOf<Offset?>(null) }
     var dragEnd by remember { mutableStateOf<Offset?>(null) }
     var extractionEngine by remember { mutableStateOf<String?>(null) }
@@ -1468,7 +1469,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                                 visualRegions = visualRegions + NativeVisualRegion(
                                                     regionId, visualLabel.ifBlank { "Visual evidence" }.take(100), visualAnnotation.take(1000),
                                                     (l/rw).coerceIn(0f,1f), (t/rh).coerceIn(0f,1f), (r/rw).coerceIn(0f,1f), (b/rh).coerceIn(0f,1f),
-                                                    null, emptyList()
+                                                    null, visualOcrLinks.toList()
                                                 )
                                                 visualCropBytes = visualCropBytes + (regionId to bytes)
                                                 message = "Visual crop added locally. Save the extract, then save its visual evidence."
@@ -1502,6 +1503,17 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                         Text("Drag to capture a visual region. Blue outlines are OCR text; purple outlines are your selections.", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall)
                         OutlinedTextField(value=visualLabel, onValueChange={visualLabel=it}, label={Text("New region label")}, singleLine=true, modifier=Modifier.fillMaxWidth())
                         OutlinedTextField(value=visualAnnotation, onValueChange={visualAnnotation=it}, label={Text("Diagram notes: labels, arrows, connections")}, modifier=Modifier.fillMaxWidth())
+                        if(extractionRegions.isNotEmpty()) {
+                            Text("Link OCR labels to the next visual region", style=MaterialTheme.typography.labelLarge, color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            extractionRegions.forEachIndexed { index, region ->
+                                Row(verticalAlignment=Alignment.CenterVertically) {
+                                    Checkbox(checked=index in visualOcrLinks, onCheckedChange={checked ->
+                                        visualOcrLinks=if(checked) visualOcrLinks+index else visualOcrLinks-index
+                                    })
+                                    Text(region.text.take(90), style=MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
                         visualRegions.forEach { region ->
                             Column(Modifier.fillMaxWidth().background(ShadeSurfaceVariant, RoundedCornerShape(12.dp)).padding(10.dp)) {
                                 Text(region.label, fontWeight=FontWeight.SemiBold)
