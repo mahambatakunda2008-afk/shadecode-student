@@ -204,7 +204,8 @@ export default function MarkingResourceReviewWorkspace() {
       setExtraction(result);
       setCorrectedLines(draft?.correctedLines || result.lines.map(line => ({ ...line })));
       setLocalOcr(draft?.localOcr || null);
-      setCorrectedRegions(draft?.localOcr?.regions || []);\n      setManualVisualRegions(draft?.manualVisualRegions || []);
+      setCorrectedRegions(draft?.localOcr?.regions || []);
+      setManualVisualRegions(draft?.manualVisualRegions || []);
       setMessage(draft ? "Saved review draft reopened from this device." : "Original resource reopened. No corrected review draft exists yet.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not reopen this resource.");
