@@ -61,7 +61,7 @@ object NativeOfflineMarker {
     fun isValid(rubric: NativeOfflineMarkingRubric): Boolean {
         if (rubric.version != 1 || !rubric.totalMarks.isFinite() || rubric.totalMarks <= 0.0) return false
         if (rubric.sourceEvidenceId.isBlank() || rubric.syllabusIdentity.isBlank() ||
-            rubric.reviewerId.isBlank() || rubric.reviewedAt.isBlank() ||
+            rubric.reviewerId.isBlank() || !isReviewTimestampValid(rubric.reviewedAt) ||
             rubric.limitations.isEmpty() || rubric.limitations.any { it.isBlank() } || !rubric.verified
         ) return false
         if (rubric.rights !in setOf(
@@ -78,12 +78,15 @@ object NativeOfflineMarker {
                 rubric.acceptedAnswers.isNotEmpty() && rubric.acceptedAnswers.all { it.isNotBlank() } &&
                     !rubric.criterion.isNullOrBlank() && rubric.criteria.isEmpty()
             NativeOfflineRubricKind.STRUCTURED_POINTS ->
-                rubric.criteria.isNotEmpty() && rubric.criteria.all {
+                rubric.criteria.isNotEmpty() && rubric.criteria.map { it.id }.distinct().size == rubric.criteria.size && rubric.criteria.all {
                     it.id.isNotBlank() && it.description.isNotBlank() && it.marks.isFinite() && it.marks > 0.0 &&
                         it.acceptedAnswers.isNotEmpty() && it.acceptedAnswers.all { phrase -> phrase.isNotBlank() }
                 } && kotlin.math.abs(rubric.criteria.sumOf { it.marks } - rubric.totalMarks) < 1e-8
         }
     }
+
+    private fun isReviewTimestampValid(value: String): Boolean =
+        runCatching { java.time.Instant.parse(value); true }.getOrDefault(false)
 
     private fun step(description: String, marks: Double, matched: Boolean) = NativeOfflineMarkStep(
         description, if (matched) marks else 0.0, marks, matched,
