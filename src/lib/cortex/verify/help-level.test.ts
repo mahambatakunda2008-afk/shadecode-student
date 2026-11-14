@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidHelpResult, selectHelpResult } from "./help-level";
+import { hasCompleteMathematicalMarkup, isValidHelpResult, selectHelpResult } from "./help-level";
 
 describe("Cortex Verify help-level contract", () => {
   it("accepts a hint only when the hint itself is substantive", () => {
@@ -50,5 +50,23 @@ describe("Cortex Verify help-level contract", () => {
       solution: "Rearrange, substitute, and simplify.",
       finalAnswer: "4",
     });
+  });
+});
+
+describe("Cortex Verify mathematical notation gate", () => {
+  it("accepts complete inline and display LaTeX", () => {
+    expect(hasCompleteMathematicalMarkup("The centre is \\( -3, 2 \\).\\n\\[ (x+3)^2+(y-2)^2=10 \\]")).toBe(true);
+    expect(hasCompleteMathematicalMarkup("Radius: $$\\sqrt{10}$$")).toBe(true);
+  });
+
+  it("rejects naked or partially corrupted equations", () => {
+    expect(hasCompleteMathematicalMarkup("The equation is x + 3)^2 = 10")).toBe(false);
+    expect(hasCompleteMathematicalMarkup("Working: \\(x+3)^2+(y-2)^2=10\\)\nFinal answer: (x+3)^2+(y-2)^2=1")).toBe(false);
+    expect(hasCompleteMathematicalMarkup("The radius is \\(\\sqrt{10")).toBe(false);
+  });
+
+  it("rejects prose-only output and unpaired delimiters", () => {
+    expect(hasCompleteMathematicalMarkup("First identify the centre, then calculate the radius.")).toBe(false);
+    expect(hasCompleteMathematicalMarkup("The answer is \\(x=4")).toBe(false);
   });
 });
