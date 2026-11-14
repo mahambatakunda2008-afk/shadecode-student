@@ -21,6 +21,18 @@ data class NativeExtractRegion(
     val bottom: Float,
 )
 
+data class NativeVisualRegion(
+    val id: String,
+    val label: String,
+    val annotation: String,
+    val left: Float,
+    val top: Float,
+    val right: Float,
+    val bottom: Float,
+    val cropFile: String?,
+    val linkedOcrRegionIndices: List<Int>,
+)
+
 data class NativeExtractArtifact(
     val id: String,
     val title: String,
@@ -32,6 +44,7 @@ data class NativeExtractArtifact(
     val extractionPlatform: String?,
     val extractionConfidence: Float?,
     val extractionRegions: List<NativeExtractRegion>,
+    val visualRegions: List<NativeVisualRegion>,
     val createdAt: Long,
     val updatedAt: Long,
 )
@@ -41,7 +54,10 @@ class NativeExtractStore(context: Context) {
     private val maxArtifacts = 20
     private val maxTextChars = 120_000
     private val maxImageBytes = 8 * 1024 * 1024
+    private val maxVisualCropBytes = 4 * 1024 * 1024
+    private val maxVisualRegions = 40
     private val imageDirectory = File(directory, "images")
+    private val cropDirectory = File(directory, "visual_crops")
     private val appContext = context.applicationContext
 
     @Synchronized
@@ -84,6 +100,7 @@ class NativeExtractStore(context: Context) {
             extractionPlatform = if (extractionEngine != null) "android" else existing?.extractionPlatform,
             extractionConfidence = if (extractionEngine != null) extractionConfidence else existing?.extractionConfidence,
             extractionRegions = if (extractionEngine != null) extractionRegions else existing?.extractionRegions.orEmpty(),
+            visualRegions = existing?.visualRegions.orEmpty(),
             createdAt = existing?.createdAt ?: now,
             updatedAt = now,
         )
@@ -102,6 +119,46 @@ class NativeExtractStore(context: Context) {
         return artifact
     }
 
+    /** Replace visual evidence; crop files are private and metadata is committed last. */
+    @Synchronized
+    fun saveVisualRegions(id: String, regions: List<NativeVisualRegion>, cropBytes: Map<String, ByteArray>): NativeExtractArtifact {
+        require(regions.size <= maxVisualRegions) { "Select no more than $maxVisualRegions visual regions." }
+        val artifact = readById(id) ?: error("Save this extract before adding visual regions.")
+        if (!cropDirectory.exists() && !cropDirectory.mkdirs()) error("Could not create private visual storage.")
+        val safeRegions = regions.map { region ->
+            require(region.id.matches(Regex("[a-fA-F0-9-]{36}"))) { "Invalid visual region identifier." }
+            require(region.label.length <= 100 && region.annotation.length <= 1000) { "Visual region notes are too long." }
+            require(listOf(region.left, region.top, region.right, region.bottom).all { it.isFinite() && it in 0f..1f }) { "Visual region coordinates are invalid." }
+            require(region.right > region.left && region.bottom > region.top) { "Visual region has no area." }
+            val bytes = cropBytes[region.id]
+            val cropName = if (bytes != null) {
+                require(bytes.isNotEmpty() && bytes.size <= maxVisualCropBytes) { "Each visual crop must be 4 MB or smaller." }
+                val name = id + "-" + region.id + ".webp"
+                val atomic = AtomicFile(File(cropDirectory, name)); val output = atomic.startWrite()
+                try { output.write(bytes); atomic.finishWrite(output) } catch (error: Exception) { atomic.failWrite(output); throw error }
+                name
+            } else region.cropFile?.takeIf { it == id + "-" + region.id + ".webp" && File(cropDirectory, it).isFile }
+            region.copy(cropFile = cropName, linkedOcrRegionIndices = region.linkedOcrRegionIndices.distinct().filter { it in artifact.extractionRegions.indices })
+        }
+        val updated = artifact.copy(visualRegions = safeRegions, updatedAt = System.currentTimeMillis())
+        val atomic = AtomicFile(fileFor(id)); val output = atomic.startWrite()
+        try { output.write(encode(updated).toByteArray(Charsets.UTF_8)); atomic.finishWrite(output) }
+        catch (error: Exception) { atomic.failWrite(output); throw error }
+        val retained = safeRegions.mapNotNull { it.cropFile }.toSet()
+        cropDirectory.listFiles()?.filter { it.isFile && it.name.startsWith(id + "-") && it.name !in retained }?.forEach { it.delete() }
+        return updated
+    }
+
+    @Synchronized
+    fun loadVisualCrop(id: String, regionId: String): ByteArray? {
+        val artifact = readById(id) ?: return null
+        val region = artifact.visualRegions.firstOrNull { it.id == regionId } ?: return null
+        val name = region.cropFile ?: return null
+        if (name != id + "-" + regionId + ".webp") return null
+        val file = File(cropDirectory, name)
+        if (!file.isFile || file.length() > maxVisualCropBytes) return null
+        return runCatching { file.readBytes() }.getOrNull()
+    }
     @Synchronized
     fun loadSourceImage(id: String): ByteArray? {
         val artifact = readById(id) ?: return null
@@ -117,13 +174,14 @@ class NativeExtractStore(context: Context) {
         val artifact = readById(id)
         val file = fileFor(id)
         val metadataDeleted = !file.exists() || file.delete()
+        val cropsDeleted = cropDirectory.listFiles()?.filter { it.isFile && it.name.startsWith(id + "-") }?.all { it.delete() } ?: true
         val imageDeleted = artifact?.sourceImageFile?.let { name ->
             if (name == "$id.img") {
                 val image = File(imageDirectory, name)
                 !image.exists() || image.delete()
             } else true
         } ?: true
-        return metadataDeleted && imageDeleted
+        return metadataDeleted && imageDeleted && cropsDeleted
     }
 
     private fun copySourceImage(uri: Uri, id: String): String {
@@ -177,6 +235,13 @@ class NativeExtractStore(context: Context) {
                     .put("right", region.right).put("bottom", region.bottom))
             }
         })
+        .put("visualRegions", org.json.JSONArray().apply {
+            artifact.visualRegions.forEach { region ->
+                put(JSONObject().put("id", region.id).put("label", region.label).put("annotation", region.annotation)
+                    .put("left", region.left).put("top", region.top).put("right", region.right).put("bottom", region.bottom)
+                    .put("cropFile", region.cropFile).put("linkedOcrRegionIndices", org.json.JSONArray(region.linkedOcrRegionIndices)))
+            }
+        })
         .put("createdAt", artifact.createdAt).put("updatedAt", artifact.updatedAt).toString()
 
     private fun decode(encoded: String): NativeExtractArtifact {
@@ -198,6 +263,22 @@ class NativeExtractStore(context: Context) {
                             top = region.optDouble("top").toFloat(),
                             right = region.optDouble("right").toFloat(),
                             bottom = region.optDouble("bottom").toFloat(),
+                        )
+                    }
+                }
+            }.orEmpty(),
+            visualRegions = json.optJSONArray("visualRegions")?.let { regions ->
+                (0 until regions.length()).mapNotNull { index ->
+                    regions.optJSONObject(index)?.let { region ->
+                        val regionId = region.optString("id")
+                        if (!regionId.matches(Regex("[a-fA-F0-9-]{36}"))) null else NativeVisualRegion(
+                            id = regionId, label = region.optString("label", "Visual evidence"), annotation = region.optString("annotation"),
+                            left = region.optDouble("left").toFloat(), top = region.optDouble("top").toFloat(),
+                            right = region.optDouble("right").toFloat(), bottom = region.optDouble("bottom").toFloat(),
+                            cropFile = region.optString("cropFile").takeIf { it == json.optString("id") + "-" + regionId + ".webp" },
+                            linkedOcrRegionIndices = region.optJSONArray("linkedOcrRegionIndices")?.let { links ->
+                                (0 until links.length()).map { links.optInt(it, -1) }.filter { it >= 0 }
+                            }.orEmpty(),
                         )
                     }
                 }
