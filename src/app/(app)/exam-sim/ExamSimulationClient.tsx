@@ -9,6 +9,7 @@ import { examCompletedEvent, examStartedEvent, questionAttemptedEvent } from "@/
 import { trackEvent } from "@/lib/traction/client";
 import { createClient } from "@/lib/supabase/client";
 import { matchAllowedSubject, isGeneralSubject } from "@/lib/academic/subjectContract";
+import { defaultExamSubject } from "@/lib/exam/defaultSubject";
 import type { ExamQuestion, ExamResults } from "@/lib/exam/types";
 import { resolveExamLearningContext } from "@/lib/exam/learningContext";
 import { normalizeLearningContext } from "@/lib/intelligence/learningContextKey";
@@ -87,14 +88,35 @@ export default function ExamSimulationClient() {
       });
     return () => { cancelled = true; };
   }, [challengeId]);
-  const [subjectReady, setSubjectReady] = useState(!requestedSubject);
+  // With no subject requested we default to the learner's own first subject, so the room must wait for that lookup (bounded).
+  const [subjectReady, setSubjectReady] = useState(Boolean(challengeId) && !requestedSubject);
 
   useEffect(() => {
     let cancelled = false;
     const resolveSubject = async () => {
       if (!requestedSubject) {
-        setSubject("");
-        setSubjectReady(true);
+        // Challenge papers carry their own subject; everyone else starts on their own first subject.
+        if (challengeId) {
+          setSubject("");
+          setSubjectReady(true);
+          return;
+        }
+        try {
+          const lookup = (async () => {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return "";
+            const { data: profile } = await supabase.from("profiles").select("subjects").eq("id", user.id).maybeSingle();
+            return defaultExamSubject(profile?.subjects);
+          })();
+          const fallback = new Promise<string>((resolve) => setTimeout(() => resolve(""), 4000));
+          const first = await Promise.race([lookup, fallback]);
+          if (!cancelled) setSubject(first);
+        } catch {
+          if (!cancelled) setSubject("");
+        } finally {
+          if (!cancelled) setSubjectReady(true);
+        }
         return;
       }
       if (isGeneralSubject(requestedSubject)) {
@@ -125,7 +147,7 @@ export default function ExamSimulationClient() {
     };
     void resolveSubject();
     return () => { cancelled = true; };
-  }, [requestedSubject]);
+  }, [requestedSubject, challengeId]);
 
   useEffect(() => {
     if (!subjectReady) return;
