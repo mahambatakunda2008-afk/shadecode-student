@@ -90,22 +90,19 @@ function splitTableRow(line: string): string[] {
       continue;
     }
     if (char === "$") {
-      const isEscaped = index > 0 && line[index - 1] === "\\\\";
+      const isEscaped = index > 0 && line[index - 1] === "\\";
       if (isEscaped) {
         cell += char;
         continue;
       }
       if (next === "$") {
-        // A currency marker or malformed delimiter must not swallow the rest
-        // of a table row when no matching display delimiter exists.
+        // Treat a paired double-dollar token as display math, but leave an
+        // unmatched currency marker in the current table cell.
         if (line.indexOf("$", index + 2) !== -1) {
           mathDelimiter = "$";
-          cell += "$";
-          index++;
-        } else {
-          cell += "$";
-          index++;
         }
+        cell += "$";
+        index++;
       } else if (line.indexOf("$", index + 1) !== -1) {
         mathDelimiter = "$";
         cell += char;
