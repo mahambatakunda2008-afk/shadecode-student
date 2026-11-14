@@ -1,0 +1,326 @@
+{
+  "asset_key": "biology-9700-photosynthesis-light-dependent",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Photosynthesis: chloroplasts, pigments and light-dependent reactions",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "13",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 13, pp. 36-38.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "13.1.1",
+      "13.1.2",
+      "13.1.3",
+      "13.1.4",
+      "13.1.5",
+      "13.1.6",
+      "13.1.7",
+      "13.1.8",
+      "13.1.9",
+      "13.1.10",
+      "13.1.11",
+      "13.1.12"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Relate chloroplast ultrastructure and pigments to photosynthesis.",
+      "Interpret absorption/action spectra and chromatography results.",
+      "Explain cyclic and non-cyclic photophosphorylation, chemiosmosis and the Calvin cycle."
+    ],
+    "sections": [
+      [
+        "Chloroplast architecture",
+        "A chloroplast has a double envelope. The fluid matrix is the stroma. Internal thylakoid membranes enclose thylakoid spaces; stacks of thylakoids are grana, connected by lamellae. Thylakoid membranes contain photosystems, electron-transfer components and ATP synthase. The stroma contains enzymes for the Calvin cycle. Structure therefore separates light-dependent reactions from carbon fixation."
+      ],
+      [
+        "Reading chloroplast diagrams and micrographs",
+        "Identify the envelope, stroma, grana, individual thylakoids, thylakoid membranes and spaces. Relate extensive thylakoid membrane surface area to pigment and electron-transfer machinery, and the stroma to soluble Calvin-cycle enzymes. A schematic is not an electron micrograph: practise recognising real micrographs separately."
+      ],
+      [
+        "Pigments and light capture",
+        "Chlorophyll a is the primary reaction-centre pigment. Chlorophyll b, carotene and xanthophyll are accessory pigments that broaden the wavelengths absorbed and transfer excitation energy towards reaction centres. Pigments are embedded in thylakoid membranes."
+      ],
+      [
+        "Absorption and action spectra",
+        "An absorption spectrum shows the wavelengths absorbed by a pigment or pigment mixture. An action spectrum shows the relative rate of photosynthesis at different wavelengths. Both generally show strong activity in blue and red regions and lower activity in much of the green region. Do not confuse absorption with rate itself."
+      ],
+      [
+        "Paper chromatography of pigments",
+        "Draw a pencil baseline near the bottom of chromatography paper. Apply a small concentrated pigment extract spot and allow it to dry, repeating to concentrate it. Place the paper in solvent with the solvent level below the baseline. The solvent rises and separates pigments by differing solubility and attraction to the stationary phase. Mark the solvent front immediately."
+      ],
+      [
+        "Calculating Rf",
+        "Rf = distance travelled by pigment from the baseline ÷ distance travelled by solvent front from the baseline. Measure both distances in the direction of solvent movement. Rf has no units and lies between 0 and 1. Compare with reference values only when solvent and conditions match; colour alone is not definitive identification."
+      ],
+      [
+        "Photosystems and photoactivation",
+        "Light energy excites electrons in chlorophyll within photosystems. The electrons leave the reaction centre and are replaced by electrons from a donor. In non-cyclic flow, PSII and PSI both participate; in cyclic flow, PSI alone is involved and electrons return to PSI."
+      ],
+      [
+        "Photolysis and the oxygen-evolving complex",
+        "In non-cyclic photophosphorylation, the oxygen-evolving complex associated with PSII catalyses photolysis of water. Water supplies electrons to replace those lost from PSII; protons contribute to the thylakoid-space proton pool and oxygen is released. Oxygen released by photosynthesis originates from water."
+      ],
+      [
+        "Non-cyclic photophosphorylation",
+        "Electrons excited in PSII pass along an electron-transfer chain and reach PSI, where light re-excites them. They are ultimately transferred to NADP, forming reduced NADP. Electron transfer supplies energy for proton movement into the thylakoid space. Proton return through ATP synthase produces ATP. Products are ATP, reduced NADP and oxygen."
+      ],
+      [
+        "Cyclic photophosphorylation",
+        "Light excites electrons in PSI. They pass through electron carriers and return to PSI. Energy released during transfer supports proton pumping and ATP synthesis by chemiosmosis. Cyclic photophosphorylation uses PSI only and produces ATP, but does not produce reduced NADP or oxygen."
+      ],
+      [
+        "Chemiosmosis in chloroplasts",
+        "Electron transfer drives proton accumulation in the thylakoid space from the stroma. Photolysis also adds protons to the thylakoid space. The resulting electrochemical gradient drives facilitated diffusion of protons back to the stroma through ATP synthase. Proton flow provides energy for ADP and inorganic phosphate to form ATP."
+      ],
+      [
+        "Calvin cycle: carbon fixation",
+        "In the stroma, RuBisCO catalyses the combination of carbon dioxide with ribulose bisphosphate (RuBP), a five-carbon compound. The unstable six-carbon intermediate immediately splits into two molecules of glycerate 3-phosphate (GP), each with three carbons."
+      ],
+      [
+        "Calvin cycle: reduction and regeneration",
+        "GP is reduced to triose phosphate (TP) using ATP and reduced NADP from the light-dependent stage. Some TP leaves the cycle and is used to synthesise carbohydrates, lipids and amino acids. The remaining TP is used, with ATP, to regenerate RuBP so carbon dioxide fixation can continue."
+      ],
+      [
+        "Using Calvin-cycle intermediates",
+        "GP can be used to form some amino acids. TP is a key starting material for carbohydrates, lipids and amino acids. ATP supplies energy and reduced NADP supplies reducing power during GP reduction. The light-dependent stage and Calvin cycle are linked by these transferable molecules."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Name the fluid region of a chloroplast where the Calvin cycle occurs.",
+        "answer": "The stroma.",
+        "mark_points": [
+          "Stroma"
+        ]
+      },
+      {
+        "question": "Distinguish a granum from a thylakoid.",
+        "answer": "A thylakoid is an individual membrane-bound sac; a granum is a stack of thylakoids.",
+        "mark_points": [
+          "Thylakoid is an individual sac",
+          "Granum is a stack"
+        ]
+      },
+      {
+        "question": "Explain how chloroplast structure supports the two stages of photosynthesis.",
+        "answer": "Thylakoid membranes contain pigments, photosystems, electron-transfer components and ATP synthase for light-dependent reactions. Stroma contains Calvin-cycle enzymes for carbon fixation.",
+        "mark_points": [
+          "Thylakoid membranes contain photosynthetic machinery",
+          "Stroma contains Calvin-cycle enzymes"
+        ]
+      },
+      {
+        "question": "State the roles of chlorophyll a, chlorophyll b, carotene and xanthophyll.",
+        "answer": "Chlorophyll a is the primary reaction-centre pigment; chlorophyll b, carotene and xanthophyll are accessory pigments that broaden light absorption.",
+        "mark_points": [
+          "Chlorophyll a primary pigment",
+          "Other three are accessory pigments"
+        ]
+      },
+      {
+        "question": "What is the difference between an absorption spectrum and an action spectrum?",
+        "answer": "An absorption spectrum plots light absorbed against wavelength; an action spectrum plots photosynthetic rate against wavelength.",
+        "mark_points": [
+          "Absorption is light absorbed",
+          "Action is photosynthetic rate",
+          "Both against wavelength"
+        ]
+      },
+      {
+        "question": "A pigment moves 3.6 cm and the solvent front moves 6.0 cm. Calculate Rf.",
+        "answer": "Rf = 3.6 ÷ 6.0 = 0.60.",
+        "mark_points": [
+          "Correct distance ratio",
+          "Correct calculation",
+          "0.60"
+        ]
+      },
+      {
+        "question": "Why must the solvent level start below the pigment baseline?",
+        "answer": "If the spot is submerged, pigment dissolves directly into the solvent reservoir instead of being carried up the paper.",
+        "mark_points": [
+          "Spot would dissolve into solvent reservoir",
+          "Would not separate properly"
+        ]
+      },
+      {
+        "question": "State what happens to electrons during photoactivation.",
+        "answer": "Light energy raises electrons in chlorophyll to a higher energy level, allowing them to leave the reaction centre.",
+        "mark_points": [
+          "Light absorbed",
+          "Electrons raised to higher energy",
+          "Electrons leave reaction centre"
+        ]
+      },
+      {
+        "question": "Describe photolysis of water in non-cyclic photophosphorylation.",
+        "answer": "The oxygen-evolving complex associated with PSII catalyses water splitting, releasing electrons, protons and oxygen.",
+        "mark_points": [
+          "Water split",
+          "Electrons replace those lost from PSII",
+          "Protons and oxygen released"
+        ]
+      },
+      {
+        "question": "Compare cyclic and non-cyclic photophosphorylation.",
+        "answer": "Cyclic uses PSI only and electrons return to PSI; it makes ATP. Non-cyclic uses PSII and PSI, electrons pass to NADP, and ATP, reduced NADP and oxygen are produced.",
+        "mark_points": [
+          "Cyclic PSI only",
+          "Cyclic ATP only",
+          "Non-cyclic both photosystems",
+          "Non-cyclic ATP, reduced NADP and oxygen"
+        ]
+      },
+      {
+        "question": "Explain how electron transfer leads to ATP synthesis in chloroplasts.",
+        "answer": "Energy released by electron transfer drives proton movement into the thylakoid space. Protons diffuse down their electrochemical gradient through ATP synthase to the stroma, driving ATP formation.",
+        "mark_points": [
+          "Electron transfer releases energy",
+          "Protons accumulate in thylakoid space",
+          "Return through ATP synthase",
+          "ATP formed"
+        ]
+      },
+      {
+        "question": "Where do protons move during chloroplast chemiosmosis?",
+        "answer": "They move from the thylakoid space through ATP synthase into the stroma.",
+        "mark_points": [
+          "Thylakoid space to stroma",
+          "Through ATP synthase"
+        ]
+      },
+      {
+        "question": "State the role of reduced NADP in the Calvin cycle.",
+        "answer": "It supplies reducing power for the reduction of GP to TP.",
+        "mark_points": [
+          "Reducing power",
+          "GP to TP"
+        ]
+      },
+      {
+        "question": "Explain carbon fixation in the Calvin cycle.",
+        "answer": "RuBisCO combines CO2 with five-carbon RuBP. The unstable six-carbon intermediate splits into two three-carbon GP molecules.",
+        "mark_points": [
+          "RuBisCO",
+          "CO2 + RuBP",
+          "Unstable six-carbon intermediate",
+          "Two GP molecules"
+        ]
+      },
+      {
+        "question": "How is RuBP regenerated?",
+        "answer": "Some TP is used with ATP to regenerate RuBP.",
+        "mark_points": [
+          "TP used",
+          "ATP required",
+          "RuBP regenerated"
+        ]
+      },
+      {
+        "question": "Name two groups of molecules synthesised using TP.",
+        "answer": "Any two of carbohydrates, lipids and amino acids.",
+        "mark_points": [
+          "Any two correct groups"
+        ]
+      },
+      {
+        "question": "Explain why the Calvin cycle depends on the light-dependent stage.",
+        "answer": "The Calvin cycle uses ATP for energy and reduced NADP for reducing power; both are supplied by the light-dependent stage.",
+        "mark_points": [
+          "ATP supplied",
+          "Reduced NADP supplied"
+        ]
+      },
+      {
+        "question": "A chromatography solvent front travels 8.0 cm. A pigment travels 5.2 cm. Calculate Rf.",
+        "answer": "5.2 ÷ 8.0 = 0.65.",
+        "mark_points": [
+          "Correct ratio",
+          "0.65"
+        ]
+      },
+      {
+        "question": "Why should chromatography spots be small and concentrated?",
+        "answer": "A small concentrated spot reduces streaking and overlapping, improving separation and measurement.",
+        "mark_points": [
+          "Reduces streaking/overlap",
+          "Improves separation"
+        ]
+      },
+      {
+        "question": "A student claims that oxygen released in photosynthesis comes from carbon dioxide. Correct the claim.",
+        "answer": "Oxygen released comes from photolysis of water during the light-dependent stage, not from carbon dioxide.",
+        "mark_points": [
+          "Oxygen comes from water",
+          "Photolysis in light-dependent stage"
+        ]
+      },
+      {
+        "question": "A thylakoid membrane becomes freely permeable to protons. Predict the effect on ATP synthesis.",
+        "answer": "The proton gradient would dissipate, reducing proton flow through ATP synthase and decreasing photophosphorylation.",
+        "mark_points": [
+          "Gradient dissipates",
+          "Less directed proton flow through ATP synthase",
+          "ATP synthesis decreases"
+        ]
+      },
+      {
+        "question": "Explain why accessory pigments increase the range of light usable for photosynthesis.",
+        "answer": "They absorb wavelengths that chlorophyll a absorbs less effectively and transfer excitation energy to reaction-centre chlorophyll.",
+        "mark_points": [
+          "Absorb additional wavelengths",
+          "Transfer energy to reaction centre"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/photosynthesis/chloroplast-structure.svg",
+        "role": "chloroplast structure"
+      },
+      {
+        "path": "/learning-assets/biology/9700/photosynthesis/pigment-spectra.svg",
+        "role": "pigment spectra"
+      },
+      {
+        "path": "/learning-assets/biology/9700/photosynthesis/pigment-chromatography.svg",
+        "role": "pigment chromatography"
+      },
+      {
+        "path": "/learning-assets/biology/9700/photosynthesis/cyclic-photophosphorylation.svg",
+        "role": "cyclic photophosphorylation"
+      },
+      {
+        "path": "/learning-assets/biology/9700/photosynthesis/noncyclic-photophosphorylation.svg",
+        "role": "noncyclic photophosphorylation"
+      },
+      {
+        "path": "/learning-assets/biology/9700/photosynthesis/chloroplast-chemiosmosis.svg",
+        "role": "chloroplast chemiosmosis"
+      },
+      {
+        "path": "/learning-assets/biology/9700/photosynthesis/calvin-cycle.svg",
+        "role": "calvin cycle"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent subject-editor, practical and accessibility review and objective UUID reconciliation.",
+      "Original explanatory diagrams are schematics, not authentic electron micrographs.",
+      "Questions are original learning checks, not official Cambridge questions or mark schemes."
+    ]
+  }
+}
