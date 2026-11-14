@@ -46,7 +46,67 @@ type Block =
   | { type: "rule" };
 
 function splitTableRow(line: string): string[] {
-  return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(cell => cell.trim());
+  const cells: string[] = [];
+  let cell = "";
+  let mathDelimiter = "";
+  let inCode = false;
+  let escaped = false;
+
+  for (let index = 0; index < line.length; index++) {
+    const char = line[index];
+    const next = line[index + 1] ?? "";
+    if (escaped) {
+      cell += char === "|" ? "|" : "\\" + char;
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (char.charCodeAt(0) === 96 && !mathDelimiter) {
+      inCode = !inCode;
+      cell += char;
+      continue;
+    }
+    if (!inCode) {
+      if (!mathDelimiter && char === "$") {
+        mathDelimiter = next === "$" ? "$$" : "$";
+        cell += char;
+        continue;
+      }
+      if (!mathDelimiter && char === "\\" && (next === "(" || next === "[")) {
+        mathDelimiter = next === "(" ? "\\(" : "\\[";
+        cell += char;
+        continue;
+      }
+      if (mathDelimiter) {
+        const closing = mathDelimiter === "$$" ? line.startsWith("$$", index)
+          : mathDelimiter === "$" ? char === "$"
+          : line.startsWith(mathDelimiter === "\\(" ? "\\)" : "\\]", index);
+        if (closing) {
+          if (mathDelimiter === "$$") { cell += "$$"; index++; }
+          else if (mathDelimiter === "\\(" || mathDelimiter === "\\[") {
+            cell += mathDelimiter === "\\(" ? "\\)" : "\\]";
+            index++;
+          } else cell += char;
+          mathDelimiter = "";
+          continue;
+        }
+      }
+      if (!mathDelimiter && char === "|") {
+        cells.push(cell.trim());
+        cell = "";
+        continue;
+      }
+    }
+    cell += char;
+  }
+  if (escaped) cell += "\\";
+  cells.push(cell.trim());
+  if (cells[0] === "") cells.shift();
+  if (cells[cells.length - 1] === "") cells.pop();
+  return cells;
 }
 
 function isTableDivider(line: string): boolean {
