@@ -55,6 +55,12 @@ class NativeLocalModelManager(private val context: Context) {
             }
         }
 
+        var offset = if (partial.isFile) partial.length() else 0L
+        if (offset !in 1 until GEMMA_MAX_BYTES) {
+            if (partial.exists()) partial.delete()
+            offset = 0L
+        }
+
         val connection = (URL(GEMMA_URL).openConnection() as HttpURLConnection).apply {
             connectTimeout = 15_000
             readTimeout = 60_000
@@ -62,15 +68,31 @@ class NativeLocalModelManager(private val context: Context) {
             requestMethod = "GET"
             setRequestProperty("Accept", "application/octet-stream")
             setRequestProperty("User-Agent", "Shadecode-Student/${BuildConfig.VERSION_NAME}")
+            if (offset > 0L) setRequestProperty("Range", "bytes=$offset-")
         }
 
         try {
-            check(connection.responseCode in 200..299) { "GGUF download failed: HTTP ${connection.responseCode}" }
-            val total = connection.contentLengthLong
+            val response = connection.responseCode
+            val append = offset > 0L && response == HttpURLConnection.HTTP_PARTIAL
+            if (append) {
+                val contentRange = connection.getHeaderField("Content-Range").orEmpty()
+                check(contentRange.startsWith("bytes $offset-")) {
+                    "Model server returned an invalid resume range."
+                }
+            } else {
+                check(response == HttpURLConnection.HTTP_OK) {
+                    "GGUF download failed: HTTP $response"
+                }
+                // Some mirrors ignore Range. Restart cleanly rather than corrupting the file.
+                offset = 0L
+            }
+
+            val remaining = connection.contentLengthLong
+            val total = if (remaining >= 0L) offset + remaining else -1L
             check(total <= GEMMA_MAX_BYTES) { "GGUF asset exceeds the safe download limit" }
-            var downloaded = 0L
+            var downloaded = offset
             connection.inputStream.use { input ->
-                FileOutputStream(partial).use { output ->
+                FileOutputStream(partial, append).use { output ->
                     val buffer = ByteArray(BUFFER_SIZE)
                     while (true) {
                         val count = input.read(buffer)
@@ -85,14 +107,20 @@ class NativeLocalModelManager(private val context: Context) {
                     output.fd.sync()
                 }
             }
-            check(partial.length() >= GEMMA_MIN_BYTES) { "GGUF asset is unexpectedly small" }
-            verifySha256(partial, GEMMA_SHA256)
+            check(partial.length() in GEMMA_MIN_BYTES..GEMMA_MAX_BYTES) {
+                "GGUF asset is incomplete or exceeds the safe download limit. Retry to resume."
+            }
+            try {
+                verifySha256(partial, GEMMA_SHA256)
+            } catch (error: IllegalStateException) {
+                partial.delete()
+                throw error
+            }
             if (destination.exists()) destination.delete()
             check(partial.renameTo(destination)) { "Could not finalize GGUF asset" }
             DownloadResult(model, destination, destination.length())
         } finally {
             connection.disconnect()
-            if (partial.exists()) partial.delete()
         }
     }
 
