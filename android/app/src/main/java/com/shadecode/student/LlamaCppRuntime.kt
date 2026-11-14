@@ -8,10 +8,6 @@ import kotlinx.coroutines.withContext
 class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
     private val modelManager = NativeLocalModelManager(context.applicationContext)
 
-    // llama.cpp state is process-global in the JNI bridge. Serialize every native entry point
-    // so overlapping UI requests cannot load, generate, or free the same context concurrently.
-    private val nativeLock = Any()
-
     init { System.loadLibrary("shadecode_cortex_native") }
 
     override suspend fun installedModels(): List<NativeLocalModelSpec> = withContext(Dispatchers.IO) {
@@ -58,7 +54,12 @@ class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
     private external fun nativeGenerate(prompt: String, maxTokens: Int): String?
     private external fun nativeUnload()
 
-    private fun formatGemmaPrompt(prompt: String): String = "<start_of_turn>user\n$prompt<end_of_turn>\n<start_of_turn>model\n"
+    private fun formatGemmaPrompt(prompt: String): String = "<start_of_turn>user\\n$prompt<end_of_turn>\\n<start_of_turn>model\\n"
 
-    companion object { private const val MAX_PROMPT_CHARS = 12_000 }
+    companion object {
+        // JNI owns one process-wide llama.cpp model/context, even if the UI creates
+        // multiple runtime wrappers. The lock must therefore be process-wide too.
+        private val nativeLock = Any()
+        private const val MAX_PROMPT_CHARS = 12_000
+    }
 }
