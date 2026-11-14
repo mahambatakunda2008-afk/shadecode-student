@@ -58,7 +58,7 @@ describe("Cortex response formatting", () => {
   });
 
   it("renders completed and pending Markdown task items", () => {
-    const source = "- [x] Identify the values\\n- [ ] Check the units";
+    const source = "- [x] Identify the values\n- [ ] Check the units";
     const blocks = parseCortexResponseBlocks(source);
     expect(blocks[0]).toMatchObject({ type: "list", items: [{ text: "Identify the values", checked: true }, { text: "Check the units", checked: false }] });
     const html = renderToStaticMarkup(<CortexResponse text={source} />);
