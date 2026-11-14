@@ -63,9 +63,9 @@ export default async function TeacherHome() {
           <p className="mt-1 text-xs text-[var(--muted-foreground)]">Manage your school context</p>
         </Link>
         <Link href="/teacher/tutorials" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 transition hover:border-[var(--primary)]">
-          <p className="text-xs text-[var(--muted-foreground)]">Tutorials awaiting review</p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{tutorialsWaiting ?? 0}</p>
-          <p className="mt-1 text-xs text-[var(--muted-foreground)]">Open Tutorial Studio</p>
+          <p className="text-xs text-[var(--muted-foreground)]">Tutorial Studio</p>
+          <p className="mt-2 text-xl font-semibold">Create resources</p>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">Build lessons, diagrams and learning materials</p>
         </Link>
       </section>
 
