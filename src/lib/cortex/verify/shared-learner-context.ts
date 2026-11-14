@@ -47,7 +47,7 @@ export function buildSharedVerifyLearnerContext(
     ...suggestions.map(item =>
       `- Evidence-backed review suggestion: ${item.topicId}; ${item.priority} priority; ${item.reason}; ${item.distinctAttempts} distinct attempts. This is a suggestion, not a predicted due date.`,
     ),
-    ...interventionOutcomes.map(item =>
+    ...interventionOutcomes.slice(0, 6).map(item =>
       `- Verify intervention follow-up for ${item.topicId} (${item.interventionLevel}): ${item.state}; ${item.baselineAttempts} baseline attempt(s) at ${item.baselineScore ?? "not yet measured"}% and ${item.transferAttempts} fresh-transfer attempt(s) at ${item.transferScore ?? "not yet measured"}%; change ${item.scoreChange === null ? "not yet established" : `${item.scoreChange > 0 ? "+" : ""}${item.scoreChange} percentage points`}. Descriptive evidence only, not proof the intervention caused the change.`,
     ),
     "Use this evidence only to tailor the explanation and next practice task. If an exploratory teaching-approach signal exists and the learner has not chosen a help level, prefer that approach. Never override an explicit learner choice. Mark the submitted work independently. Do not infer mastery from lesson views or one attempt. Prefer a fresh transfer question for developing topics, guided reteaching for repeated errors, and retrieval practice where evidence supports it.",
