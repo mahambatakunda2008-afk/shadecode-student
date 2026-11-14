@@ -51,6 +51,7 @@ class NativeVerifyApi(
                 field("question", question.trim().take(12_000))
                 field("studentAnswer", studentAnswer.trim().take(60_000))
                 if (mode == "help") field("level", helpLevel)
+                if (visualEvidence.isNotEmpty()) field("visualEvidenceConsent", "true")
                 visualEvidence.take(5).forEachIndexed { index, evidence ->
                     require(evidence.bytes.isNotEmpty() && evidence.bytes.size <= 4 * 1024 * 1024) { "Each visual crop must be 4 MB or smaller." }
                     writeText("--$boundary\r\n")
