@@ -47,6 +47,27 @@ const MARKING_CODE_RE = /\b(?:B\d|M\d|A\d|C\d|E\d|FT|cao|oe|ecf)\b/gi;
 const DIAGRAM_RE = /\b(?:diagram|graph|sketch|figure|plot|circuit|label(?:led|ed)?)\b/i;
 const TABLE_RE = /\b(?:table|results|readings|record your|column headings)\b/i;
 
+export type PdfPageSelection = { pages: number[]; error: null } | { pages: []; error: string };
+
+/** Parse and validate a user-selected PDF OCR batch before rendering any pages. */
+export function parsePdfPageSelection(input: string, pageCount: number): PdfPageSelection {
+  const tokens = input.split(",").map(value => value.trim());
+  if (!input.trim() || tokens.some(token => !/^\d+$/.test(token))) {
+    return { pages: [], error: "Enter whole PDF page numbers separated by commas, for example: 2, 4, 7." };
+  }
+  const pages = tokens.map(Number);
+  if (!Number.isInteger(pageCount) || pageCount < 1 || pages.some(page => page < 1 || page > pageCount)) {
+    return { pages: [], error: `Choose pages from 1 to ${Math.max(0, pageCount)} for this PDF.` };
+  }
+  if (new Set(pages).size !== pages.length) {
+    return { pages: [], error: "Each PDF page can appear only once in a batch." };
+  }
+  if (pages.length > 20) {
+    return { pages: [], error: "Choose no more than 20 pages per local OCR batch." };
+  }
+  return { pages, error: null };
+}
+
 function normalizePageText(page: number, text: string): MarkingResourceTextLine[] {
   return text
     .replace(/\r/g, "")
