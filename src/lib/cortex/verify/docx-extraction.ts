@@ -42,7 +42,7 @@ export function docxXmlToText(xml: string): string {
       else if (/^<w:(?:br|cr)\b/i.test(token)) pieces.push(" ");
       else pieces.push(decodeXmlEntities(token.replace(/^<w:t\b[^>]*>/i, "").replace(/<\/w:t>$/i, "")));
     }
-    return pieces.join("").replace(/[\t ]+/g, " ").trim();
+    return pieces.join("").replace(/ +/g, " ").replace(/^ +| +$/g, "");
   }).filter(Boolean);
   return output.join("\n").slice(0, DOCX_MAX_TEXT_CHARS);
 }
