@@ -185,11 +185,24 @@ export function useCortexVerify() {
     offlineRubric?: OfflineVerifyRubric;
     /** Trusted downloaded/built-in question metadata; only numeric and keyed MC items are eligible. */
     offlineQuestion?: ExamQuestion;
+    /** Locally stored diagram/graph crops. Never queued for later upload. */
+    visualEvidence?: Array<{ file: File; label: string; annotation?: string }>;
+    visualEvidenceConsent?: boolean;
   }) => {
     setLoading(true); setError(null); setResult(null);
     try {
       const userId = await currentUserId();
       const imageDataUrl = options.image ? await fileToDataUrl(options.image) : null;
+      const visualEvidence = options.visualEvidence || [];
+      if (visualEvidence.length > 5) throw new Error("Attach no more than five visual regions at a time.");
+      if (visualEvidence.length && !options.visualEvidenceConsent) throw new Error("Confirm that you agree to send the selected visual regions to cloud AI.");
+      if (visualEvidence.length && !navigator.onLine) throw new Error("Visual evidence cannot be sent while offline. Your local crops have not been uploaded; reconnect and try again.");
+      if (visualEvidence.some(item => !["image/webp", "image/png", "image/jpeg"].includes(item.file.type) || item.file.size > 4 * 1024 * 1024)) {
+        throw new Error("Each visual crop must be a JPG, PNG or WEBP image no larger than 4 MB.");
+      }
+      if (visualEvidence.reduce((sum, item) => sum + item.file.size, 0) > 8 * 1024 * 1024) {
+        throw new Error("Combined visual evidence must be 8 MB or smaller.");
+      }
       const attempt: CortexAttempt = {
         id: `${Date.now()}-${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`,
         userId,
@@ -202,6 +215,31 @@ export function useCortexVerify() {
         createdAt: new Date().toISOString(),
         attempts: 0,
       };
+      if (visualEvidence.length) {
+        const fd = new FormData();
+        fd.append("mode", attempt.mode);
+        fd.append("userId", attempt.userId);
+        fd.append("subject", attempt.subject || "General");
+        fd.append("question", attempt.question || "");
+        fd.append("studentAnswer", attempt.studentAnswer || "");
+        if (attempt.mode === "help" && attempt.level) fd.append("level", attempt.level);
+        fd.append("visualEvidenceConsent", "true");
+        visualEvidence.forEach(({ file, label, annotation }) => {
+          fd.append("visualEvidence", file, file.name || "visual-evidence.webp");
+          fd.append("visualEvidenceContext", JSON.stringify({ label: label.slice(0, 100), annotation: (annotation || "").slice(0, 1000) }));
+        });
+        const response = await fetchWithTimeout("/api/cortex/verify", { method: "POST", body: fd });
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data || typeof data !== "object") throw new Error(data?.error || "Cortex could not assess the visual evidence.");
+        const validated = data as VerifyResult;
+        if (attempt.mode === "help" ? !isValidHelpResult(validated, (attempt.level || "hint") as VerifyHelpLevel) : !isValidVerifyMarkResult(validated)) {
+          throw new Error("Cortex returned an invalid visual verification result.");
+        }
+        if (attempt.mode === "help") Object.assign(validated, selectHelpResult(validated, (attempt.level || "hint") as VerifyHelpLevel));
+        recordVerifyEvent(attempt, validated);
+        setResult(validated);
+        return validated;
+      }
       await enqueue(attempt);
       if (navigator.onLine) {
         try { const response = await sendAttemptNow(attempt); setResult(response); return response; }
