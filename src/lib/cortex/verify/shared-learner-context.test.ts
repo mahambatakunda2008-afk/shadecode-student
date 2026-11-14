@@ -32,12 +32,13 @@ const base = {
 } as unknown as CortexStudentContext;
 
 describe("shared Verify learner context", () => {
-  it("uses canonical topic, objective and repeated-error evidence for the active subject", () => {
+  it("uses canonical topic and repeated-error evidence for the active subject", () => {
     const context = buildSharedVerifyLearnerContext(base, "Physics");
     expect(context).toContain("Waves");
     expect(context).toContain("unit-conversion");
-    expect(context).toContain("Curriculum objective 2.1");
+    expect(context).not.toContain("Curriculum objective 2.1");
     expect(context).not.toContain("Algebra");
+    expect(context).not.toContain("Curriculum objective");
   });
 
   it("does not leak evidence from another subject", () => {
