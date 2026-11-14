@@ -1689,10 +1689,10 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                     Text("Your reviewed extraction becomes the working submitted to Cortex. Choose a mode and subject.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { verifyMode = "check"; verifyResult = null; cloudVerifyConsent = false }, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { verifyMode = "check"; verifyResult = null; cloudVerifyConsent = false; localHelpResult = null }, modifier = Modifier.weight(1f)) {
                             Text(if (verifyMode == "check") "✓ Mark Mode" else "Mark Mode")
                         }
-                        OutlinedButton(onClick = { verifyMode = "help"; verifyResult = null; cloudVerifyConsent = false }, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { verifyMode = "help"; verifyResult = null; cloudVerifyConsent = false; localHelpResult = null }, modifier = Modifier.weight(1f)) {
                             Text(if (verifyMode == "help") "✓ Help Mode" else "Help Mode")
                         }
                     }
