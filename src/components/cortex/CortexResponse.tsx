@@ -50,59 +50,69 @@ function splitTableRow(line: string): string[] {
   let cell = "";
   let mathDelimiter = "";
   let inCode = false;
-  let escaped = false;
 
   for (let index = 0; index < line.length; index++) {
     const char = line[index];
     const next = line[index + 1] ?? "";
-    if (escaped) {
-      cell += char === "|" ? "|" : "\\" + char;
-      escaped = false;
+
+    if (mathDelimiter) {
+      const closing = mathDelimiter === "$$" ? line.startsWith("$$", index)
+        : mathDelimiter === "$" ? char === "$"
+        : line.startsWith(mathDelimiter === "\\(" ? "\\)" : "\\]", index);
+      if (closing) {
+        const closingText = mathDelimiter === "$$" ? "$$"
+          : mathDelimiter === "$" ? "$"
+          : mathDelimiter === "\\(" ? "\\)" : "\\]";
+        cell += closingText;
+        if (closingText.length === 2) index++;
+        mathDelimiter = "";
+      } else {
+        cell += char;
+      }
       continue;
     }
-    if (char === "\\") {
-      escaped = true;
+
+    if (inCode) {
+      cell += char;
+      if (char.charCodeAt(0) === 96) inCode = false;
       continue;
     }
-    if (char.charCodeAt(0) === 96 && !mathDelimiter) {
-      inCode = !inCode;
+
+    if (char === "\\" && (next === "(" || next === "[")) {
+      mathDelimiter = next === "(" ? "\\(" : "\\[";
+      cell += char + next;
+      index++;
+      continue;
+    }
+    if (char === "\\" && next === "|") {
+      cell += "|";
+      index++;
+      continue;
+    }
+    if (char === "$") {
+      if (next === "$") {
+        mathDelimiter = "$$";
+        cell += "$$";
+        index++;
+      } else {
+        mathDelimiter = "$";
+        cell += char;
+      }
+      continue;
+    }
+    if (char.charCodeAt(0) === 96) {
+      inCode = true;
       cell += char;
       continue;
     }
-    if (!inCode) {
-      if (!mathDelimiter && char === "$") {
-        mathDelimiter = next === "$" ? "$$" : "$";
-        cell += char;
-        continue;
-      }
-      if (!mathDelimiter && char === "\\" && (next === "(" || next === "[")) {
-        mathDelimiter = next === "(" ? "\\(" : "\\[";
-        cell += char;
-        continue;
-      }
-      if (mathDelimiter) {
-        const closing = mathDelimiter === "$$" ? line.startsWith("$$", index)
-          : mathDelimiter === "$" ? char === "$"
-          : line.startsWith(mathDelimiter === "\\(" ? "\\)" : "\\]", index);
-        if (closing) {
-          if (mathDelimiter === "$$") { cell += "$$"; index++; }
-          else if (mathDelimiter === "\\(" || mathDelimiter === "\\[") {
-            cell += mathDelimiter === "\\(" ? "\\)" : "\\]";
-            index++;
-          } else cell += char;
-          mathDelimiter = "";
-          continue;
-        }
-      }
-      if (!mathDelimiter && char === "|") {
-        cells.push(cell.trim());
-        cell = "";
-        continue;
-      }
+    if (char === "|") {
+      cells.push(cell.trim());
+      cell = "";
+      continue;
     }
     cell += char;
   }
-  if (escaped) cell += "\\";
+
   cells.push(cell.trim());
   if (cells[0] === "") cells.shift();
   if (cells[cells.length - 1] === "") cells.pop();
