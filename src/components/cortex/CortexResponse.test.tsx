@@ -52,7 +52,16 @@ describe("Cortex response formatting", () => {
     expect(normalizeCortexResponseText("\\\\*\\\\*Important\\\\*\\\\*")).toBe("**Important**");
   });
 
-  it("renders completed and pending Markdown task items", () => {\n    const blocks = parseCortexResponseBlocks("- [x] Identify the values\\n- [ ] Check the units");\n    expect(blocks[0]).toMatchObject({ type: "list", items: [{ text: "Identify the values", checked: true }, { text: "Check the units", checked: false }] });\n    const html = renderToStaticMarkup(<CortexResponse text={"- [x] Identify the values\\n- [ ] Check the units"} />);\n    expect(html).toContain("aria-label=\\"Completed\\"");\n    expect(html).toContain("aria-label=\\"Not completed\\"");\n  });\n\n  it("preserves nested ordered and unordered list structure", () => {
+  it("renders completed and pending Markdown task items", () => {
+    const source = "- [x] Identify the values\\n- [ ] Check the units";
+    const blocks = parseCortexResponseBlocks(source);
+    expect(blocks[0]).toMatchObject({ type: "list", items: [{ text: "Identify the values", checked: true }, { text: "Check the units", checked: false }] });
+    const html = renderToStaticMarkup(<CortexResponse text={source} />);
+    expect(html).toContain('aria-label="Completed"');
+    expect(html).toContain('aria-label="Not completed"');
+  });
+
+  it("preserves nested ordered and unordered list structure", () => {
     const blocks = parseCortexResponseBlocks("1. First step\n   - Supporting point\n   - Another point\n2. Second step\n   1. Nested calculation\n   2. Check the result");
     expect(blocks[0]).toMatchObject({
       type: "list",
