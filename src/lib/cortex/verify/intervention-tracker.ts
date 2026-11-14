@@ -54,7 +54,7 @@ export function recordVerifyIntervention(input: {
     subject: input.subject.trim().slice(0, 100),
     topic: input.topic.trim().slice(0, 100),
     level: input.level,
-    questionFingerprint: fingerprint(input.question.trim().replace(/\\s+/g, " ").toLocaleLowerCase("en")),
+    questionFingerprint: fingerprint(input.question.trim().replace(/\s+/g, " ").toLocaleLowerCase("en")),
     createdAt: now,
   };
   write(input.userId, [...read(input.userId), next]);
@@ -80,7 +80,7 @@ export function consumeVerifyIntervention(input: {
   const attemptTime = Date.parse(input.occurredAt || new Date().toISOString());
   const interventionTime = Date.parse(index.item.createdAt);
   if (!Number.isFinite(attemptTime) || !Number.isFinite(interventionTime) || attemptTime < interventionTime) return null;
-  const questionKey = fingerprint(input.question.trim().replace(/\\s+/g, " ").toLocaleLowerCase("en"));
+  const questionKey = fingerprint(input.question.trim().replace(/\s+/g, " ").toLocaleLowerCase("en"));
   const linked = index.item.linkedTransferFingerprints || [];
   const freshTransfer = questionKey !== index.item.questionFingerprint && !linked.includes(questionKey);
   if (freshTransfer) linked.push(questionKey);
