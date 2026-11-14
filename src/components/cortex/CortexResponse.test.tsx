@@ -44,7 +44,7 @@ describe("Cortex response formatting", () => {
     expect(blocks[0]).toMatchObject({ type: "heading", text: "Part 1: Finding the Equation" });
     expect(blocks[1]).toMatchObject({ type: "paragraph", text: "**Identify the values**: The centre is $(-3, 2)$." });
     expect(blocks[2]).toMatchObject({ type: "list", ordered: true });
-    expect(blocks[2]).toMatchObject({ items: ["**Substitute the values**:\n$(x + 3)^2 + (y - 2)^2 = 10$", "**Simplify**: The equation is ready."] });
+    expect(blocks[2]).toMatchObject({ items: [{ text: "**Substitute the values**:\\n$(x + 3)^2 + (y - 2)^2 = 10$" }, { text: "**Simplify**: The equation is ready." }] });
   });
 
   it("repairs Markdown punctuation after multiple transport-escaping layers", () => {
@@ -53,7 +53,7 @@ describe("Cortex response formatting", () => {
   });
 
   it("preserves nested ordered and unordered list structure", () => {
-    const blocks = parseCortexResponseBlocks("1. First step\\n   - Supporting point\\n   - Another point\\n2. Second step\\n   1. Nested calculation\\n   2. Check the result");
+    const blocks = parseCortexResponseBlocks("1. First step\n   - Supporting point\n   - Another point\n2. Second step\n   1. Nested calculation\n   2. Check the result");
     expect(blocks[0]).toMatchObject({
       type: "list",
       ordered: true,
