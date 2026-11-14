@@ -4,6 +4,7 @@ import { docxXmlToText } from "./docx-extraction";
 import {
   extractImportedMarkingResource,
   identifyMarkingStructure,
+  joinPdfTextItemsByLayout,
   parsePdfPageSelection,
 } from "./marking-resource-extraction";
 
@@ -35,6 +36,33 @@ function resource(fileName: string, content: string): ImportedMarkingResource {
     contentSha256: "a".repeat(64),
   };
 }
+
+describe("PDF text layout reconstruction", () => {
+  it("retains wide gaps as tab-separated column hints", () => {
+    const line = joinPdfTextItemsByLayout([
+      { x: 0, width: 32, text: "Time" },
+      { x: 90, width: 55, text: "Distance" },
+      { x: 240, width: 40, text: "Speed" },
+    ]);
+    expect(line).toBe("Time\\tDistance\\tSpeed");
+  });
+
+  it("keeps ordinary sentence fragments separated by spaces", () => {
+    expect(joinPdfTextItemsByLayout([
+      { x: 0, width: 22, text: "The" },
+      { x: 26, width: 35, text: "answer" },
+      { x: 65, width: 12, text: "is" },
+      { x: 82, width: 18, text: "42." },
+    ])).toBe("The answer is 42.");
+  });
+
+  it("sorts fragments by horizontal position", () => {
+    expect(joinPdfTextItemsByLayout([
+      { x: 80, width: 20, text: "right" },
+      { x: 0, width: 30, text: "left" },
+    ])).toBe("left\\tright");
+  });
+});
 
 describe("PDF OCR page selection", () => {
   it("accepts unique whole pages within the document", () => {
