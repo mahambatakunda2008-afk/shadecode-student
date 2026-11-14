@@ -96,12 +96,11 @@ function splitTableRow(line: string): string[] {
         continue;
       }
       if (next === "$") {
-        // Treat a paired double-dollar token as display math, but leave an
-        // unmatched currency marker in the current table cell.
-        if (line.indexOf("$", index + 2) !== -1) {
-          mathDelimiter = "$";
+        // A currency marker or malformed delimiter must not swallow a row.
+        if (line.indexOf("$$", index + 2) !== -1) {
+          mathDelimiter = "$$";
         }
-        cell += "$";
+        cell += "$$";
         index++;
       } else if (line.indexOf("$", index + 1) !== -1) {
         mathDelimiter = "$";
