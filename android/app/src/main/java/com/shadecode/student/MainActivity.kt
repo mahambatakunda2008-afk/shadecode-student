@@ -1539,9 +1539,11 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     val updated=withContext(Dispatchers.IO){extractStore.saveVisualRegions(artifactId,visualRegions,visualCropBytes)}
                                     visualRegions=updated.visualRegions
                                     visualCropBytes=emptyMap()
-                                    visualCropPreviews=updated.visualRegions.mapNotNull { region ->
-                                        extractStore.loadVisualCrop(artifactId, region.id)?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()?.let { region.id to it } }
-                                    }.toMap()
+                                    visualCropPreviews=withContext(Dispatchers.IO) {
+                                        updated.visualRegions.mapNotNull { region ->
+                                            extractStore.loadVisualCrop(artifactId, region.id)?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()?.let { region.id to it } }
+                                        }.toMap()
+                                    }
                                     savedArtifacts=withContext(Dispatchers.IO){extractStore.list()}
                                     message="Saved " + updated.visualRegions.size + " visual region(s) privately on this device."
                                 } catch(error:Exception){message=error.message ?: "Could not save visual evidence."}
