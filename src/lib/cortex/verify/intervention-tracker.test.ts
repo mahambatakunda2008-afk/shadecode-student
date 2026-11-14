@@ -17,32 +17,47 @@ describe("Cortex Verify intervention tracking", () => {
     installStorage();
     recordVerifyIntervention({
       userId: "learner-1", subject: "Mathematics", topic: "Algebra", level: "method",
-      question: "Solve 2x + 3 = 9", id: "intervention-1", occurredAt: "2026-11-14T10:00:00.000Z",
+      question: "Solve 2x + 3 = 9", id: "vi_intervention1_1234567", occurredAt: "2026-11-14T10:00:00.000Z",
     });
     const linked = consumeVerifyIntervention({
       userId: "learner-1", subject: "Mathematics", topic: "Algebra",
       question: "Solve 3x - 4 = 11", occurredAt: "2026-11-14T11:30:00.000Z",
     });
     expect(linked).toEqual({
-      interventionId: "intervention-1", interventionLevel: "method",
+      interventionId: "vi_intervention1_1234567", interventionLevel: "method",
       interventionToAttemptHours: 1.5, freshTransfer: true,
     });
   });
 
-  it("does not classify the identical question as transfer and consumes the intervention once", () => {
+  it("keeps an intervention open for two distinct fresh-transfer attempts", () => {
     installStorage();
     recordVerifyIntervention({
       userId: "learner-1", subject: "Physics", topic: "Waves", level: "hint",
-      question: "Define wavelength", id: "intervention-2", occurredAt: "2026-11-14T10:00:00.000Z",
+      question: "Define wavelength", id: "vi_intervention2_1234567", occurredAt: "2026-11-14T10:00:00.000Z",
     });
     const linked = consumeVerifyIntervention({
       userId: "learner-1", subject: "Physics", topic: "Waves",
       question: "Define wavelength", occurredAt: "2026-11-14T10:05:00.000Z",
     });
     expect(linked?.freshTransfer).toBe(false);
-    expect(consumeVerifyIntervention({
+    const firstFresh = consumeVerifyIntervention({
       userId: "learner-1", subject: "Physics", topic: "Waves",
       question: "Explain wave speed", occurredAt: "2026-11-14T10:10:00.000Z",
+    });
+    expect(firstFresh?.freshTransfer).toBe(true);
+    const repeated = consumeVerifyIntervention({
+      userId: "learner-1", subject: "Physics", topic: "Waves",
+      question: "Explain wave speed", occurredAt: "2026-11-14T10:12:00.000Z",
+    });
+    expect(repeated?.freshTransfer).toBe(false);
+    const secondFresh = consumeVerifyIntervention({
+      userId: "learner-1", subject: "Physics", topic: "Waves",
+      question: "Calculate wave speed from frequency and wavelength", occurredAt: "2026-11-14T10:15:00.000Z",
+    });
+    expect(secondFresh?.freshTransfer).toBe(true);
+    expect(consumeVerifyIntervention({
+      userId: "learner-1", subject: "Physics", topic: "Waves",
+      question: "A third fresh question", occurredAt: "2026-11-14T10:20:00.000Z",
     })).toBeNull();
   });
 
