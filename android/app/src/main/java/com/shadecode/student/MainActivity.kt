@@ -1267,6 +1267,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val extractStore = remember { NativeExtractStore(context) }
+    val offlineRubricStore = remember { NativeOfflineRubricStore(context) }
     val verifyApi = remember { NativeVerifyApi() }
     val localModelManager = remember { NativeLocalModelManager(context) }
     val localModelRuntime = remember { runCatching { LlamaCppRuntime(context) }.getOrNull() }
@@ -1291,6 +1292,9 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
     var verifying by remember { mutableStateOf(false) }
     var verifyMessage by remember { mutableStateOf<String?>(null) }
     var verifyResult by remember { mutableStateOf<org.json.JSONObject?>(null) }
+    var offlineMarkResult by remember { mutableStateOf<NativeOfflineMarkResult?>(null) }
+    var rubricQuestionId by remember { mutableStateOf("") }
+    var rubricSyllabusIdentity by remember { mutableStateOf("") }
     var savedArtifacts by remember { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
     var artifactSearch by remember { mutableStateOf("") }
     var activeArtifactId by remember { mutableStateOf<String?>(null) }
@@ -1711,6 +1715,77 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 2,
                     )
+                    if (verifyMode == "check") {
+                        Spacer(Modifier.height(12.dp))
+                        Text("Offline Mark", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Uses only a verified, locally installed answer rubric. It checks reviewed text only, not handwriting, diagrams or selected image crops.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        OutlinedTextField(
+                            value = rubricQuestionId,
+                            onValueChange = { rubricQuestionId = it; offlineMarkResult = null },
+                            label = { Text("Question / resource ID") },
+                            placeholder = { Text("Exact ID from the marking pack") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = rubricSyllabusIdentity,
+                            onValueChange = { rubricSyllabusIdentity = it; offlineMarkResult = null },
+                            label = { Text("Syllabus identity") },
+                            placeholder = { Text("Exact syllabus key from the marking pack") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Button(
+                            onClick = {
+                                offlineMarkResult = null
+                                val chosen = subjects.firstOrNull { it.id == verifySubjectId }
+                                if (chosen == null) {
+                                    verifyMessage = "Choose one of your enrolled subjects."
+                                } else if (rubricQuestionId.isBlank() || rubricSyllabusIdentity.isBlank()) {
+                                    verifyMessage = "Enter the exact question ID and syllabus identity used by an installed marking pack."
+                                } else if (editableText.isBlank()) {
+                                    verifyMessage = "Review or enter your answer text before offline marking."
+                                } else {
+                                    scope.launch {
+                                        val result = withContext(Dispatchers.IO) {
+                                            val entry = offlineRubricStore.find(
+                                                chosen.id, rubricSyllabusIdentity.trim(), rubricQuestionId.trim(),
+                                            )
+                                            entry?.let { NativeOfflineMarker.mark(verifyQuestion.ifBlank { rubricQuestionId }, editableText, it.rubric) }
+                                        }
+                                        offlineMarkResult = result
+                                        verifyMessage = if (result == null) {
+                                            "No matching verified offline rubric is installed for this subject, syllabus and question. No marks were invented."
+                                        } else {
+                                            "Offline rubric check complete. This is a deterministic local answer-key check, not a full examiner assessment."
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = rubricQuestionId.isNotBlank() && rubricSyllabusIdentity.isNotBlank() && editableText.isNotBlank(),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Mark offline with verified rubric") }
+                        offlineMarkResult?.let { result ->
+                            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                                    Text("Offline result: ${result.earnedMarks}/${result.totalMarks} marks (${result.percentage}%)", fontWeight = FontWeight.Bold)
+                                    Text(result.feedback, modifier = Modifier.padding(top = 6.dp))
+                                    result.steps.forEach { step ->
+                                        Text("${step.earnedMarks}/${step.availableMarks} · ${step.description}", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
+                                        Text(step.note, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                    Text("Source: ${result.sourceEvidenceId} · Syllabus: ${result.syllabusIdentity}", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+                                    result.limitations.forEach { limitation ->
+                                        Text("Limitation: $limitation", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if (verifyMode == "help") {
                         Text("Help level", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
