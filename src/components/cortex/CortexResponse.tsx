@@ -13,8 +13,8 @@ function decodeNumericEntity(original: string, codePoint: number): string {
 export function normalizeCortexResponseText(source: string): string {
   // Protect LaTeX delimiters while repairing transport-escaped Markdown.
   const mathDelimiters: string[] = [];
-  const protectedSource = source.replace(/\\+\(([\s\S]*?)\\+\)|\\+\[([\s\S]*?)\\+\]/g, (_match, roundBody: string | undefined, squareBody: string | undefined) => {
-    const index = mathDelimiters.push(roundBody !== undefined ? "\\(" + roundBody + "\\)" : "\\[" + (squareBody ?? "") + "\\]") - 1;
+  const protectedSource = source.replace(/(\$\$[\s\S]*?\$\$|\$(?!\$)[^\n$]+?\$|\\+\([\s\S]*?\\+\)|\\+\[[\s\S]*?\\+\])/g, (match: string) => {
+    const index = mathDelimiters.push(match) - 1;
     return "\\uE000" + index + "\\uE001";
   });
   return protectedSource
