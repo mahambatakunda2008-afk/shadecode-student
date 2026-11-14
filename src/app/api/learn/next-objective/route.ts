@@ -163,6 +163,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       available: true,
+      subject: subject.name,
       curriculumVersionId: version.id,
       curriculum: {
         boardId: version.board_id,
