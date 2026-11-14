@@ -71,13 +71,26 @@ export async function extractDocxText(file: Blob): Promise<{ text: string; engin
   const bytes = new Uint8Array(await file.arrayBuffer());
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const eocd = findEndOfCentralDirectory(view);
+  if (eocd + 22 > bytes.byteLength) throw new Error("DOCX ZIP directory footer is incomplete.");
+  if (view.getUint16(eocd + 4, true) !== 0 || view.getUint16(eocd + 6, true) !== 0) {
+    throw new Error("Multi-disk DOCX archives are not supported.");
+  }
+  const entriesOnDisk = view.getUint16(eocd + 8, true);
   const entryCount = view.getUint16(eocd + 10, true);
+  const directorySize = view.getUint32(eocd + 12, true);
   const directoryOffset = view.getUint32(eocd + 16, true);
+  if (entriesOnDisk !== entryCount || entryCount === 0xffff || directorySize === 0xffffffff || directoryOffset === 0xffffffff) {
+    throw new Error("DOCX ZIP64 or multi-disk archives are not supported by this local extractor.");
+  }
+  const directoryEnd = directoryOffset + directorySize;
+  if (directoryEnd > eocd || directoryEnd > bytes.byteLength) throw new Error("DOCX ZIP directory exceeds the file boundary.");
   let cursor = directoryOffset;
   let documentXml: Uint8Array | null = null;
 
   for (let index = 0; index < entryCount; index += 1) {
-    if (view.getUint32(cursor, true) !== 0x02014b50) throw new Error("DOCX ZIP directory entry is invalid.");
+    if (cursor + 46 > directoryEnd || view.getUint32(cursor, true) !== 0x02014b50) {
+      throw new Error("DOCX ZIP directory entry is invalid or truncated.");
+    }
     const method = view.getUint16(cursor + 10, true);
     const compressedSize = view.getUint32(cursor + 20, true);
     const uncompressedSize = view.getUint32(cursor + 24, true);
@@ -85,21 +98,25 @@ export async function extractDocxText(file: Blob): Promise<{ text: string; engin
     const extraLength = view.getUint16(cursor + 30, true);
     const commentLength = view.getUint16(cursor + 32, true);
     const localOffset = view.getUint32(cursor + 42, true);
+    const nextEntry = cursor + 46 + nameLength + extraLength + commentLength;
+    if (nextEntry > directoryEnd) throw new Error("DOCX ZIP directory entry exceeds its declared boundary.");
     const name = new TextDecoder().decode(bytes.subarray(cursor + 46, cursor + 46 + nameLength));
     if (name === "word/document.xml") {
       if (compressedSize > DOCX_MAX_XML_BYTES || uncompressedSize > DOCX_MAX_XML_BYTES) throw new Error("DOCX document XML exceeds the local extraction safety limit.");
-      if (view.getUint32(localOffset, true) !== 0x04034b50) throw new Error("DOCX document entry is invalid.");
+      if (localOffset + 30 > bytes.byteLength || view.getUint32(localOffset, true) !== 0x04034b50) {
+        throw new Error("DOCX document entry is invalid.");
+      }
       const localNameLength = view.getUint16(localOffset + 26, true);
       const localExtraLength = view.getUint16(localOffset + 28, true);
       const dataStart = localOffset + 30 + localNameLength + localExtraLength;
-      if (dataStart + compressedSize > bytes.byteLength) throw new Error("DOCX document entry exceeds the file boundary.");
+      if (dataStart > bytes.byteLength || dataStart + compressedSize > bytes.byteLength) throw new Error("DOCX document entry exceeds the file boundary.");
       const compressed = bytes.slice(dataStart, dataStart + compressedSize);
       if (method === 0) documentXml = compressed;
       else if (method === 8) documentXml = await inflateRaw(compressed);
       else throw new Error("DOCX uses an unsupported ZIP compression method.");
       break;
     }
-    cursor += 46 + nameLength + extraLength + commentLength;
+    cursor = nextEntry;
   }
 
   if (!documentXml) throw new Error("DOCX does not contain word/document.xml.");
