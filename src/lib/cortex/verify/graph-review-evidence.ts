@@ -14,7 +14,7 @@ export type GraphReviewHint = {
 };
 
 const COORDINATE_PAIR_RE = /\(([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\)/g;
-const AXIS_LABEL_RE = /\b([xy])[ -]?axis\b(?:\s*(?:labelled|labeled|is|:)?\s*([^.;]{1,60}))?/gi;
+const AXIS_LABEL_RE = /\b([xy])[ -]?axis\b(?:\s*(?:labelled|labeled|is|:)?\s*([^.;]{1,60}?))?(?=\s+(?:and\s+the\s+)?[xy][ -]?axis\b|[.;]|$)/gi;
 const UNIT_CANDIDATE_RE = /\b(?:cm|mm|km|m|ms|s|kg|g|mol|N|newtons?|volts?|amperes?|A|V|J|W|Pa|Hz|degrees?|°C)\b/gi;
 
 function extractCandidateDetails(text: string, type: GraphReviewHintType): string[] {
