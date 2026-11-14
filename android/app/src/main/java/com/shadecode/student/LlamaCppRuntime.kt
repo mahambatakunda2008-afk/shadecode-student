@@ -3,12 +3,18 @@ package com.shadecode.student
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Real GGUF runtime backed by llama.cpp through JNI. */
 class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
     private val modelManager = NativeLocalModelManager(context.applicationContext)
 
-    init { System.loadLibrary("shadecode_cortex_native") }
+    private val closed = AtomicBoolean(false)
+
+    init {
+        System.loadLibrary("shadecode_cortex_native")
+        synchronized(nativeLock) { activeRuntimes++ }
+    }
 
     override suspend fun installedModels(): List<NativeLocalModelSpec> = withContext(Dispatchers.IO) {
         NativeLocalModelCatalog.models.filter { it.enabled && modelManager.isInstalled(it) }
@@ -44,9 +50,17 @@ class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
     }
 
     override fun close() {
-        synchronized(nativeLock) {
-            if (nativeIsLoaded()) nativeUnload()
-        }
+        if (!closed.compareAndSet(false, true)) return
+        // llama_free() can take noticeable time for a 250 MB model. Do not block
+        // Compose disposal / the UI thread while releasing native memory.
+        Thread({
+            synchronized(nativeLock) {
+                activeRuntimes = (activeRuntimes - 1).coerceAtLeast(0)
+                // A new Verify screen may have opened before this cleanup ran.
+                // Keep the shared process runtime alive while any wrapper is active.
+                if (activeRuntimes == 0 && nativeIsLoaded()) nativeUnload()
+            }
+        }, "cortex-native-unload").start()
     }
 
     private external fun nativeLoad(path: String): Boolean
@@ -60,6 +74,7 @@ class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
         // JNI owns one process-wide llama.cpp model/context, even if the UI creates
         // multiple runtime wrappers. The lock must therefore be process-wide too.
         private val nativeLock = Any()
+        private var activeRuntimes = 0
         private const val MAX_PROMPT_CHARS = 12_000
     }
 }
