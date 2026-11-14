@@ -15,7 +15,7 @@ export type GraphReviewHint = {
 
 const COORDINATE_PAIR_RE = /\(([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\)/g;
 const AXIS_LABEL_RE = /\b([xy])[ -]?axis\b(?:\s*(?:labelled|labeled|is|:)?\s*([^.;]{1,60}?))?(?=\s+(?:and\s+the\s+)?[xy][ -]?axis\b|[.;]|$)/gi;
-const UNIT_CANDIDATE_RE = /\b(?:cm|mm|km|m|ms|s|kg|g|mol|N|newtons?|volts?|amperes?|A|V|J|W|Pa|Hz|degrees?|°C)\b/gi;
+const UNIT_CANDIDATE_RE = /\b(?:cm|mm|km|m|ms|s|kg|g|mol|N|newtons?|volts?|amperes?|A|V|J|W|Pa|Hz|degrees?|°C)\b/g;
 
 function extractCandidateDetails(text: string, type: GraphReviewHintType): string[] {
   const details: string[] = [];
@@ -29,9 +29,9 @@ function extractCandidateDetails(text: string, type: GraphReviewHintType): strin
     }
   }
   if (type === "axis") {
-    const axisSegments = text.split(/\\s+and\\s+the\\s+(?=[xy][ -]?axis\\b)/i);
+    const axisSegments = text.split(/\s+and\s+the\s+(?=[xy][ -]?axis\b)/i);
     for (const segment of axisSegments) {
-      const match = segment.match(/\\b([xy])[ -]?axis\\b(?:\\s*(?:labelled|labeled|is|:)?\\s*([^.;]{1,60}))?/i);
+      const match = segment.match(/\b([xy])[ -]?axis\b(?:\s*(?:labelled|labeled|is|:)?\s*([^.;]{1,60}))?/i);
       if (!match) continue;
       const label = match[2]?.trim();
       details.push(label ? `${match[1].toUpperCase()}-axis label candidate: ${label}` : `${match[1].toUpperCase()}-axis reference`);
