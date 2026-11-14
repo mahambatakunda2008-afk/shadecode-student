@@ -56,12 +56,15 @@ function validCheck(value: unknown) {
   return isValidVerifyMarkResult(value);
 }
 
-function checkPrompt(subject: string, question: string, studentAnswer: string) {
+function checkPrompt(subject: string, question: string, studentAnswer: string, learnerContext = "") {
   return `You are Cortex Verify, a careful academic verifier. Subject: ${subject}.
 Question: ${question || "Infer the question from the image if possible."}
 Student answer/working: ${studentAnswer || "The student's working is in the image."}
 
-Assess the student's actual reasoning. Distinguish a correct method with an arithmetic slip from a fundamentally incorrect method. Do not invent missing work. If the image is unreadable, set needsRetake=true instead of guessing. Score the work fairly and explain the first important mistake. ${CHECK_SCHEMA}`;
+Assess the student's actual reasoning. Distinguish a correct method with an arithmetic slip from a fundamentally incorrect method. Do not invent missing work. If the image is unreadable, set needsRetake=true instead of guessing. Score the work fairly and explain the first important mistake.
+
+Private learner context (use only to tailor remediation after independently marking; NEVER change marks or correctness to match past performance): ${learnerContext || "No prior learner signals."}
+${CHECK_SCHEMA}`;
 }
 
 async function withTimeout<T>(promise: Promise<T>, ms = PROVIDER_TIMEOUT_MS): Promise<T> {
@@ -164,6 +167,7 @@ export async function POST(req: Request) {
     if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
     const subject = subjectAccess.subject;
     const question = String(formData.get("question") || "").trim();
+    const learnerContext = String(formData.get("learnerContext") || "").slice(0, 3000);
     const studentAnswer = String(formData.get("studentAnswer") || "").trim();
     const imageFile = formData.get("image");
     const visualFiles = formData.getAll("visualEvidence").filter((item): item is File => item instanceof File && item.size > 0);
@@ -196,7 +200,7 @@ export async function POST(req: Request) {
 
     if (mode === "check") {
       if (!question && !studentAnswer && images.length === 0) return NextResponse.json({ error: "Add a question, your working, or a photo first." }, { status: 400 });
-      const result = await runStructured(evidencePrompt(checkPrompt(subject, question, studentAnswer)), images);
+      const result = await runStructured(evidencePrompt(checkPrompt(subject, question, studentAnswer, learnerContext)), images);
       if (result.needsRetake) return NextResponse.json({ needsRetake: true, retakeReason: result.retakeReason || "I could not read the work clearly enough." }, { status: 422 });
       if (!validCheck(result)) return NextResponse.json({ error: "Cortex returned an unverified assessment. No score was recorded. Please try again." }, { status: 502 });
       return NextResponse.json(result);
@@ -211,7 +215,7 @@ export async function POST(req: Request) {
         : level === "method"
           ? "Explain the relevant method and next steps, but do not provide the final answer or a complete worked solution. Return the method field only."
           : "Give a complete worked solution because the student explicitly requested it. Return the solution and finalAnswer fields where appropriate.";
-      const prompt = `You are Cortex, an expert ${subject} teacher producing a mathematically precise, fully readable worked explanation. Subject: ${subject}. Question: ${question || "Read the question from the image."} Student attempt: ${studentAnswer || "The student has not provided an attempt yet."} Help level: ${level}. ${instruction}
+      const prompt = `You are Cortex, an expert ${subject} teacher producing a mathematically precise, fully readable worked explanation. Subject: ${subject}. Question: ${question || "Read the question from the image."} Student attempt: ${studentAnswer || "The student has not provided an attempt yet."} Help level: ${level}. ${instruction}\n\nPrivate learner context: ${learnerContext || "No prior learner signals."} Adapt your explanation to recurring errors and avoid repeating the same question when a fresh transfer question can test the same skill. Do not assume the learner has mastered or failed a concept solely from this context.
 
 FORMATTING RULES (mandatory): Write every mathematical expression using valid LaTeX delimiters: use \\( ... \\) for inline mathematics and \\[ ... \\] for standalone/display mathematics. Never leave equations, variables, subscripts, superscripts, fractions, roots, coordinates or operators as unformatted plain-text fragments. Use valid LaTeX such as \\frac{a}{b}, \\sqrt{10}, x_{B}, r^2, and \\begin{aligned}...\\end{aligned}. Keep each complete expression inside its delimiters. Do not split a mathematical expression across ordinary prose lines. Define every symbol before using it, preserve all signs and brackets, and show substitutions in complete equations. Use numbered steps with one clear operation per step. End with a clearly labelled final answer. Before returning, independently check every substitution, arithmetic operation, sign, coordinate, exponent and final result; the finalAnswer must agree exactly with the worked solution. If the question image is unclear or a symbol cannot be read confidently, state the uncertainty and do not guess. Never omit mathematical symbols to make the prose shorter.
 
