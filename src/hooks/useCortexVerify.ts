@@ -168,7 +168,11 @@ ${buildVerifyLearnerContext(readVerifyLearnerModel(attempt.userId), { subject: a
         },
         cloud: requestCloud,
         localMaxTokens: 1400,
-        preferParallel: true,
+        // Online cloud marking reads the authenticated shared learner context
+        // server-side. Run cloud first so a faster local response cannot bypass
+        // the cross-product evidence; browser-local remains the offline/provider
+        // fallback and still receives this device's private learner cache.
+        preferParallel: false,
       });
     } else {
       data = await requestCloud();
