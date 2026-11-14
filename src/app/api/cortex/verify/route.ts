@@ -4,6 +4,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
+import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
+import { resolveAuthenticatedCortexStudentContext } from "@/lib/cortex/student-context";
+import { buildSharedVerifyLearnerContext } from "@/lib/cortex/verify/shared-learner-context";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
 import { hasCompleteMathematicalMarkup, isCleanMathematicalAudit, isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
 import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
@@ -167,7 +170,39 @@ export async function POST(req: Request) {
     if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
     const subject = subjectAccess.subject;
     const question = String(formData.get("question") || "").trim();
-    const learnerContext = String(formData.get("learnerContext") || "").slice(0, 3000);
+    // The browser's compact learner model is an offline/failure fallback only.
+    // Prefer authenticated, syllabus-scoped evidence shared by Learn, Exam Sim,
+    // and other learning surfaces whenever the canonical context is available.
+    let learnerContext = String(formData.get("learnerContext") || "").slice(0, 3000);
+    try {
+      const curriculum = await resolveUserSystemCurriculum(user.id, subject, bearerToken || undefined);
+      const verifiedSyllabusId = curriculum.resolved.status === "resolved"
+        ? curriculum.identity?.syllabusId ?? null
+        : null;
+      const curriculumIdentity = curriculum.resolved.status === "resolved" && curriculum.identity
+        ? {
+            boardId: curriculum.identity.boardId,
+            qualificationId: curriculum.identity.qualificationId,
+            syllabusVersion: curriculum.identity.syllabusVersion ?? "",
+            subjectId: curriculum.identity.subjectId,
+          }
+        : undefined;
+      const sharedContext = await resolveAuthenticatedCortexStudentContext(
+        bearerToken || undefined,
+        verifiedSyllabusId,
+        curriculumIdentity,
+      );
+      const hasSharedEvidence = sharedContext.topics.state === "available"
+        || sharedContext.curriculumObjectives.state === "available"
+        || sharedContext.mistakes.state === "available"
+        || sharedContext.reviewSuggestions.state === "available";
+      if (hasSharedEvidence) {
+        learnerContext = buildSharedVerifyLearnerContext(sharedContext, subject, 3000);
+      }
+    } catch (contextError) {
+      // Intelligence is an enhancement, never a blocker for marking or help.
+      console.warn("[cortex verify] shared learner context unavailable; using local fallback:", contextError);
+    }
     const studentAnswer = String(formData.get("studentAnswer") || "").trim();
     const imageFile = formData.get("image");
     const visualFiles = formData.getAll("visualEvidence").filter((item): item is File => item instanceof File && item.size > 0);
