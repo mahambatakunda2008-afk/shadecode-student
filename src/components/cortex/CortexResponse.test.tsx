@@ -59,6 +59,10 @@ describe("Cortex response formatting", () => {
     expect(normalizeCortexResponseText("\\\\*\\\\*Important\\\\*\\\\*")).toBe("**Important**");
   });
 
+  it("leaves invalid numeric HTML entities intact instead of crashing", () => {
+    expect(normalizeCortexResponseText("Invalid: &#x110000; and &#99999999;.")).toBe("Invalid: &#x110000; and &#99999999;.");
+  });
+
   it("preserves LaTeX inline and display delimiters while unescaping Markdown", () => {
     const inline = "Use \\(\\frac{1}{2}\\) as the exact value.";
     const display = "\\[x^2 + y^2 = r^2\\]";
