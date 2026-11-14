@@ -1288,6 +1288,7 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
     }
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
+    var visualSourceBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var rawOcr by remember { mutableStateOf("") }
     var editableText by remember { mutableStateOf("") }
     var extractionRegions by remember { mutableStateOf<List<NativeExtractRegion>>(emptyList()) }
@@ -1313,19 +1314,24 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
         }
     }
     LaunchedEffect(selectedImage) {
-        val uri = selectedImage ?: run { imagePreview = null; return@LaunchedEffect }
-        imagePreview = withContext(Dispatchers.IO) {
+        val uri = selectedImage ?: run { imagePreview = null; visualSourceBitmap = null; return@LaunchedEffect }
+        val decoded = withContext(Dispatchers.IO) {
             try {
                 val resolver = context.contentResolver
                 val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                 resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
                 if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@withContext null
-                var sampleSize = 1
-                while (bounds.outWidth / sampleSize > 1200 || bounds.outHeight / sampleSize > 1200) sampleSize *= 2
-                val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
-                resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options)?.asImageBitmap() }
+                var previewSample = 1
+                while (bounds.outWidth / previewSample > 1200 || bounds.outHeight / previewSample > 1200) previewSample *= 2
+                var cropSample = 1
+                while (bounds.outWidth / cropSample > 4096 || bounds.outHeight / cropSample > 4096) cropSample *= 2
+                val preview = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = previewSample }) }?.asImageBitmap()
+                val cropSource = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = cropSample }) }
+                if (preview == null || cropSource == null) null else preview to cropSource
             } catch (_: Exception) { null }
         }
+        imagePreview = decoded?.first
+        visualSourceBitmap = decoded?.second
     }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -1456,11 +1462,17 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                         val r = (maxOf(startPoint.x, endPoint.x) - ox).coerceIn(0f, rw)
                                         val b = (maxOf(startPoint.y, endPoint.y) - oy).coerceIn(0f, rh)
                                         if (r-l >= 12f && b-t >= 12f) {
-                                            val bitmap = preview.asAndroidBitmap()
-                                            val x = (l/scale).toInt().coerceIn(0, bitmap.width-1)
-                                            val y = (t/scale).toInt().coerceIn(0, bitmap.height-1)
-                                            val w = (r/scale).toInt().coerceIn(x+1, bitmap.width)-x
-                                            val h = (b/scale).toInt().coerceIn(y+1, bitmap.height)-y
+                                            val bitmap = visualSourceBitmap ?: preview.asAndroidBitmap()
+                                            val nx1 = (l/rw).coerceIn(0f,1f)
+                                            val ny1 = (t/rh).coerceIn(0f,1f)
+                                            val nx2 = (r/rw).coerceIn(0f,1f)
+                                            val ny2 = (b/rh).coerceIn(0f,1f)
+                                            val x = (nx1 * bitmap.width).toInt().coerceIn(0, bitmap.width-1)
+                                            val y = (ny1 * bitmap.height).toInt().coerceIn(0, bitmap.height-1)
+                                            val right = (nx2 * bitmap.width).toInt().coerceIn(x+1, bitmap.width)
+                                            val bottom = (ny2 * bitmap.height).toInt().coerceIn(y+1, bitmap.height)
+                                            val w = right-x
+                                            val h = bottom-y
                                             val regionId = UUID.randomUUID().toString()
                                             val crop = Bitmap.createBitmap(bitmap, x, y, w, h)
                                             val output = java.io.ByteArrayOutputStream()
@@ -1818,14 +1830,19 @@ private fun SnapExtractScreen(padding: PaddingValues, session: NativeSession, su
                                     verifyResult = null
                                     scope.launch {
                                         val restored = withContext(Dispatchers.IO) {
-                                            val source = extractStore.loadSourceImage(artifact.id)?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }
+                                            val sourceBitmap = extractStore.loadSourceImage(artifact.id)?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
+                                            val sourcePreview = sourceBitmap?.let { bitmap ->
+                                                val scale = minOf(1f, 1200f / maxOf(bitmap.width, bitmap.height).toFloat())
+                                                if (scale < 1f) Bitmap.createScaledBitmap(bitmap, (bitmap.width * scale).toInt().coerceAtLeast(1), (bitmap.height * scale).toInt().coerceAtLeast(1), true).asImageBitmap() else bitmap.asImageBitmap()
+                                            }
                                             val crops = artifact.visualRegions.mapNotNull { region ->
                                                 extractStore.loadVisualCrop(artifact.id, region.id)?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()?.let { region.id to it } }
                                             }.toMap()
-                                            source to crops
+                                            Triple(sourceBitmap, sourcePreview, crops)
                                         }
-                                        imagePreview = restored.first
-                                        visualCropPreviews = restored.second
+                                        visualSourceBitmap = restored.first
+                                        imagePreview = restored.second
+                                        visualCropPreviews = restored.third
                                         message = buildString {
                                             append(if (imagePreview != null) "Loaded saved extract and its private source image." else "Loaded saved text. This older extract has no saved source image.")
                                             artifact.extractionEngine?.let { append(" OCR engine: ").append(it).append(".") }
