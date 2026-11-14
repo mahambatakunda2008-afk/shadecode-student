@@ -154,7 +154,7 @@ export function deriveVerifyInterventionOutcomes(rows: EventRow[]): VerifyInterv
       topicId: topic,
       curriculumTopicKey: topicKey,
       interventionLevel: level,
-      teachingStrategy: strategy,
+      ...(strategy ? { teachingStrategy: strategy } : {}),
       state,
       baselineAttempts: baseline.length,
       transferAttempts: transfer.length,
