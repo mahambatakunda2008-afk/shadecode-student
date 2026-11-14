@@ -71,3 +71,10 @@ export function hasCompleteMathematicalMarkup(value: string): boolean {
   const unprotectedEquation = /(?:=|≠|≤|≥|→|\\(?:frac|sqrt|begin)\b|\b(?:sin|cos|tan|log|ln)\b)/i;
   return !unprotectedEquation.test(withoutMath);
 }
+
+/** Accept only a clean, explicit independent-audit result. */
+export function isCleanMathematicalAudit(value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const audit = value as { consistent?: unknown; issues?: unknown };
+  return audit.consistent === true && Array.isArray(audit.issues) && audit.issues.length === 0;
+}
