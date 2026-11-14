@@ -20,7 +20,7 @@ export function resolveVerifiedCurriculumTopic(
 
   const topics = curriculum.knowledgeByKind.topic ?? [];
   const matches = topics.filter((item) => {
-    if (item.status !== "verified" || item.provenance.mappingStatus !== "verified" || !item.code) return false;
+    if (item.status !== "verified" || item.provenance?.mappingStatus !== "verified" || !item.code) return false;
     return [item.title, item.code, item.topicCode]
       .filter((value): value is string => typeof value === "string" && value.length > 0)
       .some((value) => normalizeLearningContextLabel(value) === label);
