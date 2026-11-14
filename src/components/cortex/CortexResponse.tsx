@@ -7,12 +7,12 @@ import katex from "katex";
 export function normalizeCortexResponseText(source: string): string {
   // Protect LaTeX delimiters while repairing transport-escaped Markdown.
   const mathDelimiters: string[] = [];
-  const protectedSource = source.replace(/\\+\(([\\s\\S]*?)\\+\)|\\+\[([\\s\\S]*?)\\+\]/g, (_match, roundBody: string | undefined, squareBody: string | undefined) => {
-    const index = mathDelimiters.push(roundBody !== undefined ? "\\\\(" + roundBody + "\\\\)" : "\\\\[" + (squareBody ?? "") + "\\\\]") - 1;
+  const protectedSource = source.replace(/\\+\(([\s\S]*?)\\+\)|\\+\[([\s\S]*?)\\+\]/g, (_match, roundBody: string | undefined, squareBody: string | undefined) => {
+    const index = mathDelimiters.push(roundBody !== undefined ? "\\(" + roundBody + "\\)" : "\\[" + (squareBody ?? "") + "\\]") - 1;
     return "\\uE000" + index + "\\uE001";
   });
   return protectedSource
-    .replace(/\\r\\n?/g, "\\n")
+    .replace(/\r\n?/g, "\n")
     .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
     .replace(/&#([0-9]+);/g, (_, decimal: string) => String.fromCodePoint(parseInt(decimal, 10)))
     .replace(/&nbsp;|&#160;/gi, " ")
