@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Brain, TrendingUp, Clock, Target, Flame } from "lucide-react";
+import CortexResponse from "@/components/cortex/CortexResponse";
 
 interface CortexMemory {
   streak: number;
@@ -110,16 +111,12 @@ export default function CortexMemoryInsights() {
       {/* AI Insights */}
       <div style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.1)", borderRadius: 8, padding: 12 }}>
         <p style={{ fontSize: "11px", fontWeight: 600, color: "#6366f1", marginBottom: 6 }}>Learning Insight</p>
-        <p style={{ fontSize: "12", color: "var(--muted-foreground)", margin: 0, lineHeight: 1.5 }}>
-          {insights.learning}
-        </p>
+        <CortexResponse text={insights.learning} className="text-xs leading-relaxed text-[var(--muted-foreground)]" />
         {insights.recommendation && (
           <>
             <div style={{ height: 1, background: "rgba(99,102,241,0.1)", margin: "10px 0" }} />
             <p style={{ fontSize: "11px", fontWeight: 600, color: "#6366f1", marginBottom: 6 }}>Recommendation</p>
-            <p style={{ fontSize: "12", color: "var(--muted-foreground)", margin: 0, lineHeight: 1.5 }}>
-              {insights.recommendation}
-            </p>
+            <CortexResponse text={insights.recommendation} className="text-xs leading-relaxed text-[var(--muted-foreground)]" />
           </>
         )}
       </div>
