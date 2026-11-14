@@ -6,7 +6,7 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
 import { resolveAuthenticatedCortexStudentContext } from "@/lib/cortex/student-context";
-import { buildSharedVerifyLearnerContext } from "@/lib/cortex/verify/shared-learner-context";
+import { buildSharedVerifyLearnerContext, selectSharedVerifyIntervention } from "@/lib/cortex/verify/shared-learner-context";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
 import { hasCompleteMathematicalMarkup, isCleanMathematicalAudit, isValidHelpResult, selectHelpResult, type VerifyHelpLevel } from "@/lib/cortex/verify/help-level";
 import { isValidVerifyMarkResult } from "@/lib/cortex/verify/result-contract";
@@ -166,6 +166,9 @@ export async function POST(req: Request) {
     const mode = String(formData.get("mode") || "check");
     const requestedSubject = String(formData.get("subject") || "").trim();
     const requestedSubjectId = String(formData.get("subjectId") || "").trim();
+    const requestedTopicId = String(formData.get("topicId") || "").trim();
+    const levelWasExplicitlyChosen = formData.get("levelExplicit") === "true";
+    let adaptiveHelpLevel: "hint" | "method" | "solution" | null = null;
     const subjectAccess = await resolveLearnerSubject(supabase, user.id, requestedSubject, requestedSubjectId || undefined);
     if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
     const subject = subjectAccess.subject;
@@ -195,8 +198,13 @@ export async function POST(req: Request) {
         || sharedContext.curriculumObjectives.state === "available"
         || sharedContext.mistakes.state === "available"
         || sharedContext.reviewSuggestions.state === "available";
-      if (hasSharedEvidence) {
+      if (hasSharedEvidence || sharedContext.interventionOutcomes.items.length) {
         learnerContext = buildSharedVerifyLearnerContext(sharedContext, subject, 3000);
+      }
+      // Only auto-select when the learner has not explicitly chosen a level.
+      // The selector requires an exact, verified topic identity and repeated outcomes.
+      if (!levelWasExplicitlyChosen && requestedTopicId) {
+        adaptiveHelpLevel = selectSharedVerifyIntervention(sharedContext, subject, requestedTopicId)?.recommendedLevel ?? null;
       }
     } catch (contextError) {
       // Intelligence is an enhancement, never a blocker for marking or help.
@@ -241,7 +249,8 @@ export async function POST(req: Request) {
     }
 
     if (mode === "help") {
-      const level = String(formData.get("level") || "hint");
+      const requestedLevel = String(formData.get("level") || "hint");
+      const level = adaptiveHelpLevel ?? requestedLevel;
       if (!["hint", "method", "solution"].includes(level)) return NextResponse.json({ error: "Choose a valid help level." }, { status: 400 });
       if (!question && images.length === 0) return NextResponse.json({ error: "Add the question or a photo first." }, { status: 400 });
       const instruction = level === "hint"
@@ -278,7 +287,10 @@ Set consistent=false if any substitution, arithmetic, sign, coordinate, exponent
           return NextResponse.json({ error: "Cortex detected a possible mathematical inconsistency and withheld this solution. Please try again." }, { status: 502 });
         }
       }
-      return NextResponse.json(selectHelpResult(result, helpLevel));
+      return NextResponse.json({
+        ...selectHelpResult(result, helpLevel),
+        ...(adaptiveHelpLevel ? { adaptiveSelection: true } : {}),
+      });
     }
 
     return NextResponse.json({ error: "Unknown Cortex mode." }, { status: 400 });
