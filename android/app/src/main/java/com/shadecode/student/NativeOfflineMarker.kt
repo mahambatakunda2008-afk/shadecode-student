@@ -91,13 +91,13 @@ object NativeOfflineMarker {
     )
     private fun parseNumber(value: String): Double? {
         val cleaned = value.trim().replace(",", "")
-            .replace(Regex("(?i)\\\\s*(m|cm|mm|km|s|ms|kg|g|n|v|a|hz|j|w|pa)$"), "").trim()
+            .replace(Regex("(?i)\\s*(m|cm|mm|km|s|ms|kg|g|n|v|a|hz|j|w|pa)$"), "").trim()
         return cleaned.toDoubleOrNull()?.takeIf { it.isFinite() }
     }
-    private fun normalize(value: String) = value.trim().lowercase().replace(Regex("\\\\s+"), " ").trimEnd('.', ',', ';', ':', '!', '?')
+    private fun normalize(value: String) = value.trim().lowercase().replace(Regex("\\s+"), " ").trimEnd('.', ',', ';', ':', '!', '?')
     private fun containsApprovedPhrase(answer: String, phrase: String): Boolean {
-        val escaped = Regex.escape(normalize(phrase)).replace(" ", "\\\\s+")
-        return Regex("(?<![\\\\p{L}\\\\p{N}])" + escaped + "(?![\\\\p{L}\\\\p{N}])", RegexOption.IGNORE_CASE)
+        val escaped = Regex.escape(normalize(phrase)).replace(" ", "\\s+")
+        return Regex("(?<![\\p{L}\\p{N}])" + escaped + "(?![\\p{L}\\p{N}])", RegexOption.IGNORE_CASE)
             .containsMatchIn(normalize(answer))
     }
 }
