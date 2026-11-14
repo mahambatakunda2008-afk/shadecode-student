@@ -4,6 +4,7 @@ import { deriveVerifyInterventionOutcomes } from "./intervention-outcomes";
 const event = (input: {
   attemptId: string; score: number; at: string; interventionId?: string;
   freshTransfer?: boolean; topicKey?: string; selfAssessment?: boolean;
+  teachingStrategy?: "guided-reconstruction" | "worked-example" | "retrieval-and-transfer" | "diagnostic-first";
 }) => ({
   type: "question_attempted",
   created_at: input.at,
@@ -20,6 +21,7 @@ const event = (input: {
         interventionLevel: "method",
         interventionToAttemptHours: Math.max(0, (Date.parse(input.at) - Date.parse("2026-11-14T10:00:00.000Z")) / 3_600_000),
         freshTransfer: input.freshTransfer ?? true,
+        ...(input.teachingStrategy ? { teachingStrategy: input.teachingStrategy } : {}),
       } : {}),
       ...(input.selfAssessment ? { selfAssessment: true } : {}),
     },
@@ -112,5 +114,23 @@ describe("deriveVerifyInterventionOutcomes", () => {
     const result = deriveVerifyInterventionOutcomes(rows)[0];
     expect(result.transferAttempts).toBe(1);
     expect(result.state).toBe("collecting_evidence");
+  });
+});
+
+
+describe("teaching strategy outcome attribution", () => {
+  it("retains the strategy actually delivered on a completed intervention cycle", () => {
+    const rows = [
+      event({ attemptId: "baseline-1", score: 35, at: "2026-11-14T08:00:00.000Z" }),
+      event({ attemptId: "baseline-2", score: 45, at: "2026-11-14T09:00:00.000Z" }),
+      event({ attemptId: "follow-1", score: 70, at: "2026-11-14T11:00:00.000Z", interventionId: "vi_strategy_123456", teachingStrategy: "worked-example" }),
+      event({ attemptId: "follow-2", score: 80, at: "2026-11-14T12:00:00.000Z", interventionId: "vi_strategy_123456", teachingStrategy: "worked-example" }),
+    ];
+    expect(deriveVerifyInterventionOutcomes(rows)[0]).toMatchObject({
+      teachingStrategy: "worked-example",
+      state: "improving",
+      baselineAttempts: 2,
+      transferAttempts: 2,
+    });
   });
 });
