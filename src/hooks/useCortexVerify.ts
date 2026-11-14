@@ -11,6 +11,7 @@ import { getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { markWithOfflineRubric, type OfflineVerifyRubric } from "@/lib/cortex/verify/offline-marking";
 import { buildOfflineVerifyRubric } from "@/lib/cortex/verify/offline-question-adapter";
 import { buildVerifyLearnerContext } from "@/lib/cortex/verify/learner-model";
+import { formatVerifyTeachingStrategy, recommendPrivateLocalVerifyTeachingStrategy } from "@/lib/cortex/verify/teaching-strategy";
 import { readVerifyLearnerModel, recordVerifyLearningSignal } from "@/lib/cortex/verify/learner-model-store";
 import { enqueueVerifyLearningEvent, flushVerifyLearningEvents } from "@/lib/cortex/verify/learning-event-outbox";
 import { createVerifyResultCacheKey, getCachedVerifyResult, saveCachedVerifyResult } from "@/lib/cortex/verify/result-cache";
@@ -160,6 +161,20 @@ async function sendAttemptNow(attempt: CortexAttempt) {
 
     let data: VerifyResult;
     if (!attempt.imageDataUrl) {
+      const localModel = readVerifyLearnerModel(attempt.userId);
+      const localTopic = localModel.topics.find(item =>
+        item.subject.toLocaleLowerCase("en") === (attempt.subject || "General").trim().toLocaleLowerCase("en") &&
+        item.topic.toLocaleLowerCase("en") === (attempt.topicId || "General practice").trim().toLocaleLowerCase("en"),
+      );
+      const localTeachingStrategy = attempt.mode === "help"
+        ? recommendPrivateLocalVerifyTeachingStrategy({
+            masteryScore: localTopic?.masteryEstimate,
+            attempts: localTopic?.attempts || 0,
+            repeatedIncorrectResponses: localTopic
+              ? Object.values(localTopic.misconceptionCounts).reduce((sum, count) => sum + count, 0)
+              : 0,
+          })
+        : null;
       const localPrompt = `You are Cortex Verify.
 Mode: ${attempt.mode}
 Subject: ${attempt.subject || "General"}
@@ -172,7 +187,7 @@ For check mode include: problem, confidence, score, correct, needsRetake, retake
 For help mode, return ONLY the field matching the selected level: hint for hint, method for method, or solution (and finalAnswer when appropriate) for solution. Never include a solution or finalAnswer for hint/method.
 Be accurate and explicit about uncertainty.
 
-${buildVerifyLearnerContext(readVerifyLearnerModel(attempt.userId), { subject: attempt.subject })}\n\nUse this private learner model to adapt explanations and choose fresh practice. Do not repeat an identical question when a new question can test the same skill.\n\nMATHEMATICAL FORMATTING IS MANDATORY: put every equation and mathematical expression inside valid LaTeX delimiters, using \\( ... \\) inline and \\[ ... \\] for display equations. Use proper LaTeX for fractions (\\frac{a}{b}), roots (\\sqrt{10}), powers (r^2), subscripts (x_{B}), coordinates and aligned working. Never output bare or fragmented mathematical notation, detached exponents, missing operators, or variables on separate lines. Define symbols, preserve signs/brackets, show complete substitutions, and use numbered steps. Independently verify every calculation and ensure the final answer agrees with the derivation. If source text or an image is unclear, say so instead of guessing. Keep all delimiters and backslashes intact inside JSON string values.`;
+${buildVerifyLearnerContext(localModel, { subject: attempt.subject })}\n\n${localTeachingStrategy ? formatVerifyTeachingStrategy(localTeachingStrategy) : ""}\n\nUse this private learner model to adapt explanations and choose fresh practice. Do not repeat an identical question when a new question can test the same skill.\n\nMATHEMATICAL FORMATTING IS MANDATORY: put every equation and mathematical expression inside valid LaTeX delimiters, using \\( ... \\) inline and \\[ ... \\] for display equations. Use proper LaTeX for fractions (\\frac{a}{b}), roots (\\sqrt{10}), powers (r^2), subscripts (x_{B}), coordinates and aligned working. Never output bare or fragmented mathematical notation, detached exponents, missing operators, or variables on separate lines. Define symbols, preserve signs/brackets, show complete substitutions, and use numbered steps. Independently verify every calculation and ensure the final answer agrees with the derivation. If source text or an image is unclear, say so instead of guessing. Keep all delimiters and backslashes intact inside JSON string values.`;
       data = await runHybridJson<VerifyResult>({
         localPrompt,
         validate: (value): value is VerifyResult => {
