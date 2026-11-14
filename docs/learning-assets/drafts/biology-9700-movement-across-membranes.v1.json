@@ -1,0 +1,194 @@
+{
+  "asset_key": "biology-9700-movement-across-membranes",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Movement into and out of cells",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "4",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 4, syllabus pp. 22–24. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 4.2.1–4.2.1.",
+    "syllabus_outcome_codes": [
+      "4.2.1"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced.",
+      "Practical activities are outlines only. Complete local school risk assessments and follow teacher supervision before practical use."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Compare simple diffusion, facilitated diffusion, osmosis, active transport, endocytosis and exocytosis.",
+      "Explain how concentration gradients, water potential gradients, membrane proteins and ATP relate to transport."
+    ],
+    "sections": [
+      {
+        "heading": "Concentration gradients and net movement",
+        "body": "Particles move randomly because they possess kinetic energy. When a substance has a concentration gradient, random movement produces a net movement from a region of higher concentration to a region of lower concentration until equilibrium is approached. Net movement does not mean that individual particles stop moving at equilibrium; movement continues in both directions at equal rates."
+      },
+      {
+        "heading": "Simple diffusion",
+        "body": "Simple diffusion is the net movement of particles down a concentration gradient, directly through the phospholipid bilayer, without transport proteins or metabolic energy. Small non-polar molecules such as oxygen and carbon dioxide cross this way. The rate is affected by the steepness of the concentration gradient, surface area, diffusion distance and properties of the molecule and membrane."
+      },
+      {
+        "heading": "Facilitated diffusion through channels",
+        "body": "Facilitated diffusion is passive movement down a concentration or electrochemical gradient with the help of membrane proteins. Channel proteins form hydrophilic pores through which particular ions or polar molecules can pass. Channels may be selective and may be gated, opening or closing in response to a signal. No ATP is directly required because movement is down the relevant gradient."
+      },
+      {
+        "heading": "Facilitated diffusion through carriers",
+        "body": "Carrier proteins bind a specific substance and change shape to move it across the membrane. The substance binds on one side, the carrier changes conformation, and the substance is released on the other side. Carrier-mediated transport is selective and can become saturated when all available carrier binding sites are occupied. If movement is down a gradient, it is facilitated diffusion and does not require ATP."
+      },
+      {
+        "heading": "Osmosis and water potential",
+        "body": "Osmosis is the net movement of water molecules from a region of higher water potential to a region of lower water potential through a partially permeable membrane. Water potential, written Ψ, describes the tendency of water molecules to move. Pure water at standard atmospheric pressure is assigned a water potential of zero; dissolved solutes lower water potential, making it more negative. Osmosis is about water potential difference, not simply the movement of water from a dilute solution to a concentrated solution unless those terms correctly represent the water potentials."
+      },
+      {
+        "heading": "Active transport",
+        "body": "Active transport moves substances across a membrane against their concentration or electrochemical gradient using energy from ATP and specific carrier proteins or pumps. A substance binds to the transport protein; ATP hydrolysis supplies energy for a conformational change that moves the substance across the membrane. Active transport allows cells to accumulate ions or molecules even when their concentration is already higher inside the cell."
+      },
+      {
+        "heading": "Endocytosis",
+        "body": "Endocytosis brings material into a cell. The cell surface membrane folds around the material, then the membrane edges fuse to form a vesicle inside the cytoplasm. Phagocytosis is a form of endocytosis involving relatively large particles, while pinocytosis involves uptake of fluid and dissolved substances. The process requires energy and membrane remodelling."
+      },
+      {
+        "heading": "Exocytosis",
+        "body": "Exocytosis releases substances from a cell. A vesicle moves to the cell surface membrane, the vesicle membrane fuses with it, and the vesicle contents are released outside the cell. This is used to secrete substances such as hormones, enzymes and neurotransmitters. Vesicle transport and membrane fusion require energy and coordinated cellular machinery."
+      },
+      {
+        "heading": "Compare the transport mechanisms",
+        "body": "Simple diffusion and osmosis do not use transport proteins or ATP. Facilitated diffusion uses channel or carrier proteins but still moves down a gradient without direct ATP use. Active transport uses membrane proteins and energy to move substances against a gradient. Endocytosis and exocytosis use vesicles to move bulk material into or out of cells and require energy. Identify both the direction relative to a gradient and the mechanism when classifying transport."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Define simple diffusion across a cell surface membrane.",
+        "answer": "Simple diffusion is the net movement of particles down a concentration gradient directly through the phospholipid bilayer, without transport proteins or metabolic energy.",
+        "mark_points": [
+          "Net movement",
+          "Down concentration gradient",
+          "Directly through phospholipid bilayer",
+          "No transport protein or ATP"
+        ]
+      },
+      {
+        "question": "Explain why an ion cannot usually cross the phospholipid bilayer by simple diffusion.",
+        "answer": "An ion is charged and interacts strongly with water. The hydrophobic interior of the phospholipid bilayer is unfavourable to charged particles, so ions generally require channel or carrier proteins.",
+        "mark_points": [
+          "Ion is charged/polar",
+          "Bilayer interior is hydrophobic",
+          "Unfavourable to enter core",
+          "Requires transport protein"
+        ]
+      },
+      {
+        "question": "Compare channel-mediated and carrier-mediated facilitated diffusion.",
+        "answer": "Channel proteins form hydrophilic pores through which selected particles pass. Carrier proteins bind a substance and change shape to move it across. Both move substances down a gradient without direct ATP use.",
+        "mark_points": [
+          "Channel forms pore",
+          "Carrier binds and changes conformation",
+          "Both selective",
+          "Both passive/down gradient/no ATP"
+        ]
+      },
+      {
+        "question": "State the direction of water movement by osmosis when two solutions are separated by a partially permeable membrane.",
+        "answer": "Water moves net from the side with higher water potential to the side with lower water potential through the partially permeable membrane.",
+        "mark_points": [
+          "Net movement of water",
+          "Higher to lower water potential",
+          "Partially permeable membrane"
+        ]
+      },
+      {
+        "question": "Explain how active transport can accumulate mineral ions in a root hair cell when their concentration is lower in the soil solution.",
+        "answer": "Specific carrier proteins bind mineral ions and use energy from ATP hydrolysis to move them against their concentration or electrochemical gradient into the cell. This allows ion accumulation even when passive diffusion would favour movement outwards.",
+        "mark_points": [
+          "Specific membrane carrier/pump",
+          "ATP provides energy",
+          "Against concentration/electrochemical gradient",
+          "Accumulates ions in cell"
+        ]
+      },
+      {
+        "question": "Describe how a cell releases a protein by exocytosis.",
+        "answer": "The protein is packaged into a vesicle, which moves to the cell surface membrane. The vesicle membrane fuses with the cell surface membrane and the protein is released outside the cell.",
+        "mark_points": [
+          "Protein packaged in vesicle",
+          "Vesicle moves to surface",
+          "Membranes fuse",
+          "Contents released outside"
+        ]
+      },
+      {
+        "question": "A white blood cell engulfs a bacterium. Name the transport process and describe the membrane event.",
+        "answer": "The process is phagocytosis, a form of endocytosis. The cell surface membrane extends around the bacterium and encloses it in a vesicle that enters the cytoplasm.",
+        "mark_points": [
+          "Phagocytosis/endocytosis",
+          "Membrane surrounds particle",
+          "Membrane closes/fuses",
+          "Vesicle enters cytoplasm"
+        ]
+      },
+      {
+        "question": "A molecule moves through a carrier protein from high to low concentration. Explain why this is not active transport.",
+        "answer": "The molecule moves down its concentration gradient, so the process is facilitated diffusion. A carrier protein is involved, but direct ATP energy is not required to move the molecule down the gradient.",
+        "mark_points": [
+          "Carrier protein involved",
+          "Movement down gradient",
+          "Facilitated diffusion",
+          "No ATP-driven movement against gradient"
+        ]
+      }
+    ],
+    "visual_tasks": [],
+    "common_mistakes": [],
+    "retrieval_check": {
+      "questions": [
+        "Define simple diffusion across a cell surface membrane.",
+        "Explain why an ion cannot usually cross the phospholipid bilayer by simple diffusion.",
+        "Compare channel-mediated and carrier-mediated facilitated diffusion.",
+        "State the direction of water movement by osmosis when two solutions are separated by a partially permeable membrane.",
+        "Explain how active transport can accumulate mineral ions in a root hair cell when their concentration is lower in the soil solution."
+      ],
+      "answers": [
+        "Simple diffusion is the net movement of particles down a concentration gradient directly through the phospholipid bilayer, without transport proteins or metabolic energy.",
+        "An ion is charged and interacts strongly with water. The hydrophobic interior of the phospholipid bilayer is unfavourable to charged particles, so ions generally require channel or carrier proteins.",
+        "Channel proteins form hydrophilic pores through which selected particles pass. Carrier proteins bind a substance and change shape to move it across. Both move substances down a gradient without direct ATP use.",
+        "Water moves net from the side with higher water potential to the side with lower water potential through the partially permeable membrane.",
+        "Specific carrier proteins bind mineral ions and use energy from ATP hydrolysis to move them against their concentration or electrochemical gradient into the cell. This allows ion accumulation even when passive diffusion would favour movement outwards."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030",
+        "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+        "use": "Controlling Topic 4 outcomes."
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/membranes/membrane-transport-summary.svg",
+        "caption": "Comparison of transport mechanisms across a cell surface membrane.",
+        "alt": "Comparison diagram of simple diffusion, channel and carrier facilitated diffusion, active transport and vesicle transport."
+      },
+      {
+        "path": "/learning-assets/biology/9700/membranes/vesicle-transport.svg",
+        "caption": "Endocytosis and exocytosis using membrane vesicles.",
+        "alt": "Diagram showing membrane invagination forming an endocytic vesicle and vesicle fusion releasing contents by exocytosis."
+      }
+    ]
+  }
+}
