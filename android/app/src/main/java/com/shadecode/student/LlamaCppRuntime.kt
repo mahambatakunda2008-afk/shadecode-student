@@ -21,6 +21,7 @@ class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
     }
 
     override suspend fun isReady(modelId: String): Boolean = withContext(Dispatchers.IO) {
+        if (closed.get()) return@withContext false
         val model = NativeLocalModelCatalog.models.firstOrNull { it.id == modelId && it.enabled } ?: return@withContext false
         if (!modelManager.isInstalled(model)) return@withContext false
         if (!modelManager.gemmaDeviceReadiness().supported) return@withContext false
@@ -31,6 +32,7 @@ class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
     }
 
     override suspend fun generate(modelId: String, prompt: String, maxTokens: Int): String? = withContext(Dispatchers.Default) {
+        if (closed.get()) return@withContext null
         val model = NativeLocalModelCatalog.models.firstOrNull { it.id == modelId && it.enabled } ?: return@withContext null
         if (!modelManager.isInstalled(model)) return@withContext null
         if (!modelManager.gemmaDeviceReadiness().supported) return@withContext null
@@ -44,6 +46,7 @@ class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
     }
 
     override suspend fun unload(modelId: String) = withContext(Dispatchers.IO) {
+        if (closed.get()) return@withContext
         synchronized(nativeLock) {
             if (nativeIsLoaded()) nativeUnload()
         }
