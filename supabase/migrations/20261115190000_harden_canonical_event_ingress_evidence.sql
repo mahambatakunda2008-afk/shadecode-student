@@ -23,9 +23,11 @@ begin
     raise exception 'canonical event identity is required';
   end if;
 
-  -- Defense in depth: direct RPC callers bypass the HTTP event route, so
-  -- strip all fields that could be interpreted as verified marking evidence.
-  if jsonb_typeof(safe_event->'metadata') = 'object' then
+  -- Authenticated browser RPC callers bypass the HTTP event route, so strip
+  -- all mastery-driving fields. The only trusted nested caller is the
+  -- SECURITY DEFINER complete_lesson_quiz_attempt() transaction, whose
+  -- effective current_user is postgres and whose answer key is server-owned.
+  if current_user <> 'postgres' and jsonb_typeof(safe_event->'metadata') = 'object' then
     safe_event := jsonb_set(
       safe_event,
       '{metadata}',
