@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAllRows } from "./fetchAllRows";
+import { summarizeAiHealth, type AiFeatureHealth, type AiLogRow } from "./aiHealth";
 import { buildGrowthReport, type EventRow, type GrowthReport, type SignupRow } from "./growthReport";
 
 /** 45 days covers MAU (30d) and the D30 window of the newest cohorts we show. */
@@ -34,4 +35,13 @@ export async function loadGrowthReport(reader: SupabaseClient): Promise<LoadedGr
   }
 
   return { report: buildGrowthReport({ events: events.rows, signups }), eventsTruncated: events.truncated, eventsFailed: events.failed, signupSource };
+}
+
+/** AI reliability for the last 7 days. Same rule as above: call only after the admin check. */
+export async function loadAiHealth(reader: SupabaseClient): Promise<{ rows: AiFeatureHealth[]; failed: boolean; truncated: boolean }> {
+  const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const logs = await fetchAllRows<AiLogRow>((from, to) =>
+    reader.from("ai_usage_logs").select("feature,success,user_id,error_message,latency_ms,created_at").gte("created_at", since).order("created_at", { ascending: false }).range(from, to),
+  { maxRows: 20_000 });
+  return { rows: summarizeAiHealth(logs.rows), failed: logs.failed, truncated: logs.truncated };
 }

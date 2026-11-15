@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { loadGrowthReport, EVENT_WINDOW_DAYS } from "@/lib/admin/loadGrowthReport";
+import { loadGrowthReport, loadAiHealth, EVENT_WINDOW_DAYS } from "@/lib/admin/loadGrowthReport";
 import type { CountRow } from "@/lib/admin/growthReport";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export default async function GrowthAdminPage() {
   // Admin-only reads use the service role (after the check above) so row-level security can never turn
   // real activity into silent zeros on this page.
   const reader = createSupabaseAdminClient() ?? supabase;
-  const { report, eventsTruncated, eventsFailed, signupSource } = await loadGrowthReport(reader);
+  const [{ report, eventsTruncated, eventsFailed, signupSource }, ai] = await Promise.all([loadGrowthReport(reader), loadAiHealth(reader)]);
   const h = report.headline;
   const maxActive = Math.max(1, ...report.series.map((p) => p.active));
 
@@ -46,6 +46,14 @@ export default async function GrowthAdminPage() {
           <Stat label="Came back by D1" value={report.retention.d1 === null ? "—" : `${report.retention.d1}%`} note={`rolling, ${report.retention.students} students (6 wks)`} />
           <Stat label="Came back by D7" value={report.retention.d7 === null ? "—" : `${report.retention.d7}%`} note="active on day 7 or later" />
         </section>
+
+        <Card title="AI reliability · 7d" sub="Share of AI attempts that worked, per feature. Each attempt is one provider try, so attempts exceed student requests. Low rates mean students are seeing errors or long waits">
+          {ai.rows.length ? (
+            <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-left text-sm"><thead className="text-xs uppercase tracking-wider text-zinc-500"><tr><th className="pb-2">Feature</th><th className="pb-2">Worked</th><th className="pb-2">Attempts</th><th className="pb-2">Students</th><th className="pb-2">Never got one</th><th className="pb-2">Avg wait on fail</th><th className="pb-2">Top failure</th></tr></thead>
+              <tbody>{ai.rows.map((f) => <tr key={f.feature} className="border-t border-white/5"><td className="py-2">{f.feature}</td><td className={f.successPct === null ? "text-zinc-600" : f.successPct >= 80 ? "font-bold text-emerald-300" : f.successPct >= 50 ? "text-amber-300" : "font-bold text-rose-300"}>{f.successPct === null ? "—" : `${f.successPct}%`}</td><td>{f.attempts}</td><td>{f.students}</td><td className={f.studentsWithoutSuccess ? "text-rose-300" : "text-zinc-500"}>{f.studentsWithoutSuccess}</td><td>{f.avgFailSeconds === null ? "—" : `${f.avgFailSeconds}s`}</td><td className="max-w-[260px] truncate text-xs text-zinc-400" title={f.topFailure ?? ""}>{f.topFailure ?? "—"}</td></tr>)}</tbody></table></div>
+          ) : <p className="text-sm text-zinc-500">{ai.failed ? "The AI log could not be read." : "No AI attempts in the last 7 days."}</p>}
+          <p className="mt-3 text-xs text-zinc-500">Full breakdown by provider and cost: <Link href="/admin/ai-usage" className="text-cyan-300 hover:underline">AI usage →</Link></p>
+        </Card>
 
         <Card title="Daily active students" sub="Last 14 days · bar = active, cyan = did learning">
           <div className="flex h-36 items-end gap-1.5" role="img" aria-label="Daily active students, last 14 days">

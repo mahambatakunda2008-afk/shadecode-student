@@ -1,4 +1,5 @@
 import {
+  Activity,
   TrendingUp,
   House,
   Timer,
@@ -83,6 +84,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   adminAnalytics: { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   adminGrowth: { href: "/admin/growth", label: "Growth", icon: TrendingUp },
   adminTraction: { href: "/admin/traction", label: "Traction", icon: Target },
+  adminAiHealth: { href: "/admin/ai-usage", label: "AI health", icon: Activity },
   adminUpload: { href: "/admin/exam-hub/upload", label: "Upload Papers", icon: UploadCloud },
   adminModeration: { href: "/admin/exam-hub/moderation", label: "Moderation", icon: ClipboardCheck },
   adminQuestions: { href: "/admin/exam-hub/questions", label: "Tag Questions", icon: Tags },
@@ -100,6 +102,7 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
       NAV_ITEMS.adminAnalytics,
       NAV_ITEMS.adminGrowth,
       NAV_ITEMS.adminTraction,
+      NAV_ITEMS.adminAiHealth,
       NAV_ITEMS.adminUpload,
       NAV_ITEMS.adminManage,
       NAV_ITEMS.adminModeration,
