@@ -1,4 +1,5 @@
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { redirect } from "next/navigation";
 import { loadLessonItems } from "@/lib/teacher/loadItems";
 import { questionItems, REVIEW_GROUPS } from "@/lib/teacher/reviewItems";
 import { ReviewClient, type StoredReview } from "./ReviewClient";
@@ -7,7 +8,8 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Review · Shadecode Student" };
 
 export default async function TeacherReviewPage({ searchParams }: { searchParams: Promise<{ group?: string }> }) {
-  const reviewer = (await getReviewer())!;
+  const reviewer = await getReviewer();
+  if (!reviewer) redirect("/teacher");
   const { group } = await searchParams;
 
   const [lessons, { data }] = await Promise.all([

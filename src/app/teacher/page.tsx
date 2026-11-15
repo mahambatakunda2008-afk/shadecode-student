@@ -1,16 +1,64 @@
 import Link from "next/link";
-import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { redirect } from "next/navigation";
+import { getReviewer, getTeacherWorkspace } from "@/lib/exam/curated/reviewAccess";
 import { loadLessonItems } from "@/lib/teacher/loadItems";
 import { questionItems, REVIEW_GROUPS } from "@/lib/teacher/reviewItems";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Teacher portal · Shadecode Student" };
 
+const TEACHING_ROLES = ["teacher", "tutor", "administrator", "staff"] as const;
+
 export default async function TeacherHome() {
-  const reviewer = (await getReviewer())!;
-  const [lessons, { data: rows }] = await Promise.all([
+  const workspace = await getTeacherWorkspace();
+  if (!workspace) redirect("/");
+  const reviewer = await getReviewer();
+
+  if (!reviewer) {
+    const [institutions, groups] = await Promise.all([
+      workspace.supabase
+        .from("platform_institution_members")
+        .select("institution_id", { count: "exact", head: true })
+        .eq("user_id", workspace.user.id)
+        .eq("status", "active")
+        .in("membership_role", [...TEACHING_ROLES]),
+      workspace.supabase
+        .from("platform_group_members")
+        .select("group_id", { count: "exact", head: true })
+        .eq("user_id", workspace.user.id)
+        .eq("status", "active")
+        .in("membership_role", [...TEACHING_ROLES]),
+    ]);
+    return (
+      <div className="space-y-7">
+        <header className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">Shadecode Teacher</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Your teaching workspace</h1>
+          <p className="max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">
+            Your institution access is active. Your school classes and learner roster are kept separate from global content-review permissions.
+          </p>
+        </header>
+        <section className="grid gap-3 sm:grid-cols-2">
+          <Link href="/teacher/classes" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 transition hover:border-[var(--primary)]">
+            <p className="text-xs text-[var(--muted-foreground)]">Institutions</p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{institutions.error ? "—" : institutions.count ?? 0}</p>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">Open your school workspace</p>
+          </Link>
+          <Link href="/teacher/classes" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 transition hover:border-[var(--primary)]">
+            <p className="text-xs text-[var(--muted-foreground)]">Teaching groups</p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{groups.error ? "—" : groups.count ?? 0}</p>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">View assigned classes</p>
+          </Link>
+        </section>
+      </div>
+    );
+  }
+
+  const [lessons, { data: rows }, institutionMemberships, groupMemberships] = await Promise.all([
     loadLessonItems(reviewer.supabase),
     reviewer.supabase.from("content_reviews").select("question_id,verdict,reviewer_id").limit(10000),
+    reviewer.supabase.from("platform_institution_members").select("institution_id").eq("user_id", reviewer.user.id).eq("status", "active").in("membership_role", [...TEACHING_ROLES]),
+    reviewer.supabase.from("platform_group_members").select("group_id").eq("user_id", reviewer.user.id).eq("status", "active").in("membership_role", [...TEACHING_ROLES]),
   ]);
 
   const items = [...questionItems(), ...lessons];
@@ -36,15 +84,44 @@ export default async function TeacherHome() {
 
   const totalLeft = cards.reduce((n, c) => n + (c.total - c.reviewed), 0);
 
+  const institutionCount = institutionMemberships.error ? null : institutionMemberships.data?.length ?? 0;
+  const groupCount = groupMemberships.error ? null : groupMemberships.data?.length ?? 0;
+
   return (
-    <div className="space-y-6">
-      <section className="space-y-1">
-        <h1 className="text-xl font-semibold">Teacher portal</h1>
-        <p className="text-sm text-[var(--muted-foreground)]">
-          {totalLeft > 0 ? `${totalLeft} items are waiting for your review.` : "You have reviewed everything available. Thank you."}
+    <div className="space-y-8">
+      <header className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">Shadecode Teacher</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Your teaching workspace</h1>
+        <p className="max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">
+          Your classes, teaching resources and content review work, connected to the same learning platform your students use.
         </p>
+      </header>
+
+      <section className="grid gap-3 sm:grid-cols-3" aria-label="Teaching overview">
+        <Link href="/teacher/classes" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 transition hover:border-[var(--primary)]">
+          <p className="text-xs text-[var(--muted-foreground)]">Teaching groups</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{groupCount ?? "—"}</p>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">View your classes</p>
+        </Link>
+        <Link href="/teacher/classes" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 transition hover:border-[var(--primary)]">
+          <p className="text-xs text-[var(--muted-foreground)]">Institutions</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{institutionCount ?? "—"}</p>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">Manage your school context</p>
+        </Link>
+        <Link href="/teacher/tutorials" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 transition hover:border-[var(--primary)]">
+          <p className="text-xs text-[var(--muted-foreground)]">Tutorial Studio</p>
+          <p className="mt-2 text-xl font-semibold">Create resources</p>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">Build lessons, diagrams and learning materials</p>
+        </Link>
       </section>
 
+      <section className="space-y-3">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">Content review</h2>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            {totalLeft > 0 ? `${totalLeft} items are waiting for your review.` : "You have reviewed everything available. Thank you."}
+          </p>
+        </div>
       <Link
         href="/teacher/tutorials/review"
         className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm transition hover:border-[var(--primary)]"
@@ -76,6 +153,7 @@ export default async function TeacherHome() {
             </Link>
           );
         })}
+      </section>
       </section>
     </div>
   );
