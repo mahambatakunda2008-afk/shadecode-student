@@ -15,7 +15,7 @@ export async function GET() {
     .order("updated_at",{ascending:false}).limit(100);
   if(error) return NextResponse.json({error:"Could not load conversations."},{status:500});
   const ids=(requests??[]).map(r=>r.id);
-  const {data:messages,messageError} = ids.length
+  const {data:messages,error:messageError} = ids.length
     ? await supabase.from("platform_educator_help_messages").select("id,request_id,sender_id,body,created_at").in("request_id",ids).order("created_at",{ascending:true})
     : {data:[],messageError:null};
   if(messageError) return NextResponse.json({error:"Could not load conversation messages."},{status:500});
