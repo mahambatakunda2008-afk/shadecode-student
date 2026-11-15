@@ -43,7 +43,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ass
 
   const [{ data: submissions, error: submissionsError }, { data: answerKey, error: answerKeyError }] = await Promise.all([
     workspace.supabase.from("platform_assignment_submissions")
-      .select("id,student_id,response,submitted_at,status,score,feedback,marked_at")
+      .select("id,student_id,response,submitted_at,status,score,feedback,marked_at,question_marks")
       .eq("assignment_id", assignmentId)
       .order("submitted_at", { ascending: false }),
     workspace.supabase.from("platform_assignment_answer_keys")
@@ -73,8 +73,31 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ as
   if (!workspace) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { assignmentId } = await params;
   const body = await request.json().catch(() => null);
-  if (!body || typeof body.submissionId !== "string" || !Number.isFinite(Number(body.score)) ||
-      Number(body.score) < 0 || typeof body.feedback !== "string" || body.feedback.length > 5000) {
+  if (!body || typeof body.submissionId !== "string") {
+    return NextResponse.json({ error: "A valid submission is required." }, { status: 400 });
+  }
+
+  if (Array.isArray(body.questionMarks)) {
+    if (typeof body.feedback !== "string" || body.feedback.length > 5000 || body.questionMarks.length > 100) {
+      return NextResponse.json({ error: "Check the question marks and feedback." }, { status: 400 });
+    }
+    const { data, error } = await workspace.supabase.rpc("mark_platform_assignment_submission_questions", {
+      p_submission_id: body.submissionId,
+      p_question_marks: body.questionMarks,
+      p_feedback: body.feedback,
+    });
+    if (error) {
+      const forbidden = error.code === "42501";
+      return NextResponse.json({
+        error: forbidden ? "Marking permission denied." : "Could not save question-level marking.",
+      }, { status: forbidden ? 403 : 400 });
+    }
+    if (data !== true) return NextResponse.json({ error: "Submission could not be marked." }, { status: 409 });
+    return NextResponse.json({ success: true });
+  }
+
+  if (!Number.isFinite(Number(body.score)) || Number(body.score) < 0 ||
+      typeof body.feedback !== "string" || body.feedback.length > 5000) {
     return NextResponse.json({ error: "A valid score and feedback are required." }, { status: 400 });
   }
 
