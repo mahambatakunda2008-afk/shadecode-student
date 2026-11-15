@@ -7,7 +7,7 @@ type Message = {id:string;request_id:string;sender_id:string;body:string;created
 type RequestItem = {
   id:string;student_id:string;educator_id:string;subject:string;level:string;topic:string;
   status:"pending"|"accepted"|"declined"|"completed"|"closed";created_at:string;updated_at:string;
-  viewerRole:"student"|"educator";studentName:string;educatorName:string;messages:Message[];
+  viewerId:string;viewerRole:"student"|"educator";studentName:string;educatorName:string;messages:Message[];
 };
 
 export function EducatorRequestInbox() {
@@ -73,8 +73,8 @@ export function EducatorRequestInbox() {
             <span className="rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs capitalize">{item.status}</span>
           </div>
           <div className="max-h-[420px] space-y-3 overflow-y-auto p-4">
-            {item.messages.map(message=><div key={message.id} className={message.sender_id===item.student_id?"flex justify-end":"flex justify-start"}>
-              <div className={"max-w-[88%] rounded-2xl px-3 py-2 "+(message.sender_id===item.student_id?"bg-[var(--primary)]/12":"bg-[var(--surface-2)]")}>
+            {item.messages.map(message=><div key={message.id} className={message.sender_id===item.viewerId?"flex justify-end":"flex justify-start"}>
+              <div className={"max-w-[88%] rounded-2xl px-3 py-2 "+(message.sender_id===item.viewerId?"bg-[var(--primary)]/12":"bg-[var(--surface-2)]")}>
                 <p className="whitespace-pre-wrap text-sm leading-6">{message.body}</p>
                 <p className="mt-1 text-right text-[10px] text-[var(--muted-foreground)]">{new Date(message.created_at).toLocaleString()}</p>
               </div>
