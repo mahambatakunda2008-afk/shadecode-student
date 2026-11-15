@@ -58,13 +58,17 @@ export async function POST(request: Request) {
   const instructions = typeof body.instructions === "string" ? body.instructions : "";
   const maxScore = Number(body.maxScore ?? 100);
   const dueAt = body.dueAt ? new Date(body.dueAt) : null;
+  const assessmentType = ["assignment", "quiz", "test", "examination", "practical"].includes(body.assessmentType)
+    ? body.assessmentType : "assignment";
+  const questions = Array.isArray(body.questions) ? body.questions : [];
+  const markScheme = Array.isArray(body.markScheme) ? body.markScheme : [];
   if (title.length < 3 || title.length > 180 || !subject || subject.length > 120 ||
       instructions.length > 12000 || !Number.isFinite(maxScore) || maxScore <= 0 || maxScore > 100000 ||
-      (body.dueAt && (!dueAt || Number.isNaN(dueAt.getTime())))) {
+      (body.dueAt && (!dueAt || Number.isNaN(dueAt.getTime()))) || questions.length < 1 || questions.length > 100 || markScheme.length > 200) {
     return NextResponse.json({ error: "Check the assignment details and try again." }, { status: 400 });
   }
 
-  const { data, error } = await workspace.supabase.rpc("create_platform_assignment", {
+  const { data, error } = await workspace.supabase.rpc("create_platform_assessment", {
     p_group_id: body.groupId,
     p_title: title,
     p_subject: subject,
@@ -72,6 +76,9 @@ export async function POST(request: Request) {
     p_due_at: dueAt?.toISOString() ?? null,
     p_max_score: maxScore,
     p_publish: body.publish === true,
+    p_assessment_type: assessmentType,
+    p_questions: questions,
+    p_mark_scheme: markScheme,
   });
   if (error) {
     const forbidden = error.code === "42501";
