@@ -325,7 +325,7 @@ begin
     update public.platform_user_relationships
       set status='revoked',approved_by=v_actor,updated_at=now()
     where id=p_relationship_id;
-    if v_status='pending' and not exists (
+    if not exists (
       select 1 from public.platform_user_relationships r
       where r.related_user_id=v_link.related_user_id
         and r.relationship_type in ('parent','guardian')
@@ -336,7 +336,7 @@ begin
       update public.platform_institution_members
         set status='revoked',updated_at=now()
       where institution_id=v_institution_id and user_id=v_link.related_user_id
-        and status='pending';
+        and status in ('pending','active');
     end if;
   end if;
 
@@ -389,6 +389,20 @@ begin
   update public.platform_user_relationships
     set status='revoked',updated_at=now()
   where id=p_relationship_id;
+
+  if not exists (
+    select 1 from public.platform_user_relationships r
+    where r.related_user_id=v_link.related_user_id
+      and r.relationship_type in ('parent','guardian')
+      and r.status in ('pending','active')
+      and r.id<>p_relationship_id
+      and nullif(r.metadata->>'institution_id','')::uuid=v_institution_id
+  ) then
+    update public.platform_institution_members
+      set status='revoked',updated_at=now()
+    where institution_id=v_institution_id and user_id=v_link.related_user_id
+      and status in ('pending','active');
+  end if;
 
   insert into public.platform_membership_audit(
     institution_id,actor_user_id,target_user_id,action,entity_type,entity_id
