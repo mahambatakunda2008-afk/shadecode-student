@@ -6,7 +6,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, fix/exam-hub-subject-access, fix/library-subject-access-followup]
+    branches: [main, fix/exam-hub-subject-access, fix/library-subject-access-followup, feat/teacher-client-workspace-foundation]
   pull_request:
     branches: [main, fix/exam-hub-subject-access]
 
