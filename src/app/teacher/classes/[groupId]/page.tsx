@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTeacherWorkspace } from "@/lib/exam/curated/reviewAccess";
 import { RosterMembershipActions } from "./RosterMembershipActions";
+import { GuardianInviteAction } from "./GuardianInviteAction";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Class roster · Shadecode Teacher" };
@@ -89,12 +90,19 @@ export default async function TeacherClassRosterPage({
                   <p className="truncate text-sm font-medium">{member.display_name || "Student"}</p>
                   <p className="mt-1 text-xs text-[var(--muted-foreground)]">{titleCase(member.membership_role)}</p>
                   {canManageRoster ? (
-                    <div className="mt-2">
+                    <div className="mt-2 space-y-2">
                       <RosterMembershipActions
                         institutionId={group.institution_id ?? ""}
                         groupId={group.id}
                         targetUserId={member.user_id}
                       />
+                      {member.membership_role === "student" && group.institution_id ? (
+                        <GuardianInviteAction
+                          institutionId={group.institution_id}
+                          studentUserId={member.user_id}
+                          studentName={member.display_name || "Student"}
+                        />
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
