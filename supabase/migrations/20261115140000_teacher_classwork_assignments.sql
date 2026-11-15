@@ -207,9 +207,12 @@ begin
   insert into public.platform_assignment_submissions(assignment_id, student_id, response)
   values (p_assignment_id, v_user, p_response)
   on conflict (assignment_id, student_id) do update
-    set response = excluded.response, submitted_at = now(), status = 'submitted',
-        score = null, feedback = null, marked_by = null, marked_at = null
+    set response = excluded.response, submitted_at = now()
+    where public.platform_assignment_submissions.status = 'submitted'
   returning id into v_id;
+  if v_id is null then
+    raise exception 'Submission has already been marked and is locked' using errcode = '55000';
+  end if;
   return v_id;
 end;
 $$;
