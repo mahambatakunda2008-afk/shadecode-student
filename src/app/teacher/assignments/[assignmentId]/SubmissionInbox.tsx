@@ -13,7 +13,7 @@ type Submission = {
   feedback: string | null;
   marked_at: string | null;
 };
-type Assignment = { id: string; title: string; subject: string; max_score: number; due_at: string | null; status: string };
+type Assignment = { id: string; title: string; subject: string; max_score: number; due_at: string | null; status: string; assessment_type?: string; questions?: Array<{ prompt: string; type: string; marks: number }>; mark_scheme?: Array<{ criterion: string }> };
 type Payload = { assignment: Assignment; group: { name: string } | null; submissions: Submission[] };
 
 export function SubmissionInbox({ assignmentId }: { assignmentId: string }) {
@@ -75,6 +75,25 @@ export function SubmissionInbox({ assignmentId }: { assignmentId: string }) {
         <h1 className="mt-1 text-2xl font-semibold">{data.assignment.title}</h1>
         <p className="mt-2 text-sm text-[var(--muted-foreground)]">{data.submissions.length} submission{data.submissions.length === 1 ? "" : "s"} · Out of {data.assignment.max_score} marks</p>
       </header>
+
+      {data.assignment.questions?.length ? (
+        <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5">
+          <h2 className="font-semibold">Assessment paper and mark scheme</h2>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">{data.assignment.assessment_type ?? "assignment"} · {data.assignment.questions.length} questions</p>
+          <div className="mt-4 space-y-3">
+            {data.assignment.questions.map((question, index) => (
+              <article key={index} className="rounded-xl bg-[var(--surface)] p-3">
+                <div className="flex justify-between gap-3 text-sm font-medium"><span>Question {index + 1}</span><span>{question.marks} marks</span></div>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{question.prompt}</p>
+              </article>
+            ))}
+          </div>
+          {data.assignment.mark_scheme?.length ? <details className="mt-4 rounded-xl border border-[var(--card-border)] p-3">
+            <summary className="cursor-pointer text-sm font-medium">Teacher-only marking criteria</summary>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm">{data.assignment.mark_scheme.map((item, index) => <li key={index}>{item.criterion}</li>)}</ol>
+          </details> : <p className="mt-3 text-xs text-[var(--muted-foreground)]">No marking criteria added.</p>}
+        </section>
+      ) : null}
 
       {data.submissions.length ? data.submissions.map((submission) => (
         <article key={submission.id} className="space-y-4 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 sm:p-5">
