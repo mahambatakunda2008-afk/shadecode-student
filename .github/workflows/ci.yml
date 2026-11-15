@@ -86,7 +86,9 @@ jobs:
           create table auth.users (id uuid primary key);
           create function auth.uid() returns uuid
             language sql stable
-            as $uid$ select null::uuid $uid$;
+            as $uid$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $uid$;
+          grant usage on schema auth to authenticated;
+          grant execute on function auth.uid() to authenticated;
           SQL
       - name: Apply recovered platform relationships baseline
         env:
@@ -96,6 +98,14 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_relationships_baseline.test.sql
+      - name: Apply institution-scoped lifecycle migration
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115100000_platform_institution_lifecycle.sql
+      - name: Test institution onboarding, invitations, roles and revocation
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_institution_lifecycle.test.sql
 
   verify:
     name: Typecheck, lint, test, build
