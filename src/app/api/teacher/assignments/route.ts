@@ -28,20 +28,13 @@ export async function GET() {
     return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
   }
   const groupIds = [...new Set((membershipsResult.data ?? []).map((row) => row.group_id))];
-  const institutionIds = [...new Set((institutionsResult.data ?? []).map((row) => row.institution_id))];
-  const [assignedGroups, adminGroups] = await Promise.all([
-    groupIds.length
-      ? workspace.supabase.from("platform_groups").select("id,name").in("id", groupIds)
-      : Promise.resolve({ data: [], error: null }),
-    institutionIds.length
-      ? workspace.supabase.from("platform_groups").select("id,name").in("institution_id", institutionIds)
-      : Promise.resolve({ data: [], error: null }),
-  ]);
-  if (assignedGroups.error || adminGroups.error) {
+  const assignedGroups = groupIds.length
+    ? await workspace.supabase.from("platform_groups").select("id,name").in("id", groupIds)
+    : { data: [], error: null };
+  if (assignedGroups.error) {
     return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
   }
-  const groups = [...new Map([...(assignedGroups.data ?? []), ...(adminGroups.data ?? [])].map((group) => [group.id, group])).values()]
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const groups = (assignedGroups.data ?? []).sort((a, b) => a.name.localeCompare(b.name));
   const authorizedGroupIds = groups.map((group) => group.id);
   if (!authorizedGroupIds.length) return NextResponse.json({ assignments: [], groups: [] });
 
