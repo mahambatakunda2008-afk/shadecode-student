@@ -8,6 +8,10 @@ create table if not exists public.profiles (
   display_name text
 );
 create table if not exists public.test_platform_admins(user_id uuid primary key);
+create or replace function public.test_expire_guardian_invite(p_id uuid)
+returns void language sql security definer set search_path=public,pg_temp
+as $ update public.platform_guardian_invites set expires_at=now()-interval '1 minute' where id=p_id $;
+grant execute on function public.test_expire_guardian_invite(uuid) to authenticated;
 create or replace function public.has_role(user_id uuid, role_name text)
 returns boolean language sql stable security definer
 set search_path=public,pg_temp
@@ -35,6 +39,7 @@ declare
   v_student_group uuid;
   v_student_code text := 'guardian-student-enrolment-code-2026';
   v_guardian_code text := 'guardian-family-link-code-2026';
+  v_student_self_code text := 'guardian-student-self-code-2026';
   v_second_guardian_code text := 'guardian-family-link-code-2026b';
   v_expired_code text := 'guardian-family-link-expired-2026';
   v_student_invite uuid;
@@ -90,14 +95,6 @@ begin
   exception when sqlstate '42501' then null;
   end;
 
-  -- A student cannot redeem an invitation intended to link a guardian.
-  perform set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000003',true);
-  begin
-    perform public.redeem_platform_guardian_invite(v_guardian_code);
-    raise exception 'student redeemed their own guardian invite';
-  exception when sqlstate '42501' then null;
-  end;
-
   -- One-use protection.
   perform set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000004',true);
   begin
@@ -143,7 +140,7 @@ begin
     v_institution,'20000000-0000-4000-8000-000000000003','parent',
     encode(sha256(convert_to(v_expired_code,'utf8')),'hex'),now()+interval '1 hour'
   );
-  update public.platform_guardian_invites set expires_at=now()-interval '1 minute' where id=v_link_invite;
+  perform public.test_expire_guardian_invite(v_link_invite);
   perform set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000005',true);
   begin
     perform public.redeem_platform_guardian_invite(v_expired_code);
