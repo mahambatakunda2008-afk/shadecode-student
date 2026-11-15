@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 interface QuizQuestion {
-  id: number;
+  id: number | string;
   question: string;
   options: string[];
   correctIndex?: number;
@@ -92,9 +92,12 @@ export default function QuizPage() {
         ? String(verifiedQuestions[index].explanation)
         : question.explanation,
     }));
-    const finalAnswers = verifiedQuestions.map((question, index) =>
-      Number.isInteger(question.selectedIndex) ? Number(question.selectedIndex) : submittedAnswers[index]
-    );
+    const finalAnswers = verifiedQuestions.map((question, index) => {
+      const selectedIndex = Number.isInteger(question.selectedIndex)
+        ? Number(question.selectedIndex)
+        : submittedAnswers[index] ?? 0;
+      return selectedIndex >= 0 && selectedIndex <= 3 ? selectedIndex : 0;
+    });
     setQuestions(completedQuestions);
     setAnswers(finalAnswers);
     setPhase("results");
@@ -541,8 +544,8 @@ export default function QuizPage() {
 
           {/* Explanation after confirm */}
           {confirmed && (
-            <div role="status" aria-live="polite" className={`mb-5 animate-[ssc-page-in_200ms_ease_both] rounded-[14px] border px-4 py-3.5 ${isCorrectAnswer ? good : bad}`}>
-              <p className={`mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] ${isCorrectAnswer ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
+            <div role="status" aria-live="polite" className={`mb-5 animate-[ssc-page-in_200ms_ease_both] rounded-[14px] border px-4 py-3.5 ${q.correctIndex === undefined ? "border-[var(--card-border)] bg-[var(--surface-2)]" : isCorrectAnswer ? good : bad}`}>
+              <p className={`mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] ${q.correctIndex === undefined ? "text-[var(--muted-foreground)]" : isCorrectAnswer ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
                 {q.correctIndex === undefined ? "Answer saved" : isCorrectAnswer ? "✓ Correct!" : "✗ Incorrect"}
               </p>
               <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">{q.correctIndex === undefined ? "Your selection is saved. Correctness will be checked securely when you submit the quiz." : q.explanation}</p>
