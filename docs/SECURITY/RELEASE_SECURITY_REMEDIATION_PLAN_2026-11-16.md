@@ -25,7 +25,7 @@ Do not solve this by blindly revoking SELECT or changing the leaderboard view. E
 
 ### 2. SECURITY DEFINER function execution
 
-The 2026-11-16 Security Advisor snapshot reports three SECURITY DEFINER functions executable by `anon` and nine executable by `authenticated`.
+The 2026-11-15 22:23 UTC Security Advisor snapshot reports three SECURITY DEFINER functions executable by `anon` and nine executable by `authenticated`. The three anon-callable functions are `apply_lesson_vote()`, `guard_teacher_tutorial_transition()` and `publish_lesson_to_library()`. The authenticated-callable set additionally includes `claim_lesson_quiz_attempt(uuid, integer[])`, `complete_lesson_quiz_attempt(uuid)`, `has_role(uuid, text)`, `publish_teacher_tutorial(uuid, integer)`, `redeem_teacher_invite(text)` and `review_teacher_tutorial(uuid, integer, text, text)`.
 
 **Required before release**
 - Enumerate each function's signature, owner, grants, search path, body and call sites.
@@ -38,7 +38,7 @@ Do not revoke all SECURITY DEFINER execution indiscriminately. Some functions ma
 
 ### 3. Tables without RLS policies
 
-The same advisor snapshot reports three RLS-enabled tables without policies, including `lesson_quiz_attempts`.
+The same advisor snapshot reports three RLS-enabled tables without policies: `challenge_answer_keys`, `feedback_rate_limits` and `lesson_quiz_attempts`.
 
 **Required before release**
 - Confirm whether each table is server-only or intended for direct client access.
@@ -52,7 +52,7 @@ RLS enabled with no policies is normally deny-by-default for direct client acces
 
 The advisor reports leaked-password protection disabled. Earlier performance review also identified unindexed foreign keys, multiple permissive policies, RLS init-plan warnings and unused indexes.
 
-These are not all equivalent release blockers. Prioritise the password-protection setting and authorization findings first; handle performance/index cleanup separately with query-plan evidence and migration review.
+These are not all equivalent release blockers. The advisor's leaked-password check is a configuration warning, not proof of a compromised account. Prioritise the password-protection setting and authorization findings first; handle performance/index cleanup separately with query-plan evidence and migration review.
 
 ## Account deletion release gate
 
