@@ -1,5 +1,3 @@
-import "server-only";
-
 import { createResource, type ShadeNetResource } from "./content";
 import type { KnowledgeQuery, KnowledgeSource } from "./retrieval";
 
