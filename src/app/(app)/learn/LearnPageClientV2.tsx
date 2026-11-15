@@ -8,6 +8,7 @@ import PaperStudyLauncher from "./PaperStudyLauncher";
 import { AlertCircle, BookOpen, CheckCircle2, Clock3, RefreshCw, Sparkles, WifiOff, Zap } from "lucide-react";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import LearnerPracticeRecommendations from "./components/LearnerPracticeRecommendations";
+import { readVerifyLearnerModel } from "@/lib/cortex/verify/learner-model-store";
 
 const REQUEST_TIMEOUT_MS = 12000;
 const GENERATE_TIMEOUT_MS = 65000;
@@ -126,7 +127,14 @@ export default function LearnPageClientV2() {
       const result = await requestJson<{ id?: string; error?: string }>("/api/learn/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ subject, topic: topic.trim(), difficulty }),
+        body: JSON.stringify({
+          subject,
+          topic: topic.trim(),
+          difficulty,
+          learnerEvidence: userId
+            ? { topics: readVerifyLearnerModel(userId).topics.filter(item => item.subject.toLocaleLowerCase("en") === subject.toLocaleLowerCase("en")).slice(0, 6) }
+            : { topics: [] },
+        }),
       }, GENERATE_TIMEOUT_MS);
       if (!result.id) throw new Error(result.error || "The lesson was not created.");
       router.push(`/learn/${result.id}`);
