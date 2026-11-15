@@ -157,6 +157,10 @@ begin
     raise exception 'guardian revocation did not remove relationship access';
   end if;
 
+  if not exists(select 1 from public.platform_institution_members where institution_id=v_institution and user_id='20000000-0000-4000-8000-000000000004' and status='revoked') then
+    raise exception 'last guardian link revocation did not revoke orphaned institution membership';
+  end if;
+
   -- Expired invitation cannot be redeemed.
   perform set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000001',true);
   v_link_invite := public.create_platform_guardian_invite(
