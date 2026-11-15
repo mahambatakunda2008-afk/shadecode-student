@@ -55,6 +55,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   focus: { href: "/focus", label: "Focus", icon: Target, feature: "focus" },
   tasks: { href: "/tasks", label: "Tasks", icon: ListChecks, feature: "tasks" },
   exams: { href: "/exams", label: "Assessments", icon: ClipboardCheck, feature: "assessments" },
+  assignments: { href: "/assignments", label: "Classwork", icon: FileCheck2, feature: "assessments" },
   examHub: { href: "/exam-hub", label: "Past Papers", icon: Files, feature: "past-papers" },
   examSim: { href: "/exam-sim", label: "Exam Sim", icon: ClipboardCheck, feature: "exam-sim" },
   mathChecker: { href: "/workmate", label: "Cortex Verify", icon: FileCheck2, feature: "workmate" },
@@ -232,7 +233,7 @@ export function getExperienceNavGroups(
             ? hasComputingSubject
             : item.href === NAV_ITEMS.biologyPractical.href
               ? hasBiologySubject
-              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp",
+              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments",
       ),
     }))
     .filter((group) => group.items.length > 0);
