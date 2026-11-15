@@ -173,7 +173,6 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       const result = await scoreAnswer(asRecord(input.payload) as ScoreAnswerInput);
       const practicePayload = asRecord(input.payload);
       const practiceTopic = asString(practicePayload.topic);
-      const practiceSubject = asString(practicePayload.subjectName) ?? asString(practicePayload.subject);
       // The reference answer arrives in the client payload, so an exact match
       // is only a local comparison, not independently verified assessment
       // evidence. Preserve the topic for continuity, but never store its score
