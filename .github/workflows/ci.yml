@@ -119,6 +119,15 @@ jobs:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_guardian_relationship_lifecycle.test.sql
 
+      - name: Apply teacher attendance lifecycle
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115160000_teacher_attendance_lifecycle.sql
+      - name: Test attendance recording, closure and learner isolation
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_attendance_lifecycle.test.sql
+
       - name: Apply teacher classwork assignment lifecycle
         env:
           PGPASSWORD: postgres
