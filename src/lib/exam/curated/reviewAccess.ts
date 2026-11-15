@@ -46,7 +46,7 @@ export const getTeacherWorkspace = cache(async (): Promise<TeacherWorkspaceConte
 
   return {
     supabase, user, isAdmin, isTeacher, isInstitutionStaff, isIndependentEducator,
-    canAuthorTutorials: isAdmin || isTeacher || isIndependentEducator,
+    canAuthorTutorials: isAdmin || isTeacher || isInstitutionStaff || isIndependentEducator,
     canReviewContent: isAdmin || isTeacher,
   };
 });
