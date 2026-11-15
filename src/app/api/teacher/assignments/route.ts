@@ -28,7 +28,7 @@ export async function GET() {
 
   const assignmentsResult = await workspace.supabase
     .from("platform_assignments")
-    .select("id,group_id,created_by,title,subject,instructions,due_at,max_score,status,created_at")
+    .select("id,group_id,created_by,title,subject,instructions,due_at,max_score,status,assessment_type,created_at")
     .in("group_id", authorizedGroupIds)
     .order("created_at", { ascending: false })
     .limit(100);
