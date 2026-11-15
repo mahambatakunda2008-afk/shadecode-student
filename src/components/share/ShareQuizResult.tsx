@@ -30,15 +30,15 @@ export function ShareQuizResult({ attemptId, subject, correct, total, percentage
     timeSeconds: null,
     completedAt: null,
   };
-  const url = () => `${window.location.origin}/results/${attemptId}`;
+  const url = (channel: "whatsapp" | "copy") => `${window.location.origin}/results/${attemptId}?utm_source=${channel}&utm_medium=share&utm_campaign=lesson_quiz`;
 
   const whatsapp = () => {
     void trackEvent("result_shared", { channel: "whatsapp", source: "lesson_quiz" });
-    window.open(`https://wa.me/?text=${encodeURIComponent(resultShareText(summary, url()))}`, "_blank", "noopener,noreferrer");
+    window.open(`https://wa.me/?text=${encodeURIComponent(resultShareText(summary, url("whatsapp")))}`, "_blank", "noopener,noreferrer");
   };
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(url());
+      await navigator.clipboard.writeText(url("copy"));
       setCopied(true);
       void trackEvent("result_shared", { channel: "copy", source: "lesson_quiz" });
       setTimeout(() => setCopied(false), 2000);

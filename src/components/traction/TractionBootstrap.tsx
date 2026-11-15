@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { trackEvent } from "@/lib/traction/client";
+import { currentAcquisition } from "@/lib/traction/acquisition";
 
 const ACTIVATED_KEY = "shadecode_activation_recorded";
 
@@ -10,7 +11,7 @@ export default function TractionBootstrap() {
   const pathname = usePathname();
 
   useEffect(() => {
-    void trackEvent("session_started", { path: pathname });
+    void trackEvent("session_started", { path: pathname, ...currentAcquisition() });
   }, []);
 
   useEffect(() => {
