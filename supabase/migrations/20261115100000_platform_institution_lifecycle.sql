@@ -280,9 +280,21 @@ begin
     update public.platform_institution_members
       set status=p_status,updated_at=now()
       where institution_id=p_institution_id and user_id=p_target_user_id;
+
+    -- Institution suspension/revocation must immediately remove every class-level
+    -- authorization too. Restoring institution membership reactivates only the
+    -- memberships that were previously suspended/revoked by this same admin action.
+    update public.platform_group_members gm
+      set status=p_status,updated_at=now()
+      from public.platform_groups g
+      where gm.group_id=g.id and g.institution_id=p_institution_id
+        and gm.user_id=p_target_user_id
+        and gm.status in ('active','suspended','revoked')
+        and (p_status <> 'active' or gm.status <> 'active');
+
     insert into public.platform_membership_audit(institution_id,actor_user_id,target_user_id,action,entity_type,entity_id,metadata)
     values (p_institution_id,v_actor,p_target_user_id,'institution_membership.'||p_status,'institution_member',p_institution_id,
-      jsonb_build_object('membership_role',v_role));
+      jsonb_build_object('membership_role',v_role,'group_memberships_cascaded',true));
   else
     if not exists (select 1 from public.platform_groups where id=p_group_id and institution_id=p_institution_id) then
       raise exception 'group does not belong to institution' using errcode = '22023';
