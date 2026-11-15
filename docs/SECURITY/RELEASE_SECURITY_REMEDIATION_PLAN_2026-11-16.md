@@ -115,3 +115,22 @@ This confirms an access-control defect in the current configuration, not evidenc
 **Required test matrix before a migration is approved:** anon can read only the six leaderboard fields; learner A can read and update only A's permitted profile data; learner B cannot read or mutate A's private profile; teacher and admin access is limited to explicitly authorized institution/relationship workflows; service-role server operations continue to work. Test both direct base-table access and the leaderboard projection. Run this against a disposable database with distinct test identities, then verify effective privileges and policies again after deployment.
 
 The current repository also contains a SQL regression-test pattern under `supabase/tests/` that wraps service-role fixtures in a transaction and rolls back. That pattern is useful for data-contract tests, but it is not by itself sufficient to prove cross-role RLS behaviour; the new profile test must explicitly switch to the relevant API roles and set distinct authenticated JWT claims.
+
+
+### 2A. Follow-up verification: SECURITY DEFINER function inventory (2026-11-16)
+
+A read-only catalog inspection retrieved the definitions, owners, ACLs and configured search paths for the nine functions in the advisor finding. All nine are owned by `postgres` and set a function-level search path.
+
+**Trigger-only functions:** `apply_lesson_vote()`, `guard_teacher_tutorial_transition()` and `publish_lesson_to_library()` return `trigger`. Their current ACLs include `PUBLIC`, `anon` and `authenticated`. PostgreSQL trigger functions cannot be invoked as ordinary PostgREST RPCs, so the advisor's EXECUTE warning should not be described as proof that anonymous users can call these trigger bodies directly. Their client EXECUTE grants are still unnecessary and should be removed in a reviewed migration after confirming no non-trigger invocation path exists. Keep trigger execution itself intact.
+
+**Authenticated RPCs with visible identity checks:**
+- `claim_lesson_quiz_attempt(uuid, integer[])` requires `auth.uid()`, bounds and validates answer selections, and locks an attempt belonging to that user.
+- `complete_lesson_quiz_attempt(uuid)` requires `auth.uid()`, loads the attempt and lesson by the same user ID, validates the stored question/answer shape, and completes the owned attempt.
+- `has_role(uuid, text)` rejects unauthenticated calls and rejects a caller-supplied user ID that differs from `auth.uid()` unless the JWT role is `service_role`.
+- `publish_teacher_tutorial(uuid, integer)` requires an authenticated admin role and updates only the expected verified tutorial version.
+- `redeem_teacher_invite(text)` requires authentication, hashes the supplied code for lookup, checks unused/unexpired status and assigns the teacher role to `auth.uid()`.
+- `review_teacher_tutorial(uuid, integer, text, text)` requires teacher/admin role, validates verdict/note and locks the expected in-review version before writing the review.
+
+This is a source-level review of the live function definitions, not a complete exploit assessment. The six RPCs should retain explicit authenticated grants only if their API call sites are confirmed. Their ownership, cross-table effects, concurrency behaviour and negative authorization cases still require tests. In particular, test wrong-user attempt IDs, non-teacher review/publish attempts, expired/reused invites, version races, and spoofed `has_role` user IDs.
+
+The two quiz functions use `search_path = public, pg_catalog`; the other functions use `search_path = public`. Before changing any function, review object resolution and schema CREATE privileges, then prefer fully qualified references and a hardened search path where compatible. Do not blanket-revoke authenticated execution from the six RPCs until application call sites and regression tests are complete.
