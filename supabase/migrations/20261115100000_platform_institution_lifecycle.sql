@@ -225,6 +225,21 @@ begin
     raise exception 'invalid, expired, revoked or already redeemed invite' using errcode = '22023';
   end if;
 
+  if exists (
+    select 1 from public.platform_institution_members
+    where institution_id=v_invite.institution_id and user_id=v_actor
+      and status='active' and membership_role<>v_invite.membership_role
+  ) then
+    raise exception 'an active institution membership already exists with a different role' using errcode = '23505';
+  end if;
+  if v_invite.group_id is not null and exists (
+    select 1 from public.platform_group_members
+    where group_id=v_invite.group_id and user_id=v_actor
+      and status='active' and membership_role<>v_invite.membership_role
+  ) then
+    raise exception 'an active group membership already exists with a different role' using errcode = '23505';
+  end if;
+
   insert into public.platform_institution_members(institution_id,user_id,membership_role,status)
   values (v_invite.institution_id,v_actor,v_invite.membership_role,'active')
   on conflict (institution_id,user_id) do update
