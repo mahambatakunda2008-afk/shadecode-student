@@ -39,7 +39,7 @@ function validateMarkingReport(report: any, questions: ExamQuestion[]): boolean 
 
 export async function POST(request: Request) {
   const authorization = request.headers.get("authorization") || "";
-  const token = authorization.match(/^Bearer\\s+(.+)$/i)?.[1];
+  const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!token) return NextResponse.json({ error: "Sign in to mark your exam." }, { status: 401 });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
