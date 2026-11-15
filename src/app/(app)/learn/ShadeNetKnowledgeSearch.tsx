@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { BookOpen, Search, Wifi, WifiOff } from "lucide-react";
+import { BookOpen, BookmarkCheck, Search, Wifi, WifiOff } from "lucide-react";
 import { retrieveKnowledge, type KnowledgeRetrievalResult } from "@/lib/shadenet/retrieval";
 import type { ShadeNetResource } from "@/lib/shadenet/content";
+import { assessKnowledgeSources } from "@/lib/shadenet/source-assessment";
+import { listResearchMemory, saveResearchMemory } from "@/lib/shadenet/research-memory";
 
 function trustLabel(status?: string) {
   switch (status) {
@@ -23,10 +25,26 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
   const [readingUrl, setReadingUrl] = useState<string | null>(null);
   const [result, setResult] = useState<KnowledgeRetrievalResult | null>(null);
   const [error, setError] = useState("");
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [memoryCount, setMemoryCount] = useState(0);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [memoryMessage, setMemoryMessage] = useState("");
 
   useEffect(() => {
     if (!subjects.some((item) => item.name === subject)) setSubject(subjects[0]?.name ?? "");
   }, [subjects, subject]);
+
+  useEffect(() => {
+    let active = true;
+    void listResearchMemory().then((records) => {
+      if (!active) return;
+      setSavedIds(new Set(records.map((record) => record.id)));
+      setMemoryCount(records.length);
+    }).catch(() => {
+      if (active) setMemoryMessage("Local research memory is unavailable in this browser.");
+    });
+    return () => { active = false; };
+  }, []);
 
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,6 +97,23 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
     }
   }
 
+  async function saveSource(resource: ShadeNetResource, assessment: ReturnType<typeof assessKnowledgeSources>[number]["assessment"] | undefined) {
+    if (savingId || !assessment) return;
+    setSavingId(resource.contentHash);
+    setMemoryMessage("");
+    try {
+      await saveResearchMemory(resource, assessment, { subject, qualification: resource.metadata.qualification, syllabus: resource.metadata.syllabus, topic: query.trim(), searchQuery: query.trim() });
+      const wasSaved = savedIds.has(resource.contentHash);
+      setSavedIds((current) => new Set(current).add(resource.contentHash));
+      if (!wasSaved) setMemoryCount((current) => current + 1);
+      setMemoryMessage("Saved with its original source, assessment and curriculum context. Available offline on this device.");
+    } catch {
+      setMemoryMessage("Could not save this source. Check available device storage and try again.");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   async function readSource(url: string) {
     if (!subject || readingUrl) return;
     setReadingUrl(url);
@@ -107,6 +142,7 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
   }
 
   if (subjects.length === 0) return null;
+  const sourceAssessments = assessKnowledgeSources(result?.results.map((item) => item.resource) ?? []);
 
   return (
     <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--surface)] p-5 sm:p-6" aria-labelledby="shadenet-search-title">
@@ -162,6 +198,8 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
         </span>
       </div>
 
+      <p className="mt-3 text-xs text-[var(--muted-foreground)]" aria-live="polite">Research memory: {memoryCount} saved source{memoryCount === 1 ? "" : "s"} on this device. Saved material is available offline and can be reused by local knowledge retrieval.</p>
+      {memoryMessage && <p className="mt-2 text-xs text-[var(--muted-foreground)]" role="status">{memoryMessage}</p>}
       {error && <p className="mt-4 rounded-xl border border-[var(--card-border)] p-3 text-sm" role="status">{error}</p>}
 
       {result && result.results.length > 0 && (
@@ -169,7 +207,8 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
           <p className="text-sm text-[var(--muted-foreground)]">
             {result.results.length} result{result.results.length === 1 ? "" : "s"} · Checked {result.attempted.join(", ")}
           </p>
-          {result.results.map(({ resource, source }) => {
+          {result.results.map(({ resource, source }, index) => {
+            const assessment = sourceAssessments[index]?.assessment;
             const webContent = resource.content && typeof resource.content === "object"
               ? resource.content as { snippet?: unknown; pageText?: unknown; extraction?: unknown; text?: unknown; documentType?: unknown; pageCount?: unknown; kind?: unknown }
               : null;
@@ -191,6 +230,20 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
                 <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                   {[resource.metadata.subject, resource.metadata.qualification, resource.metadata.syllabus, source === "local" ? "On this device" : source === "peer" ? "Shared by a peer" : "Open web search result"].filter(Boolean).join(" · ")}
                 </p>
+                {assessment && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-[var(--muted-foreground)]" aria-label="Source assessment signals">
+                    <span className="rounded-full bg-[var(--surface-2)] px-2 py-1">{assessment.authority.replaceAll("-", " ")}</span>
+                    <span className="rounded-full bg-[var(--surface-2)] px-2 py-1">Date: {assessment.freshness}</span>
+                    {assessment.relatedHostCount > 1 && <span className="rounded-full bg-[var(--surface-2)] px-2 py-1">Similar coverage across {assessment.relatedHostCount} publisher hosts</span>}
+                  </div>
+                )}
+                {assessment?.authorityReason && <p className="mt-1 text-xs text-[var(--muted-foreground)]">{assessment.authorityReason}</p>}
+                {assessment?.dateReason && <p className="mt-1 text-xs text-[var(--muted-foreground)]">{assessment.dateReason}</p>}
+                {assessment?.reviewFlags.map((flag) => <p key={flag} className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 text-xs">{flag}</p>)}
+                <button type="button" onClick={() => void saveSource(resource, assessment)} disabled={!assessment || savingId === resource.contentHash} className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--card-border)] px-3 text-xs font-medium disabled:opacity-60">
+                  <BookmarkCheck size={14} aria-hidden="true" />
+                  {savingId === resource.contentHash ? "Saving…" : savedIds.has(resource.contentHash) ? "Saved to Research Memory" : "Save to Research Memory"}
+                </button>
                 <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{excerpt.slice(0, 6000)}</div>
                 {source === "online" && webContent?.extraction === "provider-extracted page text" && <p className="mt-2 text-xs text-[var(--muted-foreground)]">Page text retrieved by the search provider. Check the original page before relying on it.</p>}
                 {webContent?.documentType === "pdf" && <p className="mt-2 text-xs text-[var(--muted-foreground)]">PDF · {String(webContent.pageCount ?? "Unknown")} pages in source. Text extraction is limited to the first 20 pages.</p>}

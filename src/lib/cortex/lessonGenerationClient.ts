@@ -20,6 +20,7 @@ import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { shouldUseFastVerifiedCurriculumRecovery } from "@/lib/cortex/lessonGenerationPolicy";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 import { getLearningMode } from "@/lib/learningMode";
+import { buildResearchMemoryContext } from "@/lib/shadenet/research-memory";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; }
@@ -166,13 +167,14 @@ function resolvedRequest(job: GenerationJob<LessonGenerationInput>) {
   if (request.broadTopic) request.depth = "deep";
   return request;
 }
-function localContext(job: GenerationJob<LessonGenerationInput>) {
+async function localContext(job: GenerationJob<LessonGenerationInput>): Promise<string> {
   const request = resolvedRequest(job);
   const pack = readOfflineCurriculumPack(job.request.subject, job.request.examBoard, job.request.level);
   const cachedGrounding = readLocalCurriculumGrounding(job.request.subject, request.topic) || readLocalCurriculumGrounding(job.request.subject, resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject }).topic);
   const curriculum = buildOfflineCurriculumScope(pack, request.topic);
-  const memory = buildLocalLearnerContext(readLocalLearnerMemory());
-  return `${cachedGrounding ? `\n\n${cachedGrounding}` : ""}${curriculum ? `\n\n${curriculum}` : ""}\n\n${memory}`;
+  const learnerMemory = buildLocalLearnerContext(readLocalLearnerMemory());
+  const researchMemory = await buildResearchMemoryContext(request.topic, job.request.subject, 4).catch(() => "");
+  return `${cachedGrounding ? `\n\n${cachedGrounding}` : ""}${curriculum ? `\n\n${curriculum}` : ""}\n\n${learnerMemory}${researchMemory ? `\n\n${researchMemory.slice(0, 6000)}` : ""}`;
 }
 
 async function readCrossDeviceLearnerMemory(token: string, subject: string, topic: string): Promise<string> {
@@ -204,7 +206,7 @@ function validateResult(result: LessonGenerationResult, request: ReturnType<type
   return { ...result, blocks: normalized };
 }
 async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, generated?: LessonGenerationResult) {
-  const context = localContext(job);
+  const context = await localContext(job);
   const request = resolvedRequest(job);
   const local = generated ?? generateLocalLesson(job.request.subject, job.request.prompt, context);
   const validated = validateResult(local, request);
@@ -303,10 +305,10 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: s
   request.broadTopic = request.broadTopic || isBroadTopic(request.topic);
   if (request.broadTopic) request.depth = "deep";
 
-  const context = localContext(job);
+  const context = await localContext(job);
   const resolved = buildResolvedLessonPrompt(request);
   const crossDeviceMemory = await readCrossDeviceLearnerMemory(token, job.request.subject, request.topic);
-  const learnerContext = [localContext(job), crossDeviceMemory].filter(Boolean).join("\n\n");
+  const learnerContext = [context, crossDeviceMemory].filter(Boolean).join("\n\n");
   const sectionCount = request.broadTopic ? 6 : 4;
   const sectionPlan = request.broadTopic
     ? [
@@ -630,6 +632,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
     let data: any = null;
     let lastError: unknown = null;
     const request = resolvedRequest(job);
+    const researchMemoryContext = await buildResearchMemoryContext(request.topic, job.request.subject, 4).catch(() => "");
     const sectionCount = request.broadTopic ? 6 : 4;
     const persistedPartial = job.partial && typeof job.partial === "object" ? job.partial : null;
     let assembledBlocks: Array<Record<string, unknown>> = persistedPartial && Array.isArray((persistedPartial as Record<string, unknown>).blocks)
@@ -694,6 +697,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
               goal: job.request.goal,
               level: job.request.level,
               examBoard: job.request.examBoard,
+              researchMemoryContext: researchMemoryContext.slice(0, 6000),
               generationJobId: job.id,
               generationLeaseId: generationLeaseId(job.id),
             }),
@@ -860,10 +864,11 @@ async function runJob(
     // An authenticated online learner must get a real Cortex generation attempt first;
     // the section API itself returns the curated lesson if its provider chain fails.
     // This keeps the fast recovery path from silently replacing successful AI teaching.
+    const fastRecoveryContext = isBrowser() ? await localContext(job) : "";
     if (
       isBrowser() &&
       shouldUseFastVerifiedCurriculumRecovery({ online, hasSessionToken: Boolean(token) }) &&
-      hasLocalLessonFallback(job.request.subject, job.request.prompt, localContext(job))
+      hasLocalLessonFallback(job.request.subject, job.request.prompt, fastRecoveryContext)
     ) {
       try {
         updateGenerationJob(job.id, {
@@ -871,7 +876,7 @@ async function runJob(
           progress: 10,
           error: "Cortex is using verified curriculum recovery while online generation is unavailable or warming up.",
         });
-        const local = generateLocalLesson(job.request.subject, job.request.prompt, localContext(job));
+        const local = generateLocalLesson(job.request.subject, job.request.prompt, fastRecoveryContext);
         if (local.blocks.length >= 10) {
           const localFallback: LessonGenerationResult = {
             id: local.id,
@@ -982,7 +987,7 @@ async function runJob(
   } catch (error) {
     // Use the latest stored job because section generation updates its checkpoint in storage.
     const currentJob = (getGenerationJob(job.id) ?? job) as GenerationJob<LessonGenerationInput>;
-    const message = errorMessage(error); const context = localContext(currentJob as GenerationJob<LessonGenerationInput>);
+    const message = errorMessage(error); const context = await localContext(currentJob as GenerationJob<LessonGenerationInput>);
     const failureClass = classifyCortexExecutionFailure(error);
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
       hasVerifiedData: isBrowser() && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context),
