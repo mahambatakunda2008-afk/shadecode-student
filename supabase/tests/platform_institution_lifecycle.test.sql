@@ -45,6 +45,8 @@ do $$
 declare
   v_institution uuid;
   v_group uuid;
+  v_unassigned_group uuid;
+  v_visible_groups integer;
   v_teacher_invite uuid;
   v_student_invite uuid;
   v_code_teacher text := 'teacher-invite-code-2026-functional';
@@ -55,6 +57,11 @@ declare
 begin
   v_institution := public.create_platform_institution('Fixture School','school','ZW');
   v_group := public.create_platform_group(v_institution,'Form 5A','class',null);
+  v_unassigned_group := public.create_platform_group(v_institution,'Form 5B','class',null);
+  select count(*) into v_visible_groups from public.platform_groups where institution_id=v_institution;
+  if v_visible_groups <> 2 then
+    raise exception 'institution administrator cannot see all tenant groups';
+  end if;
 
   v_teacher_invite := public.create_platform_institution_invite(
     v_institution,encode(sha256(convert_to(v_code_teacher,'utf8')),'hex'),'teacher',v_group,now()+interval '7 days'
@@ -69,6 +76,10 @@ begin
   end if;
   if not exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and membership_role='teacher' and status='active') then
     raise exception 'teacher group membership not created';
+  end if;
+  select count(*) into v_visible_groups from public.platform_groups where institution_id=v_institution;
+  if v_visible_groups <> 1 then
+    raise exception 'teacher can see a class they are not assigned to';
   end if;
   select count(*) into v_roster_count from public.list_platform_group_roster(v_group);
   if v_roster_count <> 1 then
