@@ -8,9 +8,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const MARKING_REQUEST_BUDGET_MS = 34_000;
-const SIDE_EFFECT_BUDGET_MS = 2_500;
 
-type MaybePromise<T> = T | Promise<T>;
 
 
 function validateMarkingReport(report: any, questions: ExamQuestion[]) {
