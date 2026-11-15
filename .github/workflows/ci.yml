@@ -78,6 +78,24 @@ jobs:
             end;
           end $assert$;
           SQL
+      - name: Prepare isolated platform schema fixture
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 <<'SQL'
+          create table auth.users (id uuid primary key);
+          create function auth.uid() returns uuid
+            language sql stable
+            as $uid$ select null::uuid $uid$;
+          SQL
+      - name: Apply recovered platform relationships baseline
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20260911112810_create_platform_relationships.sql
+      - name: Verify recovered platform schema and RLS baseline
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_relationships_baseline.test.sql
 
   verify:
     name: Typecheck, lint, test, build
