@@ -12,6 +12,11 @@ create or replace function public.test_expire_guardian_invite(p_id uuid)
 returns void language sql security definer set search_path=public,pg_temp
 as $expire$ update public.platform_guardian_invites set expires_at=now()-interval '1 minute' where id=p_id $expire$;
 grant execute on function public.test_expire_guardian_invite(uuid) to authenticated;
+create or replace function public.test_guardian_audit_count(p_institution_id uuid)
+returns integer language sql stable security definer
+set search_path=public,pg_temp
+as $audit$ select count(*)::integer from public.platform_membership_audit where institution_id=p_institution_id and entity_type='relationship' $audit$;
+grant execute on function public.test_guardian_audit_count(uuid) to authenticated;
 create or replace function public.has_role(user_id uuid, role_name text)
 returns boolean language sql stable security definer
 set search_path=public,pg_temp
@@ -185,8 +190,7 @@ begin
   exception when sqlstate '23505' then null;
   end;
 
-  select count(*) into v_count from public.platform_membership_audit
-    where institution_id=v_institution and entity_type='relationship';
+  v_count := public.test_guardian_audit_count(v_institution);
   if v_count < 3 then raise exception 'guardian lifecycle audit trail is incomplete'; end if;
 end $$;
 
