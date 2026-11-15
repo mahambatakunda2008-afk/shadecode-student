@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,8 @@ function publicQuestions(value: unknown) {
 
 export async function GET(req: Request, context: { params: Promise<{ attemptId: string }> }) {
   try {
+    const limited = await applyRateLimit(req, aiEndpointLimiter);
+    if (limited) return limited;
     const token = bearer(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
