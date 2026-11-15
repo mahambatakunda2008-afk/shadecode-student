@@ -29,6 +29,12 @@ create policy "authors edit own unsubmitted tutorials" on public.teacher_tutoria
       has_role(auth.uid(), 'teacher'::text)
       or has_role(auth.uid(), 'admin'::text)
       or public.is_approved_independent_educator(auth.uid())
+      or exists (
+        select 1 from public.platform_institution_members im
+        where im.user_id = auth.uid()
+          and im.status = 'active'
+          and im.membership_role in ('teacher','tutor','administrator','staff')
+      )
     )
   ) with check (
     author_id = auth.uid() and status in ('draft','changes_requested','in_review')
@@ -44,6 +50,12 @@ create policy "educators upload media into own folder" on storage.objects
       has_role(auth.uid(), 'teacher'::text)
       or has_role(auth.uid(), 'admin'::text)
       or public.is_approved_independent_educator(auth.uid())
+      or exists (
+        select 1 from public.platform_institution_members im
+        where im.user_id = auth.uid()
+          and im.status = 'active'
+          and im.membership_role in ('teacher','tutor','administrator','staff')
+      )
     )
   );
 
@@ -56,5 +68,11 @@ create policy "educators delete own teacher media" on storage.objects
       has_role(auth.uid(), 'teacher'::text)
       or has_role(auth.uid(), 'admin'::text)
       or public.is_approved_independent_educator(auth.uid())
+      or exists (
+        select 1 from public.platform_institution_members im
+        where im.user_id = auth.uid()
+          and im.status = 'active'
+          and im.membership_role in ('teacher','tutor','administrator','staff')
+      )
     )
   );
