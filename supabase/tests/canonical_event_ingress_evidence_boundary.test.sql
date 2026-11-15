@@ -35,6 +35,32 @@ begin
     raise exception 'Trusted quiz completion must remain SECURITY DEFINER owned by postgres';
   end if;
 
+  if not has_function_privilege(
+    'authenticated',
+    'public.insert_canonical_cortex_event(uuid,jsonb)',
+    'EXECUTE'
+  ) then
+    raise exception 'Authenticated learners must retain the canonical telemetry RPC';
+  end if;
+  if has_function_privilege(
+    'anon',
+    'public.insert_canonical_cortex_event(uuid,jsonb)',
+    'EXECUTE'
+  ) then
+    raise exception 'Anonymous callers must not execute the canonical event RPC';
+  end if;
+  if has_function_privilege(
+    'authenticated',
+    'public.sanitize_untrusted_cortex_event_evidence()',
+    'EXECUTE'
+  ) or has_function_privilege(
+    'anon',
+    'public.sanitize_untrusted_cortex_event_evidence()',
+    'EXECUTE'
+  ) then
+    raise exception 'Trigger sanitizer must not be directly executable by client roles';
+  end if;
+
   select id into v_user from auth.users order by created_at limit 1;
   if v_user is null then raise exception 'Missing auth user fixture'; end if;
 
