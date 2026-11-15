@@ -15,6 +15,7 @@ const input = {
 
 describe("exam paper provenance", () => {
   const previousSecret = process.env.EXAM_PAPER_SIGNING_SECRET;
+  const previousServiceSecret = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   beforeEach(() => {
     process.env.EXAM_PAPER_SIGNING_SECRET = "test-only-secret-with-enough-entropy";
@@ -23,6 +24,8 @@ describe("exam paper provenance", () => {
   afterEach(() => {
     if (previousSecret === undefined) delete process.env.EXAM_PAPER_SIGNING_SECRET;
     else process.env.EXAM_PAPER_SIGNING_SECRET = previousSecret;
+    if (previousServiceSecret === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    else process.env.SUPABASE_SERVICE_ROLE_KEY = previousServiceSecret;
   });
 
   it("signs and verifies the exact paper for the authenticated student and subject", () => {
@@ -64,7 +67,8 @@ describe("exam paper provenance", () => {
     expect(verifyExamPaperProof(token, input, 1_000_000 + 24 * 60 * 60 * 1000).valid).toBe(false);
     expect(verifyExamPaperProof("not-a-token", input, 1_000_001).valid).toBe(false);
     const [payload, signature] = token!.split(".");
-    expect(verifyExamPaperProof(`${payload}.${signature.slice(0, -1)}x`, input, 1_000_001).valid).toBe(false);
+    const changedSignature = `${signature[0] === "A" ? "B" : "A"}${signature.slice(1)}`;
+    expect(verifyExamPaperProof(`${payload}.${changedSignature}`, input, 1_000_001).valid).toBe(false);
   });
 
   it("fails closed when no server signing secret is configured", () => {
