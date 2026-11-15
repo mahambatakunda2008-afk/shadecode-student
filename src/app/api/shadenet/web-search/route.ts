@@ -3,12 +3,15 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 import { isAllowedSubject } from "@/lib/academic/subjectContract";
 import { createOpenWebKnowledgeSourceFromEnv } from "@/lib/shadenet/web-search";
+import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import type { KnowledgeQuery } from "@/lib/shadenet/retrieval";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 15;
 
 export async function POST(request: Request) {
+  const rateLimit = await applyRateLimit(request, aiEndpointLimiter);
+  if (rateLimit) return rateLimit;
   try {
     const supabase = await createSupabaseServerClient();
     const { data: { user }, error } = await supabase.auth.getUser();
