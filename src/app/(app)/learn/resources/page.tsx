@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { BookOpen, ExternalLink, Loader2, Play, Search, Video } from "lucide-react";
 import TeacherVerifiedBadge from "@/components/learn/TeacherVerifiedBadge";
 import type { TutorialSummary } from "@/components/learn/TeacherTutorials";
@@ -48,7 +48,7 @@ export default function LearningResourcesPage() {
     return [item.topic, item.title, item.summary].some((value) => value?.toLowerCase().includes(needle));
   }), [tutorials, subject, topic]);
 
-  async function searchVideos(event: React.FormEvent<HTMLFormElement>) {
+  async function searchVideos(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!subject) return;
     setSearching(true);
