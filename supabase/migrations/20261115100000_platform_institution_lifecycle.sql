@@ -268,7 +268,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 declare
   v_actor uuid := auth.uid();
 begin
@@ -295,7 +295,7 @@ begin
   insert into public.platform_membership_audit(institution_id,actor_user_id,action,entity_type,entity_id)
   values (p_institution_id,v_actor,'invite.revoked','invite',p_invite_id);
 end;
-$;
+$$;
 
 create or replace function public.set_platform_membership_status(
   p_institution_id uuid,
