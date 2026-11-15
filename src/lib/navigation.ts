@@ -267,7 +267,6 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
       NAV_ITEMS.learn,
       NAV_ITEMS.teacherTutorials,
       NAV_ITEMS.resources,
-  NAV_ITEMS.resources,
       NAV_ITEMS.curriculum,
       NAV_ITEMS.projects,
       NAV_ITEMS.workmate,
