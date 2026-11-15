@@ -51,6 +51,39 @@ begin
   if v_row.data->'metadata'->>'topicLabel' <> 'Equations of motion' then
     raise exception 'Safe activity metadata was not preserved';
   end if;
-end $$;
+
+  -- Direct table INSERT must be subject to the same boundary as the RPC.
+  insert into public.cortex_events(user_id,type,source,data)
+  values(
+    v_user,'question_attempted','forged-direct-insert',
+    jsonb_build_object(
+      'eventId',v_event_id||'-direct',
+      'metadata',jsonb_build_object('correct',true,'percentage',100,'note','safe')
+    )
+  )
+  returning * into v_row;
+  if v_row.data->'metadata' ? 'correct' or v_row.data->'metadata' ? 'percentage' then
+    raise exception 'Direct authenticated table INSERT retained forged marking metadata';
+  end if;
+  if v_row.data->'metadata'->>'note' <> 'safe' then
+    raise exception 'Direct authenticated table INSERT lost safe metadata';
+  end if;
+
+  -- Direct table UPDATE must not be able to re-introduce forged marks.
+  update public.cortex_events
+  set data = jsonb_set(
+    data,'{metadata}',
+    jsonb_build_object('correct',true,'score',99,'note','updated-safe'),
+    true
+  )
+  where id = v_row.id
+  returning * into v_row;
+  if v_row.data->'metadata' ? 'correct' or v_row.data->'metadata' ? 'score' then
+    raise exception 'Direct authenticated table UPDATE reintroduced forged marking metadata';
+  end if;
+  if v_row.data->'metadata'->>'note' <> 'updated-safe' then
+    raise exception 'Direct authenticated table UPDATE lost safe metadata';
+  end if;
+end $;
 
 rollback;
