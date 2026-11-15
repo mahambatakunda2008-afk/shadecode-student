@@ -5,6 +5,7 @@ interface WebSearchItem {
   title: string;
   url: string;
   snippet: string;
+  pageText?: string;
   publishedAt?: string;
   publisher?: string;
 }
@@ -50,7 +51,7 @@ function mapBrave(payload: unknown): WebSearchItem[] {
     const title = boundedText(item.title, 240);
     const snippet = boundedText(item.description, 1_200);
     if (!url || !title || !snippet) return [];
-    return [{ title, url, snippet, publishedAt: boundedText(item.page_age, 80) || undefined, publisher: new URL(url).hostname }];
+    return [{ title, url, snippet, pageText: boundedText(item.extra_snippets, 0) || undefined, publishedAt: boundedText(item.page_age, 80) || undefined, publisher: new URL(url).hostname }];
   });
 }
 
@@ -64,8 +65,9 @@ function mapTavily(payload: unknown): WebSearchItem[] {
     const url = safeHttpUrl(item.url);
     const title = boundedText(item.title, 240);
     const snippet = boundedText(item.content, 1_200);
-    if (!url || !title || !snippet) return [];
-    return [{ title, url, snippet, publishedAt: boundedText(item.published_date, 80) || undefined, publisher: new URL(url).hostname }];
+    const pageText = boundedText(item.raw_content, 12_000);
+    if (!url || !title || (!snippet && !pageText)) return [];
+    return [{ title, url, snippet: snippet || pageText.slice(0, 1_200), pageText: pageText || undefined, publishedAt: boundedText(item.published_date, 80) || undefined, publisher: new URL(url).hostname }];
   });
 }
 
@@ -90,6 +92,8 @@ async function toResources(items: WebSearchItem[], query: KnowledgeQuery): Promi
       content: {
         kind: "web-search-result",
         snippet: item.snippet,
+        pageText: item.pageText ?? null,
+        extraction: item.pageText ? "provider-extracted page text" : "search-result excerpt only",
         publishedAt: item.publishedAt ?? null,
         retrievedAt: new Date().toISOString(),
         provenance: "Search-result excerpt. The full source page has not yet been independently fetched or verified.",
@@ -132,7 +136,7 @@ export function createTavilyWebSearchSource(apiKey: string, fetcher: Fetcher = f
           search_depth: "basic",
           max_results: Math.max(1, Math.min(10, query.limit ?? 8)),
           include_answer: false,
-          include_raw_content: false,
+          include_raw_content: true,
         }),
       }, signal);
       return toResources(mapTavily(payload), query);
