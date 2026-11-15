@@ -78,7 +78,7 @@ begin
     v_index := v_index + 1;
     if coalesce((v_mark->>'questionNumber')::integer, 0) <> v_index
       or nullif(v_mark->>'marksAwarded', '') is null
-      or (v_mark->>'marksAwarded') !~ '^\\d+(\\.\\d{1,2})?$'
+      or coalesce(jsonb_typeof(v_mark->'marksAwarded'), '') <> 'number'
       or char_length(coalesce(v_mark->>'feedback', '')) > 2000 then
       raise exception 'Invalid marking for question %', v_index using errcode = '22023';
     end if;
