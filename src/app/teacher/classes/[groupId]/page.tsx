@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { getTeacherWorkspace } from "@/lib/exam/curated/reviewAccess";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Class roster · Shadecode Teacher" };
@@ -22,7 +22,7 @@ export default async function TeacherClassRosterPage({
 }: {
   params: Promise<{ groupId: string }>;
 }) {
-  const reviewer = await getReviewer();
+  const reviewer = await getTeacherWorkspace();
   if (!reviewer) redirect("/");
 
   const { groupId } = await params;
