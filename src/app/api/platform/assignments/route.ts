@@ -17,7 +17,7 @@ export async function GET() {
 
   const { data: assignments, error } = await supabase
     .from("platform_assignments")
-    .select("id,group_id,title,subject,instructions,due_at,max_score,created_at")
+    .select("id,group_id,title,subject,instructions,due_at,max_score,assessment_type,questions,created_at")
     .in("group_id", groupIds).eq("status", "published")
     .order("due_at", { ascending: true, nullsFirst: false }).limit(100);
   if (error) return NextResponse.json({ error: "Could not load classwork." }, { status: 500 });
@@ -32,6 +32,9 @@ export async function GET() {
   return NextResponse.json({
     assignments: (assignments ?? []).map((assignment) => ({
       ...assignment,
+      questions: (assignment.questions ?? []).map((question: { prompt: string; type: string; marks: number; options?: string[] }) => ({
+        prompt: question.prompt, type: question.type, marks: question.marks, options: question.options ?? [],
+      })),
       submission: submitted.get(assignment.id) ?? null,
     })),
   });
