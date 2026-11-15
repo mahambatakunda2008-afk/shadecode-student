@@ -29,7 +29,7 @@ describe("headline metrics", () => {
   });
   it("counts the rolling last 24 hours separately from the calendar day", () => {
     const early = new Date("2026-11-15T01:00:00Z"); // new UTC day, nothing yet today
-    const r = buildGrowthReport({ events: [ev("page_view", "a", "2026-11-14T20:00:00Z"), ev("page_view", "b", "2026-11-14T05:00:00Z")], signups: [], now: early });
+    const r = buildGrowthReport({ events: [ev("page_view", "a", "2026-11-14T20:00:00Z"), ev("page_view", "b", "2026-11-13T23:00:00Z")], signups: [], now: early });
     expect(r.headline.dau).toBe(0);
     expect(r.headline.active24h).toBe(1); // only a is inside the last 24h
   });
