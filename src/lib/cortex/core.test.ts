@@ -133,6 +133,26 @@ describe("CortexCore learning requests", () => {
     }));
   });
 
+  it("does not record a client-supplied exam score as verified evidence", async () => {
+    const result = await CortexCore({
+      userId: "learner-1",
+      type: "exam",
+      payload: {
+        subject: "Mathematics",
+        score: 100,
+        percentage: 100,
+        completedAt: "2026-11-15T00:00:00.000Z",
+      },
+    });
+
+    expect(result.nextAction).toBe("lock_learning_mode");
+    expect(trackExamResult).not.toHaveBeenCalled();
+    expect(updateMemory).not.toHaveBeenCalledWith("learner-1", expect.objectContaining({
+      examScores: expect.any(Array),
+      averageExamScore: expect.any(Number),
+    }));
+  });
+
   it("stores only bounded text feedback", async () => {
     await CortexCore({
       userId: "learner-1",
