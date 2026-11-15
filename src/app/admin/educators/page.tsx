@@ -46,7 +46,7 @@ export default function AdminEducatorApplicationsPage() {
     finally { setBusy(null); }
   }
 
-  return <main className="mx-auto max-w-5xl space-y-5 p-5 sm:p-8">
+  return <div className="mx-auto max-w-5xl space-y-5 p-5 sm:p-8">
     <header><p className="text-xs font-bold uppercase tracking-wider text-[var(--primary)]">Administration</p><h1 className="mt-1 text-2xl font-bold">Independent educator applications</h1><p className="mt-1 text-sm text-[var(--muted-foreground)]">Review independent tutors, subject specialists and educational creators. Approval grants content-authoring eligibility only, never school or student-record access.</p></header>
     {error && <p role="alert" className="rounded-xl bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">{error}</p>}
     {message && <p role="status" className="rounded-xl bg-[var(--success)]/10 p-3 text-sm">{message}</p>}
@@ -58,5 +58,5 @@ export default function AdminEducatorApplicationsPage() {
       <textarea value={notes[item.user_id] ?? ""} onChange={e=>setNotes(old=>({...old,[item.user_id]:e.target.value}))} maxLength={1200} rows={2} placeholder="Review note (required when requesting changes)" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm" />
       <div className="flex flex-wrap gap-2"><button disabled={busy===item.user_id} onClick={()=>void decide(item,"approved")} className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--primary-foreground)] disabled:opacity-50">Approve educator</button><button disabled={busy===item.user_id} onClick={()=>void decide(item,"changes_requested")} className="rounded-xl border border-[var(--card-border)] px-4 py-2 text-sm disabled:opacity-50">Request changes</button><button disabled={busy===item.user_id} onClick={()=>void decide(item,"rejected")} className="rounded-xl border border-[var(--danger)]/40 px-4 py-2 text-sm text-[var(--danger)] disabled:opacity-50">Reject</button></div>
     </article>)}
-  </main>;
+  </div>;
 }
