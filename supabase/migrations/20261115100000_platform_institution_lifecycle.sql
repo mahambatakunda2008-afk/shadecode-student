@@ -245,6 +245,43 @@ begin
 end;
 $$;
 
+create or replace function public.revoke_platform_institution_invite(
+  p_institution_id uuid,
+  p_invite_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+declare
+  v_actor uuid := auth.uid();
+begin
+  if v_actor is null then
+    raise exception 'active institution administrator required' using errcode = '42501';
+  end if;
+  perform 1 from public.platform_institutions where id=p_institution_id for update;
+  if not found or not exists (
+    select 1 from public.platform_institution_members m
+    where m.institution_id=p_institution_id and m.user_id=v_actor
+      and m.status='active' and m.membership_role='administrator'
+  ) then
+    raise exception 'active institution administrator required' using errcode = '42501';
+  end if;
+
+  update public.platform_institution_invites
+    set revoked_at=now()
+    where id=p_invite_id and institution_id=p_institution_id
+      and redeemed_at is null and revoked_at is null;
+  if not found then
+    raise exception 'unused institution invite not found' using errcode = 'P0002';
+  end if;
+
+  insert into public.platform_membership_audit(institution_id,actor_user_id,action,entity_type,entity_id)
+  values (p_institution_id,v_actor,'invite.revoked','invite',p_invite_id);
+end;
+$;
+
 create or replace function public.set_platform_membership_status(
   p_institution_id uuid,
   p_target_user_id uuid,
@@ -336,10 +373,12 @@ revoke all on function public.create_platform_institution(text,text,text) from p
 revoke all on function public.create_platform_group(uuid,text,text,uuid) from public, anon;
 revoke all on function public.create_platform_institution_invite(uuid,text,text,uuid,timestamptz) from public, anon;
 revoke all on function public.redeem_platform_institution_invite(text) from public, anon;
+revoke all on function public.revoke_platform_institution_invite(uuid,uuid) from public, anon;
 revoke all on function public.set_platform_membership_status(uuid,uuid,text,uuid) from public, anon;
 
 grant execute on function public.create_platform_institution(text,text,text) to authenticated;
 grant execute on function public.create_platform_group(uuid,text,text,uuid) to authenticated;
 grant execute on function public.create_platform_institution_invite(uuid,text,text,uuid,timestamptz) to authenticated;
 grant execute on function public.redeem_platform_institution_invite(text) to authenticated;
+grant execute on function public.revoke_platform_institution_invite(uuid,uuid) to authenticated;
 grant execute on function public.set_platform_membership_status(uuid,uuid,text,uuid) to authenticated;
