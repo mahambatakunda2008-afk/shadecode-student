@@ -1,0 +1,102 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+type Submission = { submitted_at: string; status: "submitted" | "marked"; score: number | null; feedback: string | null } | null;
+type Assignment = {
+  id: string; group_id: string; title: string; subject: string; instructions: string;
+  due_at: string | null; max_score: number; created_at: string; submission: Submission;
+};
+
+export default function StudentAssignments() {
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [responses, setResponses] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function load() {
+    setError("");
+    try {
+      const response = await fetch("/api/platform/assignments", { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Could not load classwork.");
+      setAssignments(payload.assignments ?? []);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not load classwork.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { void load(); }, []);
+
+  async function submit(assignment: Assignment) {
+    const responseText = responses[assignment.id] ?? "";
+    if (!responseText.trim()) {
+      setError("Write your answer before submitting.");
+      return;
+    }
+    setSaving(assignment.id);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/platform/assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignmentId: assignment.id, response: responseText }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Could not submit your work.");
+      setNotice("Your work has been submitted.");
+      setResponses((current) => ({ ...current, [assignment.id]: "" }));
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not submit your work.");
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  if (loading) return <p role="status" className="text-sm text-[var(--muted-foreground)]">Loading your classwork…</p>;
+
+  return (
+    <div className="space-y-5">
+      {assignments.length ? assignments.map((assignment) => (
+        <article key={assignment.id} className="space-y-4 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">{assignment.subject}</p>
+              <h2 className="mt-1 text-lg font-semibold">{assignment.title}</h2>
+            </div>
+            <span className="rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs">
+              {assignment.submission?.status === "marked" ? "Feedback ready" : assignment.submission ? "Submitted" : "To do"}
+            </span>
+          </div>
+          {assignment.instructions ? <p className="whitespace-pre-wrap text-sm leading-6">{assignment.instructions}</p> : null}
+          <p className="text-xs text-[var(--muted-foreground)]">{assignment.max_score} marks{assignment.due_at ? ` · Due ${new Date(assignment.due_at).toLocaleString()}` : ""}</p>
+          {assignment.submission?.status === "marked" ? (
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--surface)] p-4">
+              <p className="font-semibold">Your result: {assignment.submission.score} / {assignment.max_score}</p>
+              {assignment.submission.feedback ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{assignment.submission.feedback}</p> : <p className="mt-2 text-sm text-[var(--muted-foreground)]">Your teacher has marked this work.</p>}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {assignment.submission ? <p className="text-xs text-[var(--muted-foreground)]">Submitted {new Date(assignment.submission.submitted_at).toLocaleString()}. You can update your response before the deadline.</p> : null}
+              <label className="block space-y-1.5 text-sm">
+                <span className="font-medium">Your answer / working</span>
+                <textarea rows={5} maxLength={30000} value={responses[assignment.id] ?? ""} onChange={(event) => setResponses((current) => ({ ...current, [assignment.id]: event.target.value }))} placeholder="Write your answer or explain your working…" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2.5" />
+              </label>
+              <button disabled={saving === assignment.id} onClick={() => void submit(assignment)} className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+                {saving === assignment.id ? "Submitting…" : assignment.submission ? "Update submission" : "Submit work"}
+              </button>
+            </div>
+          )}
+        </article>
+      )) : <div className="rounded-2xl border border-dashed border-[var(--card-border)] p-6 text-center"><h2 className="font-semibold">No classwork yet</h2><p className="mt-1 text-sm text-[var(--muted-foreground)]">Published assignments from your classes will appear here.</p></div>}
+      {notice ? <p role="status" className="text-sm text-emerald-600">{notice}</p> : null}
+      {error ? <p role="alert" className="text-sm text-red-500">{error}</p> : null}
+    </div>
+  );
+}
