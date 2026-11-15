@@ -46,7 +46,7 @@ export default function EducatorDirectoryPage() {
     catch(e){setContactError(e instanceof Error?e.message:"Could not send your request.");}finally{setSending(false);}
   }
 
-  return <main className="mx-auto max-w-5xl space-y-6 px-4 py-7 sm:px-6">
+  return <div className="mx-auto max-w-5xl space-y-6 px-4 py-7 sm:px-6">
     <header className="space-y-2"><p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--primary)]">Human learning support</p><h1 className="text-3xl font-bold">Find a real educator.</h1><p className="max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Discover approved independent tutors, subject specialists and teachers who contribute learning resources to Shadecode. No school membership required.</p></header>
     <section className="grid gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 sm:grid-cols-[1fr_1fr_auto]">
       <label className="space-y-1 text-xs font-medium"><span>Subject</span><select value={subject} onChange={e=>setSubject(e.target.value)} className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-3 text-sm"><option value="">All subjects</option>{subjects.map(s=><option key={s}>{s}</option>)}</select></label>
@@ -74,5 +74,5 @@ export default function EducatorDirectoryPage() {
         </form>
       </section>
     </div>}
-  </main>;
+  </div>;
 }
