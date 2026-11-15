@@ -9,9 +9,6 @@ vi.mock("./student-context", () => ({
   resolveAuthenticatedCortexStudentContext: vi.fn(),
 }));
 
-vi.mock("./events", () => ({
-  recordVerifiedPracticeAttempt: vi.fn(),
-}));
 
 vi.mock("./tools/tutor", () => ({
   generateTutoringResponse: vi.fn(),
@@ -30,7 +27,6 @@ vi.mock("./memoryTracker", () => ({
 
 import { getMemory, updateMemory } from "./memory";
 import { resolveAuthenticatedCortexStudentContext } from "./student-context";
-import { recordVerifiedPracticeAttempt } from "./events";
 import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
 import {
@@ -67,7 +63,6 @@ describe("CortexCore learning requests", () => {
     vi.clearAllMocks();
     vi.mocked(getMemory).mockResolvedValue(memory);
     vi.mocked(updateMemory).mockResolvedValue(memory);
-    vi.mocked(recordVerifiedPracticeAttempt).mockResolvedValue({ recorded: true });
     vi.mocked(resolveAuthenticatedCortexStudentContext).mockRejectedValue(new Error("No session context in this unit test."));
     vi.mocked(generateTutoringResponse).mockResolvedValue("A tutoring response.");
     vi.mocked(getCurriculumState).mockRejectedValue(new Error("Curriculum is not needed in this unit test."));
@@ -93,33 +88,8 @@ describe("CortexCore learning requests", () => {
     });
   });
 
-  it("persists practice scores separately from formal exam averages", async () => {
-    await CortexCore({
-      userId: "learner-1",
-      type: "practice",
-      payload: {
-        topic: "Quadratic equations",
-        subjectName: "Mathematics",
-        answer: "x = 2",
-        correctAnswer: "x = 2",
-      },
-    });
-
-    expect(updateMemory).toHaveBeenCalledWith("learner-1", {
-      lastPracticeScore: 100,
-      lastPracticeTopic: "Quadratic equations",
-      lastPracticeSubject: "Mathematics",
-      lastPracticeSyllabusId: null,
-    });
-    expect(updateMemory).not.toHaveBeenCalledWith("learner-1", expect.objectContaining({
-      weakTopics: [],
-    }));
-    expect(trackStudySession).not.toHaveBeenCalled();
-    expect(trackExamResult).not.toHaveBeenCalled();
-  });
-
-  it("records only verified practice against the resolved syllabus without storing answers", async () => {
-    await CortexCore({
+  it("does not promote a client-supplied reference match into learner mastery", async () => {
+    const result = await CortexCore({
       userId: "learner-1",
       accessToken: "learner-access-token",
       type: "practice",
@@ -127,22 +97,20 @@ describe("CortexCore learning requests", () => {
       payload: {
         attemptId: "attempt-1",
         questionId: "question-1",
-        subjectId: "biology-id",
+        topic: "Photosynthesis",
         subjectName: "Biology",
-        topicId: "photosynthesis",
-        answer: "correct answer text",
-        correctAnswer: "correct answer text",
+        answer: "x = 2",
+        correctAnswer: "x = 2",
       },
     });
 
-    expect(recordVerifiedPracticeAttempt).toHaveBeenCalledWith({
-      userId: "learner-1",
-      accessToken: "learner-access-token",
-      payload: expect.objectContaining({ attemptId: "attempt-1" }),
-      subjectId: "biology",
-      score: 100,
-      syllabusId: "cambridge-9700",
-    });
+    expect(result.response).toContain("matches the supplied reference answer");
+    expect(updateMemory).toHaveBeenCalledWith("learner-1", { lastTopic: "Photosynthesis" });
+    expect(updateMemory).not.toHaveBeenCalledWith("learner-1", expect.objectContaining({
+      lastPracticeScore: expect.any(Number),
+    }));
+    expect(trackStudySession).not.toHaveBeenCalled();
+    expect(trackExamResult).not.toHaveBeenCalled();
   });
 
   it("does not persist a score when no marking guide is available", async () => {
