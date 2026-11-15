@@ -85,7 +85,24 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
     }
   }
 
-  async function saveSource(resource: ShadeNetResource, assessment: ReturnType<typeof assessKnowledgeSources>[number]["assessment"] | undefined) {\n    if (savingId || !assessment) return;\n    setSavingId(resource.contentHash);\n    setMemoryMessage("");\n    try {\n      await saveResearchMemory(resource, assessment, { subject, topic: query.trim(), searchQuery: query.trim() });\n      const wasSaved = savedIds.has(resource.contentHash);\n      setSavedIds((current) => new Set(current).add(resource.contentHash));\n      if (!wasSaved) setMemoryCount((current) => current + 1);\n      setMemoryMessage("Saved with its original source, assessment and curriculum context. Available offline on this device.");\n    } catch {\n      setMemoryMessage("Could not save this source. Check available device storage and try again.");\n    } finally {\n      setSavingId(null);\n    }\n  }\n\n  async function readSource(url: string) {
+  async function saveSource(resource: ShadeNetResource, assessment: ReturnType<typeof assessKnowledgeSources>[number]["assessment"] | undefined) {
+    if (savingId || !assessment) return;
+    setSavingId(resource.contentHash);
+    setMemoryMessage("");
+    try {
+      await saveResearchMemory(resource, assessment, { subject, topic: query.trim(), searchQuery: query.trim() });
+      const wasSaved = savedIds.has(resource.contentHash);
+      setSavedIds((current) => new Set(current).add(resource.contentHash));
+      if (!wasSaved) setMemoryCount((current) => current + 1);
+      setMemoryMessage("Saved with its original source, assessment and curriculum context. Available offline on this device.");
+    } catch {
+      setMemoryMessage("Could not save this source. Check available device storage and try again.");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function readSource(url: string) {
     if (!subject || readingUrl) return;
     setReadingUrl(url);
     setError("");
@@ -169,7 +186,9 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
         </span>
       </div>
 
-      <p className="mt-3 text-xs text-[var(--muted-foreground)]" aria-live="polite">Research memory: {memoryCount} saved source{memoryCount === 1 ? "" : "s"} on this device. Saved material is available offline and can be reused by local knowledge retrieval.</p>\n      {memoryMessage && <p className="mt-2 text-xs text-[var(--muted-foreground)]" role="status">{memoryMessage}</p>}\n      {error && <p className="mt-4 rounded-xl border border-[var(--card-border)] p-3 text-sm" role="status">{error}</p>}
+      <p className="mt-3 text-xs text-[var(--muted-foreground)]" aria-live="polite">Research memory: {memoryCount} saved source{memoryCount === 1 ? "" : "s"} on this device. Saved material is available offline and can be reused by local knowledge retrieval.</p>
+      {memoryMessage && <p className="mt-2 text-xs text-[var(--muted-foreground)]" role="status">{memoryMessage}</p>}
+      {error && <p className="mt-4 rounded-xl border border-[var(--card-border)] p-3 text-sm" role="status">{error}</p>}
 
       {result && result.results.length > 0 && (
         <div className="mt-5 space-y-3" aria-live="polite">
@@ -209,6 +228,10 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
                 {assessment?.authorityReason && <p className="mt-1 text-xs text-[var(--muted-foreground)]">{assessment.authorityReason}</p>}
                 {assessment?.dateReason && <p className="mt-1 text-xs text-[var(--muted-foreground)]">{assessment.dateReason}</p>}
                 {assessment?.reviewFlags.map((flag) => <p key={flag} className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 text-xs">{flag}</p>)}
+                <button type="button" onClick={() => void saveSource(resource, assessment)} disabled={!assessment || savingId === resource.contentHash} className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--card-border)] px-3 text-xs font-medium disabled:opacity-60">
+                  <BookmarkCheck size={14} aria-hidden="true" />
+                  {savingId === resource.contentHash ? "Saving…" : savedIds.has(resource.contentHash) ? "Saved to Research Memory" : "Save to Research Memory"}
+                </button>
                 <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{excerpt.slice(0, 6000)}</div>
                 {source === "online" && webContent?.extraction === "provider-extracted page text" && <p className="mt-2 text-xs text-[var(--muted-foreground)]">Page text retrieved by the search provider. Check the original page before relying on it.</p>}
                 {webContent?.documentType === "pdf" && <p className="mt-2 text-xs text-[var(--muted-foreground)]">PDF · {String(webContent.pageCount ?? "Unknown")} pages in source. Text extraction is limited to the first 20 pages.</p>}
