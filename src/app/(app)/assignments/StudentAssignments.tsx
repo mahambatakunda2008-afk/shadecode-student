@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Submission = { submitted_at: string; status: "submitted" | "marked"; score: number | null; feedback: string | null } | null;
+type Submission = { submitted_at: string; status: "submitted" | "marked"; score: number | null; feedback: string | null; question_marks?: Array<{ questionNumber: number; marksAwarded: number; maxMarks: number; feedback: string }> } | null;
 type Question = { prompt: string; type: "written" | "multiple_choice" | "calculation" | "practical"; marks: number; options: string[] };
 type Assignment = {
   id: string; group_id: string; title: string; subject: string; instructions: string;
@@ -78,6 +78,20 @@ export default function StudentAssignments() {
             <div className="rounded-xl border border-[var(--card-border)] bg-[var(--surface)] p-4">
               <p className="font-semibold">Your result: {assignment.submission.score} / {assignment.max_score}</p>
               {assignment.submission.feedback ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{assignment.submission.feedback}</p> : <p className="mt-2 text-sm text-[var(--muted-foreground)]">Your teacher has marked this work.</p>}
+              {assignment.submission.question_marks?.length ? (
+                <div className="mt-4 space-y-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Question-by-question feedback</h3>
+                  {assignment.submission.question_marks.map((mark) => (
+                    <div key={mark.questionNumber} className="rounded-lg border border-[var(--card-border)] bg-[var(--card)] p-3">
+                      <div className="flex items-center justify-between gap-3 text-sm font-medium">
+                        <span>Question {mark.questionNumber}</span>
+                        <span>{mark.marksAwarded} / {mark.maxMarks}</span>
+                      </div>
+                      {mark.feedback ? <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[var(--muted-foreground)]">{mark.feedback}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-4">
