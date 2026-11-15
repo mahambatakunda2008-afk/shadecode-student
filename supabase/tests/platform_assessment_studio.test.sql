@@ -58,6 +58,7 @@ begin
   ) then
     raise exception 'teacher-only answer key or marking criteria were not persisted';
   end if;
+  perform set_config('test.assessment_id', v_id::text, true);
 
   begin
     perform public.create_platform_assessment(
@@ -89,6 +90,74 @@ begin
   end if;
 end
 $learner_key_privacy$;
+
+do $student_submission$
+declare v_submission uuid;
+begin
+  v_submission := public.submit_platform_assignment(
+    current_setting('test.assessment_id')::uuid,
+    'Question 1 (4 marks)' || E'\n' || 'Working shown' || E'\n\n' ||
+    'Question 2 (1 marks)' || E'\n' || '3'
+  );
+  perform set_config('test.submission_id', v_submission::text, true);
+  begin
+    perform public.mark_platform_assignment_submission_questions(
+      v_submission,
+      '[{"questionNumber":1,"marksAwarded":5,"feedback":"Too many marks"},{"questionNumber":2,"marksAwarded":1}]'::jsonb,
+      'Invalid total'
+    );
+    raise exception 'student was able to mark a submission';
+  exception when insufficient_privilege then null;
+  end;
+end
+$student_submission$;
+
+select set_config('request.jwt.claim.sub','21000000-0000-4000-8000-000000000001',true);
+do $question_marking$
+declare v_submission uuid;
+begin
+  v_submission := current_setting('test.submission_id')::uuid;
+  begin
+    perform public.mark_platform_assignment_submission_questions(
+      v_submission,
+      '[{"questionNumber":1,"marksAwarded":5,"feedback":"Too many marks"},{"questionNumber":2,"marksAwarded":1}]'::jsonb,
+      'Invalid total'
+    );
+    raise exception 'question marking accepted marks above the question allocation';
+  exception when sqlstate '22023' then null;
+  end;
+
+  if public.mark_platform_assignment_submission_questions(
+    v_submission,
+    '[{"questionNumber":1,"marksAwarded":3.5,"feedback":"Method correct"},{"questionNumber":2,"marksAwarded":1,"feedback":"Correct"}]'::jsonb,
+    'Good work overall'
+  ) is not true then
+    raise exception 'teacher could not save question-level marking';
+  end if;
+
+  if not exists (
+    select 1 from public.platform_assignment_submissions
+    where id=v_submission and status='marked' and score=4.5
+      and jsonb_array_length(question_marks)=2
+      and question_marks->0->>'feedback'='Method correct'
+  ) then
+    raise exception 'question-level marks were not saved or aggregated correctly';
+  end if;
+end
+$question_marking$;
+
+select set_config('request.jwt.claim.sub','21000000-0000-4000-8000-000000000002',true);
+do $learner_mark_visibility$
+begin
+  if not exists (
+    select 1 from public.platform_assignment_submissions
+    where id=current_setting('test.submission_id')::uuid
+      and score=4.5 and jsonb_array_length(question_marks)=2
+  ) then
+    raise exception 'learner cannot read returned question-level feedback evidence';
+  end if;
+end
+$learner_mark_visibility$;
 
 select set_config('request.jwt.claim.sub','21000000-0000-4000-8000-000000000003',true);
 do $unauthorized$
