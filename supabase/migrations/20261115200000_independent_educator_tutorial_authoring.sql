@@ -12,6 +12,12 @@ create policy "authors create own draft tutorials" on public.teacher_tutorials
       has_role(auth.uid(), 'teacher'::text)
       or has_role(auth.uid(), 'admin'::text)
       or public.is_approved_independent_educator(auth.uid())
+      or exists (
+        select 1 from public.platform_institution_members im
+        where im.user_id = auth.uid()
+          and im.status = 'active'
+          and im.membership_role in ('teacher','tutor','staff')
+      )
     )
   );
 
