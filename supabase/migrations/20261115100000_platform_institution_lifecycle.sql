@@ -103,7 +103,11 @@ declare
   v_actor uuid := auth.uid();
   v_group_id uuid;
 begin
-  if v_actor is null or not exists (
+  if v_actor is null then
+    raise exception 'active institution administrator required' using errcode = '42501';
+  end if;
+  perform 1 from public.platform_institutions where id=p_institution_id for update;
+  if not found or not exists (
     select 1 from public.platform_institution_members m
     where m.institution_id=p_institution_id and m.user_id=v_actor
       and m.status='active' and m.membership_role='administrator'
@@ -150,7 +154,11 @@ declare
   v_actor uuid := auth.uid();
   v_invite_id uuid;
 begin
-  if v_actor is null or not exists (
+  if v_actor is null then
+    raise exception 'active institution administrator required' using errcode = '42501';
+  end if;
+  perform 1 from public.platform_institutions where id=p_institution_id for update;
+  if not found or not exists (
     select 1 from public.platform_institution_members m
     where m.institution_id=p_institution_id and m.user_id=v_actor
       and m.status='active' and m.membership_role='administrator'
@@ -253,7 +261,13 @@ declare
   v_role text;
   v_active_admins integer;
 begin
-  if v_actor is null or not exists (
+  if v_actor is null then
+    raise exception 'active institution administrator required' using errcode = '42501';
+  end if;
+  -- Serialize membership transitions for this tenant. In particular, two
+  -- concurrent administrator revocations cannot both pass the last-admin check.
+  perform 1 from public.platform_institutions where id=p_institution_id for update;
+  if not found or not exists (
     select 1 from public.platform_institution_members m
     where m.institution_id=p_institution_id and m.user_id=v_actor
       and m.status='active' and m.membership_role='administrator'
