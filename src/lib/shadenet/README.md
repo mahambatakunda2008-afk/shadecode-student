@@ -36,3 +36,21 @@ Keys must remain server-side and must never use a `NEXT_PUBLIC_` prefix. The aut
 Search results are deliberately labelled **unverified**. Brave returns search-result excerpts; Tavily is asked for provider-extracted page text where available, with a strict 12,000-character cap. Neither is independently verified and neither may be represented as official Cambridge/ZIMSEC curriculum or teacher-approved material. Every result retains its original URL and publisher hostname so a learner can inspect the source.
 
 This is the first open-web retrieval layer. Provider-extracted page text is now surfaced when Tavily supplies it. Direct arbitrary URL fetching, dedicated PDF extraction, cross-source corroboration, source freshness evaluation and saving reviewed pages into the learner's library remain subsequent integration work. No page is silently scraped or treated as authoritative by this search adapter.
+
+
+## Full-page and PDF reading
+
+Learners can request **Read full page / PDF** from a search result. The authenticated `/api/shadenet/read-document` route reads public HTTPS HTML pages and PDFs, extracts readable text and returns it as an unverified ShadeNet resource with its original source URL, publisher, retrieval time and document metadata.
+
+Safety and resource limits:
+
+- HTTPS only; reject localhost, private/internal hostnames and DNS results containing private/reserved IP addresses.
+- Revalidate every redirect destination and allow at most three redirects.
+- Only HTML/XHTML and PDF content types are accepted.
+- Downloads are capped at 8 MB and fetches time out after 12 seconds.
+- PDF extraction uses the first 20 pages and caps extracted text at 40,000 characters.
+- HTML extraction removes scripts, styles, navigation and common non-content regions.
+- Login-only, paywalled, blocked, malformed or image-only documents may not yield readable text.
+- Extracted material remains **unverified**. It is not automatically saved as an official curriculum source or teacher-approved resource.
+
+This is a bounded reader, not a general-purpose crawler. It reads only a source the learner explicitly selects from the search results.

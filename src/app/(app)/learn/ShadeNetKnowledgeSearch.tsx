@@ -20,6 +20,7 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState(subjects[0]?.name ?? "");
   const [busy, setBusy] = useState(false);
+  const [readingUrl, setReadingUrl] = useState<string | null>(null);
   const [result, setResult] = useState<KnowledgeRetrievalResult | null>(null);
   const [error, setError] = useState("");
 
@@ -75,6 +76,33 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
       setError("Search could not complete. Your saved lessons and notes have not been changed.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function readSource(url: string) {
+    if (!subject || readingUrl) return;
+    setReadingUrl(url);
+    setError("");
+    try {
+      const response = await fetch("/api/shadenet/read-document", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url, subject }),
+        cache: "no-store",
+      });
+      const payload = await response.json().catch(() => ({})) as { resource?: ShadeNetResource; error?: string };
+      if (!response.ok || !payload.resource) throw new Error(payload.error ?? "Could not read this source.");
+      setResult((current) => current ? {
+        ...current,
+        results: [
+          { resource: payload.resource!, source: "online" as const },
+          ...current.results.filter((item) => item.resource.metadata.source !== url),
+        ].slice(0, 12),
+      } : current);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not read this source.");
+    } finally {
+      setReadingUrl(null);
     }
   }
 
@@ -143,10 +171,12 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
           </p>
           {result.results.map(({ resource, source }) => {
             const webContent = resource.content && typeof resource.content === "object"
-              ? resource.content as { snippet?: unknown; pageText?: unknown; extraction?: unknown }
+              ? resource.content as { snippet?: unknown; pageText?: unknown; extraction?: unknown; text?: unknown; documentType?: unknown; pageCount?: unknown; kind?: unknown }
               : null;
-            const excerpt = typeof webContent?.pageText === "string" && webContent.pageText.trim()
-              ? webContent.pageText
+            const excerpt = typeof webContent?.text === "string" && webContent.text.trim()
+              ? webContent.text
+              : typeof webContent?.pageText === "string" && webContent.pageText.trim()
+                ? webContent.pageText
               : typeof webContent?.snippet === "string"
                 ? webContent.snippet
               : typeof resource.content === "string"
@@ -163,6 +193,12 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
                 </p>
                 <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{excerpt.slice(0, 6000)}</div>
                 {source === "online" && webContent?.extraction === "provider-extracted page text" && <p className="mt-2 text-xs text-[var(--muted-foreground)]">Page text retrieved by the search provider. Check the original page before relying on it.</p>}
+                {webContent?.documentType === "pdf" && <p className="mt-2 text-xs text-[var(--muted-foreground)]">PDF · {String(webContent.pageCount ?? "Unknown")} pages in source. Text extraction is limited to the first 20 pages.</p>}
+                {resource.metadata.source && /^https:\/\//i.test(resource.metadata.source) && webContent?.kind !== "web-document" && (
+                  <button type="button" onClick={() => void readSource(resource.metadata.source!)} disabled={Boolean(readingUrl)} className="mt-3 mr-3 inline-flex min-h-9 items-center rounded-lg border border-[var(--card-border)] px-3 text-xs font-medium disabled:opacity-60">
+                    {readingUrl === resource.metadata.source ? "Reading…" : "Read full page / PDF"}
+                  </button>
+                )}
                 {resource.metadata.source && (
                   <a href={resource.metadata.source} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block break-all text-xs text-[var(--primary)] underline underline-offset-2">
                     Open original source
