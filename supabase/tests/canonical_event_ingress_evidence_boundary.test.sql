@@ -5,9 +5,36 @@ set local role service_role;
 do $$
 declare
   v_user uuid;
+  v_function_owner text;
+  v_is_security_definer boolean;
   v_event_id text := 'client-ingress-boundary-' || gen_random_uuid()::text;
   v_row public.cortex_events%rowtype;
 begin
+  -- The boundary relies on SECURITY INVOKER for the RPC/trigger and on the
+  -- trusted quiz transaction being SECURITY DEFINER owned by postgres.
+  select pg_get_userbyid(p.proowner), p.prosecdef
+    into v_function_owner, v_is_security_definer
+  from pg_proc p
+  where p.oid = 'public.insert_canonical_cortex_event(uuid,jsonb)'::regprocedure;
+  if v_function_owner is null or v_is_security_definer then
+    raise exception 'Canonical insert RPC must remain SECURITY INVOKER';
+  end if;
+
+  select p.prosecdef into v_is_security_definer
+  from pg_proc p
+  where p.oid = 'public.sanitize_untrusted_cortex_event_evidence()'::regprocedure;
+  if v_is_security_definer then
+    raise exception 'Evidence sanitizer trigger must remain SECURITY INVOKER';
+  end if;
+
+  select pg_get_userbyid(p.proowner), p.prosecdef
+    into v_function_owner, v_is_security_definer
+  from pg_proc p
+  where p.oid = 'public.complete_lesson_quiz_attempt(uuid)'::regprocedure;
+  if v_function_owner <> 'postgres' or not v_is_security_definer then
+    raise exception 'Trusted quiz completion must remain SECURITY DEFINER owned by postgres';
+  end if;
+
   select id into v_user from auth.users order by created_at limit 1;
   if v_user is null then raise exception 'Missing auth user fixture'; end if;
 
