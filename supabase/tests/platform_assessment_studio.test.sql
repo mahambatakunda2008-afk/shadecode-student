@@ -17,7 +17,9 @@ values
  ('31000000-0000-4000-8000-000000000001','21000000-0000-4000-8000-000000000001','teacher','active')
 on conflict do nothing;
 insert into public.platform_group_members(group_id,user_id,membership_role,status)
-values ('41000000-0000-4000-8000-000000000001','21000000-0000-4000-8000-000000000001','teacher','active')
+values
+ ('41000000-0000-4000-8000-000000000001','21000000-0000-4000-8000-000000000001','teacher','active'),
+ ('41000000-0000-4000-8000-000000000002','21000000-0000-4000-8000-000000000002','student','active')
 on conflict do nothing;
 
 set local role authenticated;
@@ -39,9 +41,21 @@ begin
   if not exists (
     select 1 from public.platform_assignments
     where id=v_id and assessment_type='quiz' and max_score=5
-      and jsonb_array_length(questions)=2 and jsonb_array_length(mark_scheme)=2
+      and jsonb_array_length(questions)=2
   ) then
     raise exception 'structured assessment was not persisted correctly';
+  end if;
+  if exists (
+    select 1 from public.platform_assignments
+    where id=v_id and questions @> '[{"correctOption":"3"}]'::jsonb
+  ) then
+    raise exception 'learner-visible question payload contains a correct answer';
+  end if;
+  if not exists (
+    select 1 from public.platform_assignment_answer_keys
+    where assignment_id=v_id and jsonb_array_length(correct_answers)=1 and jsonb_array_length(mark_scheme)=2
+  ) then
+    raise exception 'teacher-only answer key or marking criteria were not persisted';
   end if;
 
   begin
