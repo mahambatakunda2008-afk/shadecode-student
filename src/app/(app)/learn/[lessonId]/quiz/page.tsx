@@ -130,8 +130,8 @@ export default function QuizPage() {
     nextSelected: number | null,
     nextConfirmed: boolean,
     nextQuestions = questions,
-  ) {
-    if (!quizUserId || !lessonId || !quizAttemptIdRef.current || !nextQuestions.length) return;
+  ): Promise<boolean> {
+    if (!quizUserId || !lessonId || !quizAttemptIdRef.current || !nextQuestions.length) return false;
     try {
       await saveQuizAttemptCheckpoint(quizUserId, {
         attemptId: quizAttemptIdRef.current,
@@ -143,8 +143,10 @@ export default function QuizPage() {
         confirmed: nextConfirmed,
         updatedAt: new Date().toISOString(),
       });
+      return true;
     } catch {
       setSubmissionError("Local recovery could not be saved on this device. Keep this page open until the quiz is submitted.");
+      return false;
     }
   }
 
@@ -288,8 +290,8 @@ export default function QuizPage() {
       return;
     }
 
-    await saveCheckpoint(newAnswers, current, selected, true);
-    setSubmissionError("");
+    const checkpointSaved = await saveCheckpoint(newAnswers, current, selected, true);
+    setSubmissionError(checkpointSaved ? "" : "Local recovery could not be saved. The server will still verify your answers if the connection is available.");
     setSubmitting(true);
     try {
       const response = await fetch("/api/learn/quiz/submit", {
