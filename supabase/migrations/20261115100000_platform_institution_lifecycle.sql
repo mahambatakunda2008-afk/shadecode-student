@@ -39,6 +39,24 @@ create table if not exists public.platform_membership_audit (
 create index if not exists platform_membership_audit_institution_created_idx
   on public.platform_membership_audit(institution_id, created_at desc);
 
+-- Institution administrators need to manage every group in their own tenant,
+-- including groups to which they have not personally been assigned.
+drop policy if exists "institution administrators can view tenant groups" on public.platform_groups;
+create policy "institution administrators can view tenant groups"
+  on public.platform_groups
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.platform_institution_members im
+      where im.institution_id=platform_groups.institution_id
+        and im.user_id=auth.uid()
+        and im.status='active'
+        and im.membership_role='administrator'
+    )
+  );
+
 alter table public.platform_institution_invites enable row level security;
 alter table public.platform_membership_audit enable row level security;
 
