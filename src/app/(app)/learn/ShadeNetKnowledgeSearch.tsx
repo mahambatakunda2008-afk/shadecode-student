@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { BookOpen, Search, Wifi, WifiOff } from "lucide-react";
-import { createHttpKnowledgeSource } from "@/lib/shadenet/source-adapters";
 import { retrieveKnowledge, type KnowledgeRetrievalResult } from "@/lib/shadenet/retrieval";
-
-const INDEX_URL = process.env.NEXT_PUBLIC_SHADENET_KNOWLEDGE_INDEX_URL?.trim();
+import type { ShadeNetResource } from "@/lib/shadenet/content";
 
 function trustLabel(status?: string) {
   switch (status) {
@@ -29,28 +27,50 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
     if (!subjects.some((item) => item.name === subject)) setSubject(subjects[0]?.name ?? "");
   }, [subjects, subject]);
 
-  const onlineSource = useMemo(() => {
-    if (!INDEX_URL) return undefined;
-    try { return createHttpKnowledgeSource({ endpoint: INDEX_URL }); }
-    catch { return undefined; }
-  }, []);
-
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!query.trim() || !subject || busy) return;
     setBusy(true);
     setError("");
     try {
-      const response = await retrieveKnowledge(
-        { query: query.trim(), subject: subject.trim() || undefined, limit: 8 },
-        { ...(onlineSource ? { online: onlineSource } : {}), perSourceTimeoutMs: 4_000 },
-      );
-      setResult(response);
-      if (!response.results.length) {
-        setError(response.unavailable.length
-          ? "Some sources did not respond. No matching verified resource was found in the sources that answered."
-          : "No matching resource is saved on this device.");
+      const knowledgeQuery = { query: query.trim(), subject: subject.trim(), limit: 8 };
+      const local = await retrieveKnowledge(knowledgeQuery, { perSourceTimeoutMs: 2_000 });
+      const attempted = [...local.attempted];
+      const unavailable = [...local.unavailable];
+      const results = [...local.results];
+
+      if (typeof navigator === "undefined" || navigator.onLine) {
+        attempted.push("online");
+        try {
+          const response = await fetch("/api/shadenet/web-search", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(knowledgeQuery),
+            cache: "no-store",
+          });
+          const payload = await response.json().catch(() => ({})) as { resources?: ShadeNetResource[]; error?: string };
+          if (!response.ok) {
+            if (response.status !== 503 || !payload.error?.includes("not configured")) unavailable.push("online");
+            if (!results.length) setError(payload.error ?? "Open web search is temporarily unavailable.");
+          } else if (Array.isArray(payload.resources)) {
+            const seen = new Set(results.map((item) => item.resource.contentHash));
+            for (const resource of payload.resources) {
+              if (resource?.contentHash && !seen.has(resource.contentHash)) {
+                seen.add(resource.contentHash);
+                results.push({ resource, source: "online" });
+              }
+            }
+          }
+        } catch {
+          unavailable.push("online");
+          if (!results.length) setError("Internet search could not connect. Your saved resources are still available offline.");
+        }
+      } else if (!results.length) {
+        setError("You are offline. Search your downloaded and saved ShadeNet resources.");
       }
+
+      setResult({ results: results.slice(0, 12), attempted, unavailable });
+      if (!results.length && !error) setError("No matching resources were found in the available sources.");
     } catch {
       setError("Search could not complete. Your saved lessons and notes have not been changed.");
     } finally {
@@ -69,7 +89,7 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
         <div className="min-w-0 flex-1">
           <h2 id="shadenet-search-title" className="text-lg font-semibold">Knowledge search</h2>
           <p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">
-            Search saved ShadeNet resources without using AI. When an approved online index is configured, search can also retrieve resources from it.
+            Search saved learning resources and the open web. Results retain their source links and are not treated as verified curriculum material.
           </p>
         </div>
       </div>
@@ -97,7 +117,7 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
         </select>
         <button
           type="submit"
-          disabled={busy || !query.trim() || !subject || subjects.length === 0}
+          disabled={busy || !query.trim() || !subject}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Search size={16} aria-hidden="true" />
@@ -109,13 +129,9 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-2)] px-2.5 py-1">
           <WifiOff size={14} aria-hidden="true" /> Local search, AI not required
         </span>
-        {onlineSource ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-2)] px-2.5 py-1">
-            <Wifi size={14} aria-hidden="true" /> Approved online index configured
-          </span>
-        ) : (
-          <span>Online index not configured</span>
-        )}
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-2)] px-2.5 py-1">
+          <Wifi size={14} aria-hidden="true" /> Open web search when configured
+        </span>
       </div>
 
       {error && <p className="mt-4 rounded-xl border border-[var(--card-border)] p-3 text-sm" role="status">{error}</p>}
@@ -125,23 +141,33 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
           <p className="text-sm text-[var(--muted-foreground)]">
             {result.results.length} result{result.results.length === 1 ? "" : "s"} · Checked {result.attempted.join(", ")}
           </p>
-          {result.results.map(({ resource, source }) => (
-            <article key={resource.contentHash} className="rounded-2xl border border-[var(--card-border)] p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-semibold">{resource.metadata.title}</h3>
-                <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs">{trustLabel(resource.metadata.verificationStatus)}</span>
-              </div>
-              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                {[resource.metadata.subject, resource.metadata.qualification, resource.metadata.syllabus, source === "local" ? "On this device" : source === "peer" ? "Shared by a peer" : "Online index"].filter(Boolean).join(" · ")}
-              </p>
-              <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">
-                {typeof resource.content === "string" ? resource.content.slice(0, 1800) : (JSON.stringify(resource.content, null, 2) ?? String(resource.content)).slice(0, 1800)}
-              </div>
-              {resource.metadata.source && (
-                <p className="mt-3 break-all text-xs text-[var(--muted-foreground)]">Source: {resource.metadata.source}</p>
-              )}
-            </article>
-          ))}
+          {result.results.map(({ resource, source }) => {
+            const webContent = resource.content && typeof resource.content === "object"
+              ? resource.content as { snippet?: unknown }
+              : null;
+            const excerpt = typeof webContent?.snippet === "string"
+              ? webContent.snippet
+              : typeof resource.content === "string"
+                ? resource.content
+                : JSON.stringify(resource.content, null, 2) ?? String(resource.content);
+            return (
+              <article key={resource.contentHash} className="rounded-2xl border border-[var(--card-border)] p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-semibold">{resource.metadata.title}</h3>
+                  <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs">{trustLabel(resource.metadata.verificationStatus)}</span>
+                </div>
+                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                  {[resource.metadata.subject, resource.metadata.qualification, resource.metadata.syllabus, source === "local" ? "On this device" : source === "peer" ? "Shared by a peer" : "Open web search result"].filter(Boolean).join(" · ")}
+                </p>
+                <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{excerpt.slice(0, 1800)}</div>
+                {resource.metadata.source && (
+                  <a href={resource.metadata.source} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block break-all text-xs text-[var(--primary)] underline underline-offset-2">
+                    Open original source
+                  </a>
+                )}
+              </article>
+            );
+          })}
         </div>
       )}
     </section>
