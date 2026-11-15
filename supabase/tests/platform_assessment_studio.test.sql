@@ -4,7 +4,8 @@ begin;
 
 insert into auth.users(id) values
  ('21000000-0000-4000-8000-000000000001'),
- ('21000000-0000-4000-8000-000000000002')
+ ('21000000-0000-4000-8000-000000000002'),
+ ('21000000-0000-4000-8000-000000000003')
 on conflict do nothing;
 insert into public.platform_institutions(id,name,institution_type,country_code)
 values ('31000000-0000-4000-8000-000000000001','Assessment Fixture School','school','ZW')
@@ -19,7 +20,7 @@ on conflict do nothing;
 insert into public.platform_group_members(group_id,user_id,membership_role,status)
 values
  ('41000000-0000-4000-8000-000000000001','21000000-0000-4000-8000-000000000001','teacher','active'),
- ('41000000-0000-4000-8000-000000000002','21000000-0000-4000-8000-000000000002','student','active')
+ ('41000000-0000-4000-8000-000000000001','21000000-0000-4000-8000-000000000002','student','active')
 on conflict do nothing;
 
 set local role authenticated;
@@ -81,6 +82,15 @@ end
 $assessment$;
 
 select set_config('request.jwt.claim.sub','21000000-0000-4000-8000-000000000002',true);
+do $learner_key_privacy$
+begin
+  if (select count(*) from public.platform_assignment_answer_keys) <> 0 then
+    raise exception 'student can read teacher-only assessment answer keys';
+  end if;
+end
+$learner_key_privacy$;
+
+select set_config('request.jwt.claim.sub','21000000-0000-4000-8000-000000000003',true);
 do $unauthorized$
 begin
   begin
