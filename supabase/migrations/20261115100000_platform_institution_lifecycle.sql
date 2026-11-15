@@ -207,6 +207,7 @@ as $$
 declare
   v_actor uuid := auth.uid();
   v_invite public.platform_institution_invites%rowtype;
+  v_institution_id uuid;
 begin
   if v_actor is null then
     raise exception 'sign in before redeeming an institution invite' using errcode = '42501';
@@ -215,9 +216,26 @@ begin
     raise exception 'invalid or expired invite' using errcode = '22023';
   end if;
 
+  -- Resolve the tenant first, then lock it before touching the invite or
+  -- membership rows. This uses the same lock order as admin revocation and
+  -- prevents invite redemption racing a suspension/revocation transition.
+  select i.institution_id into v_institution_id
+  from public.platform_institution_invites i
+  where i.code_hash=encode(sha256(convert_to(p_code,'utf8')),'hex')
+    and i.redeemed_at is null and i.revoked_at is null and i.expires_at > now();
+  if v_institution_id is null then
+    raise exception 'invalid, expired, revoked or already redeemed invite' using errcode = '22023';
+  end if;
+
+  perform 1 from public.platform_institutions where id=v_institution_id for update;
+  if not found then
+    raise exception 'institution no longer exists' using errcode = '22023';
+  end if;
+
   update public.platform_institution_invites
      set redeemed_by=v_actor, redeemed_at=now()
    where code_hash=encode(sha256(convert_to(p_code,'utf8')),'hex')
+     and institution_id=v_institution_id
      and redeemed_at is null and revoked_at is null and expires_at > now()
   returning * into v_invite;
 
@@ -225,6 +243,20 @@ begin
     raise exception 'invalid, expired, revoked or already redeemed invite' using errcode = '22023';
   end if;
 
+  if exists (
+    select 1 from public.platform_institution_members
+    where institution_id=v_invite.institution_id and user_id=v_actor
+      and status in ('suspended','revoked')
+  ) then
+    raise exception 'institution membership is suspended or revoked; ask an administrator to restore access' using errcode = '42501';
+  end if;
+  if exists (
+    select 1 from public.platform_group_members
+    where group_id=v_invite.group_id and user_id=v_actor
+      and status in ('suspended','revoked')
+  ) then
+    raise exception 'group membership is suspended or revoked; ask an administrator to restore access' using errcode = '42501';
+  end if;
   if exists (
     select 1 from public.platform_institution_members
     where institution_id=v_invite.institution_id and user_id=v_actor
