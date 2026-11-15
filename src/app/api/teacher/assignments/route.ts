@@ -2,39 +2,27 @@ import { NextResponse } from "next/server";
 import { getTeacherWorkspace } from "@/lib/exam/curated/reviewAccess";
 
 export const dynamic = "force-dynamic";
-
 const TEACHING_ROLES = ["teacher", "tutor", "administrator", "staff"] as const;
 
 export async function GET() {
   const workspace = await getTeacherWorkspace();
   if (!workspace) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const [membershipsResult, institutionsResult] = await Promise.all([
-    workspace.supabase
-      .from("platform_group_members")
-      .select("group_id")
-      .eq("user_id", workspace.user.id)
-      .eq("status", "active")
-      .in("membership_role", [...TEACHING_ROLES]),
-    workspace.supabase
-      .from("platform_institution_members")
-      .select("institution_id")
-      .eq("user_id", workspace.user.id)
-      .eq("status", "active")
-      .eq("membership_role", "administrator"),
-  ]);
+  const memberships = await workspace.supabase
+    .from("platform_group_members")
+    .select("group_id")
+    .eq("user_id", workspace.user.id)
+    .eq("status", "active")
+    .in("membership_role", [...TEACHING_ROLES]);
+  if (memberships.error) return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
 
-  if (membershipsResult.error || institutionsResult.error) {
-    return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
-  }
-  const groupIds = [...new Set((membershipsResult.data ?? []).map((row) => row.group_id))];
-  const assignedGroups = groupIds.length
+  const groupIds = [...new Set((memberships.data ?? []).map((row) => row.group_id))];
+  const groupResult = groupIds.length
     ? await workspace.supabase.from("platform_groups").select("id,name").in("id", groupIds)
     : { data: [], error: null };
-  if (assignedGroups.error) {
-    return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
-  }
-  const groups = (assignedGroups.data ?? []).sort((a, b) => a.name.localeCompare(b.name));
+  if (groupResult.error) return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
+
+  const groups = (groupResult.data ?? []).sort((a, b) => a.name.localeCompare(b.name));
   const authorizedGroupIds = groups.map((group) => group.id);
   if (!authorizedGroupIds.length) return NextResponse.json({ assignments: [], groups: [] });
 
@@ -44,9 +32,7 @@ export async function GET() {
     .in("group_id", authorizedGroupIds)
     .order("created_at", { ascending: false })
     .limit(100);
-  if (assignmentsResult.error) {
-    return NextResponse.json({ error: "Could not load classwork." }, { status: 500 });
-  }
+  if (assignmentsResult.error) return NextResponse.json({ error: "Could not load classwork." }, { status: 500 });
   return NextResponse.json({ groups, assignments: assignmentsResult.data ?? [] });
 }
 
@@ -57,6 +43,14 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (!body || typeof body.groupId !== "string" || typeof body.title !== "string" || typeof body.subject !== "string") {
     return NextResponse.json({ error: "A class, title and subject are required." }, { status: 400 });
+  }
+
+  const memberships = await workspace.supabase.from("platform_group_members").select("group_id")
+    .eq("user_id", workspace.user.id).eq("status", "active")
+    .in("membership_role", [...TEACHING_ROLES]);
+  if (memberships.error) return NextResponse.json({ error: "Could not verify your teaching access." }, { status: 500 });
+  if (!(memberships.data ?? []).some((row) => row.group_id === body.groupId)) {
+    return NextResponse.json({ error: "You are not assigned to teach this class." }, { status: 403 });
   }
 
   const title = body.title.trim();
