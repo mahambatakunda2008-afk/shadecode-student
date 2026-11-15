@@ -8,5 +8,5 @@ export const metadata = { title: "Tutorial studio · Shadecode Student" };
 export default async function TeacherTutorialsPage() {
   const reviewer = await getTutorialAuthor();
   if (!reviewer) redirect("/teacher");
-  return <TutorialsClient />;
+  return <TutorialsClient canReviewContent={reviewer.canReviewContent} />;
 }
