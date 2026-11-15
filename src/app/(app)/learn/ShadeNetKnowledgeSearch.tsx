@@ -102,7 +102,7 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
     setSavingId(resource.contentHash);
     setMemoryMessage("");
     try {
-      await saveResearchMemory(resource, assessment, { subject, topic: query.trim(), searchQuery: query.trim() });
+      await saveResearchMemory(resource, assessment, { subject, qualification: resource.metadata.qualification, syllabus: resource.metadata.syllabus, topic: query.trim(), searchQuery: query.trim() });
       const wasSaved = savedIds.has(resource.contentHash);
       setSavedIds((current) => new Set(current).add(resource.contentHash));
       if (!wasSaved) setMemoryCount((current) => current + 1);
