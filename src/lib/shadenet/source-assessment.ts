@@ -51,7 +51,7 @@ function authorityFor(hostname: string | null): { authority: SourceAuthority; re
   if (ACADEMIC_SUFFIXES.some((suffix) => hostname.endsWith(suffix) || hostname.includes(`${suffix}.`))) {
     return { authority: "academic-institution", authorityReason: "Academic-institution domain signal only; authorship and page quality still need review." };
   }
-  return { authority: "unclassified", reason: "Publisher is not in the configured authority-domain list." };
+  return { authority: "unclassified", authorityReason: "Publisher is not in the configured authority-domain list." };
 }
 
 function contentRecord(resource: ShadeNetResource): Record<string, unknown> {
