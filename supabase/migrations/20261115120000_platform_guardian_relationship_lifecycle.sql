@@ -401,10 +401,14 @@ $$;
 
 revoke all on function public.create_platform_guardian_invite(uuid,uuid,text,text,timestamptz) from public,anon;
 revoke all on function public.redeem_platform_guardian_invite(text) from public,anon;
-revoke all on function public.list_platform_pending_guardian_links(uuid) from public,anon;\nrevoke all on function public.list_my_platform_guardian_links() from public,anon;\nrevoke all on function public.review_platform_guardian_link(uuid,boolean) from public,anon;
+revoke all on function public.list_platform_pending_guardian_links(uuid) from public,anon;
+revoke all on function public.list_my_platform_guardian_links() from public,anon;
+revoke all on function public.review_platform_guardian_link(uuid,boolean) from public,anon;
 revoke all on function public.revoke_platform_guardian_link(uuid) from public,anon;
 
 grant execute on function public.create_platform_guardian_invite(uuid,uuid,text,text,timestamptz) to authenticated;
 grant execute on function public.redeem_platform_guardian_invite(text) to authenticated;
-grant execute on function public.list_platform_pending_guardian_links(uuid) to authenticated;\ngrant execute on function public.list_my_platform_guardian_links() to authenticated;\ngrant execute on function public.review_platform_guardian_link(uuid,boolean) to authenticated;
+grant execute on function public.list_platform_pending_guardian_links(uuid) to authenticated;
+grant execute on function public.list_my_platform_guardian_links() to authenticated;
+grant execute on function public.review_platform_guardian_link(uuid,boolean) to authenticated;
 grant execute on function public.revoke_platform_guardian_link(uuid) to authenticated;
