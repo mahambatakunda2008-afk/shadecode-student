@@ -37,6 +37,10 @@ export function AttendanceClient() {
       const response = await fetch(nextGroupId ? `/api/teacher/attendance?groupId=${encodeURIComponent(nextGroupId)}` : "/api/teacher/attendance", { cache: "no-store" });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Could not load attendance.");
+      if (!nextGroupId && payload.groups?.[0]?.id) {
+        await load(payload.groups[0].id);
+        return;
+      }
       setGroups(payload.groups ?? []);
       setSessions(payload.sessions ?? []);
       setRecords(payload.records ?? []);
