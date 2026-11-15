@@ -49,6 +49,7 @@ declare
   v_student_invite uuid;
   v_code_teacher text := 'teacher-invite-code-2026-functional';
   v_code_student text := 'student-invite-code-2026-functional';
+  v_code_student_retry text := 'student-invite-retry-2026-functional';
   v_result jsonb;
   v_roster_count integer;
 begin
@@ -133,6 +134,18 @@ begin
   if exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and status='active') then
     raise exception 'institution suspension did not cascade to group access';
   end if;
+
+  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+  perform public.create_platform_institution_invite(
+    v_institution,encode(sha256(convert_to(v_code_student_retry,'utf8')),'hex'),'student',v_group,now()+interval '7 days'
+  );
+  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
+  begin
+    perform public.redeem_platform_institution_invite(v_code_student_retry);
+    raise exception 'new invite bypassed an existing suspended institution membership';
+  exception when sqlstate '42501' then
+    null;
+  end;
 
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
   perform public.set_platform_membership_status(v_institution,'10000000-0000-4000-8000-000000000003','active',null);
