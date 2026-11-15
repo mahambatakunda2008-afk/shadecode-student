@@ -90,4 +90,18 @@ begin
 end
 $marking$;
 
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000002',true);
+do $locked$
+begin
+  begin
+    perform public.submit_platform_assignment(
+      current_setting('test.assignment_id')::uuid,
+      'Attempt to overwrite marked work'
+    );
+    raise exception 'a learner overwrote an already marked submission';
+  exception when sqlstate '55000' then null;
+  end;
+end
+$locked$;
+
 rollback;
