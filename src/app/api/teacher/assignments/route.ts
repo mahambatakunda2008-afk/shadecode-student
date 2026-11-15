@@ -9,30 +9,52 @@ export async function GET() {
   const workspace = await getTeacherWorkspace();
   if (!workspace) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { data: memberships, error: membershipError } = await workspace.supabase
-    .from("platform_group_members")
-    .select("group_id")
-    .eq("user_id", workspace.user.id)
-    .eq("status", "active")
-    .in("membership_role", [...TEACHING_ROLES]);
-
-  if (membershipError) return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
-  const groupIds = [...new Set((memberships ?? []).map((row) => row.group_id))];
-  if (!groupIds.length) return NextResponse.json({ assignments: [], groups: [] });
-
-  const [groupsResult, assignmentsResult] = await Promise.all([
-    workspace.supabase.from("platform_groups").select("id,name").in("id", groupIds).order("name"),
+  const [membershipsResult, institutionsResult] = await Promise.all([
     workspace.supabase
-      .from("platform_assignments")
-      .select("id,group_id,created_by,title,subject,instructions,due_at,max_score,status,created_at")
-      .in("group_id", groupIds)
-      .order("created_at", { ascending: false })
-      .limit(100),
+      .from("platform_group_members")
+      .select("group_id")
+      .eq("user_id", workspace.user.id)
+      .eq("status", "active")
+      .in("membership_role", [...TEACHING_ROLES]),
+    workspace.supabase
+      .from("platform_institution_members")
+      .select("institution_id")
+      .eq("user_id", workspace.user.id)
+      .eq("status", "active")
+      .eq("membership_role", "administrator"),
   ]);
+
+  if (membershipsResult.error || institutionsResult.error) {
+    return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
+  }
+  const groupIds = [...new Set((membershipsResult.data ?? []).map((row) => row.group_id))];
+  const institutionIds = [...new Set((institutionsResult.data ?? []).map((row) => row.institution_id))];
+  const [assignedGroups, adminGroups] = await Promise.all([
+    groupIds.length
+      ? workspace.supabase.from("platform_groups").select("id,name").in("id", groupIds)
+      : Promise.resolve({ data: [], error: null }),
+    institutionIds.length
+      ? workspace.supabase.from("platform_groups").select("id,name").in("institution_id", institutionIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (assignedGroups.error || adminGroups.error) {
+    return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
+  }
+  const groups = [...new Map([...(assignedGroups.data ?? []), ...(adminGroups.data ?? [])].map((group) => [group.id, group])).values()]
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const authorizedGroupIds = groups.map((group) => group.id);
+  if (!authorizedGroupIds.length) return NextResponse.json({ assignments: [], groups: [] });
+
+  const assignmentsResult = await workspace.supabase
+    .from("platform_assignments")
+    .select("id,group_id,created_by,title,subject,instructions,due_at,max_score,status,created_at")
+    .in("group_id", authorizedGroupIds)
+    .order("created_at", { ascending: false })
+    .limit(100);
   if (groupsResult.error || assignmentsResult.error) {
     return NextResponse.json({ error: "Could not load classwork." }, { status: 500 });
   }
-  return NextResponse.json({ groups: groupsResult.data ?? [], assignments: assignmentsResult.data ?? [] });
+  return NextResponse.json({ groups, assignments: assignmentsResult.data ?? [] });
 }
 
 export async function POST(request: Request) {
