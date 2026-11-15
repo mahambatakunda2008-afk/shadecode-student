@@ -93,6 +93,35 @@ function learnerContinuityNote(
     notes.push(
       `I have ${evidence.attempts} recorded learning attempts for this topic in this subject, so I'll build on that history rather than assume this is your first encounter.`
     );
+    if (typeof evidence.masteryScore === "number") {
+      notes.push(`The current topic-mastery estimate is ${Math.round(evidence.masteryScore)}% from recorded evidence. Treat it as an estimate with uncertainty, not a grade or a fixed label.`);
+      if (evidence.masteryScore < 55) {
+        notes.push("I'll first check the prerequisite idea and rebuild the method with a worked example before asking you to solve a fresh question.");
+      } else if (evidence.masteryScore < 80) {
+        notes.push("I'll use a short guided attempt, then a fresh transfer question to check whether the method holds in a different setting.");
+      } else {
+        notes.push("I'll begin with a brief retrieval question and then stretch the idea with a less familiar application.");
+      }
+    }
+  }
+
+  const reviewSuggestion = context.studentContext.reviewSuggestions.items.find((item) =>
+    item.topicId.trim().toLocaleLowerCase() === normalizedTopic &&
+    subjectKeys.includes(item.subjectKey.trim().toLocaleLowerCase())
+  );
+  if (reviewSuggestion) {
+    notes.push(reviewSuggestion.reason === "repeated_errors"
+      ? "Your saved evidence suggests prioritising this topic for another focused review because errors appeared across separate attempts."
+      : "Your saved history shows retrieval on separate occasions, so I'll include a fresh recall check rather than simply repeat the previous explanation.");
+  }
+
+  const intervention = context.studentContext.interventionOutcomes.items.find((item) =>
+    item.topicId.trim().toLocaleLowerCase() === normalizedTopic &&
+    subjectKeys.includes(item.subjectKey.trim().toLocaleLowerCase()) &&
+    item.state !== "collecting_evidence"
+  );
+  if (intervention) {
+    notes.push("There is enough recorded follow-up evidence to compare how earlier teaching approaches were followed by later attempts. I'll use that as descriptive guidance, not proof that one method caused the result.");
   }
 
   const repeatedErrors = context.studentContext.mistakes.repeatedTopicErrors.find((item) =>
