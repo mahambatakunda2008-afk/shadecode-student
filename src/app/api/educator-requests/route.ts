@@ -27,7 +27,7 @@ export async function GET() {
     : {data:[]};
   const names=new Map((profiles??[]).map(p=>[p.user_id,p.display_name]));
   return NextResponse.json({requests:(requests??[]).map(r=>({
-    ...r,viewerRole:r.student_id===user.id?"student":"educator",
+    ...r,viewerId:user.id,viewerRole:r.student_id===user.id?"student":"educator",
     studentName:names.get(r.student_id)??"Student",
     educatorName:names.get(r.educator_id)??"Educator",
     messages:(messages??[]).filter(m=>m.request_id===r.id),
