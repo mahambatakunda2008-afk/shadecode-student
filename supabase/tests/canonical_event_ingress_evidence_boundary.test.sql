@@ -23,7 +23,7 @@ begin
   select p.prosecdef into v_is_security_definer
   from pg_proc p
   where p.oid = 'public.sanitize_untrusted_cortex_event_evidence()'::regprocedure;
-  if v_is_security_definer then
+  if v_is_security_definer is distinct from false then
     raise exception 'Evidence sanitizer trigger must remain SECURITY INVOKER';
   end if;
 
@@ -31,7 +31,7 @@ begin
     into v_function_owner, v_is_security_definer
   from pg_proc p
   where p.oid = 'public.complete_lesson_quiz_attempt(uuid)'::regprocedure;
-  if v_function_owner <> 'postgres' or not v_is_security_definer then
+  if v_function_owner is distinct from 'postgres' or v_is_security_definer is distinct from true then
     raise exception 'Trusted quiz completion must remain SECURITY DEFINER owned by postgres';
   end if;
 
