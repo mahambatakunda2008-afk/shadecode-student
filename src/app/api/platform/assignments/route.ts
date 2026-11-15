@@ -25,7 +25,7 @@ export async function GET() {
   const assignmentIds = (assignments ?? []).map((assignment) => assignment.id);
   const { data: submissions } = assignmentIds.length
     ? await supabase.from("platform_assignment_submissions")
-        .select("assignment_id,submitted_at,status,score,feedback")
+        .select("assignment_id,submitted_at,status,score,feedback,question_marks")
         .eq("student_id", user.id).in("assignment_id", assignmentIds)
     : { data: [] };
   const submitted = new Map((submissions ?? []).map((submission) => [submission.assignment_id, submission]));
