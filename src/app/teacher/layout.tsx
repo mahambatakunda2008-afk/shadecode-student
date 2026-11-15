@@ -19,7 +19,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           <Link href="/teacher" aria-label="Teacher portal home"><BrandLockup compact /></Link>
           <TeacherAccountMenu isAdmin={reviewer.isAdmin} />
         </div>
-        <TeacherNav isAdmin={reviewer.isAdmin} canReviewContent={reviewer.canReviewContent} />
+        <TeacherNav isAdmin={reviewer.isAdmin} canReviewContent={reviewer.canReviewContent} canAuthorTutorials={reviewer.canAuthorTutorials} isInstitutionStaff={reviewer.isInstitutionStaff} />
       </header>
       <main className="mx-auto w-full max-w-6xl px-4 py-7 sm:px-6 lg:py-9">{children}</main>
     </div>

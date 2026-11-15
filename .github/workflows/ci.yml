@@ -6,7 +6,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, fix/exam-hub-subject-access, fix/library-subject-access-followup, feat/teacher-client-workspace-foundation, feat/student-learning-resource-discovery]
+    branches: [main, fix/exam-hub-subject-access, fix/library-subject-access-followup, feat/teacher-client-workspace-foundation, feat/student-learning-resource-discovery, feat/independent-educator-onboarding]
   pull_request:
     branches: [main, fix/exam-hub-subject-access]
 
@@ -91,6 +91,11 @@ jobs:
           create function auth.uid() returns uuid
             language sql stable
             as $uid$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $uid$;
+          -- The disposable fixture does not load the production auth role catalog.
+          -- This stub keeps unrelated admin-only branches closed during lifecycle tests.
+          create function public.has_role(user_id uuid, role_name text) returns boolean
+            language sql stable
+            as $role$ select false $role$;
           grant usage on schema auth to authenticated;
           grant execute on function auth.uid() to authenticated;
           SQL
@@ -145,6 +150,19 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_assessment_studio.test.sql
+
+      - name: Apply independent educator applications
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115190000_independent_educator_applications.sql
+      - name: Apply educator help requests and messaging
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115210000_educator_help_requests_and_messaging.sql
+      - name: Test educator request creation, replies and participant isolation
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/educator_help_requests_and_messaging.test.sql
 
   verify:
     name: Typecheck, lint, test, build

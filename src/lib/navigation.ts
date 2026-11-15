@@ -62,6 +62,8 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   learn: { href: "/learn", label: "Learn", icon: BookOpen, feature: "learn" },
   teacherTutorials: { href: "/learn/tutorials", label: "Tutorials", icon: MonitorPlay, feature: "tutorials" },
   resources: { href: "/learn/resources", label: "Resources", icon: LibraryBig, feature: "tutorials" },
+  educators: { href: "/learn/educators", label: "Find an educator", icon: GraduationCap, feature: "tutorials" },
+  educatorMessages: { href: "/learn/educator-requests", label: "Educator messages", icon: MessageSquare },
   compLab: { href: "/comp-lab", label: "Comp Lab", icon: Code2, feature: "code-lab" },
   curriculum: { href: "/curriculum", label: "Courses", icon: BookOpen, feature: "courses" },
   workmate: { href: "/workmate", label: "Cortex Verify", icon: FileCheck2, feature: "workmate" },
@@ -91,6 +93,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   adminManage: { href: "/admin/exam-hub/manage", label: "Manage Papers", icon: Settings2 },
   adminBoards: { href: "/admin/exam-hub/boards", label: "Exam Boards", icon: Globe },
   adminContentReview: { href: "/teacher", label: "Teacher Portal", icon: FileCheck2 },
+  adminEducators: { href: "/admin/educators", label: "Educator Applications", icon: GraduationCap },
   adminFeedback: { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 };
 
@@ -107,6 +110,7 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
       NAV_ITEMS.adminModeration,
       NAV_ITEMS.adminQuestions,
       NAV_ITEMS.adminContentReview,
+      NAV_ITEMS.adminEducators,
       NAV_ITEMS.adminBoards,
       NAV_ITEMS.adminFeedback,
     ],
@@ -122,7 +126,7 @@ export function getExperienceNavGroups(
     .toLowerCase()
     .includes("biology");
   const foundation: NavGroup[] = [
-    { group: "Start here", items: [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.resources] },
+    { group: "Start here", items: [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.resources, NAV_ITEMS.educators, NAV_ITEMS.educatorMessages] },
     {
       group: "Keep exploring",
       items: [
@@ -144,6 +148,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.learn,
         NAV_ITEMS.teacherTutorials,
         NAV_ITEMS.resources,
+        NAV_ITEMS.educators,
         NAV_ITEMS.curriculum,
         NAV_ITEMS.study,
         NAV_ITEMS.studyPlan,
@@ -164,7 +169,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.timetable,
       ],
     },
-    { group: "Connect", items: [NAV_ITEMS.whatsapp] },
+    { group: "Connect", items: [NAV_ITEMS.educatorMessages, NAV_ITEMS.whatsapp] },
     {
       group: "Tools",
       items: [NAV_ITEMS.studyspace, NAV_ITEMS.cortex, NAV_ITEMS.share, NAV_ITEMS.virtualLab],
@@ -184,6 +189,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.studyspace,
         NAV_ITEMS.learn,
         NAV_ITEMS.resources,
+        NAV_ITEMS.educators,
         NAV_ITEMS.studyPlan,
       ],
     },
@@ -199,7 +205,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.timetable,
       ],
     },
-    { group: "Connect", items: [NAV_ITEMS.whatsapp] },
+    { group: "Connect", items: [NAV_ITEMS.educatorMessages, NAV_ITEMS.whatsapp] },
     {
       group: "Growth",
       items: [NAV_ITEMS.analytics, NAV_ITEMS.cortex, NAV_ITEMS.achievements, NAV_ITEMS.share],
@@ -239,7 +245,7 @@ export function getExperienceNavGroups(
             ? hasComputingSubject
             : item.href === NAV_ITEMS.biologyPractical.href
               ? hasBiologySubject
-              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments" || item.href === "/learn/resources",
+              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments" || item.href === "/learn/resources" || item.href === "/learn/educators" || item.href === "/learn/educator-requests",
       ),
     }))
     .filter((group) => group.items.length > 0);
@@ -276,7 +282,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
       NAV_ITEMS.virtualLab,
     ],
   },
-  { group: "Connect", items: [NAV_ITEMS.whatsapp] },
+  { group: "Connect", items: [NAV_ITEMS.educatorMessages, NAV_ITEMS.whatsapp] },
   {
     group: "Progress",
     items: [NAV_ITEMS.analytics, NAV_ITEMS.leaderboard, NAV_ITEMS.achievements],

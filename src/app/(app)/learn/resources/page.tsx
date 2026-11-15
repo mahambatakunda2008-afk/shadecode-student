@@ -76,6 +76,9 @@ export default function LearningResourcesPage() {
       <h1 className="text-2xl font-bold sm:text-3xl">Find something that actually teaches you.</h1>
       <p className="max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Discover reviewed tutorials from Shadecode educators and search YouTube using your subject, exact topic and level. No generic video firehose.</p>
     </header>
+    <Link href="/learn/educators" className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-4 py-3 text-sm font-semibold transition hover:border-[var(--primary)]">
+      Find a tutor or subject specialist <ExternalLink size={14} />
+    </Link>
 
     <form onSubmit={searchVideos} className="space-y-4 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 sm:p-5">
       <div className="flex items-center gap-2 font-semibold"><Search size={18} />Find a learning resource</div>

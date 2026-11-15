@@ -14,6 +14,26 @@ export default async function TeacherHome() {
   if (!workspace) redirect("/");
   const reviewer = await getReviewer();
 
+  if (!reviewer && workspace.isIndependentEducator && !workspace.isInstitutionStaff) {
+    return (
+      <div className="space-y-7">
+        <header className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">Shadecode Educator</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Your independent teaching workspace</h1>
+          <p className="max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Create useful lessons, tutorials, worked examples, diagrams and learning resources for students. Your educator approval lets you author content without requiring a school membership.</p>
+        </header>
+        <section className="grid gap-3 sm:grid-cols-2">
+          <Link href="/teacher/tutorials" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 transition hover:border-[var(--primary)]">
+            <p className="text-xs text-[var(--muted-foreground)]">Educator workspace</p><h2 className="mt-2 text-lg font-semibold">Tutorial Studio</h2><p className="mt-1 text-sm text-[var(--muted-foreground)]">Build and submit lessons, explanations, videos, diagrams and practical resources.</p>
+          </Link>
+          <Link href="/educator/apply" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 transition hover:border-[var(--primary)]">
+            <p className="text-xs text-[var(--muted-foreground)]">Your educator profile</p><h2 className="mt-2 text-lg font-semibold">Application and status</h2><p className="mt-1 text-sm text-[var(--muted-foreground)]">Review your educator profile and approval information.</p>
+          </Link>
+        </section>
+      </div>
+    );
+  }
+
   if (!reviewer) {
     const [institutions, groups] = await Promise.all([
       workspace.supabase

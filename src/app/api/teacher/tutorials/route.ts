@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { getTutorialAuthor } from "@/lib/exam/curated/reviewAccess";
 import { validateTutorialBlocks } from "@/lib/teacher/tutorials";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const reviewer = await getReviewer();
+  const reviewer = await getTutorialAuthor();
   if (!reviewer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const query = reviewer.supabase
@@ -19,7 +19,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const reviewer = await getReviewer();
+  const reviewer = await getTutorialAuthor();
   if (!reviewer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json().catch(() => null);
