@@ -13,6 +13,7 @@ type Assignment = {
 export default function StudentAssignments() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [responses, setResponses] = useState<Record<string, Record<number, string>>>({});
+  const [legacyResponses, setLegacyResponses] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -36,7 +37,7 @@ export default function StudentAssignments() {
 
   async function submit(assignment: Assignment) {
     const answers = responses[assignment.id] ?? {};
-    if (assignment.questions.some((_, index) => !(answers[index] ?? "").trim())) {
+    if (assignment.questions.length && assignment.questions.some((_, index) => !(answers[index] ?? "").trim())) {
       setError("Complete each question before submitting.");
       return;
     }
@@ -54,6 +55,7 @@ export default function StudentAssignments() {
       if (!response.ok) throw new Error(payload.error || "Could not submit your work.");
       setNotice("Your work has been submitted.");
       setResponses((current) => ({ ...current, [assignment.id]: {} }));
+      setLegacyResponses((current) => ({ ...current, [assignment.id]: "" }));
       await load();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not submit your work.");
@@ -80,6 +82,11 @@ export default function StudentAssignments() {
           ) : (
             <div className="space-y-4">
               {assignment.submission ? <p className="text-xs text-[var(--muted-foreground)]">Submitted {new Date(assignment.submission.submitted_at).toLocaleString()}. You can update your response before the deadline.</p> : null}
+              {!assignment.questions.length ? (
+                <label className="block space-y-1.5 text-sm"><span className="font-medium">Your answer / working</span>
+                  <textarea rows={5} maxLength={30000} value={legacyResponses[assignment.id] ?? ""} onChange={(event) => setLegacyResponses((current) => ({ ...current, [assignment.id]: event.target.value }))} placeholder="Write your answer or explain your working…" className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2.5" />
+                </label>
+              ) : null}
               {assignment.questions.map((question, index) => (
                 <section key={index} className="space-y-2 rounded-xl bg-[var(--surface)] p-4">
                   <div className="flex items-start justify-between gap-3"><h3 className="text-sm font-semibold">Question {index + 1}</h3><span className="text-xs text-[var(--muted-foreground)]">{question.marks} marks</span></div>
