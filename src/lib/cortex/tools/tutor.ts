@@ -121,7 +121,13 @@ function learnerContinuityNote(
     item.state !== "collecting_evidence"
   );
   if (intervention) {
-    notes.push("There is enough recorded follow-up evidence to compare how earlier teaching approaches were followed by later attempts. I'll use that as descriptive guidance, not proof that one method caused the result.");
+    const strategy = intervention.teachingStrategy?.replace(/-/g, " ");
+    const result = intervention.state === "improving"
+      ? "follow-up scores improved against the recorded baseline"
+      : intervention.state === "declining"
+        ? "follow-up scores were lower than the recorded baseline"
+        : "follow-up scores were broadly stable against the recorded baseline";
+    notes.push(`A previous ${strategy || "teaching"} intervention has ${result}. I'll treat this as descriptive evidence, not proof that the approach caused the change.`);
   }
 
   const repeatedErrors = context.studentContext.mistakes.repeatedTopicErrors.find((item) =>
