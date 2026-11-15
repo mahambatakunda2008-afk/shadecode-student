@@ -34,6 +34,18 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
     if (!subjects.some((item) => item.name === subject)) setSubject(subjects[0]?.name ?? "");
   }, [subjects, subject]);
 
+  useEffect(() => {
+    let active = true;
+    void listResearchMemory().then((records) => {
+      if (!active) return;
+      setSavedIds(new Set(records.map((record) => record.id)));
+      setMemoryCount(records.length);
+    }).catch(() => {
+      if (active) setMemoryMessage("Local research memory is unavailable in this browser.");
+    });
+    return () => { active = false; };
+  }, []);
+
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!query.trim() || !subject || busy) return;
