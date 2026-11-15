@@ -9,6 +9,7 @@ import { ShareQuizResult } from "@/components/share/ShareQuizResult";
 import { gradeForPercentage } from "@/lib/challenge/fromResult";
 import { trackEvent } from "@/lib/traction/client";
 import { recordVerifyLearningSignal } from "@/lib/cortex/verify/learner-model-store";
+import { clearQuizAttemptCheckpoint, getQuizAttemptCheckpoint, saveQuizAttemptCheckpoint } from "@/lib/learn/quizAttemptCheckpoint";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
   ArrowRight, RotateCcw, Trophy, Brain,
@@ -70,6 +71,80 @@ export default function QuizPage() {
   const [submissionError, setSubmissionError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  function applyVerifiedResult(
+    result: Record<string, unknown>,
+    sourceQuestions: QuizQuestion[],
+    submittedAnswers: number[],
+    userId: string,
+    subject: string,
+    topic: string,
+  ) {
+    const verifiedQuestions = Array.isArray(result.questions)
+      ? result.questions as Array<Record<string, unknown>>
+      : [];
+    if (verifiedQuestions.length !== sourceQuestions.length) {
+      throw new Error("The server returned an incomplete verified result.");
+    }
+    const completedQuestions = sourceQuestions.map((question, index) => ({
+      ...question,
+      correctIndex: Number(verifiedQuestions[index].correctIndex),
+      explanation: typeof verifiedQuestions[index].explanation === "string"
+        ? String(verifiedQuestions[index].explanation)
+        : question.explanation,
+    }));
+    const finalAnswers = verifiedQuestions.map((question, index) =>
+      Number.isInteger(question.selectedIndex) ? Number(question.selectedIndex) : submittedAnswers[index]
+    );
+    setQuestions(completedQuestions);
+    setAnswers(finalAnswers);
+    setPhase("results");
+
+    const correct = completedQuestions.reduce(
+      (count, question, index) => count + (finalAnswers[index] === question.correctIndex ? 1 : 0),
+      0,
+    );
+    const percentage = Math.round((correct / completedQuestions.length) * 100);
+    if (userId && subject && topic && typeof window !== "undefined") {
+      const evidenceKey = "shadecode:learn:verified-quiz-evidence:v1:" + encodeURIComponent(userId);
+      try {
+        const stored = JSON.parse(localStorage.getItem(evidenceKey) || "[]") as unknown;
+        const seen = Array.isArray(stored) ? stored.filter((value) => typeof value === "string").slice(-499) as string[] : [];
+        if (!seen.includes(quizAttemptIdRef.current)) {
+          recordVerifyLearningSignal(userId, { subject, topic, score: percentage, occurredAt: new Date().toISOString() });
+          localStorage.setItem(evidenceKey, JSON.stringify([...seen, quizAttemptIdRef.current].slice(-500)));
+        }
+      } catch {
+        // Local adaptation is best-effort; the server-verified result remains saved.
+      }
+    }
+    void trackEvent("quiz_completed", { source: "lesson_quiz", subject: subject || undefined, correct, total: completedQuestions.length, percentage });
+    void clearQuizAttemptCheckpoint(userId, lessonId).catch(() => {});
+  }
+
+  async function saveCheckpoint(
+    nextAnswers: number[],
+    nextCurrent: number,
+    nextSelected: number | null,
+    nextConfirmed: boolean,
+    nextQuestions = questions,
+  ) {
+    if (!quizUserId || !lessonId || !quizAttemptIdRef.current || !nextQuestions.length) return;
+    try {
+      await saveQuizAttemptCheckpoint(quizUserId, {
+        attemptId: quizAttemptIdRef.current,
+        lessonId,
+        questions: nextQuestions,
+        answers: nextAnswers,
+        current: nextCurrent,
+        selected: nextSelected,
+        confirmed: nextConfirmed,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch {
+      setSubmissionError("Local recovery could not be saved on this device. Keep this page open until the quiz is submitted.");
+    }
+  }
+
   useEffect(() => {
     (async () => {
       const sb = createClient();
@@ -77,6 +152,8 @@ export default function QuizPage() {
       if (!session) { router.push("/login"); return; }
       setToken(session.access_token);
       setQuizUserId(session.user.id);
+      let resolvedSubject = "";
+      let resolvedTopic = "";
 
       // fetch lesson title
       try {
@@ -85,8 +162,10 @@ export default function QuizPage() {
           const d = await r.json();
           const lesson = d.lesson ?? {};
           setLessonTitle(lesson.title ?? "");
-          setLessonSubject(typeof lesson.subject === "string" && lesson.subject !== "Unknown subject" ? lesson.subject : "");
-          setLessonTopic(typeof lesson.topic === "string" ? lesson.topic : "");
+          resolvedSubject = typeof lesson.subject === "string" && lesson.subject !== "Unknown subject" ? lesson.subject : "";
+          resolvedTopic = typeof lesson.topic === "string" ? lesson.topic : "";
+          setLessonSubject(resolvedSubject);
+          setLessonTopic(resolvedTopic);
           try {
             const rawReview = sessionStorage.getItem("shadecode:cortex:active-review:v1");
             if (rawReview) {
@@ -110,6 +189,60 @@ export default function QuizPage() {
         }
       } catch {}
 
+      // Recover the last user-scoped attempt before issuing a new one.
+      const checkpoint = await getQuizAttemptCheckpoint(session.user.id, lessonId).catch(() => null);
+      if (checkpoint) {
+        quizAttemptIdRef.current = checkpoint.attemptId;
+        try {
+          const recoveryResponse = await fetch(`/api/learn/quiz/attempt/${encodeURIComponent(checkpoint.attemptId)}`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+          const recovery = await recoveryResponse.json();
+          if (recoveryResponse.ok && recovery.lessonId === lessonId) {
+            if (recovery.status === "completed" && recovery.result) {
+              applyVerifiedResult(recovery.result, checkpoint.questions, checkpoint.answers, session.user.id, resolvedSubject, resolvedTopic);
+              return;
+            }
+            if (recovery.status === "processing" && Array.isArray(recovery.answers)) {
+              const retryResponse = await fetch("/api/learn/quiz/submit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+                body: JSON.stringify({ attemptId: checkpoint.attemptId, answers: recovery.answers }),
+              });
+              const retryResult = await retryResponse.json();
+              if (retryResponse.ok) {
+                applyVerifiedResult(retryResult, checkpoint.questions, recovery.answers, session.user.id, resolvedSubject, resolvedTopic);
+                return;
+              }
+              setSubmissionError(retryResult?.error || "Your submitted answers are saved. Retry verification when online.");
+              setQuestions(checkpoint.questions);
+              setAnswers(recovery.answers.slice(0, -1));
+              setCurrent(checkpoint.questions.length - 1);
+              setSelected(recovery.answers[recovery.answers.length - 1] ?? null);
+              setConfirmed(true);
+              setPhase("quiz");
+              return;
+            }
+            if (recovery.status === "issued") {
+              setQuestions(checkpoint.questions);
+              setAnswers(checkpoint.answers);
+              setCurrent(checkpoint.current);
+              setSelected(checkpoint.selected);
+              setConfirmed(checkpoint.confirmed);
+              setPhase("quiz");
+              return;
+            }
+          } else if (recoveryResponse.status >= 500) {
+            throw new Error(recovery?.error || "Could not recover your saved quiz. Please reconnect and retry.");
+          }
+          await clearQuizAttemptCheckpoint(session.user.id, lessonId);
+        } catch (recoveryError) {
+          setErrMsg(recoveryError instanceof Error ? recoveryError.message : "Could not recover your saved quiz.");
+          setPhase("error");
+          return;
+        }
+      }
+
       // generate quiz
       setPhase("generating");
       try {
@@ -119,7 +252,16 @@ export default function QuizPage() {
           body: JSON.stringify({ lessonId }),
         });
         const qd = await qr.json();
-        if (qd?.questions?.length && typeof qd.attemptId === "string") { quizAttemptIdRef.current = qd.attemptId; setQuestions(qd.questions); setPhase("quiz"); void trackEvent("quiz_started", { source: "lesson_quiz", question_count: qd.questions.length }); }
+        if (qd?.questions?.length && typeof qd.attemptId === "string") {
+          quizAttemptIdRef.current = qd.attemptId;
+          setQuestions(qd.questions);
+          await saveQuizAttemptCheckpoint(session.user.id, {
+            attemptId: qd.attemptId, lessonId, questions: qd.questions, answers: [],
+            current: 0, selected: null, confirmed: false, updatedAt: new Date().toISOString(),
+          }).catch(() => {});
+          setPhase("quiz");
+          void trackEvent("quiz_started", { source: "lesson_quiz", question_count: qd.questions.length });
+        }
         else { setErrMsg("Couldn't generate quiz questions. Please try again."); setPhase("error"); }
       } catch { setErrMsg("Something went wrong. Please try again."); setPhase("error"); }
     })();
@@ -128,12 +270,14 @@ export default function QuizPage() {
   function confirm() {
     if (selected === null) return;
     setConfirmed(true);
+    void saveCheckpoint(answers, current, selected, true);
   }
 
   async function next() {
     if (selected === null || submitting) return;
     const newAnswers = [...answers, selected];
     if (current < questions.length - 1) {
+      await saveCheckpoint(newAnswers, current + 1, null, false);
       setAnswers(newAnswers);
       setCurrent(c => c + 1);
       setSelected(null);
@@ -141,6 +285,7 @@ export default function QuizPage() {
       return;
     }
 
+    await saveCheckpoint(newAnswers, current, selected, true);
     setSubmissionError("");
     setSubmitting(true);
     try {
@@ -151,39 +296,10 @@ export default function QuizPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result?.error || "Could not verify this quiz. Please retry.");
-      const verifiedQuestions = Array.isArray(result.questions) ? result.questions : [];
-      if (verifiedQuestions.length !== questions.length) throw new Error("The server returned an incomplete verified result.");
-      const completedQuestions = questions.map((question, index) => ({
-        ...question,
-        correctIndex: verifiedQuestions[index].correctIndex,
-        explanation: verifiedQuestions[index].explanation ?? question.explanation,
-      }));
-      setQuestions(completedQuestions);
-      setAnswers(newAnswers);
-
-      // Verified question evidence is persisted and projected atomically by the server.
+      applyVerifiedResult(result, questions, newAnswers, quizUserId, lessonSubject, lessonTopic);
       if (reviewSessionIdRef.current) {
         try { sessionStorage.removeItem("shadecode:cortex:active-review:v1"); } catch {}
       }
-      setPhase("results");
-      const correct = completedQuestions.reduce((n, q, i) => (newAnswers[i] === q.correctIndex ? n + 1 : n), 0);
-      const percentage = Math.round((correct / completedQuestions.length) * 100);
-      // Only the server-verified score enters the private local learner model.
-      // The attempt ID makes this idempotent across retries and page refreshes.
-      if (quizUserId && lessonSubject && lessonTopic && typeof window !== "undefined") {
-        const evidenceKey = "shadecode:learn:verified-quiz-evidence:v1:" + encodeURIComponent(quizUserId);
-        try {
-          const stored = JSON.parse(localStorage.getItem(evidenceKey) || "[]") as unknown;
-          const seen = Array.isArray(stored) ? stored.filter((value) => typeof value === "string").slice(-499) as string[] : [];
-          if (!seen.includes(quizAttemptIdRef.current)) {
-            recordVerifyLearningSignal(quizUserId, { subject: lessonSubject, topic: lessonTopic, score: percentage, occurredAt: new Date().toISOString() });
-            localStorage.setItem(evidenceKey, JSON.stringify([...seen, quizAttemptIdRef.current].slice(-500)));
-          }
-        } catch {
-          // Local adaptation is best-effort; server-verified quiz results remain saved.
-        }
-      }
-      void trackEvent("quiz_completed", { source: "lesson_quiz", subject: lessonSubject || undefined, correct, total: completedQuestions.length, percentage });
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : "Could not verify this quiz. Please retry.");
     } finally {
@@ -207,6 +323,11 @@ export default function QuizPage() {
       }
       quizAttemptIdRef.current = data.attemptId;
       setQuestions(data.questions);
+      await clearQuizAttemptCheckpoint(quizUserId, lessonId).catch(() => {});
+      await saveQuizAttemptCheckpoint(quizUserId, {
+        attemptId: data.attemptId, lessonId, questions: data.questions, answers: [],
+        current: 0, selected: null, confirmed: false, updatedAt: new Date().toISOString(),
+      }).catch(() => {});
       setPhase("quiz");
       void trackEvent("quiz_started", { source: "lesson_quiz_retry", question_count: data.questions.length });
     } catch (error) {
@@ -353,7 +474,7 @@ export default function QuizPage() {
   // ── Quiz ─────────────────────────────────────────────────────────────────
 
   if (!q) return null;
-  const isCorrectAnswer = confirmed && selected === q.correctIndex;
+  const isCorrectAnswer = confirmed && q.correctIndex !== undefined && selected === q.correctIndex;
   const progressPct     = (current / questions.length) * 100;
 
   return (
@@ -390,7 +511,7 @@ export default function QuizPage() {
           <div role="radiogroup" aria-label="Answer options" className="mb-5 flex flex-col gap-2.5">
             {q.options.map((opt, i) => {
               const isRight = confirmed && i === q.correctIndex;
-              const isWrong = confirmed && i === selected && selected !== q.correctIndex;
+              const isWrong = confirmed && q.correctIndex !== undefined && i === selected && selected !== q.correctIndex;
               const tone = isRight
                 ? "border-[color-mix(in_srgb,var(--success)_45%,transparent)] bg-[var(--success-soft)] text-[var(--success)]"
                 : isWrong
@@ -422,9 +543,9 @@ export default function QuizPage() {
           {confirmed && (
             <div role="status" aria-live="polite" className={`mb-5 animate-[ssc-page-in_200ms_ease_both] rounded-[14px] border px-4 py-3.5 ${isCorrectAnswer ? good : bad}`}>
               <p className={`mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] ${isCorrectAnswer ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                {isCorrectAnswer ? "✓ Correct!" : "✗ Incorrect"}
+                {q.correctIndex === undefined ? "Answer saved" : isCorrectAnswer ? "✓ Correct!" : "✗ Incorrect"}
               </p>
-              <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">{q.explanation}</p>
+              <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">{q.correctIndex === undefined ? "Your selection is saved. Correctness will be checked securely when you submit the quiz." : q.explanation}</p>
             </div>
           )}
 
