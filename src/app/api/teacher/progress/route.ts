@@ -11,24 +11,18 @@ export async function GET(request: Request) {
   const groupId = new URL(request.url).searchParams.get("groupId");
   if (!groupId) return NextResponse.json({ error: "Choose a teaching group." }, { status: 400 });
 
-  const [groupMemberships, institutionMemberships] = await Promise.all([
-    workspace.supabase.from("platform_group_members").select("group_id")
-      .eq("user_id", workspace.user.id).eq("status", "active")
-      .in("membership_role", [...TEACHING_ROLES]),
-    workspace.supabase.from("platform_institution_members").select("institution_id")
-      .eq("user_id", workspace.user.id).eq("status", "active")
-      .eq("membership_role", "administrator"),
-  ]);
-  if (groupMemberships.error || institutionMemberships.error) {
+  const groupMemberships = await workspace.supabase.from("platform_group_members").select("group_id")
+    .eq("user_id", workspace.user.id).eq("status", "active")
+    .in("membership_role", [...TEACHING_ROLES]);
+  if (groupMemberships.error) {
     return NextResponse.json({ error: "Could not verify your teaching access." }, { status: 500 });
   }
 
   const assigned = (groupMemberships.data ?? []).some((row) => row.group_id === groupId);
-  const institutionIds = (institutionMemberships.data ?? []).map((row) => row.institution_id);
   const { data: group, error: groupError } = await workspace.supabase
     .from("platform_groups").select("id,name,institution_id").eq("id", groupId).maybeSingle();
   if (groupError) return NextResponse.json({ error: "Could not load this class." }, { status: 500 });
-  if (!group || (!assigned && (!group.institution_id || !institutionIds.includes(group.institution_id)))) {
+  if (!group || !assigned) {
     return NextResponse.json({ error: "You are not authorized to view this class." }, { status: 403 });
   }
 
