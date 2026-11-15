@@ -78,6 +78,15 @@ export default async function GrowthAdminPage() {
         </Card>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
+          <Card title="Where visitors come from · 7d" sub="Distinct browsers; bots and link previews are counted apart. Appears as new visits arrive" flush>
+            {report.acquisition.channels.length ? <div className="space-y-1.5">{report.acquisition.channels.slice(0, 8).map((c) => <div key={c.label} className="flex items-center justify-between rounded-xl bg-white/[0.03] px-3 py-2 text-sm"><span className="truncate">{c.label}</span><span className="shrink-0 pl-3 text-xs text-zinc-400"><b className="text-cyan-300">{c.visitors}</b> visitors{c.mobilePct !== null && ` · ${c.mobilePct}% mobile`}{c.bots > 0 && ` · ${c.bots} bots`}</span></div>)}</div> : <p className="text-sm text-zinc-500">No tracked visits yet. This fills in as people arrive after the latest deploy.</p>}
+          </Card>
+          <Card title="Landing buttons tapped · 7d" sub="By distinct visitor" flush>
+            <List rows={report.acquisition.landingTaps} empty="No landing taps recorded yet." />
+          </Card>
+        </section>
+
+        <section className="mt-6 grid gap-6 lg:grid-cols-2">
           <Card title="What students tap to start learning" sub="learning_action_started by source" flush>
             <List rows={report.adoption.actionSources} empty="No learning starts recorded yet." />
             <p className="mt-3 text-xs text-zinc-500">First lesson from the dashboard: <b className="text-zinc-300">{report.adoption.firstStep.syllabus}</b> from the syllabus · <b className="text-zinc-300">{report.adoption.firstStep.generic}</b> generic</p>

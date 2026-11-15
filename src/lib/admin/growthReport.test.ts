@@ -160,3 +160,35 @@ describe("visitors and overall retention", () => {
     expect(r.headline.visitorToSignupPct).toBeNull();
   });
 });
+
+describe("acquisition", () => {
+  const sess = (anon: string, props: Record<string, unknown>, at = "2026-11-14T09:00:00Z"): EventRow => ({ name: "session_started", user_id: null, created_at: at, anonymous_id: anon, properties: props });
+  it("splits real visitors from bots by channel and reports mobile share", () => {
+    const r = buildGrowthReport({
+      events: [
+        sess("a", { channel: "campaign", source: "whatsapp", device: "mobile", likely_bot: false }),
+        sess("b", { channel: "campaign", source: "whatsapp", device: "desktop", likely_bot: false }),
+        sess("c", { channel: "campaign", source: "whatsapp", device: "mobile", likely_bot: true }),
+        sess("d", { channel: "direct", device: "mobile", likely_bot: false }),
+        sess("d", { channel: "direct", device: "mobile", likely_bot: false }),
+        sess("e", { channel: "internal", device: "mobile", likely_bot: false }),
+        sess("old", { channel: "direct", device: "mobile", likely_bot: false }, "2026-10-01T09:00:00Z"),
+      ],
+      signups: [], now,
+    });
+    expect(r.acquisition.channels).toEqual([
+      { label: "campaign · whatsapp", visitors: 2, bots: 1, mobilePct: 50 },
+      { label: "direct", visitors: 1, bots: 0, mobilePct: 100 },
+    ]);
+    expect(r.acquisition.trackedVisitors).toBe(3);
+  });
+  it("counts landing button taps by distinct visitor and ignores sessions without a channel", () => {
+    const tap = (anon: string, cta: string): EventRow => ({ name: "landing_cta_clicked", user_id: null, created_at: "2026-11-14T09:00:00Z", anonymous_id: anon, properties: { cta } });
+    const r = buildGrowthReport({ events: [tap("a", "hero_start_free"), tap("a", "hero_start_free"), tap("b", "hero_start_free"), tap("b", "header_download"), sess("z", { device: "mobile" })], signups: [], now });
+    expect(r.acquisition.landingTaps).toEqual([
+      { label: "hero_start_free", events: 3, users: 2 },
+      { label: "header_download", events: 1, users: 1 },
+    ]);
+    expect(r.acquisition.channels).toEqual([]);
+  });
+});

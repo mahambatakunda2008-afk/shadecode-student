@@ -34,6 +34,8 @@ export interface FunnelStep { key: string; label: string; users: number; ofSignu
 export interface CohortRow { weekStart: string; size: number; d1: number | null; d7: number | null; d30: number | null }
 export interface DayPoint { day: string; active: number; engaged: number; signups: number }
 export interface CountRow { label: string; events: number; users: number }
+/** Visitors are distinct browsers (anonymous_id), not signed-in students. */
+export interface AcquisitionRow { label: string; visitors: number; bots: number; mobilePct: number | null }
 
 export interface GrowthReport {
   generatedAt: string;
@@ -61,6 +63,8 @@ export interface GrowthReport {
     firstStep: { syllabus: number; generic: number };
     shares: CountRow[];
   };
+  /** Where the last 7 days of visitors came from. Only sessions that recorded a channel (tracking began with that deploy) appear. */
+  acquisition: { channels: AcquisitionRow[]; landingTaps: CountRow[]; trackedVisitors: number };
   topEvents: CountRow[];
   health: { eventsAnalysed: number; anonymousPct: number | null; signupsKnown: number };
 }
@@ -189,6 +193,33 @@ export function buildGrowthReport({ events, signups, now = new Date(), funnelWin
   }
   const allCohortIds = [...byWeek.values()].flat();
 
+  // Acquisition: split visitors by channel, setting bots aside so they do not look like students who bounced.
+  const channelMap = new Map<string, { real: Set<string>; bots: Set<string>; mobile: Set<string> }>();
+  const tapMap = new Map<string, { events: number; visitors: Set<string> }>();
+  const tracked = new Set<string>();
+  for (const e of known) {
+    if (Date.parse(e.created_at) < sevenDaysAgo || !e.anonymous_id) continue;
+    if (e.name === "landing_cta_clicked") {
+      const cta = prop(e, "cta");
+      if (cta) { const t = tapMap.get(cta) ?? { events: 0, visitors: new Set<string>() }; t.events += 1; t.visitors.add(e.anonymous_id); tapMap.set(cta, t); }
+      continue;
+    }
+    if (e.name !== "session_started") continue;
+    const channel = prop(e, "channel");
+    if (!channel || channel === "internal") continue;
+    const source = prop(e, "source");
+    const label = source ? `${channel} · ${source}` : channel;
+    const row = channelMap.get(label) ?? { real: new Set<string>(), bots: new Set<string>(), mobile: new Set<string>() };
+    if (e.properties?.likely_bot === true) row.bots.add(e.anonymous_id);
+    else { row.real.add(e.anonymous_id); tracked.add(e.anonymous_id); if (prop(e, "device") === "mobile") row.mobile.add(e.anonymous_id); }
+    channelMap.set(label, row);
+  }
+  const channels: AcquisitionRow[] = [...channelMap.entries()]
+    .map(([label, r]) => ({ label, visitors: r.real.size, bots: r.bots.size, mobilePct: pct(r.mobile.size, r.real.size) }))
+    .filter((r) => r.visitors + r.bots > 0)
+    .sort((a, b) => b.visitors - a.visitors || b.bots - a.bots);
+  const landingTaps: CountRow[] = [...tapMap.entries()].map(([label, t]) => ({ label, events: t.events, users: t.visitors.size })).sort((a, b) => b.events - a.events);
+
   // Adoption of the retention/activation features.
   const actions = known.filter((e) => e.name === "learning_action_started");
   const firstStepEvents = actions.filter((e) => prop(e, "source") === "dashboard_first_lesson");
@@ -220,6 +251,7 @@ export function buildGrowthReport({ events, signups, now = new Date(), funnelWin
       },
       shares: countBy(shares, (e) => `${prop(e, "source") ?? "exam"} · ${prop(e, "channel") ?? "other"}`),
     },
+    acquisition: { channels, landingTaps, trackedVisitors: tracked.size },
     topEvents: [...topMap.entries()].map(([label, v]) => ({ label, events: v.events, users: v.users.size })).sort((a, b) => b.users - a.users || b.events - a.events).slice(0, 12),
     health: {
       eventsAnalysed: known.length,
