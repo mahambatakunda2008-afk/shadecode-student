@@ -110,6 +110,14 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_institution_lifecycle.test.sql
+      - name: Apply approval-gated guardian relationship lifecycle
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115120000_platform_guardian_relationship_lifecycle.sql
+      - name: Test guardian invitation, approval, isolation and revocation
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_guardian_relationship_lifecycle.test.sql
 
   verify:
     name: Typecheck, lint, test, build
