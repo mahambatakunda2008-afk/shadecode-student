@@ -9,6 +9,7 @@ import { hasCuratedBank } from "@/lib/exam/fallbackExam";
 import { matchGenerators } from "@/lib/exam/engine";
 import { examAiBreaker } from "@/lib/aiCircuitBreaker";
 import { resolveLearnerSubjects, assertRequestedLearnerSubject } from "@/lib/subjects/resolveLearnerSubjects";
+import { signExamPaper } from "@/lib/exam/paper-provenance";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -99,15 +100,25 @@ export async function POST(req) {
     // Generated papers are intentionally not written to `exams`: that table is the learner's exam
     // schedule (subject + exam_date). The old insert here could never succeed against it.
 
+    const paperProof = signExamPaper({
+      userId,
+      subjectId: canonicalSubject.id,
+      difficulty,
+      source,
+      questions: exam.questions,
+    });
+
     return NextResponse.json({
       questions: exam.questions,
       metadata: {
         subject: canonicalSubject.name,
+        subjectId: canonicalSubject.id,
         topic: cleanTopic || canonicalSubject.name,
         source,
         title: exam.title,
         durationMinutes: exam.durationMinutes,
         totalMarks: exam.totalMarks,
+        paperProof,
       },
     });
   } catch (err) {
