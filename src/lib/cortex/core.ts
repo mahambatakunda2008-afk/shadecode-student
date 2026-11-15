@@ -4,7 +4,7 @@ import { scoreAnswer, type ScoreAnswerInput } from "./tools/scoring";
 import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
 import type { SystemCurriculumContext } from "@/lib/curriculum/system-curriculum-context";
-import { trackExamResult, generateRecommendation } from "./memoryTracker";
+import { generateRecommendation } from "./memoryTracker";
 
 export type CortexInput = {
   userId: string;
@@ -193,18 +193,9 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
     }
 
     case "exam": {
-      const payload = asRecord(input.payload);
-      const subject = asString(payload.subject);
-      const score = payload.score;
-      if (subject && typeof score === "number" && Number.isFinite(score)) {
-        await trackExamResult({
-          userId: input.userId,
-          subject,
-          score: Math.max(0, Math.min(100, score)),
-          completedAt: new Date().toISOString(),
-        });
-      }
-
+      // This generic Cortex endpoint receives a client payload, not a
+      // server-verified marking report. Exam scores are recorded only by the
+      // authenticated marking route after it validates the complete report.
       const recommendation = await generateRecommendation(input.userId);
       return {
         response: "Exam mode activated. Good luck.",
