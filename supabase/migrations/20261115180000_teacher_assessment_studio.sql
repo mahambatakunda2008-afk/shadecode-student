@@ -55,7 +55,8 @@ begin
     end if;
     if v_question->>'type' = 'multiple_choice'
       and (jsonb_typeof(v_question->'options') <> 'array' or jsonb_array_length(v_question->'options') < 2
-        or nullif(v_question->>'correctOption','') is null) then
+        or nullif(v_question->>'correctOption','') is null
+        or not ((v_question->'options') ? (v_question->>'correctOption'))) then
       raise exception 'Multiple-choice question % needs options and a correct option', v_question_number using errcode = '22023';
     end if;
     v_total := v_total + (v_question->>'marks')::numeric;
