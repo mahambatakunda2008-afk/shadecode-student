@@ -120,7 +120,7 @@ export async function POST(request: Request) {
 
     // Marking is the critical response. Analytics, XP and achievements are bounded
     // side effects and must never keep the student waiting after a valid report exists.
-    const sideEffects: Array<Promise<unknown> | undefined> = [
+    const sideEffects: Array<Promise<unknown> | void | undefined> = [
       trackExamResult({
         userId: user.id,
         subject: subject.trim(),
