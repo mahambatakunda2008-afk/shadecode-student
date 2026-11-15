@@ -58,7 +58,7 @@ export function AssignmentsClient() {
     setSaving(true);
     setError("");
     try {
-      const normalizedQuestions = questions.map((question) => ({
+      const normalizedQuestions: Array<{ prompt: string; type: QuestionDraft["type"]; marks: number; options?: string[]; correctOption?: string }> = questions.map((question) => ({
         prompt: question.prompt.trim(),
         type: question.type,
         marks: Number(question.marks),
