@@ -96,3 +96,22 @@ This document does not authorize or perform:
 3. Confirm the three no-policy tables are truly server-only or add tested policies.
 4. Port account deletion onto current `main` and rerun all checks.
 5. Review the combined release evidence before any production action.
+
+
+### 1A. Follow-up verification: effective profile access (2026-11-16)
+
+A second read-only query against the live project confirmed the effective shape of the issue:
+
+- `public.profiles` contains private or learner-specific fields including `curriculum_subjects`, `curriculum_profile`, `subjects`, `study_level`, `study_style`, `daily_goal_minutes`, `weekly_goal_minutes`, `education_stage`, `curriculum_board`, `qualification`, `syllabus_code`, `syllabus_year` and `language`.
+- `Public leaderboard read` is a SELECT policy for the `public` role with `USING (true)`. It therefore applies to authenticated users as well as anonymous users.
+- Authenticated clients have SELECT access across the profile columns. The narrow leaderboard projection does not restrict direct reads from the base table.
+- The `leaderboard_profiles` view is currently `security_barrier=true` and `security_invoker=true`, selecting only `id, username, xp, season_xp, level, streak`. Anonymous access is granted only to those six base-table columns; authenticated access remains broader.
+- The app leaderboard reads the view. The curriculum profile API and curriculum resolver read/write the signed-in user's row using `id = user.id`. Cortex student context reads a fixed set of profile columns for the authenticated user. These filters are useful but are not a substitute for database-enforced row isolation.
+
+This confirms an access-control defect in the current configuration, not evidence that another student actually accessed the data. The read-only query did not enumerate data rows or attempt cross-account access.
+
+**Implementation decision:** do not add a speculative grant/policy migration yet. With an invoker-security view, changing the SELECT policy to owner-only would also constrain the leaderboard view to the caller's own row. Restoring cross-user leaderboard access requires a separately reviewed public-safe projection mechanism, such as a narrowly scoped, explicitly tested RPC/view design. The replacement must preserve only the six approved leaderboard fields and must not expose curriculum or learning-preference columns.
+
+**Required test matrix before a migration is approved:** anon can read only the six leaderboard fields; learner A can read and update only A's permitted profile data; learner B cannot read or mutate A's private profile; teacher and admin access is limited to explicitly authorized institution/relationship workflows; service-role server operations continue to work. Test both direct base-table access and the leaderboard projection. Run this against a disposable database with distinct test identities, then verify effective privileges and policies again after deployment.
+
+The current repository also contains a SQL regression-test pattern under `supabase/tests/` that wraps service-role fixtures in a transaction and rolls back. That pattern is useful for data-contract tests, but it is not by itself sufficient to prove cross-role RLS behaviour; the new profile test must explicitly switch to the relevant API roles and set distinct authenticated JWT claims.
