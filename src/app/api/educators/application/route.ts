@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 const TYPES = new Set(["independent_tutor", "subject_specialist", "independent_teacher", "education_creator"]);
 const clean = (value: unknown, max: number) => typeof value === "string"
-  ? value.replace(/[\\u0000-\\u001f\\u007f]/g, " ").replace(/\\s+/g, " ").trim().slice(0, max)
+  ? value.replace(/[\x00-\x1f\x7f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max)
   : "";
 
 function cleanList(value: unknown, max: number, count: number) {
