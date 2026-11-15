@@ -239,7 +239,7 @@ export function getExperienceNavGroups(
             ? hasComputingSubject
             : item.href === NAV_ITEMS.biologyPractical.href
               ? hasBiologySubject
-              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments" || item.href === "/assignments",
+              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments" || item.href === "/learn/resources",
       ),
     }))
     .filter((group) => group.items.length > 0);
