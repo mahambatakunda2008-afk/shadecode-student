@@ -92,7 +92,7 @@ export async function POST(req) {
     const paperProvenance = verifyExamPaperProof(body?.paperProof, {
       userId: user.id,
       subjectId: typeof body?.subjectId === "string" ? body.subjectId : "",
-      difficulty,
+      difficulty: /o-level/i.test(difficulty) ? "easy" : /a-level/i.test(difficulty) ? "medium" : /university/i.test(difficulty) ? "hard" : difficulty,
       source: "cortex",
       questions,
     });
