@@ -126,6 +126,7 @@ export function getExperienceNavGroups(
       group: "Keep exploring",
       items: [
         NAV_ITEMS.tasks,
+        NAV_ITEMS.assignments,
         NAV_ITEMS.timetable,
         NAV_ITEMS.studyPlan,
         NAV_ITEMS.achievements,
@@ -153,6 +154,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.examHub,
         NAV_ITEMS.examSim,
         NAV_ITEMS.exams,
+        NAV_ITEMS.assignments,
         NAV_ITEMS.mathChecker,
         ...(hasBiologySubject ? [NAV_ITEMS.biologyPractical] : []),
         NAV_ITEMS.tasks,
@@ -189,6 +191,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.workmate,
         NAV_ITEMS.projects,
         NAV_ITEMS.tasks,
+        NAV_ITEMS.assignments,
         NAV_ITEMS.focus,
         NAV_ITEMS.timetable,
       ],
@@ -233,7 +236,7 @@ export function getExperienceNavGroups(
             ? hasComputingSubject
             : item.href === NAV_ITEMS.biologyPractical.href
               ? hasBiologySubject
-              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments",
+              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments" || item.href === "/assignments",
       ),
     }))
     .filter((group) => group.items.length > 0);
@@ -291,6 +294,7 @@ export const BOTTOM_MORE: NavItem[] = [
   NAV_ITEMS.studyPlan,
   NAV_ITEMS.study,
   NAV_ITEMS.exams,
+  NAV_ITEMS.assignments,
   NAV_ITEMS.examSim,
   NAV_ITEMS.examHub,
   NAV_ITEMS.mathChecker,
