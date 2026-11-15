@@ -91,6 +91,11 @@ jobs:
           create function auth.uid() returns uuid
             language sql stable
             as $uid$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $uid$;
+          -- The disposable fixture does not load the production auth role catalog.
+          -- This stub keeps unrelated admin-only branches closed during lifecycle tests.
+          create function public.has_role(p_user_id uuid, p_role text) returns boolean
+            language sql stable
+            as $role$ select false $role$;
           grant usage on schema auth to authenticated;
           grant execute on function auth.uid() to authenticated;
           SQL
