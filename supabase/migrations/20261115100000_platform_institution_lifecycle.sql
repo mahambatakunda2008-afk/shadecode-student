@@ -299,6 +299,12 @@ begin
     if not exists (select 1 from public.platform_groups where id=p_group_id and institution_id=p_institution_id) then
       raise exception 'group does not belong to institution' using errcode = '22023';
     end if;
+    if p_status='active' and not exists (
+      select 1 from public.platform_institution_members
+      where institution_id=p_institution_id and user_id=p_target_user_id and status='active'
+    ) then
+      raise exception 'active institution membership is required before group access can be restored' using errcode = '42501';
+    end if;
     select membership_role into v_role from public.platform_group_members
       where group_id=p_group_id and user_id=p_target_user_id for update;
     if v_role is null then raise exception 'group membership not found' using errcode = 'P0002'; end if;
