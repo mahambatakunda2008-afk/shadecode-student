@@ -40,7 +40,7 @@ function matchesDomain(host: string, domain: string): boolean {
   return host === domain || host.endsWith(`.${domain}`);
 }
 
-function authorityFor(hostname: string | null): { authority: SourceAuthority; reason: string } {
+function authorityFor(hostname: string | null): { authority: SourceAuthority; authorityReason: string } {
   if (!hostname) return { authority: "unclassified", authorityReason: "No public HTTPS publisher hostname is available." };
   if (OFFICIAL_EXAM_BOARD_HOSTS.some((host) => matchesDomain(hostname, host))) {
     return { authority: "official-exam-board", authorityReason: "Hostname matches a configured Cambridge International or ZIMSEC official domain. Check the exact page and document." };
