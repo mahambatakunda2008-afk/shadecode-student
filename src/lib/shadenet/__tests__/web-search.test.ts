@@ -22,7 +22,7 @@ describe("open web knowledge search adapters", () => {
   it("uses Tavily result content while rejecting non-HTTPS URLs", async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify({
       results: [
-        { title: "Photosynthesis", url: "https://biology.example.org/photo", content: "Light energy is converted to chemical energy." },
+        { title: "Photosynthesis", url: "https://biology.example.org/photo", content: "Light energy is converted to chemical energy.", raw_content: "Photosynthesis is the process by which plants convert light energy into chemical energy. It occurs in chloroplasts." },
         { title: "Local", url: "http://127.0.0.1/private", content: "Not a public source." },
       ],
     }), { status: 200 }));
@@ -30,6 +30,8 @@ describe("open web knowledge search adapters", () => {
     const results = await source.search({ query: "photosynthesis" }, new AbortController().signal);
     expect(results).toHaveLength(1);
     expect(results[0].metadata.title).toBe("Photosynthesis");
+    expect(results[0].content).toMatchObject({ extraction: "provider-extracted page text" });
+    expect((results[0].content as { pageText: string }).pageText).toContain("chloroplasts");
   });
 
   it("fails clearly on provider errors", async () => {

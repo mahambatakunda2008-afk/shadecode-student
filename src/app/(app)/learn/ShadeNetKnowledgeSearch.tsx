@@ -143,10 +143,12 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
           </p>
           {result.results.map(({ resource, source }) => {
             const webContent = resource.content && typeof resource.content === "object"
-              ? resource.content as { snippet?: unknown }
+              ? resource.content as { snippet?: unknown; pageText?: unknown; extraction?: unknown }
               : null;
-            const excerpt = typeof webContent?.snippet === "string"
-              ? webContent.snippet
+            const excerpt = typeof webContent?.pageText === "string" && webContent.pageText.trim()
+              ? webContent.pageText
+              : typeof webContent?.snippet === "string"
+                ? webContent.snippet
               : typeof resource.content === "string"
                 ? resource.content
                 : JSON.stringify(resource.content, null, 2) ?? String(resource.content);
@@ -159,7 +161,8 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
                 <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                   {[resource.metadata.subject, resource.metadata.qualification, resource.metadata.syllabus, source === "local" ? "On this device" : source === "peer" ? "Shared by a peer" : "Open web search result"].filter(Boolean).join(" · ")}
                 </p>
-                <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{excerpt.slice(0, 1800)}</div>
+                <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{excerpt.slice(0, 6000)}</div>
+                {source === "online" && webContent?.extraction === "provider-extracted page text" && <p className="mt-2 text-xs text-[var(--muted-foreground)]">Page text retrieved by the search provider. Check the original page before relying on it.</p>}
                 {resource.metadata.source && (
                   <a href={resource.metadata.source} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block break-all text-xs text-[var(--primary)] underline underline-offset-2">
                     Open original source
