@@ -9,7 +9,7 @@ on conflict do nothing;
 
 alter table public.platform_educator_profiles disable trigger platform_educator_profile_guard;
 insert into public.platform_educator_profiles(user_id,display_name,educator_type,bio,subjects,levels,status)
-values ('51000000-0000-4000-8000-000000000002','Test Tutor','independent_tutor','Fixture educator',['Mathematics','Physics'],['AS Level','A Level'],'approved')
+values ('51000000-0000-4000-8000-000000000002','Test Tutor','independent_tutor','Fixture educator',array['Mathematics','Physics'],array['AS Level','A Level'],'approved')
 on conflict (user_id) do update set status='approved',subjects=excluded.subjects,levels=excluded.levels;
 alter table public.platform_educator_profiles enable trigger platform_educator_profile_guard;
 
