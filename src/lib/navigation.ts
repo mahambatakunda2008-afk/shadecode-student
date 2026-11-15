@@ -62,6 +62,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   learn: { href: "/learn", label: "Learn", icon: BookOpen, feature: "learn" },
   teacherTutorials: { href: "/learn/tutorials", label: "Tutorials", icon: MonitorPlay, feature: "tutorials" },
   resources: { href: "/learn/resources", label: "Resources", icon: LibraryBig, feature: "tutorials" },
+  educators: { href: "/learn/educators", label: "Find an educator", icon: GraduationCap, feature: "tutorials" },
   compLab: { href: "/comp-lab", label: "Comp Lab", icon: Code2, feature: "code-lab" },
   curriculum: { href: "/curriculum", label: "Courses", icon: BookOpen, feature: "courses" },
   workmate: { href: "/workmate", label: "Cortex Verify", icon: FileCheck2, feature: "workmate" },
@@ -124,7 +125,7 @@ export function getExperienceNavGroups(
     .toLowerCase()
     .includes("biology");
   const foundation: NavGroup[] = [
-    { group: "Start here", items: [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.resources] },
+    { group: "Start here", items: [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.resources, NAV_ITEMS.educators] },
     {
       group: "Keep exploring",
       items: [
@@ -146,6 +147,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.learn,
         NAV_ITEMS.teacherTutorials,
         NAV_ITEMS.resources,
+        NAV_ITEMS.educators,
         NAV_ITEMS.curriculum,
         NAV_ITEMS.study,
         NAV_ITEMS.studyPlan,
@@ -186,6 +188,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.studyspace,
         NAV_ITEMS.learn,
         NAV_ITEMS.resources,
+        NAV_ITEMS.educators,
         NAV_ITEMS.studyPlan,
       ],
     },
@@ -241,7 +244,7 @@ export function getExperienceNavGroups(
             ? hasComputingSubject
             : item.href === NAV_ITEMS.biologyPractical.href
               ? hasBiologySubject
-              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments" || item.href === "/learn/resources",
+              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments" || item.href === "/learn/resources" || item.href === "/learn/educators",
       ),
     }))
     .filter((group) => group.items.length > 0);
