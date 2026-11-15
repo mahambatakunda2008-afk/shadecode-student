@@ -35,7 +35,7 @@ Keys must remain server-side and must never use a `NEXT_PUBLIC_` prefix. The aut
 
 Search results are deliberately labelled **unverified**. Brave returns search-result excerpts; Tavily is asked for provider-extracted page text where available, with a strict 12,000-character cap. Neither is independently verified and neither may be represented as official Cambridge/ZIMSEC curriculum or teacher-approved material. Every result retains its original URL and publisher hostname so a learner can inspect the source.
 
-This is the first open-web retrieval layer. Provider-extracted page text is now surfaced when Tavily supplies it. Direct arbitrary URL fetching, dedicated PDF extraction, cross-source corroboration, source freshness evaluation and saving reviewed pages into the learner's library remain subsequent integration work. No page is silently scraped or treated as authoritative by this search adapter.
+ShadeNet can read a learner-selected public HTML page or PDF through the authenticated `/api/shadenet/read-document` route. Cross-source assessment is deterministic and AI-free: it reports configured domain signals, publisher-provided publication/modified dates, similar title coverage across distinct publisher hosts, and conservative review flags for differing numeric details or negation. It does not fact-check claims, certify publishers, or upgrade a resource's `unverified` status. Similar coverage is explicitly not proof of correctness. The current assessment is computed for the visible result set and is not yet a persistent research record.
 
 
 ## Full-page and PDF reading
