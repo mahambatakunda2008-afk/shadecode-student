@@ -155,6 +155,14 @@ begin
     );
   end if;
 
+  if exists (
+    select 1 from public.platform_user_relationships
+    where subject_user_id=v_invite.student_user_id and related_user_id=v_actor
+      and relationship_type=v_invite.relationship_type and status='active'
+  ) then
+    raise exception 'this guardian relationship is already active' using errcode='23505';
+  end if;
+
   insert into public.platform_user_relationships(
     subject_user_id,related_user_id,relationship_type,status,created_by,approved_by,metadata
   ) values (
@@ -228,7 +236,7 @@ begin
   from public.platform_institution_members
   where institution_id=v_institution_id and user_id=v_link.related_user_id
   for update;
-  if v_role not in ('parent','guardian') or v_status not in ('pending','active') then
+  if v_role is null or v_role not in ('parent','guardian') or v_status not in ('pending','active') then
     raise exception 'guardian institution membership is not eligible for approval' using errcode='42501';
   end if;
 
