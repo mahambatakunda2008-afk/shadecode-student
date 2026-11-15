@@ -22,3 +22,17 @@ ShadeNet is Shadecode Student's optional peer-assisted educational content netwo
 7. Fall back to another peer or the cloud backup/control path when necessary.
 
 The cloud is a control/backup path, not the default carrier for peer-shareable content.
+
+
+## Open web knowledge search
+
+ShadeNet's learner-facing Knowledge Search can query the public web through a server-side search provider. Configure one provider key on the deployment:
+
+- `BRAVE_SEARCH_API_KEY` (preferred when both keys exist), or
+- `TAVILY_API_KEY` (fallback).
+
+Keys must remain server-side and must never use a `NEXT_PUBLIC_` prefix. The authenticated `/api/shadenet/web-search` endpoint applies a per-user/IP rate limit, validates that the requested subject is enrolled, bounds query/result sizes, and returns HTTPS-only public result URLs. If no provider key is configured or the learner is offline, local ShadeNet search continues to work.
+
+Search results are deliberately labelled **unverified**. The returned text is a search-result excerpt, not a verified copy of the full source page. It must not be represented as official Cambridge/ZIMSEC curriculum or as a teacher-approved resource. The result retains its original URL and publisher hostname so a learner can inspect the source.
+
+This is the first open-web retrieval layer. Full-page reading, PDF extraction, cross-source corroboration, source freshness evaluation and saving reviewed pages into the learner's library remain subsequent integration work. No page is silently scraped or treated as authoritative by this search adapter.
