@@ -171,7 +171,7 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
           </p>
           {result.results.map(({ resource, source }) => {
             const webContent = resource.content && typeof resource.content === "object"
-              ? resource.content as { snippet?: unknown; pageText?: unknown; extraction?: unknown; text?: unknown; documentType?: unknown; pageCount?: unknown }
+              ? resource.content as { snippet?: unknown; pageText?: unknown; extraction?: unknown; text?: unknown; documentType?: unknown; pageCount?: unknown; kind?: unknown }
               : null;
             const excerpt = typeof webContent?.text === "string" && webContent.text.trim()
               ? webContent.text
