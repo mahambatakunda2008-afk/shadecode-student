@@ -6,6 +6,7 @@ import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { calculateExamScore, computeTopicScores } from "@/lib/exam/scoring";
 import { markNumeric } from "@/lib/exam/engine/numeric";
+import { verifyExamPaperProof } from "@/lib/exam/paper-provenance";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -87,7 +88,14 @@ export async function POST(req) {
       return new Response(JSON.stringify({ error: "Validation failed", details: validation.details?.issues.map((e) => ({ field: e.path.join("."), message: e.message })) }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
-    const { subject, difficulty, questions, answers, timeTaken, attemptId } = validation.data;
+    const { subject, difficulty, questions, answers, timeTaken } = validation.data;
+    const paperProvenance = verifyExamPaperProof(body?.paperProof, {
+      userId: user.id,
+      subjectId: typeof body?.subjectId === "string" ? body.subjectId : "",
+      difficulty,
+      source: "cortex",
+      questions,
+    });
     const userId = user.id;
     if (!subject || !questions || !answers) return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 
@@ -115,18 +123,15 @@ export async function POST(req) {
     }
 
     const { totalScore, maxScore, percentage, grade } = calculateExamScore(questions, markingData.results);
-    const examId = crypto.randomUUID();
     const submissionResult = { ...markingData, totalScore, maxScore, percentage, grade, timeTaken };
 
-
-    const topicScores = computeTopicScores(questions, markingData.results)
-      .filter((item) => typeof item.topic === "string" && item.topic.trim() && Number.isFinite(Number(item.percentage)))
-      .map((item) => ({ topic: item.topic.trim(), percentage: Math.max(0, Math.min(100, Number(item.percentage))) }));
 
     return NextResponse.json({
       ...submissionResult,
       evidenceRecorded: false,
-      evidenceReason: "unverified_paper_provenance",
+      paperProvenanceVerified: paperProvenance.valid,
+      paperSource: paperProvenance.valid ? paperProvenance.source : null,
+      evidenceReason: paperProvenance.valid ? "trusted_provenance_evidence_pipeline_pending" : "unverified_paper_provenance",
     });
   } catch (err) {
     console.error("Marking error:", err);
