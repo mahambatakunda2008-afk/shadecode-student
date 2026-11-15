@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { getTeacherWorkspace } from "@/lib/exam/curated/reviewAccess";
 import { InstitutionAdminPanel } from "./InstitutionAdminPanel";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +40,7 @@ function titleCase(value: string) {
 }
 
 export default async function TeacherClassesPage() {
-  const reviewer = await getReviewer();
+  const reviewer = await getTeacherWorkspace();
   if (!reviewer) redirect("/");
 
   const { data: institutionRows, error: institutionMembershipError } = await reviewer.supabase
