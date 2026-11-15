@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Group = { id: string; name: string };
@@ -136,7 +137,7 @@ export function AssignmentsClient() {
               <article key={assignment.id} className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold">{assignment.title}</h3>
+                    <h3 className="font-semibold"><Link href={`/teacher/assignments/${assignment.id}`} className="hover:text-[var(--primary)] hover:underline">{assignment.title}</Link></h3>
                     <p className="mt-1 text-sm text-[var(--muted-foreground)]">{assignment.subject} · {groups.find((group) => group.id === assignment.group_id)?.name ?? "Teaching group"}</p>
                   </div>
                   <span className="rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs">{assignment.status === "published" ? "Published" : assignment.status === "draft" ? "Draft" : "Archived"}</span>
