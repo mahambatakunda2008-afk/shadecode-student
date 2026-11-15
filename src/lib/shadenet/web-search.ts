@@ -51,7 +51,7 @@ function mapBrave(payload: unknown): WebSearchItem[] {
     const title = boundedText(item.title, 240);
     const snippet = boundedText(item.description, 1_200);
     if (!url || !title || !snippet) return [];
-    return [{ title, url, snippet, pageText: boundedText(item.extra_snippets, 0) || undefined, publishedAt: boundedText(item.page_age, 80) || undefined, publisher: new URL(url).hostname }];
+    return [{ title, url, snippet, publishedAt: boundedText(item.page_age, 80) || undefined, publisher: new URL(url).hostname }];
   });
 }
 
