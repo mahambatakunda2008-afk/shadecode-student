@@ -23,9 +23,14 @@ export async function POST(request: NextRequest) {
     const signals = sanitizeSignals(body?.signals)
     if (!signals.length) return NextResponse.json({ error: 'No valid signals' }, { status: 400 })
 
-    const { error } = await supabase.from('learning_signals').insert(signals.map((signal) => ({ ...signal, user_id: user.id })))
-    if (error) throw error
-    return NextResponse.json({ ok: true, recorded: signals.length })
+    // Client-generated signals are useful for UI telemetry but are not independently
+    // verified assessment evidence. Never persist them into the learning evidence table.
+    return NextResponse.json({
+      ok: true,
+      recorded: 0,
+      evidenceRecorded: false,
+      evidenceReason: 'unverified_client_signal',
+    })
   } catch (error) {
     console.error('[learning/signals]', error)
     return NextResponse.json({ error: 'Could not record signals', retryable: true }, { status: 500 })
