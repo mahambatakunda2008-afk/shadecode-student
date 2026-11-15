@@ -10,7 +10,7 @@ create table if not exists public.profiles (
 create table if not exists public.test_platform_admins(user_id uuid primary key);
 create or replace function public.test_expire_guardian_invite(p_id uuid)
 returns void language sql security definer set search_path=public,pg_temp
-as $expire$ update public.platform_guardian_invites set expires_at=now()-interval '1 minute' where id=p_id $expire$;
+as $expire$ update public.platform_guardian_invites set created_at=now()-interval '2 days',expires_at=now()-interval '1 minute' where id=p_id $expire$;
 grant execute on function public.test_expire_guardian_invite(uuid) to authenticated;
 create or replace function public.test_guardian_audit_count(p_institution_id uuid)
 returns integer language sql stable security definer
