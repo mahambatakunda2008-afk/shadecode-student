@@ -55,11 +55,14 @@ export async function saveQuizAttemptCheckpoint(
   }
   if (!Array.isArray(checkpoint.answers) || checkpoint.answers.some((answer) =>
     !Number.isInteger(answer) || answer < 0 || answer > 3
-  )) {
-    throw new Error("Quiz checkpoint contains invalid answers");
+  ) || checkpoint.answers.length !== checkpoint.current) {
+    throw new Error("Quiz checkpoint contains invalid answers or progress");
   }
   if (!Number.isInteger(checkpoint.current) || checkpoint.current < 0 || checkpoint.current >= questions.length) {
     throw new Error("Quiz checkpoint has an invalid question position");
+  }
+  if (typeof checkpoint.confirmed !== "boolean") {
+    throw new Error("Quiz checkpoint has an invalid confirmation state");
   }
   if (checkpoint.selected !== null && (!Number.isInteger(checkpoint.selected) || checkpoint.selected < 0 || checkpoint.selected > 3)) {
     throw new Error("Quiz checkpoint has an invalid selected option");
@@ -87,9 +90,13 @@ export async function getQuizAttemptCheckpoint(
     checkpoint.lessonId !== lessonId ||
     !questions.length ||
     !Array.isArray(checkpoint.answers) ||
+    checkpoint.answers.length !== checkpoint.current ||
+    checkpoint.answers.some((answer) => !Number.isInteger(answer) || answer < 0 || answer > 3) ||
     !Number.isInteger(checkpoint.current) ||
     checkpoint.current < 0 ||
-    checkpoint.current >= questions.length
+    checkpoint.current >= questions.length ||
+    (checkpoint.selected !== null && (!Number.isInteger(checkpoint.selected) || checkpoint.selected < 0 || checkpoint.selected > 3)) ||
+    typeof checkpoint.confirmed !== "boolean"
   ) return null;
   return { ...checkpoint, questions };
 }
