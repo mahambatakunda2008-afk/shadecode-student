@@ -101,6 +101,12 @@ begin
   if v_roster_count <> 2 then
     raise exception 'assigned teacher should see both active teacher and student roster entries';
   end if;
+  begin
+    perform public.set_platform_membership_status(v_institution,'10000000-0000-4000-8000-000000000003','suspended',v_group);
+    raise exception 'ordinary teacher changed another learner membership';
+  exception when sqlstate '42501' then
+    null;
+  end;
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
   begin
     perform * from public.list_platform_group_roster(v_group);
