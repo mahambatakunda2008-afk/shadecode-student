@@ -88,6 +88,23 @@ begin
     raise exception 'guardian institution membership must remain pending before approval';
   end if;
 
+  select count(*) into v_count from public.list_my_platform_guardian_links()
+    where relationship_id=v_link_id and relationship_status='pending';
+  if v_count <> 1 then raise exception 'guardian cannot view their own pending link status'; end if;
+
+  perform set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000001',true);
+  select count(*) into v_count from public.list_platform_pending_guardian_links(v_institution)
+    where relationship_id=v_link_id and guardian_user_id='20000000-0000-4000-8000-000000000004';
+  if v_count <> 1 then raise exception 'institution administrator cannot see the scoped guardian review queue'; end if;
+
+  perform set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000005',true);
+  begin
+    perform * from public.list_platform_pending_guardian_links(v_institution);
+    raise exception 'unaffiliated user read the guardian review queue';
+  exception when sqlstate '42501' then null;
+  end;
+  perform set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000004',true);
+
   -- Pending guardian cannot approve their own link.
   begin
     perform public.review_platform_guardian_link(v_link_id,true);
