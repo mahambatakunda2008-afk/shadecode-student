@@ -141,6 +141,10 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115180000_teacher_assessment_studio.sql
+      - name: Apply question-level teacher marking
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115190000_teacher_question_level_marking.sql
       - name: Test assessment authoring, mark totals and teaching authorization
         env:
           PGPASSWORD: postgres
