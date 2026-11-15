@@ -305,7 +305,7 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: s
   request.broadTopic = request.broadTopic || isBroadTopic(request.topic);
   if (request.broadTopic) request.depth = "deep";
 
-  const context = localContext(job);
+  const context = await localContext(job);
   const resolved = buildResolvedLessonPrompt(request);
   const crossDeviceMemory = await readCrossDeviceLearnerMemory(token, job.request.subject, request.topic);
   const learnerContext = [context, crossDeviceMemory].filter(Boolean).join("\n\n");
