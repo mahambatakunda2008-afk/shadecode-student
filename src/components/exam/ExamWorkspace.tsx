@@ -74,7 +74,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   useEffect(() => { const f = () => setOnline(navigator.onLine); f(); addEventListener("online", f); addEventListener("offline", f); return () => { removeEventListener("online", f); removeEventListener("offline", f); }; }, []);
   useEffect(() => { (async () => { const { data } = await createClient().auth.getSession(); if (data.session?.user) setUserId(data.session.user.id); })(); }, []);
   useEffect(() => { if (!userId || mode !== "setup") return; try { const raw = localStorage.getItem(`${KEY}:${userId}`); if (raw) { const saved = JSON.parse(raw) as { workId: string; questions: ExamQuestion[] }; if (saved.questions?.length) getStudySession(saved.workId).then((session) => { if (session && (session.status === "active" || session.status === "paused")) setResumeId(saved.workId); }); } } catch {} }, [mode, userId]);
-  const persist = useCallback(async () => { if (!workId.current || !questionsRef.current.length || !userId) return; const payload = { questions: questionsRef.current, answers: answersRef.current, current: currentRef.current, seconds: secondsRef.current, totalSeconds: totalRef.current, startedAt, flags, canvas: canvasRef.current }; try { await saveWorkObject({ id: workId.current, mode: "exam" as StudySpaceMode, status: "draft", subject, topic: topic || undefined, prompt: `${subject} exam`, response: JSON.stringify(payload), working: canvasRef.current || undefined, createdAt: new Date(startedAt || Date.now()).toISOString(), updatedAt: new Date().toISOString() }); const session = await getStudySession(workId.current); await saveStudySession(session ? { ...session, updatedAt: new Date().toISOString(), remainingMs: secondsRef.current * 1000 } : createStudySession(workId.current, "exam", secondsRef.current * 1000)); localStorage.setItem(`${KEY}:${userId}`, JSON.stringify({ ...payload, workId: workId.current, subject, topic, level, count })); setSavedAt(Date.now()); } catch {} }, [count, flags, level, startedAt, subject, topic, userId]);
+  const persist = useCallback(async () => { if (!workId.current || !questionsRef.current.length || !userId) return; const payload = { questions: questionsRef.current, answers: answersRef.current, current: currentRef.current, seconds: secondsRef.current, totalSeconds: totalRef.current, startedAt, flags, canvas: canvasRef.current, paperProof, paperSubjectId }; try { await saveWorkObject({ id: workId.current, mode: "exam" as StudySpaceMode, status: "draft", subject, topic: topic || undefined, prompt: `${subject} exam`, response: JSON.stringify(payload), working: canvasRef.current || undefined, createdAt: new Date(startedAt || Date.now()).toISOString(), updatedAt: new Date().toISOString() }); const session = await getStudySession(workId.current); await saveStudySession(session ? { ...session, updatedAt: new Date().toISOString(), remainingMs: secondsRef.current * 1000 } : createStudySession(workId.current, "exam", secondsRef.current * 1000)); localStorage.setItem(`${KEY}:${userId}`, JSON.stringify({ ...payload, workId: workId.current, subject, topic, level, count })); setSavedAt(Date.now()); } catch {} }, [count, flags, level, paperProof, paperSubjectId, startedAt, subject, topic, userId]);
   useEffect(() => { if (mode !== "exam") return; const t = setTimeout(() => void persist(), 600); return () => clearTimeout(t); }, [answers, current, flags, mode, persist, seconds]);
   useEffect(() => { if (mode !== "exam") return; const timer = setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000); return () => clearInterval(timer); }, [mode]);
   useEffect(() => { if (mode === "exam" && seconds === 0 && totalSeconds > 0) setConfirmSubmit(true); }, [mode, seconds, totalSeconds]);
@@ -104,6 +104,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   const [savedResultId, setSavedResultId] = useState<string | null>(null);
   // "fallback" = a built-in curated practice set was used because live generation was unavailable.
   const [paperSource, setPaperSource] = useState<"live" | "curated-bank" | "deterministic-engine" | "offline">("live");
+  const [paperProof, setPaperProof] = useState<string | null>(null);
+  const [paperSubjectId, setPaperSubjectId] = useState<string | null>(null);
   useEffect(() => {
     if (!frozenQuestions?.length || frozenStarted.current || mode !== "setup") return;
     frozenStarted.current = true;
@@ -152,6 +154,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           return;
         }
         setPaperSource("offline");
+        setPaperProof(null);
+        setPaperSubjectId(null);
         const total = fallbackQuestions.length * 120;
         workId.current = `exam:offline:${id()}`;
         void trackEvent("exam_paper_ready", { ...telemetry, source: "offline", ms: Date.now() - requestedAt });
@@ -244,7 +248,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       setGenerating(false);
     }
   };
-  const resume = async () => { if (!resumeId || !userId) return; try { const raw = localStorage.getItem(`${KEY}:${userId}`); if (!raw) return; const saved = JSON.parse(raw) as { workId: string; subject: string; topic: string; questions: ExamQuestion[]; answers: Answer[]; current: number; seconds: number; totalSeconds: number; startedAt: number; flags: number[]; level: number; count: number }; const session = await getStudySession(saved.workId); if (!session) return; workId.current = saved.workId; setSubject(saved.subject); setTopic(saved.topic); setLevel(saved.level); setCount(saved.count); setQuestions(saved.questions); setAnswers(saved.answers); setCurrent(saved.current); setTotalSeconds(saved.totalSeconds); setSeconds(Math.max(0, Math.round((session.remainingMs ?? saved.seconds * 1000) / 1000))); setStartedAt(saved.startedAt); setFlags(saved.flags || []); setMode("exam"); setResumeId(null); } catch { setError("That saved exam could not be restored."); } };
+  const resume = async () => { if (!resumeId || !userId) return; try { const raw = localStorage.getItem(`${KEY}:${userId}`); if (!raw) return; const saved = JSON.parse(raw) as { workId: string; subject: string; topic: string; questions: ExamQuestion[]; answers: Answer[]; current: number; seconds: number; totalSeconds: number; startedAt: number; flags: number[]; level: number; count: number; paperProof?: string | null; paperSubjectId?: string | null }; const session = await getStudySession(saved.workId); if (!session) return; workId.current = saved.workId; setSubject(saved.subject); setTopic(saved.topic); setLevel(saved.level); setCount(saved.count); setQuestions(saved.questions); setPaperProof(saved.paperProof ?? null); setPaperSubjectId(saved.paperSubjectId ?? null); setAnswers(saved.answers); setCurrent(saved.current); setTotalSeconds(saved.totalSeconds); setSeconds(Math.max(0, Math.round((session.remainingMs ?? saved.seconds * 1000) / 1000))); setStartedAt(saved.startedAt); setFlags(saved.flags || []); setMode("exam"); setResumeId(null); } catch { setError("That saved exam could not be restored."); } };
   const askHint = async () => { if (!q || hintLoading) return; setHintLoading(true); setPanel("hint"); try { const response = await help({ mode: "help", subject, question: q.question, level: "hint" }); setHint(response?.hint || response?.content || (online ? "Cortex could not produce a hint right now." : "You're offline. Keep working on the Canvas and ask Cortex when you reconnect.")); } finally { setHintLoading(false); } };
   const submit = async () => {
     if (submitRef.current || !questions.length) return;
@@ -277,6 +281,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
             },
             body: JSON.stringify({
               subject,
+              subjectId: paperSubjectId,
+              paperProof,
               difficulty: LEVELS[level].curriculum,
               questions,
               answers: answersRef.current,
