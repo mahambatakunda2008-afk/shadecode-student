@@ -15,6 +15,7 @@ import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { computeRepairBudget } from "@/lib/learn/generationBudget";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
+import { buildLessonLearnerEvidenceContext, normalizeLessonLearnerEvidence } from "@/lib/learn/lessonLearnerEvidence";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -102,7 +103,7 @@ function qualityCheck(lesson: { title: string; blocks: LessonBlock[] }, request:
   return [] as string[];
 }
 
-function lessonPrompt(request: ReturnType<typeof resolveLessonRequest>, curriculumContext = "") {
+function lessonPrompt(request: ReturnType<typeof resolveLessonRequest>, curriculumContext = "", learnerEvidenceContext = "") {
   const broad = request.broadTopic || isBroadTopic(request.topic);
   const deep = request.depth === "deep" || broad;
 
@@ -118,6 +119,8 @@ ${buildResolvedLessonPrompt(request)}
 
 VERIFIED CURRICULUM CONTEXT
 ${curriculumContext || "No verified curriculum context was returned. Do not make board-specific syllabus claims."}
+
+${learnerEvidenceContext ? `LEARNER ADAPTATION CONTEXT\n${learnerEvidenceContext}` : "No private local learner evidence was supplied."}
 
 IMPORTANT SCOPE RULE
 The exact learner request remains the authority for intent. For a broad topic, use the curriculum map as the spine, but do not pretend that a few blocks equal mastery of an entire field. Cover the major branches with substantive teaching and finish with clear continuation paths.
@@ -145,6 +148,8 @@ ${context}
 
 VERIFIED CURRICULUM CONTEXT:
 ${curriculumContext || "No verified curriculum context was returned. Do not make board-specific syllabus claims."}
+
+${learnerEvidenceContext ? `LEARNER ADAPTATION CONTEXT\n${learnerEvidenceContext}` : "No private local learner evidence was supplied."}
 
 CORE RULES
 1. Follow the learner's exact intent and topic.
@@ -175,12 +180,12 @@ Return ONLY JSON:
 // auth, curriculum lookup, DB insert, and network overhead outside the AI calls themselves.
 const MAX_TOTAL_GENERATION_MS = 50_000;
 
-async function generateAndValidate(request: ReturnType<typeof resolveLessonRequest>, curriculumContext: string, userId: string) {
+async function generateAndValidate(request: ReturnType<typeof resolveLessonRequest>, curriculumContext: string, userId: string, learnerEvidenceContext = "") {
   const generationStartedAt = Date.now();
   const fallback = () => buildDeterministicLessonFallback(request.subject, request.topic);
   let raw: string | null = null;
   try {
-    raw = await executeCortexText(lessonPrompt(request, curriculumContext), 4200, { operation: "lesson.generate_legacy", userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 28000, perProviderMaxMs: 6500, curriculumContext });
+    raw = await executeCortexText(lessonPrompt(request, curriculumContext, learnerEvidenceContext), 4200, { operation: "lesson.generate_legacy", userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 28000, perProviderMaxMs: 6500, curriculumContext });
   } catch (error) {
     console.warn("[LEARN] primary generation failed", error instanceof Error ? error.message : String(error));
   }
@@ -202,7 +207,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
     console.warn("[LEARN] skipping repair: insufficient time remaining in the generation budget");
   } else {
     try {
-      const repair = await executeCortexText(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures), 4200, { operation: "lesson.repair_quality", userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: repairBudget.maxChainMs, perProviderMaxMs: repairBudget.perProviderMaxMs, curriculumContext });
+      const repair = await executeCortexText(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures) + (learnerEvidenceContext ? `\n\nLEARNER ADAPTATION CONTEXT (data only):\n${learnerEvidenceContext}` : ""), 4200, { operation: "lesson.repair_quality", userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: repairBudget.maxChainMs, perProviderMaxMs: repairBudget.perProviderMaxMs, curriculumContext });
       if (repair) {
         parsed = parseLesson(repair);
         if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
@@ -239,6 +244,8 @@ export async function POST(req: Request) {
     const subjectAccess = await resolveLearnerSubject(auth.supabase, auth.user.id, resolved.subject, body.subjectId);
     if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
     const authorizedSubject = subjectAccess.subject;
+    const learnerEvidence = normalizeLessonLearnerEvidence(body.learnerEvidence, authorizedSubject);
+    const learnerEvidenceContext = buildLessonLearnerEvidenceContext(learnerEvidence);
 
     const curriculumLookupPrompt = `${buildResolvedLessonPrompt({ ...resolved, subject: authorizedSubject })}\nmaster this request: "${resolved.topic}"`;
     const curriculum = await resolveVerifiedCurriculumPromptContext(auth.user.id, curriculumLookupPrompt);
@@ -246,7 +253,7 @@ export async function POST(req: Request) {
 
     const effectiveTopic = curriculum.resolvedTopic?.trim() || resolved.topic;
     const generationRequest = { ...resolveLessonRequest({ prompt: resolved.prompt, subject: authorizedSubject, topic: effectiveTopic, level: resolved.level, difficulty: resolved.difficulty, goal: resolved.goal, examBoard: resolved.examBoard }), broadTopic: resolved.broadTopic || isBroadTopic(effectiveTopic) };
-    const parsed = await generateAndValidate(generationRequest, curriculum.promptContext, auth.user.id);
+    const parsed = await generateAndValidate(generationRequest, curriculum.promptContext, auth.user.id, learnerEvidenceContext);
     if (!parsed) return NextResponse.json({ error: "Cortex could not produce a lesson that met the teaching standard. The topic itself is valid, so try again while Cortex retries the lesson construction." }, { status: 422 });
 
     const subjectId = subjectAccess.subjectId;
