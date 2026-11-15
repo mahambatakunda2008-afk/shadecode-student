@@ -14,9 +14,6 @@ export const runtime = "nodejs";
 const MARKING_REQUEST_BUDGET_MS = 34_000;
 const SIDE_EFFECT_BUDGET_MS = 2_500;
 
-type MaybePromise<T> = T | Promise<T>;
-
-
 function validateMarkingReport(report: any, questions: ExamQuestion[]) {
   if (!report || typeof report !== "object" || !Array.isArray(report.results)) return false;
   if (report.results.length !== questions.length) return false;
@@ -46,7 +43,7 @@ function validateMarkingReport(report: any, questions: ExamQuestion[]) {
     Array.isArray(report.weakTopics) && Array.isArray(report.strongTopics) && Array.isArray(report.recommendedActions);
 }
 
-function withTimeout<T>(promise: MaybePromise<T>, timeoutMs: number, fallback: T): Promise<T> {
+function withTimeout<T>(promise: T | Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
   return new Promise(resolve => {
     let settled = false;
     const finish = (value: T) => {
@@ -96,7 +93,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const report = await withTimeout(
+    const report = await withTimeout<Awaited<ReturnType<typeof generateExamFeedback>>>(
       generateExamFeedback(subject.trim(), questions, answers),
       MARKING_REQUEST_BUDGET_MS,
       null,
@@ -123,7 +120,7 @@ export async function POST(request: Request) {
 
     // Marking is the critical response. Analytics, XP and achievements are bounded
     // side effects and must never keep the student waiting after a valid report exists.
-    const sideEffects: MaybePromise<unknown>[] = [
+    const sideEffects: Array<Promise<unknown> | undefined> = [
       trackExamResult({
         userId: user.id,
         subject: subject.trim(),
