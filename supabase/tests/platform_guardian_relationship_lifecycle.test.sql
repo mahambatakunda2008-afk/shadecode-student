@@ -131,7 +131,8 @@ begin
   -- Institution administrator approves after external identity verification.
   perform set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000001',true);
   perform public.review_platform_guardian_link(v_link_id,true);
-  if not exists(select 1 from public.platform_user_relationships where id=v_link_id and status='active' and approved_by=auth.uid()) then
+  perform set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000004',true);
+  if not exists(select 1 from public.platform_user_relationships where id=v_link_id and status='active' and approved_by='20000000-0000-4000-8000-000000000001') then
     raise exception 'administrator approval did not activate the relationship';
   end if;
   if not exists(select 1 from public.platform_institution_members where institution_id=v_institution and user_id='20000000-0000-4000-8000-000000000004' and status='active' and membership_role='guardian') then
