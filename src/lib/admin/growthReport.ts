@@ -21,7 +21,7 @@ export interface SignupRow {
 
 /** Events that mean the student actually did learning, not just opened the app. */
 export const LEARNING_START_EVENTS = ["learning_action_started", "learning_session_started", "exam_started", "quiz_started"] as const;
-export const LEARNING_DONE_EVENTS = ["learning_session_completed", "exam_completed", "task_completed", "quiz_completed"] as const;
+export const LEARNING_DONE_EVENTS = ["learning_session_completed", "exam_completed", "task_completed", "quiz_completed", "lesson_completed"] as const;
 export const SHARE_EVENTS = ["result_shared", "share_completed", "share_started"] as const;
 const ENGAGED = new Set<string>([...LEARNING_START_EVENTS, ...LEARNING_DONE_EVENTS]);
 

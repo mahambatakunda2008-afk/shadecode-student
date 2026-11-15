@@ -337,6 +337,7 @@ export default function LessonDetailPage() {
       });
       const completedLesson = { ...lesson, progress: 100, completed: true, updated_at: completedAt };
       setLesson(completedLesson);
+      void trackEvent("lesson_completed", { lessonId: lesson.id, source: "lesson" });
       await offlineStorage.saveLesson({
         ...completedLesson,
         downloadedAt: new Date().toISOString(),

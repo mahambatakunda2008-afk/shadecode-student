@@ -82,6 +82,10 @@ describe("activation funnel", () => {
     expect(q.funnel.find((s) => s.key === "done")!.users).toBe(1);
     expect(q.headline.engagedWau).toBe(1);
   });
+  it("counts a completed lesson as finishing something", () => {
+    const l = buildGrowthReport({ events: [ev("lesson_completed", "u2", "2026-11-10T12:00:00Z")], signups, now });
+    expect(l.funnel.find((s) => s.key === "done")!.users).toBe(1);
+  });
   it("excludes signups older than the funnel window", () => {
     const old = buildGrowthReport({ events: [], signups: [{ id: "x", created_at: "2026-09-01T00:00:00Z" }], now });
     expect(old.funnel[0].users).toBe(0);
