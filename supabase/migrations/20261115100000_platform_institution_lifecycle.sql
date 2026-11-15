@@ -384,9 +384,12 @@ begin
 end;
 $$;
 
-create or replace function public.list_platform_group_roster(p_group_id uuid)
+drop function if exists public.list_platform_group_roster(uuid);
+
+create function public.list_platform_group_roster(p_group_id uuid)
 returns table (
   user_id uuid,
+  display_name text,
   membership_role text,
   status text,
   joined_at timestamptz
@@ -429,8 +432,14 @@ begin
   end if;
 
   return query
-    select gm.user_id,gm.membership_role,gm.status,gm.created_at
+    select
+      gm.user_id,
+      coalesce(nullif(btrim(p.display_name),''),nullif(btrim(p.username),''),'Student')::text,
+      gm.membership_role,
+      gm.status,
+      gm.created_at
     from public.platform_group_members gm
+    left join public.profiles p on p.id=gm.user_id
     where gm.group_id=p_group_id and gm.status='active'
     order by gm.membership_role,gm.created_at,gm.user_id;
 end;
