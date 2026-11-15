@@ -45,7 +45,7 @@ function authorityFor(hostname: string | null): { authority: SourceAuthority; au
   if (OFFICIAL_EXAM_BOARD_HOSTS.some((host) => matchesDomain(hostname, host))) {
     return { authority: "official-exam-board", authorityReason: "Hostname matches a configured Cambridge International or ZIMSEC official domain. Check the exact page and document." };
   }
-  if (GOVERNMENT_SUFFIXES.some((suffix) => hostname.endsWith(suffix) || hostname.includes(`${suffix}.`))) {
+  if (GOVERNMENT_SUFFIXES.some((suffix) => hostname.endsWith(suffix))) {
     return { authority: "government", authorityReason: "Government-domain signal only; this does not establish that the page is relevant or authoritative for this topic." };
   }
   if (ACADEMIC_SUFFIXES.some((suffix) => hostname.endsWith(suffix) || hostname.includes(`${suffix}.`))) {
