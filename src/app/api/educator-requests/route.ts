@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +21,9 @@ export async function GET() {
     : {data:[],messageError:null};
   if(messageError) return NextResponse.json({error:"Could not load conversation messages."},{status:500});
   const participantIds=[...new Set((requests??[]).flatMap(r=>[r.student_id,r.educator_id]))];
-  const {data:profiles}=participantIds.length
-    ? await supabase.from("platform_educator_profiles").select("user_id,display_name").in("user_id",participantIds)
+  const admin=createSupabaseAdminClient();
+  const {data:profiles}=admin&&participantIds.length
+    ? await admin.from("platform_educator_profiles").select("user_id,display_name").eq("status","approved").in("user_id",participantIds)
     : {data:[]};
   const names=new Map((profiles??[]).map(p=>[p.user_id,p.display_name]));
   return NextResponse.json({requests:(requests??[]).map(r=>({
