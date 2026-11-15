@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
   }
 
   const normalize = (value: string) => value.trim().toLocaleLowerCase();
-  const educators = (data ?? []).filter(item =>
+  const rows = (data ?? []) as { user_id: string; display_name: string; educator_type: string; bio: string; subjects: string[]; levels: string[]; experience_years: number | null }[];
+  const educators = rows.filter(item =>
     (!subject || item.subjects.some(value => normalize(value) === normalize(subject))) &&
     (!level || item.levels.some(value => normalize(value) === normalize(level)))
   ).map(item => ({
