@@ -8,6 +8,7 @@ import { normalizeLearningContext } from "@/lib/intelligence/learningContextKey"
 import { ShareQuizResult } from "@/components/share/ShareQuizResult";
 import { gradeForPercentage } from "@/lib/challenge/fromResult";
 import { trackEvent } from "@/lib/traction/client";
+import { recordVerifyLearningSignal } from "@/lib/cortex/verify/learner-model-store";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
   ArrowRight, RotateCcw, Trophy, Brain,
@@ -61,6 +62,7 @@ export default function QuizPage() {
   const [answers,     setAnswers]     = useState<number[]>([]);
   const [confirmed,   setConfirmed]   = useState(false);
   const [token,       setToken]       = useState<string | null>(null);
+  const [quizUserId,  setQuizUserId]  = useState("");
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonSubject, setLessonSubject] = useState("");
   const [lessonTopic, setLessonTopic] = useState("");
@@ -74,6 +76,7 @@ export default function QuizPage() {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { router.push("/login"); return; }
       setToken(session.access_token);
+      setQuizUserId(session.user.id);
 
       // fetch lesson title
       try {
@@ -164,7 +167,23 @@ export default function QuizPage() {
       }
       setPhase("results");
       const correct = completedQuestions.reduce((n, q, i) => (newAnswers[i] === q.correctIndex ? n + 1 : n), 0);
-      void trackEvent("quiz_completed", { source: "lesson_quiz", subject: lessonSubject || undefined, correct, total: completedQuestions.length, percentage: Math.round((correct / completedQuestions.length) * 100) });
+      const percentage = Math.round((correct / completedQuestions.length) * 100);
+      // Only the server-verified score enters the private local learner model.
+      // The attempt ID makes this idempotent across retries and page refreshes.
+      if (quizUserId && lessonSubject && lessonTopic && typeof window !== "undefined") {
+        const evidenceKey = "shadecode:learn:verified-quiz-evidence:v1:" + encodeURIComponent(quizUserId);
+        try {
+          const stored = JSON.parse(localStorage.getItem(evidenceKey) || "[]") as unknown;
+          const seen = Array.isArray(stored) ? stored.filter((value) => typeof value === "string").slice(-499) as string[] : [];
+          if (!seen.includes(quizAttemptIdRef.current)) {
+            recordVerifyLearningSignal(quizUserId, { subject: lessonSubject, topic: lessonTopic, score: percentage, occurredAt: new Date().toISOString() });
+            localStorage.setItem(evidenceKey, JSON.stringify([...seen, quizAttemptIdRef.current].slice(-500)));
+          }
+        } catch {
+          // Local adaptation is best-effort; server-verified quiz results remain saved.
+        }
+      }
+      void trackEvent("quiz_completed", { source: "lesson_quiz", subject: lessonSubject || undefined, correct, total: completedQuestions.length, percentage });
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : "Could not verify this quiz. Please retry.");
     } finally {
