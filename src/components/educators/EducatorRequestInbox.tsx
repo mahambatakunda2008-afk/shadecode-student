@@ -58,7 +58,7 @@ export function EducatorRequestInbox() {
     finally{setBusy(null);}
   }
 
-  return <main className="mx-auto max-w-5xl space-y-5 px-4 py-7 sm:px-6">
+  return <div className="mx-auto max-w-5xl space-y-5 px-4 py-7 sm:px-6">
     <header className="space-y-2"><p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--primary)]">Human learning support</p><h1 className="text-3xl font-bold">Help requests & conversations</h1><p className="text-sm leading-6 text-[var(--muted-foreground)]">A private space for students and educators to discuss learning needs, agree on next steps and follow up.</p></header>
     {error&&<p role="alert" className="rounded-xl bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">{error}</p>}
     {notice&&<p role="status" className="rounded-xl bg-[var(--success)]/10 p-3 text-sm">{notice}</p>}
@@ -95,5 +95,5 @@ export function EducatorRequestInbox() {
           </div>
         </article>;
       })}</section>}
-  </main>;
+  </div>;
 }
