@@ -10,6 +10,7 @@ const ITEMS: { href: string; label: string; exact: boolean; adminOnly: boolean; 
   { href: "/teacher/assignments", label: "Classwork", exact: false, adminOnly: false, institutionOnly: true, reviewerOnly: false, authorOnly: false },
   { href: "/teacher/progress", label: "Learner progress", exact: false, adminOnly: false, institutionOnly: true, reviewerOnly: false, authorOnly: false },
   { href: "/teacher/tutorials", label: "Tutorials", exact: false, adminOnly: false, institutionOnly: false, reviewerOnly: false, authorOnly: true },
+  { href: "/teacher/requests", label: "Help requests", exact: false, adminOnly: false, institutionOnly: false, reviewerOnly: false, authorOnly: true },
   { href: "/teacher/review", label: "Review", exact: false, adminOnly: false, institutionOnly: false, reviewerOnly: true, authorOnly: false },
 ];
 
