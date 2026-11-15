@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { GraduationCap, Search, UserRound } from "lucide-react";
 
@@ -15,7 +15,7 @@ export default function EducatorDirectoryPage() {
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true); setError("");
     try {
       const params = new URLSearchParams();
@@ -27,8 +27,8 @@ export default function EducatorDirectoryPage() {
       setItems(Array.isArray(body.educators)?body.educators:[]);
     } catch(e) { setError(e instanceof Error?e.message:"Could not load educators."); }
     finally { setLoading(false); }
-  }
-  useEffect(()=>{void load();},[]);
+  }, [subject, level]);
+  useEffect(()=>{void load();},[load]);
 
   return <main className="mx-auto max-w-5xl space-y-6 px-4 py-7 sm:px-6">
     <header className="space-y-2"><p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--primary)]">Human learning support</p><h1 className="text-3xl font-bold">Find a real educator.</h1><p className="max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Discover approved independent tutors, subject specialists and teachers who contribute learning resources to Shadecode. No school membership required.</p></header>
