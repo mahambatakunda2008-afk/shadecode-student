@@ -9,11 +9,10 @@ type Learner = {
   assignmentsSubmitted: number;
   assignmentsMarked: number;
   assignmentsAvailable: number;
+  awaitingMarking: number;
   averagePercent: number | null;
-  attendanceRate: number | null;
-  attendanceSessions: number;
 };
-type Report = { group: Group; evidenceWindow: { assignments: number; attendanceSessions: number }; learners: Learner[] };
+type Report = { group: Group; evidenceWindow: { assignments: number }; learners: Learner[] };
 
 export function ProgressClient({ groups }: { groups: Group[] }) {
   const [groupId, setGroupId] = useState(groups[0]?.id ?? "");
@@ -56,7 +55,7 @@ export function ProgressClient({ groups }: { groups: Group[] }) {
 
       {report && !loading ? (
         <>
-          <section className="grid gap-3 sm:grid-cols-3" aria-label="Evidence coverage">
+          <section className="grid gap-3 sm:grid-cols-2" aria-label="Evidence coverage">
             <article className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4">
               <p className="text-xs text-[var(--muted-foreground)]">Learners</p>
               <p className="mt-2 text-2xl font-semibold tabular-nums">{report.learners.length}</p>
@@ -65,29 +64,25 @@ export function ProgressClient({ groups }: { groups: Group[] }) {
               <p className="text-xs text-[var(--muted-foreground)]">Assignments in evidence window</p>
               <p className="mt-2 text-2xl font-semibold tabular-nums">{report.evidenceWindow.assignments}</p>
             </article>
-            <article className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4">
-              <p className="text-xs text-[var(--muted-foreground)]">Attendance sessions</p>
-              <p className="mt-2 text-2xl font-semibold tabular-nums">{report.evidenceWindow.attendanceSessions}</p>
-            </article>
           </section>
 
           <section className="space-y-3">
             <div>
               <h2 className="text-lg font-semibold">Learner progress</h2>
-              <p className="text-sm text-[var(--muted-foreground)]">A combined view of recorded classwork and attendance. Missing evidence is shown as “Not enough data”, never as zero achievement.</p>
+              <p className="text-sm text-[var(--muted-foreground)]">A view of recorded classwork and marking. Missing evidence is shown as “Not enough data”, never as zero achievement.</p>
             </div>
             <div className="overflow-x-auto rounded-2xl border border-[var(--card-border)] bg-[var(--card)]">
               <table className="w-full min-w-[680px] text-left text-sm">
                 <thead className="bg-[var(--surface)] text-xs text-[var(--muted-foreground)]">
-                  <tr><th scope="col" className="px-4 py-3 font-medium">Learner</th><th scope="col" className="px-4 py-3 font-medium">Work submitted</th><th scope="col" className="px-4 py-3 font-medium">Marked average</th><th scope="col" className="px-4 py-3 font-medium">Attendance</th></tr>
+                  <tr><th scope="col" className="px-4 py-3 font-medium">Learner</th><th scope="col" className="px-4 py-3 font-medium">Work submitted</th><th scope="col" className="px-4 py-3 font-medium">Awaiting marking</th><th scope="col" className="px-4 py-3 font-medium">Marked average</th></tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--card-border)]">
                   {report.learners.map((learner) => (
                     <tr key={learner.studentId}>
                       <th scope="row" className="px-4 py-3 font-medium">{learner.name}</th>
                       <td className="px-4 py-3 tabular-nums">{learner.assignmentsSubmitted} submitted · {learner.assignmentsMarked} marked</td>
+                      <td className="px-4 py-3 tabular-nums">{learner.awaitingMarking}</td>
                       <td className="px-4 py-3 tabular-nums">{learner.averagePercent === null ? "Not enough data" : `${learner.averagePercent}%`}</td>
-                      <td className="px-4 py-3 tabular-nums">{learner.attendanceRate === null ? "Not enough data" : `${learner.attendanceRate}%`} <span className="text-xs text-[var(--muted-foreground)]">({learner.attendanceSessions} records)</span></td>
                     </tr>
                   ))}
                   {!report.learners.length ? <tr><td colSpan={4} className="px-4 py-8 text-center text-[var(--muted-foreground)]">No active learners in this group.</td></tr> : null}
