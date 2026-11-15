@@ -25,6 +25,8 @@ export function AttendanceClient() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [historyFrom, setHistoryFrom] = useState("");
+  const [historyTo, setHistoryTo] = useState("");
 
   const selectedSession = sessions.find((session) => session.id === selectedSessionId) ?? null;
   const groupSessions = useMemo(() => sessions.filter((session) => session.group_id === groupId), [sessions, groupId]);
@@ -86,6 +88,18 @@ export function AttendanceClient() {
   const presentCount = sessionRecords.filter((record) => record.attendance_status === "present").length;
   const absentCount = sessionRecords.filter((record) => record.attendance_status === "absent").length;
   const unmarkedCount = Math.max(0, roster.filter((member) => member.membership_role === "student").length - sessionRecords.length);
+  const historySessions = groupSessions.filter((session) =>
+    (!historyFrom || session.session_date >= historyFrom) && (!historyTo || session.session_date <= historyTo),
+  );
+  const historyRows = roster.filter((member) => member.membership_role === "student").map((learner) => {
+    const learnerRecords = records.filter((record) => historySessions.some((session) => session.id === record.session_id) && record.student_id === learner.user_id);
+    const present = learnerRecords.filter((record) => record.attendance_status === "present").length;
+    const late = learnerRecords.filter((record) => record.attendance_status === "late").length;
+    const absent = learnerRecords.filter((record) => record.attendance_status === "absent").length;
+    const excused = learnerRecords.filter((record) => record.attendance_status === "excused").length;
+    const eligible = present + late + absent;
+    return { ...learner, present, late, absent, excused, rate: eligible ? Math.round(((present + late) / eligible) * 100) : null };
+  }).sort((a, b) => (a.rate ?? -1) - (b.rate ?? -1));
 
   return (
     <div className="space-y-6">
@@ -117,6 +131,20 @@ export function AttendanceClient() {
           </div>
           {selectedSession.status === "open" ? <button type="button" disabled={saving} onClick={() => void send({ action: "close-session", sessionId: selectedSession.id }, "PATCH")} className="rounded-xl border border-[var(--card-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Close register</button> : <p className="text-sm text-[var(--muted-foreground)]">This register is closed. Its entries are read-only.</p>}
         </> : <p className="rounded-xl border border-dashed border-[var(--card-border)] p-5 text-sm text-[var(--muted-foreground)]">No register for this class yet. Start one above.</p>}
+      </section>
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div><h2 className="text-lg font-semibold">Attendance history</h2><p className="text-sm text-[var(--muted-foreground)]">Learner-level attendance across this class. Present and late count as attended; excused sessions are excluded from the rate.</p></div>
+          <div className="flex flex-wrap gap-2">
+            <label className="space-y-1 text-xs"><span className="block font-medium">From</span><input type="date" value={historyFrom} onChange={(event) => setHistoryFrom(event.target.value)} className="rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2.5 py-2" /></label>
+            <label className="space-y-1 text-xs"><span className="block font-medium">To</span><input type="date" value={historyTo} onChange={(event) => setHistoryTo(event.target.value)} className="rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-2.5 py-2" /></label>
+            {(historyFrom || historyTo) ? <button type="button" onClick={() => { setHistoryFrom(""); setHistoryTo(""); }} className="self-end rounded-lg border border-[var(--card-border)] px-3 py-2 text-xs">Clear dates</button> : null}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)]">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--card-border)] px-4 py-3 text-sm"><span className="font-medium">{historySessions.length} register{historySessions.length === 1 ? "" : "s"} in range</span><span className="text-xs text-[var(--muted-foreground)]">Showing up to the 60 most recent class registers</span></div>
+          {historyRows.length ? <div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-[var(--surface)] text-xs text-[var(--muted-foreground)]"><tr><th className="px-4 py-3 font-medium">Learner</th><th className="px-3 py-3 font-medium">Present</th><th className="px-3 py-3 font-medium">Late</th><th className="px-3 py-3 font-medium">Absent</th><th className="px-3 py-3 font-medium">Excused</th><th className="px-4 py-3 text-right font-medium">Attendance</th></tr></thead><tbody className="divide-y divide-[var(--card-border)]">{historyRows.map((row) => <tr key={row.user_id}><td className="px-4 py-3 font-medium">{row.display_name || "Student"}</td><td className="px-3 py-3">{row.present}</td><td className="px-3 py-3">{row.late}</td><td className="px-3 py-3">{row.absent}</td><td className="px-3 py-3">{row.excused}</td><td className="px-4 py-3 text-right font-semibold">{row.rate === null ? "No data" : String(row.rate) + "%"}</td></tr>)}</tbody></table></div> : <p className="p-5 text-sm text-[var(--muted-foreground)]">Choose a class with active learners to see attendance history.</p>}
+        </div>
       </section>
       {error ? <p role="alert" className="rounded-xl border border-red-500/30 bg-red-500/5 p-3 text-sm">{error}</p> : null}
       {notice ? <p role="status" className="rounded-xl border border-[var(--primary)]/20 bg-[var(--primary-glow)] p-3 text-sm">{notice}</p> : null}
