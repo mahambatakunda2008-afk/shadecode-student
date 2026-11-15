@@ -197,7 +197,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $body$
 declare
   v_actor uuid := auth.uid();
 begin
@@ -223,7 +223,7 @@ begin
       and nullif(r.metadata->>'institution_id','')::uuid=p_institution_id
     order by r.created_at,r.id;
 end;
-$;
+$body$;
 
 create or replace function public.list_my_platform_guardian_links()
 returns table (
@@ -238,7 +238,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $body$
 declare
   v_actor uuid := auth.uid();
 begin
@@ -255,7 +255,7 @@ begin
     where r.related_user_id=v_actor and r.relationship_type in ('parent','guardian')
     order by r.created_at desc,r.id;
 end;
-$;
+$body$;
 
 create or replace function public.review_platform_guardian_link(
   p_relationship_id uuid,
