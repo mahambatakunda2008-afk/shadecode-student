@@ -8,11 +8,9 @@ const ITEMS: { href: string; label: string; exact: boolean; adminOnly: boolean; 
   { href: "/teacher", label: "Home", exact: true, adminOnly: false, reviewerOnly: false },
   { href: "/teacher/classes", label: "Classes", exact: false, adminOnly: false, reviewerOnly: false },
   { href: "/teacher/assignments", label: "Classwork", exact: false, adminOnly: false, reviewerOnly: false },
-  { href: "/teacher/attendance", label: "Attendance", exact: false, adminOnly: false, reviewerOnly: false },
   { href: "/teacher/progress", label: "Learner progress", exact: false, adminOnly: false, reviewerOnly: false },
   { href: "/teacher/tutorials", label: "Tutorials", exact: false, adminOnly: false, reviewerOnly: true },
   { href: "/teacher/review", label: "Review", exact: false, adminOnly: false, reviewerOnly: true },
-  { href: "/teacher/invites", label: "Invites", exact: false, adminOnly: true, reviewerOnly: false },
 ];
 
 export function TeacherNav({ isAdmin, canReviewContent }: { isAdmin: boolean; canReviewContent: boolean }) {
