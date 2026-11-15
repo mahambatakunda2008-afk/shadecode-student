@@ -2,6 +2,18 @@
 -- Run after the platform baseline and institution lifecycle migrations on disposable PostgreSQL.
 begin;
 
+-- Minimal profile fixture for the authorized roster display-name projection.
+create table if not exists public.profiles (
+  id uuid primary key,
+  username text,
+  display_name text
+);
+insert into public.profiles(id,username,display_name) values
+ ('10000000-0000-4000-8000-000000000001','schooladmin','School Administrator'),
+ ('10000000-0000-4000-8000-000000000002','teacherone','Teacher One'),
+ ('10000000-0000-4000-8000-000000000003','studentone','Student One')
+on conflict (id) do update set username=excluded.username,display_name=excluded.display_name;
+
 create table if not exists public.test_platform_admins(user_id uuid primary key);
 create or replace function public.has_role(user_id uuid, role_name text)
 returns boolean language sql stable security definer
@@ -60,6 +72,13 @@ begin
   select count(*) into v_roster_count from public.list_platform_group_roster(v_group);
   if v_roster_count <> 1 then
     raise exception 'teacher should see the active roster for their assigned group';
+  end if;
+  if not exists (
+    select 1 from public.list_platform_group_roster(v_group)
+    where user_id='10000000-0000-4000-8000-000000000002'
+      and display_name='Teacher One'
+  ) then
+    raise exception 'authorized class roster did not resolve the member display name';
   end if;
 
   begin
