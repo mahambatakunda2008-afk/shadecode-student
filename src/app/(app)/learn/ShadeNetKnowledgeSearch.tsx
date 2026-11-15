@@ -95,7 +95,7 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
       setResult((current) => current ? {
         ...current,
         results: [
-          { resource: payload.resource!, source: "online" },
+          { resource: payload.resource!, source: "online" as const },
           ...current.results.filter((item) => item.resource.metadata.source !== url),
         ].slice(0, 12),
       } : current);
