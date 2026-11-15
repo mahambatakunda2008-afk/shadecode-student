@@ -134,9 +134,9 @@ describe("Cortex tutor learner continuity", () => {
 
     expect(response).toContain("4 recorded learning attempts");
     expect(response).toContain("rather than assume this is your first encounter");
-    expect(response).toContain("latest recorded practice score");
-    expect(response).toContain("100%");
-    expect(response).toContain("not proof of mastery");
+    expect(response).not.toContain("latest recorded practice score");
+    expect(response).not.toContain("100%");
+    expect(response).toContain("61% from recorded evidence");
   });
 
 
