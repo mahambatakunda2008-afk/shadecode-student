@@ -114,6 +114,7 @@ export async function getActivePlatformUserRelationships(
     .from("platform_user_relationships")
     .select("id, subject_user_id, related_user_id, relationship_type, status")
     .or(`subject_user_id.eq.${userId},related_user_id.eq.${userId}`)
+    .in("relationship_type", ["parent", "guardian"])
     .eq("status", "active");
 
   if (error) throw new Error(error.message);
