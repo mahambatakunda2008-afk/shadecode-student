@@ -1,8 +1,4 @@
 import { NextResponse } from "next/server";
-import { createHash } from "node:crypto";
-import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
-import { updateCortexFromExam } from "@/lib/cortex";
-import { emitExamCompleted } from "@/lib/events";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
@@ -78,32 +74,6 @@ function markDeterministic(questions, answers) {
   return { results, weakAreas, strongAreas, cortexInsight: "This paper was marked locally because AI marking was unavailable. MCQs use exact answers; written responses use conservative keyword overlap, so treat partial written scores as provisional." };
 }
 
-function buildExamCortexEventId(userId, attemptId, payload) {
-  const identity = attemptId?.trim()
-    ? `exam-attempt:${userId}:${attemptId.trim()}`
-    : `exam-result:${userId}:${JSON.stringify(payload)}`;
-  const hex = createHash("sha256").update(identity).digest("hex").slice(0, 32);
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
-}
-
-async function claimMasteryProjection(svc, userId, eventId, payload) {
-  const { error } = await svc.from("cortex_events").insert({
-    user_id: userId,
-    type: "exam.mastery.projected",
-    source: "exam-mark",
-    data: {
-      eventId,
-      sourceEventId: eventId,
-      subject: payload.subject,
-      attemptId: payload.attemptId || null,
-      projectedAt: new Date().toISOString(),
-    },
-  });
-  if (!error) return true;
-  if (error.code === "23505") return false;
-  throw error;
-}
-
 export async function POST(req) {
   try {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
@@ -121,42 +91,8 @@ export async function POST(req) {
     const userId = user.id;
     if (!subject || !questions || !answers) return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 
-    const submissionPayload = { subject, difficulty, questions, answers, timeTaken };
-    const submissionHash = createHash("sha256").update(JSON.stringify(submissionPayload)).digest("hex");
-    // A stable attempt ID is claimed before any Cortex or mastery side effects.
-    // A retry receives the original server-marked result instead of replaying them.
-    let submissionService = null;
-    let submissionClaimToken = null;
-    if (attemptId?.trim()) {
-      submissionService = createSupabaseServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        { auth: { autoRefreshToken: false, persistSession: false } }
-      );
-      const { data: claimRows, error: claimError } = await submissionService.rpc("claim_exam_submission", {
-        p_user_id: userId,
-        p_attempt_id: attemptId.trim(),
-        p_payload_hash: submissionHash,
-      });
-      if (claimError) {
-        console.error("[exam/mark] Submission claim failed:", claimError.message);
-        return NextResponse.json({ error: "Your result could not be safely recorded. Your answers are still saved. Please retry." }, { status: 503 });
-      }
-      const claim = Array.isArray(claimRows) ? claimRows[0] : claimRows;
-      if (claim?.state === "completed" && claim.saved_result) {
-        return NextResponse.json(claim.saved_result, { headers: { "X-Exam-Submission-Replayed": "true" } });
-      }
-      if (claim?.state === "processing") {
-        return NextResponse.json({ error: "This exam is already being submitted. Retry shortly; your attempt is saved." }, { status: 409 });
-      }
-      if (claim?.state === "payload_conflict") {
-        return NextResponse.json({ error: "This attempt ID was already used with different answers. Restore the original attempt before retrying." }, { status: 409 });
-      }
-      if (claim?.state !== "claimed" || !claim.claim_token) {
-        return NextResponse.json({ error: "The exam submission could not be claimed safely. Please retry." }, { status: 503 });
-      }
-      submissionClaimToken = claim.claim_token;
-    }
+    // Client-held question sets and reference answers are not authenticated paper provenance.
+    // Keep marking available, but never persist scores or emit mastery/XP events from this route.
 
     let markingData = null;
     const deterministicPaper = questions.length > 0 && questions.every((q) => String(q.id).startsWith("fallback_"));
@@ -187,83 +123,11 @@ export async function POST(req) {
       .filter((item) => typeof item.topic === "string" && item.topic.trim() && Number.isFinite(Number(item.percentage)))
       .map((item) => ({ topic: item.topic.trim(), percentage: Math.max(0, Math.min(100, Number(item.percentage))) }));
 
-    if (submissionService && attemptId?.trim()) {
-      const { data: finalized, error: finalizeError } = await submissionService.rpc("complete_exam_submission", {
-        p_user_id: userId,
-        p_attempt_id: attemptId.trim(),
-        p_payload_hash: submissionHash,
-        p_claim_token: submissionClaimToken,
-        p_result: submissionResult,
-        p_event: {
-          eventId: buildExamCortexEventId(userId, attemptId, { subject, difficulty, questions, answers, timeTaken }),
-          examId,
-          subject,
-          difficulty,
-          score: totalScore,
-          maxScore,
-          percentage,
-          grade,
-          weakAreas: markingData.weakAreas,
-          strongAreas: markingData.strongAreas,
-          timeTaken,
-          topicScores,
-        },
-      });
-      if (finalizeError || finalized !== true) {
-        console.error("[exam/mark] Submission result finalization failed:", finalizeError?.message || "No row finalized");
-        return NextResponse.json({ error: "Your paper was marked, but the result could not be finalized safely. Retry this same attempt to recover it." }, { status: 503 });
-      }
-    }
-
-    if (!submissionService || !attemptId?.trim()) {
-      // Legacy callers without a stable attempt ID cannot use the durable
-      // per-attempt outbox. Preserve their existing synchronous side effects.
-      try {
-        await updateCortexFromExam({
-          userId,
-          subject,
-          score: totalScore,
-          maxScore,
-          eventId: buildExamCortexEventId(userId, attemptId, { subject, difficulty, questions, answers, timeTaken }),
-        });
-        const svc = createSupabaseServiceClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL,
-          process.env.SUPABASE_SERVICE_ROLE_KEY,
-          { auth: { autoRefreshToken: false, persistSession: false } },
-        );
-        const { error: memoryError } = await svc.rpc("record_exam_score", {
-          p_user_id: userId,
-          p_score: {
-            examId,
-            submissionIdentity: `exam:${examId}`,
-            subject,
-            score: totalScore,
-            totalMarks: maxScore,
-            percentage,
-            grade,
-            weakAreas: markingData.weakAreas,
-            strongAreas: markingData.strongAreas,
-            date: new Date().toISOString(),
-          },
-        });
-        if (memoryError) throw memoryError;
-        await emitExamCompleted(userId, {
-          examId,
-          subject,
-          topic: difficulty,
-          score: percentage,
-          totalMarks: maxScore,
-          grade,
-          weakAreas: markingData.weakAreas,
-          strongAreas: markingData.strongAreas,
-          timeSpent: timeTaken,
-        }, "exam");
-      } catch (legacyEventError) {
-        console.error("[exam/mark] Legacy completion side effects failed:", legacyEventError);
-      }
-    }
-
-    return NextResponse.json(submissionResult);
+    return NextResponse.json({
+      ...submissionResult,
+      evidenceRecorded: false,
+      evidenceReason: "unverified_paper_provenance",
+    });
   } catch (err) {
     console.error("Marking error:", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Server error" }, { status: 500 });
