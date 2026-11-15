@@ -72,7 +72,24 @@ begin
   perform public.redeem_platform_institution_invite(v_code_student);
 
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+  begin
+    perform public.set_platform_membership_status(v_institution,'10000000-0000-4000-8000-000000000001','revoked',null);
+    raise exception 'last active institution administrator was revoked';
+  exception when sqlstate '23514' then
+    null;
+  end;
   perform public.set_platform_membership_status(v_institution,'10000000-0000-4000-8000-000000000003','suspended',null);
+  begin
+    perform public.set_platform_membership_status(v_institution,'10000000-0000-4000-8000-000000000003','active',v_group);
+    raise exception 'group access was restored while institution membership was suspended';
+  exception when sqlstate '42501' then
+    null;
+  end;
+  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
+  if exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and status='active') then
+    raise exception 'institution suspension did not cascade to group access';
+  end if;
+  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
   if exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and status='active') then
     raise exception 'institution suspension did not cascade to group access';
