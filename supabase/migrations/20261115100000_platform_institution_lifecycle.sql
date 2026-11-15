@@ -384,12 +384,65 @@ begin
 end;
 $$;
 
+create or replace function public.list_platform_group_roster(p_group_id uuid)
+returns table (
+  user_id uuid,
+  membership_role text,
+  status text,
+  joined_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $roster$
+declare
+  v_actor uuid := auth.uid();
+  v_institution_id uuid;
+begin
+  if v_actor is null then
+    raise exception 'sign in to view a class roster' using errcode = '42501';
+  end if;
+
+  select g.institution_id into v_institution_id
+  from public.platform_groups g where g.id=p_group_id;
+  if v_institution_id is null then
+    raise exception 'class not found' using errcode = 'P0002';
+  end if;
+
+  if not exists (
+    select 1 from public.platform_institution_members im
+    where im.institution_id=v_institution_id and im.user_id=v_actor and im.status='active'
+  ) then
+    raise exception 'active institution membership required' using errcode = '42501';
+  end if;
+
+  if not exists (
+    select 1 from public.platform_institution_members im
+    where im.institution_id=v_institution_id and im.user_id=v_actor
+      and im.status='active' and im.membership_role='administrator'
+  ) and not exists (
+    select 1 from public.platform_group_members gm
+    where gm.group_id=p_group_id and gm.user_id=v_actor and gm.status='active'
+      and gm.membership_role in ('teacher','tutor','staff','administrator')
+  ) then
+    raise exception 'active teaching assignment required to view this class roster' using errcode = '42501';
+  end if;
+
+  return query
+    select gm.user_id,gm.membership_role,gm.status,gm.created_at
+    from public.platform_group_members gm
+    where gm.group_id=p_group_id and gm.status='active'
+    order by gm.membership_role,gm.created_at,gm.user_id;
+end;
+$roster$;
+
 revoke all on function public.create_platform_institution(text,text,text) from public, anon;
 revoke all on function public.create_platform_group(uuid,text,text,uuid) from public, anon;
 revoke all on function public.create_platform_institution_invite(uuid,text,text,uuid,timestamptz) from public, anon;
 revoke all on function public.redeem_platform_institution_invite(text) from public, anon;
 revoke all on function public.revoke_platform_institution_invite(uuid,uuid) from public, anon;
 revoke all on function public.set_platform_membership_status(uuid,uuid,text,uuid) from public, anon;
+revoke all on function public.list_platform_group_roster(uuid) from public, anon;
 
 grant execute on function public.create_platform_institution(text,text,text) to authenticated;
 grant execute on function public.create_platform_group(uuid,text,text,uuid) to authenticated;
@@ -397,3 +450,4 @@ grant execute on function public.create_platform_institution_invite(uuid,text,te
 grant execute on function public.redeem_platform_institution_invite(text) to authenticated;
 grant execute on function public.revoke_platform_institution_invite(uuid,uuid) to authenticated;
 grant execute on function public.set_platform_membership_status(uuid,uuid,text,uuid) to authenticated;
+grant execute on function public.list_platform_group_roster(uuid) to authenticated;
