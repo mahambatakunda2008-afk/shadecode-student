@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTeacherWorkspace } from "@/lib/exam/curated/reviewAccess";
-import { InstitutionAdminPanel } from "./InstitutionAdminPanel";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My classes · Shadecode Teacher" };
@@ -61,31 +60,22 @@ export default async function TeacherClassesPage() {
   const groupMemberships = (groupRows ?? []) as GroupMembership[];
   const institutionIds = [...new Set(institutionMemberships.map((row) => row.institution_id))];
   const groupIds = [...new Set(groupMemberships.map((row) => row.group_id))];
-  const adminInstitutionIds = [...new Set(
-    institutionMemberships
-      .filter((row) => row.membership_role === "administrator")
-      .map((row) => row.institution_id),
-  )];
 
-  const [institutionResult, groupResult, adminGroupsResult] = await Promise.all([
+  const [institutionResult, groupResult] = await Promise.all([
     institutionIds.length
       ? reviewer.supabase.from("platform_institutions").select("id,name,institution_type,country_code").in("id", institutionIds)
       : Promise.resolve({ data: [], error: null }),
     groupIds.length
       ? reviewer.supabase.from("platform_groups").select("id,institution_id,name,group_type,metadata").in("id", groupIds)
       : Promise.resolve({ data: [], error: null }),
-    adminInstitutionIds.length
-      ? reviewer.supabase.from("platform_groups").select("id,institution_id,name,group_type,metadata").in("institution_id", adminInstitutionIds)
-      : Promise.resolve({ data: [], error: null }),
   ]);
 
   const institutions = (institutionResult.data ?? []) as Institution[];
   const assignedGroups = (groupResult.data ?? []) as TeachingGroup[];
-  const adminGroups = (adminGroupsResult.data ?? []) as TeachingGroup[];
-  const groups = [...new Map([...assignedGroups, ...adminGroups].map((group) => [group.id, group])).values()];
+  const groups = assignedGroups;
   const institutionNames = new Map(institutions.map((institution) => [institution.id, institution.name]));
   const membershipRoles = new Map(groupMemberships.map((membership) => [membership.group_id, membership.membership_role]));
-  const loadFailed = Boolean(institutionMembershipError || groupMembershipError || institutionResult.error || groupResult.error || adminGroupsResult.error);
+  const loadFailed = Boolean(institutionMembershipError || groupMembershipError || institutionResult.error || groupResult.error);
 
   return (
     <div className="space-y-7">
@@ -138,18 +128,6 @@ export default async function TeacherClassesPage() {
               </div>
             )}
           </section>
-
-          {institutions
-            .filter((institution) => adminInstitutionIds.includes(institution.id))
-            .map((institution) => (
-              <InstitutionAdminPanel
-                key={institution.id}
-                institutionId={institution.id}
-                groups={groups
-                  .filter((group) => group.institution_id === institution.id)
-                  .map((group) => ({ id: group.id, name: group.name, group_type: group.group_type }))}
-              />
-            ))}
 
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-3">
