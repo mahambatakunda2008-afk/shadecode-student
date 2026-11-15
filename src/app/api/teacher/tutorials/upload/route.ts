@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { getTutorialAuthor } from "@/lib/exam/curated/reviewAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,7 @@ const MIME_EXTENSIONS: Record<string, string> = {
 const MAX_BYTES = 50 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const reviewer = await getReviewer();
+  const reviewer = await getTutorialAuthor();
   if (!reviewer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json().catch(() => null);
