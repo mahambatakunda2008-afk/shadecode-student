@@ -11,7 +11,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ass
 
   const { data: assignment, error: assignmentError } = await workspace.supabase
     .from("platform_assignments")
-    .select("id,group_id,title,subject,instructions,due_at,max_score,status")
+    .select("id,group_id,title,subject,instructions,due_at,max_score,status,assessment_type,questions,mark_scheme")
     .eq("id", assignmentId)
     .maybeSingle();
   if (assignmentError) return NextResponse.json({ error: "Could not load assignment." }, { status: 500 });
