@@ -281,16 +281,16 @@ begin
       set status=p_status,updated_at=now()
       where institution_id=p_institution_id and user_id=p_target_user_id;
 
-    -- Institution suspension/revocation must immediately remove every class-level
-    -- authorization too. Restoring institution membership reactivates only the
-    -- memberships that were previously suspended/revoked by this same admin action.
-    update public.platform_group_members gm
-      set status=p_status,updated_at=now()
-      from public.platform_groups g
-      where gm.group_id=g.id and g.institution_id=p_institution_id
-        and gm.user_id=p_target_user_id
-        and gm.status in ('active','suspended','revoked')
-        and (p_status <> 'active' or gm.status <> 'active');
+    -- Institution suspension/revocation must immediately remove every active
+    -- class-level authorization too. Restoring institution membership does not
+    -- silently restore group access; an administrator must explicitly reassign it.
+    if p_status <> 'active' then
+      update public.platform_group_members gm
+        set status=p_status,updated_at=now()
+        from public.platform_groups g
+        where gm.group_id=g.id and g.institution_id=p_institution_id
+          and gm.user_id=p_target_user_id and gm.status='active';
+    end if;
 
     insert into public.platform_membership_audit(institution_id,actor_user_id,target_user_id,action,entity_type,entity_id,metadata)
     values (p_institution_id,v_actor,p_target_user_id,'institution_membership.'||p_status,'institution_member',p_institution_id,
