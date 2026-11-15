@@ -38,6 +38,7 @@ declare
   v_code_teacher text := 'teacher-invite-code-2026-functional';
   v_code_student text := 'student-invite-code-2026-functional';
   v_result jsonb;
+  v_roster_count integer;
 begin
   v_institution := public.create_platform_institution('Fixture School','school','ZW');
   v_group := public.create_platform_group(v_institution,'Form 5A','class',null);
@@ -56,6 +57,10 @@ begin
   if not exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and membership_role='teacher' and status='active') then
     raise exception 'teacher group membership not created';
   end if;
+  select count(*) into v_roster_count from public.list_platform_group_roster(v_group);
+  if v_roster_count <> 1 then
+    raise exception 'teacher should see the active roster for their assigned group';
+  end if;
 
   begin
     perform public.redeem_platform_institution_invite(v_code_teacher);
@@ -70,6 +75,19 @@ begin
   );
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
   perform public.redeem_platform_institution_invite(v_code_student);
+
+  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000002',true);
+  select count(*) into v_roster_count from public.list_platform_group_roster(v_group);
+  if v_roster_count <> 2 then
+    raise exception 'assigned teacher should see both active teacher and student roster entries';
+  end if;
+  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
+  begin
+    perform * from public.list_platform_group_roster(v_group);
+    raise exception 'student accessed teacher-only roster endpoint';
+  exception when sqlstate '42501' then
+    null;
+  end;
 
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
   begin
@@ -87,6 +105,11 @@ begin
     null;
   end;
 
+  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000002',true);
+  select count(*) into v_roster_count from public.list_platform_group_roster(v_group);
+  if v_roster_count <> 1 then
+    raise exception 'suspended student remained visible in the active roster';
+  end if;
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
   if exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and status='active') then
     raise exception 'institution suspension did not cascade to group access';
