@@ -4,12 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const ITEMS = [
-  { href: "/teacher", label: "Home", exact: true, adminOnly: false },
-  { href: "/teacher/classes", label: "Classes", exact: false, adminOnly: false },
-  { href: "/teacher/tutorials", label: "Tutorials", exact: false, reviewerOnly: true },
-  { href: "/teacher/review", label: "Review", exact: false, reviewerOnly: true },
-  { href: "/teacher/invites", label: "Invites", exact: false, adminOnly: true },
+const ITEMS: { href: string; label: string; exact: boolean; adminOnly: boolean; reviewerOnly: boolean }[] = [
+  { href: "/teacher", label: "Home", exact: true, adminOnly: false, reviewerOnly: false },
+  { href: "/teacher/classes", label: "Classes", exact: false, adminOnly: false, reviewerOnly: false },
+  { href: "/teacher/tutorials", label: "Tutorials", exact: false, adminOnly: false, reviewerOnly: true },
+  { href: "/teacher/review", label: "Review", exact: false, adminOnly: false, reviewerOnly: true },
+  { href: "/teacher/invites", label: "Invites", exact: false, adminOnly: true, reviewerOnly: false },
 ];
 
 export function TeacherNav({ isAdmin, canReviewContent }: { isAdmin: boolean; canReviewContent: boolean }) {
