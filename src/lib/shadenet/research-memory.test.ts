@@ -77,7 +77,7 @@ describe("ShadeNet research memory", () => {
   it("saves resource and assessment as one record while retaining first saved time", async () => {
     const record = await makeRecord();
     vi.spyOn(shadeNetStore, "getResearch").mockResolvedValue(record);
-    const save = vi.spyOn(shadeNetStore, "saveResearch").mockResolvedValue();
+    const save = vi.spyOn(shadeNetStore, "saveResearch").mockResolvedValue(undefined);
     const saved = await saveResearchMemory(record.resource, assessment, {
       subject: "Physics",
       qualification: "AS",
