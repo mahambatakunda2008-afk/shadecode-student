@@ -7,7 +7,7 @@ create or replace function public.has_role(user_id uuid, role_name text)
 returns boolean language sql stable security definer
 set search_path=public,pg_temp
 as $$
-  select role_name='admin' and exists(select 1 from public.test_platform_admins a where a.user_id=has_role.user_id);
+  select role_name='admin' and exists(select 1 from public.test_platform_admins a where a.user_id=$1);
 $$;
 
 insert into auth.users(id) values
@@ -18,6 +18,8 @@ on conflict do nothing;
 insert into public.test_platform_admins(user_id)
 values ('10000000-0000-4000-8000-000000000001') on conflict do nothing;
 
+grant usage on schema auth to authenticated;
+grant execute on function auth.uid() to authenticated;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 
