@@ -40,6 +40,8 @@ function validateMarkingReport(report: any, questions: ExamQuestion[]) {
     Array.isArray(report.weakTopics) && Array.isArray(report.strongTopics) && Array.isArray(report.recommendedActions);
 }
 
+type MaybePromise<T> = T | Promise<T>;
+
 function withTimeout<T>(promise: MaybePromise<T>, timeoutMs: number, fallback: T): Promise<T> {
   return new Promise(resolve => {
     let settled = false;
