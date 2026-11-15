@@ -18,8 +18,6 @@ import { markExamOffline } from "@/lib/local-first/exam-marker";
 import { getExamAttempt, saveExamAttempt } from "@/lib/local-first/exam-attempt";
 import { sanitizeQuestions } from "@/lib/challenge/questions";
 import ChallengeFriend from "./ChallengeFriend";
-import { sendLearningSignals } from "@/lib/learning/client";
-import { signalsFromMarkedPaper } from "@/lib/learning/signals";
 import { renderMath as math } from "@/lib/exam/mathText";
 import { expectedPaperLength, isValidGeneratedPaper } from "@/lib/exam/paperValidation";
 import { builtInCapacity } from "@/lib/exam/guaranteedExam";
@@ -312,42 +310,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
 
       const completedResult: ExamResults = { ...markingData, subject: subject.trim(), topic: topic.trim() };
       setResults(completedResult);
-      // Learning loop: record each question's outcome (and any diagnosed mistake). Battles are recorded by the server.
-      if (userId && !serverMarkChallengeId) sendLearningSignals(signalsFromMarkedPaper(questions as ExamQuestion[], markingData.results ?? []));
-      if (userId) {
-        const correct = markingData.results?.filter((r: ExamResult) => r.correct).length ?? 0;
-        try {
-          const supabase = createClient();
-          const resultIdentity = workId.current ?? null;
-          const resultPayload = {
-            user_id: userId,
-            ...(resultIdentity ? { attempt_id: resultIdentity } : {}),
-            subject,
-            topic: topic || null,
-            difficulty: LEVELS[level].label,
-            score: markingData.percentage,
-            total_questions: questions.length,
-            correct_answers: correct,
-            weak_areas: markingData.weakAreas ?? [],
-            time_taken: totalRef.current - secondsRef.current
-          };
-          const { data: inserted, error: insertError } = await supabase.from("exam_results").insert(resultPayload).select("id").single();
-          let saved = inserted;
-          const createdNewResult = !insertError && Boolean(inserted?.id);
-          if (insertError?.code === "23505" && resultIdentity) {
-            const { data: existingResult } = await supabase.from("exam_results").select("id").eq("user_id", userId).eq("attempt_id", resultIdentity).maybeSingle();
-            saved = existingResult;
-          }
-          // The result_id primary key makes this insert idempotent. Retrying also repairs
-          // a partial save where the result row succeeded but its question snapshot did not.
-          const frozen = sanitizeQuestions(questions);
-          if (saved?.id) setSavedResultId(saved.id);
-          if (saved?.id && frozen && !serverMarkChallengeId) {
-            const { error: snapshotError } = await supabase.from("exam_result_questions").insert({ result_id: saved.id, user_id: userId, questions: frozen });
-            if (snapshotError && snapshotError.code !== "23505") console.error("[exam] Could not persist question snapshot:", snapshotError.message);
-          }
-        } catch {}
-      }
+      // Marking currently accepts client-held paper content, so this result is feedback-only.
+      // Do not persist its score or question snapshot as trusted exam history until paper provenance is verified.
       if (workId.current && userId && !serverMarkChallengeId) {
         try {
           const savedAttempt = await getExamAttempt(userId, workId.current);
