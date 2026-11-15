@@ -11,7 +11,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ass
 
   const { data: assignment, error: assignmentError } = await workspace.supabase
     .from("platform_assignments")
-    .select("id,group_id,title,subject,instructions,due_at,max_score,status,assessment_type,questions,mark_scheme")
+    .select("id,group_id,title,subject,instructions,due_at,max_score,status,assessment_type,questions")
     .eq("id", assignmentId)
     .maybeSingle();
   if (assignmentError) return NextResponse.json({ error: "Could not load assignment." }, { status: 500 });
@@ -41,12 +41,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ass
     }
   }
 
-  const { data: submissions, error: submissionsError } = await workspace.supabase
-    .from("platform_assignment_submissions")
-    .select("id,student_id,response,submitted_at,status,score,feedback,marked_at")
-    .eq("assignment_id", assignmentId)
-    .order("submitted_at", { ascending: false });
-  if (submissionsError) return NextResponse.json({ error: "Could not load submissions." }, { status: 500 });
+  const [{ data: submissions, error: submissionsError }, { data: answerKey, error: answerKeyError }] = await Promise.all([
+    workspace.supabase.from("platform_assignment_submissions")
+      .select("id,student_id,response,submitted_at,status,score,feedback,marked_at")
+      .eq("assignment_id", assignmentId)
+      .order("submitted_at", { ascending: false }),
+    workspace.supabase.from("platform_assignment_answer_keys")
+      .select("mark_scheme").eq("assignment_id", assignmentId).maybeSingle(),
+  ]);
+  if (submissionsError || answerKeyError) return NextResponse.json({ error: "Could not load assessment evidence." }, { status: 500 });
 
   const { data: roster } = await workspace.supabase.rpc("list_platform_group_roster", {
     p_group_id: assignment.group_id,
@@ -56,7 +59,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ass
     member.display_name,
   ]));
   return NextResponse.json({
-    assignment,
+    assignment: { ...assignment, mark_scheme: answerKey?.mark_scheme ?? [] },
     group,
     submissions: (submissions ?? []).map((submission) => ({
       ...submission,
