@@ -293,6 +293,41 @@ describe("callAI shareChainBudget and Cloudflare diagnostics", () => {
     expect(elapsedMs, `took ${elapsedMs}ms`).toBeLessThan(3800);
   }, 10000);
 
+  it("reserves a bounded turn for every configured shareable provider", async () => {
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gw-key");
+    vi.stubEnv("GROQ_API_KEY", "groq-key");
+    vi.stubEnv("OPENROUTER_API_KEY", "or-key");
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    vi.stubEnv("GEMINI_API_KEY", "gemini-key");
+
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.includes("generativelanguage.googleapis.com")) {
+        return jsonResponse({ candidates: [{ content: { parts: [{ text: "a complete lesson from gemini" }] } }] });
+      }
+      // Simulate providers that ignore AbortSignal while the independent hard
+      // timeout safely ends their turn. The next configured provider must still run.
+      return new Promise<Response>(() => {});
+    });
+
+    const { callAI } = await import("./ai");
+    const result = await callAI("teach me waves", 500, {
+      skipCurriculumGrounding: true,
+      curriculumContext: "",
+      maxChainMs: 8000,
+      perProviderMaxMs: 8000,
+      shareChainBudget: true,
+    });
+
+    expect(result).toBe("a complete lesson from gemini");
+    const calledUrls = fetchMock.mock.calls.map(([url]) => String(url));
+    expect(calledUrls).toHaveLength(5);
+    expect(calledUrls[0]).toContain("ai-gateway.vercel.sh");
+    expect(calledUrls[1]).toContain("api.groq.com");
+    expect(calledUrls[2]).toContain("openrouter.ai");
+    expect(calledUrls[3]).toContain("cloudflare.com");
+    expect(calledUrls[4]).toContain("generativelanguage.googleapis.com");
+  }, 12000);
+
   it("records Cloudflare's own reason for a failure, not just the status code", async () => {
     vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
     fetchMock.mockResolvedValue(cfError(429, 4006, "you have used up your daily free allocation of 10,000 neurons"));

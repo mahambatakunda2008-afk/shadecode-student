@@ -162,19 +162,25 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   }
   const attempted = new Set<string>();
   const SHAREABLE_PROVIDER_MAX_MS = 10000;
+  const HARD_TIMEOUT_GRACE_MS = 250;
   const providerTimeout = (provider: string) => {
     const fixed = Math.min(perProviderMaxMs, remaining());
-    // A provider's repeat attempt (e.g. a fallback model) and non-shareable providers keep the fixed cap.
-    if (!shareable.has(provider) || attempted.has(provider)) return fixed;
-    const waiting = [...shareable].filter(name => !attempted.has(name)).length || 1;
-    const fairShare = Math.max(perProviderMaxMs, Math.floor(remaining() / waiting));
-    // Keep room for the next independent provider. A 32s chain must not give one slow call 15-20s
-    // while the remaining providers receive only crumbs.
+    if (!shareable.has(provider)) return fixed;
+
+    // Divide the *remaining* chain budget across every configured provider that
+    // has not yet had its turn. Include a provider's repeat model/key attempt as
+    // one slot too, so (for example) Cloudflare's fallback model cannot consume
+    // the time reserved for Groq, OpenRouter, or Gemini.
+    const waiting = [...shareable].filter(name => !attempted.has(name)).length;
+    const slots = Math.max(1, waiting + (attempted.has(provider) ? 1 : 0));
+    // tryProvider has an independent hard race at timeout + grace. Reserve that
+    // grace inside the fair share so N slow providers cannot overrun the chain
+    // budget by N * 250ms.
+    const fairShare = Math.max(1000, Math.floor(remaining() / slots) - HARD_TIMEOUT_GRACE_MS);
     return Math.min(remaining(), SHAREABLE_PROVIDER_MAX_MS, fairShare);
   };
   const canTry = () => remaining() >= 1000;
-  // Grace period on top of the provider's declared budget before the hard race below gives up on it.
-  const HARD_TIMEOUT_GRACE_MS = 250;
+  // Grace period is included in providerTimeout's fair-share calculation above.
   async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>, breakerScope = provider): Promise<string | null> {
     if (!canTry()) return null;
     const breaker = providerBreaker(breakerScope);
