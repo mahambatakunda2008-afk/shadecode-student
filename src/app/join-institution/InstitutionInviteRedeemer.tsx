@@ -69,7 +69,10 @@ export function InstitutionInviteRedeemer() {
             <p className="text-xs text-[var(--muted-foreground)]">
               {result.group_id ? "A class or group assignment was included." : "Your institution membership is active. A class assignment may follow separately."}
             </p>
-            <Link href={result.membership_role === "student" ? "/" : "/teacher/classes"} className="inline-flex rounded-xl bg-[var(--primary-glow)] px-3 py-2 text-sm font-medium text-[var(--primary)]">
+            <Link
+              href={["teacher", "tutor", "administrator", "staff"].includes(result.membership_role) ? "/teacher/classes" : "/"}
+              className="inline-flex rounded-xl bg-[var(--primary-glow)] px-3 py-2 text-sm font-medium text-[var(--primary)]"
+            >
               Continue
             </Link>
           </div>
