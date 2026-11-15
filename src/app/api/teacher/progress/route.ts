@@ -25,6 +25,15 @@ export async function GET(request: Request) {
   if (!group || !assigned) {
     return NextResponse.json({ error: "You are not authorized to view this class." }, { status: 403 });
   }
+  if (group.institution_id) {
+    const { data: institutionMembership, error: institutionError } = await workspace.supabase
+      .from("platform_institution_members").select("institution_id")
+      .eq("institution_id", group.institution_id).eq("user_id", workspace.user.id)
+      .eq("status", "active").in("membership_role", [...TEACHING_ROLES]).maybeSingle();
+    if (institutionError || !institutionMembership) {
+      return NextResponse.json({ error: "You are not assigned to teach this institution." }, { status: 403 });
+    }
+  }
 
   const [{ data: roster, error: rosterError }, { data: assignments, error: assignmentError }] = await Promise.all([
     workspace.supabase.rpc("list_platform_group_roster", { p_group_id: groupId }),
