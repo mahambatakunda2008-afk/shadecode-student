@@ -84,6 +84,6 @@ begin
   if v_row.data->'metadata'->>'note' <> 'updated-safe' then
     raise exception 'Direct authenticated table UPDATE lost safe metadata';
   end if;
-end $;
+end $$;
 
 rollback;
