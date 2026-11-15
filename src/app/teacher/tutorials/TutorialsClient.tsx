@@ -136,7 +136,7 @@ function TableEditor({ data, disabled, onChange }: {
   </div>;
 }
 
-export function TutorialsClient() {
+export function TutorialsClient({ canReviewContent = false }: { canReviewContent?: boolean }) {
   const [items, setItems] = useState<Tutorial[]>([]);
   const [current, setCurrent] = useState<Tutorial | null>(null);
   const [title, setTitle] = useState("");
@@ -293,7 +293,7 @@ export function TutorialsClient() {
           <h1 className="text-xl font-semibold">Tutorial studio</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">Build lessons with explanations, visuals and video. Every submission goes through review.</p>
         </div>
-        {!current && <Link href="/teacher/tutorials/review" className="rounded-xl border border-[var(--card-border)] px-3 py-2 text-sm">Review queue</Link>}
+        {!current && canReviewContent && <Link href="/teacher/tutorials/review" className="rounded-xl border border-[var(--card-border)] px-3 py-2 text-sm">Review queue</Link>}
         {!current && <button onClick={createDraft} disabled={busy} className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">＋ New tutorial</button>}
         {current && <button onClick={resetEditor} className="rounded-xl border border-[var(--card-border)] px-3 py-2 text-sm">Back to tutorials</button>}
       </header>
