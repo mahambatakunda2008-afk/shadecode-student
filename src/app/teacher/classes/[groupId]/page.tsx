@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTeacherWorkspace } from "@/lib/exam/curated/reviewAccess";
+import { RosterMembershipActions } from "./RosterMembershipActions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Class roster · Shadecode Teacher" };
@@ -35,6 +36,17 @@ export default async function TeacherClassRosterPage({
     reviewer.supabase.rpc("list_platform_group_roster", { p_group_id: groupId }),
   ]);
 
+  const { data: ownInstitutionMembership } = group?.institution_id
+    ? await reviewer.supabase
+        .from("platform_institution_members")
+        .select("membership_role,status")
+        .eq("institution_id", group.institution_id)
+        .eq("user_id", reviewer.user.id)
+        .eq("status", "active")
+        .maybeSingle()
+    : { data: null };
+  const canManageRoster = ownInstitutionMembership?.membership_role === "administrator";
+
   if (groupError || rosterError) {
     return (
       <div className="space-y-5">
@@ -60,6 +72,7 @@ export default async function TeacherClassRosterPage({
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">Class workspace</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">{group.name}</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">{titleCase(group.group_type)} · {members.length} active members</p>
+          {canManageRoster ? <p className="mt-2 text-xs text-[var(--muted-foreground)]">You can manage class membership access for this institution.</p> : null}
         </div>
       </header>
 
@@ -75,6 +88,15 @@ export default async function TeacherClassRosterPage({
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{member.display_name || "Student"}</p>
                   <p className="mt-1 text-xs text-[var(--muted-foreground)]">{titleCase(member.membership_role)}</p>
+                  {canManageRoster ? (
+                    <div className="mt-2">
+                      <RosterMembershipActions
+                        institutionId={group.institution_id}
+                        groupId={group.id}
+                        targetUserId={member.user_id}
+                      />
+                    </div>
+                  ) : null}
                 </div>
                 <span className="shrink-0 text-xs text-[var(--muted-foreground)]">
                   Joined {new Date(member.joined_at).toLocaleDateString()}
