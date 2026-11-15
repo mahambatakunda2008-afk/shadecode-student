@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     : { data: [], error: null };
   if (submissions.error) return NextResponse.json({ error: "Could not load learner work." }, { status: 500 });
 
-  const learners = (roster ?? [])
+  const learners: Array<{ studentId: string; name: string; assignmentsSubmitted: number; assignmentsMarked: number; assignmentsAvailable: number; awaitingMarking: number; averagePercent: number | null }> = (roster ?? [])
     .filter((row: { membership_role: string }) => row.membership_role === "student")
     .map((learner: { user_id: string; display_name: string }) => {
       const work = (submissions.data ?? []).filter((row) => row.student_id === learner.user_id);
