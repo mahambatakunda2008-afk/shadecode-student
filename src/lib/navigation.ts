@@ -293,6 +293,7 @@ export const BOTTOM_PRIMARY: NavItem[] = [
 
 export const BOTTOM_MORE: NavItem[] = [
   NAV_ITEMS.teacherTutorials,
+  NAV_ITEMS.resources,
   NAV_ITEMS.curriculum,
   NAV_ITEMS.timetable,
   NAV_ITEMS.studyPlan,
@@ -316,7 +317,7 @@ export const BOTTOM_MORE: NavItem[] = [
 
 export function isRouteActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
-  // Teacher tutorials live under /learn but are their own destination, so "Learn" must not also light up.
-  if (href === "/learn" && (pathname === "/learn/tutorials" || pathname.startsWith("/learn/tutorials/"))) return false;
+  // Dedicated learning destinations live under /learn but should not also light up the Learn item.
+  if (href === "/learn" && ["/learn/tutorials", "/learn/resources"].some((route) => pathname === route || pathname.startsWith(`${route}/`))) return false;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
