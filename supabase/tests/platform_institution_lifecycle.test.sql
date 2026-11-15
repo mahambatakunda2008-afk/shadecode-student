@@ -10,6 +10,12 @@ as $$
   select role_name='admin' and exists(select 1 from public.test_platform_admins a where a.user_id=$1);
 $$;
 
+create or replace function public.test_platform_audit_count(p_institution_id uuid)
+returns integer language sql stable security definer
+set search_path=public,pg_temp
+as $ select count(*)::integer from public.platform_membership_audit where institution_id=$1 $;
+grant execute on function public.test_platform_audit_count(uuid) to authenticated;
+
 insert into auth.users(id) values
  ('10000000-0000-4000-8000-000000000001'),
  ('10000000-0000-4000-8000-000000000002'),
@@ -67,15 +73,18 @@ begin
 
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
   perform public.set_platform_membership_status(v_institution,'10000000-0000-4000-8000-000000000003','suspended',null);
-  if exists(select 1 from public.platform_group_members where group_id=v_group and user_id='10000000-0000-4000-8000-000000000003' and status='active') then
+  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
+  if exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and status='active') then
     raise exception 'institution suspension did not cascade to group access';
   end if;
+  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
   perform public.set_platform_membership_status(v_institution,'10000000-0000-4000-8000-000000000003','active',null);
-  if exists(select 1 from public.platform_group_members where group_id=v_group and user_id='10000000-0000-4000-8000-000000000003' and status='active') then
+  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
+  if exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and status='active') then
     raise exception 'institution reinstatement silently restored group access';
   end if;
 
-  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
+
   begin
     perform public.create_platform_group(v_institution,'Unauthorized class','class',null);
     raise exception 'non-administrator created a group';
@@ -83,7 +92,7 @@ begin
     null;
   end;
 
-  if (select count(*) from public.platform_membership_audit where institution_id=v_institution) < 6 then
+  if public.test_platform_audit_count(v_institution) < 6 then
     raise exception 'expected lifecycle audit events were not written';
   end if;
 end $$;
