@@ -68,21 +68,9 @@ function learnerContinuityNote(
   if (!activeSyllabusId) return "";
 
   const notes: string[] = [];
-  const profile = context.studentContext.profile;
-  const practiceMatches =
-    profile.lastPracticeTopic?.trim().toLocaleLowerCase() === normalizedTopic &&
-    Boolean(profile.lastPracticeSubject?.trim()) &&
-    subjectKeys.includes(profile.lastPracticeSubject!.trim().toLocaleLowerCase()) &&
-    profile.lastPracticeSyllabusId === activeSyllabusId &&
-    typeof profile.lastPracticeScore === "number" &&
-    Number.isFinite(profile.lastPracticeScore);
-
-  if (practiceMatches) {
-    notes.push(
-      `Your latest recorded practice score for this topic in this subject and syllabus was ${profile.lastPracticeScore}%. Treat it as one result, not proof of mastery.`
-    );
-  }
-
+  // Legacy cortex_memory practice scores may originate from a client-supplied
+  // reference answer. Do not use them for adaptation until their provenance
+  // can be independently verified.
   const evidence = context.studentContext.topics.items.find((item) =>
     item.topicId.trim().toLocaleLowerCase() === normalizedTopic &&
     subjectKeys.includes(item.subjectKey.trim().toLocaleLowerCase()) &&
