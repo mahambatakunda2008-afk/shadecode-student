@@ -47,7 +47,7 @@ describe("quiz attempt checkpoints", () => {
       attemptId: "attempt-a",
       lessonId: "lesson-a",
       questions,
-      answers: [1],
+      answers: [],
       current: 0,
       selected: 1,
       confirmed: true,
