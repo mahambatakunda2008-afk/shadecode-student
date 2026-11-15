@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { generateExamFeedback } from "@/lib/cortex/markingEngine";
-import { trackExamResult } from "@/lib/cortex/memoryTracker";
-import { awardXPBySource } from "@/lib/xp/manager";
-import { emitCortexEvent } from "@/lib/cortex/events/emit";
-import { checkAndUnlockAchievements } from "@/lib/cortex/achievements";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import type { ExamQuestion } from "@/lib/cortex/examGenerator";
 
@@ -121,37 +117,14 @@ export async function POST(request: Request) {
       }, { status: 503 });
     }
 
-    // Marking is the critical response. Analytics, XP and achievements are bounded
-    // side effects and must never keep the student waiting after a valid report exists.
-    const sideEffects: MaybePromise<unknown>[] = [
-      trackExamResult({
-        userId: user.id,
-        subject: subject.trim(),
-        score: report.percentage,
-        completedAt: new Date().toISOString(),
-      }),
-      emitCortexEvent({
-        userId: user.id,
-        type: "exam.completed",
-        source: "exam",
-        data: { subject: subject.trim(), score: report.percentage, maxScore: 100 },
-      }),
-      report.percentage >= 50
-        ? awardXPBySource(user.id, "exam_completion")
-        : undefined,
-      checkAndUnlockAchievements(user.id),
-    ];
-
-    const boundedSideEffects = sideEffects.map(effect =>
-      withTimeout(effect, SIDE_EFFECT_BUDGET_MS, undefined),
-    );
-    const sideEffectResults = await Promise.allSettled(boundedSideEffects);
-    const achievementsResult = sideEffectResults[3];
-    const newAchievements = achievementsResult?.status === "fulfilled"
-      ? achievementsResult.value
-      : [];
-
-    return NextResponse.json({ report, newAchievements });
+    // The request contains client-supplied questions and reference answers.
+    // Marking remains useful feedback, but cannot create trusted mastery,
+    // exam-history, XP, or achievement evidence until paper provenance is signed.
+    return NextResponse.json({
+      report,
+      evidenceRecorded: false,
+      evidenceReason: "unverified_paper_provenance",
+    });
   } catch (err) {
     console.error("[cortex/mark-exam]", err);
     return NextResponse.json(
