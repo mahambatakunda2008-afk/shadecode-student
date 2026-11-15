@@ -74,3 +74,51 @@ $function$;
 
 revoke all on function public.insert_canonical_cortex_event(uuid,jsonb) from public, anon;
 grant execute on function public.insert_canonical_cortex_event(uuid,jsonb) to authenticated;
+
+-- RLS currently allows learners to write only their own rows directly.
+-- A BEFORE trigger closes that alternate write/update path too. Server-owned
+-- SECURITY DEFINER assessment transactions execute as postgres and may retain
+-- their server-computed per-question correctness; ordinary authenticated table
+-- writes are reduced to telemetry.
+create or replace function public.sanitize_untrusted_cortex_event_evidence()
+returns trigger
+language plpgsql
+set search_path to 'public'
+as $trigger$
+begin
+  if current_user <> 'postgres' and jsonb_typeof(new.data->'metadata') = 'object' then
+    new.data := jsonb_set(
+      new.data,
+      '{metadata}',
+      (new.data->'metadata') - array[
+        'correct',
+        'evidenceScore',
+        'percentage',
+        'score',
+        'maxScore',
+        'confidence',
+        'responseSeconds',
+        'difficulty',
+        'verified',
+        'serverVerified',
+        'teacherReviewed',
+        'reviewerId',
+        'evidenceClass',
+        'markingAuthority',
+        'markingMethod',
+        'answerKeyVersion',
+        'questionSetHash',
+        'marksAwarded'
+      ]::text[],
+      true
+    );
+  end if;
+  return new;
+end;
+$trigger$;
+
+revoke all on function public.sanitize_untrusted_cortex_event_evidence() from public, anon, authenticated;
+drop trigger if exists cortex_events_sanitize_untrusted_evidence on public.cortex_events;
+create trigger cortex_events_sanitize_untrusted_evidence
+  before insert or update on public.cortex_events
+  for each row execute function public.sanitize_untrusted_cortex_event_evidence();
