@@ -16,7 +16,7 @@ create policy "authors create own draft tutorials" on public.teacher_tutorials
         select 1 from public.platform_institution_members im
         where im.user_id = auth.uid()
           and im.status = 'active'
-          and im.membership_role in ('teacher','tutor','staff')
+          and im.membership_role in ('teacher','tutor','administrator','staff')
       )
     )
   );
