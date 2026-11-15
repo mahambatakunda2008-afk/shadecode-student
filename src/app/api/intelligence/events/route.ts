@@ -6,6 +6,7 @@ import { projectLearningEvent } from "@/lib/intelligence/projectLearningEvent";
 import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
 import { resolveVerifiedCurriculumTopic } from "@/lib/curriculum/topic-mapping";
 import { sanitizeVerifyInterventionMetadata } from "@/lib/intelligence/verifyInterventionMetadata";
+import { sanitizeClientLearningEvidenceMetadata } from "@/lib/intelligence/clientEventEvidence";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,12 @@ export async function POST(request: NextRequest) {
       topicId: asString(body.topicId),
       entityId: asString(body.entityId),
       attemptId: asString(body.attemptId),
-      metadata: sanitizeVerifyInterventionMetadata(safeMetadata(body.metadata), asString(body.type) ?? ""),
+      // This endpoint is browser-authenticated. It may record activity telemetry,
+      // but client-supplied marks/correctness are never authoritative mastery evidence.
+      metadata: sanitizeVerifyInterventionMetadata(
+        sanitizeClientLearningEvidenceMetadata(safeMetadata(body.metadata)),
+        asString(body.type) ?? "",
+      ),
     };
 
     const curriculum = await resolveUserSystemCurriculum(user.id, input.subjectId);
