@@ -68,6 +68,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   const [mode, setMode] = useState<"setup" | "exam" | "marking" | "results">("setup"), [generating, setGenerating] = useState(false), [error, setError] = useState<string | null>(null), [userId, setUserId] = useState(""), [online, setOnline] = useState(true), [savedAt, setSavedAt] = useState<number | null>(null);
   const [flags, setFlags] = useState<number[]>([]), [panel, setPanel] = useState<"canvas" | "calculator" | "formulae" | "hint" | "upload">("canvas"), [canvasOpen, setCanvasOpen] = useState(true), [mobileNav, setMobileNav] = useState(false), [more, setMore] = useState(false), [confirmSubmit, setConfirmSubmit] = useState(false);
   const [calculator, setCalculator] = useState(""), [calcResult, setCalcResult] = useState<string | null>(null), [hint, setHint] = useState<string | null>(null), [hintLoading, setHintLoading] = useState(false), [attachment, setAttachment] = useState<string | null>(null), [resumeId, setResumeId] = useState<string | null>(null), [results, setResults] = useState<ExamResults | null>(null);
+  const [paperProof, setPaperProof] = useState<string | null>(null);
+  const [paperSubjectId, setPaperSubjectId] = useState<string | null>(null);
   const workId = useRef<string | null>(null), answersRef = useRef(answers), questionsRef = useRef(questions), currentRef = useRef(current), secondsRef = useRef(seconds), totalRef = useRef(totalSeconds), canvasRef = useRef(""), fileRef = useRef<HTMLInputElement>(null), submitRef = useRef(false);
   const { help, check } = useCortexVerify();
   useEffect(() => { answersRef.current = answers; }, [answers]); useEffect(() => { questionsRef.current = questions; }, [questions]); useEffect(() => { currentRef.current = current; }, [current]); useEffect(() => { secondsRef.current = seconds; }, [seconds]); useEffect(() => { totalRef.current = totalSeconds; }, [totalSeconds]);
@@ -104,8 +106,6 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   const [savedResultId, setSavedResultId] = useState<string | null>(null);
   // "fallback" = a built-in curated practice set was used because live generation was unavailable.
   const [paperSource, setPaperSource] = useState<"live" | "curated-bank" | "deterministic-engine" | "offline">("live");
-  const [paperProof, setPaperProof] = useState<string | null>(null);
-  const [paperSubjectId, setPaperSubjectId] = useState<string | null>(null);
   useEffect(() => {
     if (!frozenQuestions?.length || frozenStarted.current || mode !== "setup") return;
     frozenStarted.current = true;
