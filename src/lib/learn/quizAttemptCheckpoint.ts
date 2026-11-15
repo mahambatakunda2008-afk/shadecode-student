@@ -21,7 +21,7 @@ export interface QuizAttemptCheckpoint {
 const checkpointId = (userId: string, lessonId: string) =>
   `quiz_attempt_checkpoint:${userId}:${lessonId}`;
 
-function safeQuestions(value: unknown): SafeQuizQuestion[] {
+export function sanitizeQuizQuestions(value: unknown): SafeQuizQuestion[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) return [];
@@ -49,7 +49,7 @@ export async function saveQuizAttemptCheckpoint(
   if (!userId || !checkpoint.lessonId || !checkpoint.attemptId) {
     throw new Error("Quiz checkpoint requires an authenticated learner and attempt");
   }
-  const questions = safeQuestions(checkpoint.questions);
+  const questions = sanitizeQuizQuestions(checkpoint.questions);
   if (!questions.length || questions.length !== checkpoint.questions.length) {
     throw new Error("Quiz checkpoint contains invalid questions");
   }
@@ -81,7 +81,7 @@ export async function getQuizAttemptCheckpoint(
   const record = await localFirstStore.get<QuizAttemptCheckpoint>(checkpointId(userId, lessonId));
   if (!record || record.userId !== userId || record.deletedAt || !record.payload) return null;
   const checkpoint = record.payload;
-  const questions = safeQuestions(checkpoint.questions);
+  const questions = sanitizeQuizQuestions(checkpoint.questions);
   if (
     !checkpoint.attemptId ||
     checkpoint.lessonId !== lessonId ||
