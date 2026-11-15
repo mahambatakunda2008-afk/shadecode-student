@@ -78,6 +78,7 @@ begin
   exception when sqlstate '23514' then
     null;
   end;
+
   perform public.set_platform_membership_status(v_institution,'10000000-0000-4000-8000-000000000003','suspended',null);
   begin
     perform public.set_platform_membership_status(v_institution,'10000000-0000-4000-8000-000000000003','active',v_group);
@@ -85,22 +86,18 @@ begin
   exception when sqlstate '42501' then
     null;
   end;
+
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
   if exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and status='active') then
     raise exception 'institution suspension did not cascade to group access';
   end if;
-  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
-  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
-  if exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and status='active') then
-    raise exception 'institution suspension did not cascade to group access';
-  end if;
+
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
   perform public.set_platform_membership_status(v_institution,'10000000-0000-4000-8000-000000000003','active',null);
   perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
   if exists(select 1 from public.platform_group_members where group_id=v_group and user_id=auth.uid() and status='active') then
     raise exception 'institution reinstatement silently restored group access';
   end if;
-
 
   begin
     perform public.create_platform_group(v_institution,'Unauthorized class','class',null);
