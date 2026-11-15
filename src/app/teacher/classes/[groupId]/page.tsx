@@ -91,7 +91,7 @@ export default async function TeacherClassRosterPage({
                   {canManageRoster ? (
                     <div className="mt-2">
                       <RosterMembershipActions
-                        institutionId={group.institution_id}
+                        institutionId={group.institution_id ?? ""}
                         groupId={group.id}
                         targetUserId={member.user_id}
                       />
