@@ -143,7 +143,7 @@ begin
   if v_member_status in ('suspended','revoked') then
     raise exception 'institution membership is suspended or revoked' using errcode='42501';
   end if;
-  if v_member_role is not null and v_member_role not in ('parent','guardian') then
+  if v_member_role is not null and v_member_role<>v_invite.relationship_type then
     raise exception 'this account already has a different institution role' using errcode='23505';
   end if;
 
@@ -236,7 +236,7 @@ begin
   from public.platform_institution_members
   where institution_id=v_institution_id and user_id=v_link.related_user_id
   for update;
-  if v_role is null or v_role not in ('parent','guardian') or v_status not in ('pending','active') then
+  if v_role is null or v_role<>v_link.relationship_type or v_status not in ('pending','active') then
     raise exception 'guardian institution membership is not eligible for approval' using errcode='42501';
   end if;
 
