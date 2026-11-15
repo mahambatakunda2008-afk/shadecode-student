@@ -8,9 +8,9 @@ const clean = (value: unknown, max: number) => typeof value === "string"
   ? value.replace(/[\\u0000-\\u001f\\u007f]/g, " ").replace(/\\s+/g, " ").trim().slice(0, max)
   : "";
 
-function cleanList(value: unknown, max: number) {
+function cleanList(value: unknown, max: number, count: number) {
   if (!Array.isArray(value)) return [];
-  return [...new Set(value.map(item => clean(item, max)).filter(Boolean))].slice(0, 30);
+  return [...new Set(value.map(item => clean(item, max)).filter(Boolean))].slice(0, count);
 }
 
 export async function GET() {
@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
   const displayName = clean(body.displayName, 100);
   const educatorType = clean(body.educatorType, 40);
   const bio = clean(body.bio, 1600);
-  const subjects = cleanList(body.subjects, 120);
-  const levels = cleanList(body.levels, 100);
+  const subjects = cleanList(body.subjects, 120, 30);
+  const levels = cleanList(body.levels, 100, 20);
   const experienceYears = body.experienceYears === "" || body.experienceYears == null ? null : Number(body.experienceYears);
   if (displayName.length < 2 || !TYPES.has(educatorType) || !subjects.length || !levels.length ||
       (experienceYears !== null && (!Number.isInteger(experienceYears) || experienceYears < 0 || experienceYears > 70))) {
