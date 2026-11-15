@@ -51,7 +51,7 @@ export async function GET() {
     .in("group_id", authorizedGroupIds)
     .order("created_at", { ascending: false })
     .limit(100);
-  if (groupsResult.error || assignmentsResult.error) {
+  if (assignmentsResult.error) {
     return NextResponse.json({ error: "Could not load classwork." }, { status: 500 });
   }
   return NextResponse.json({ groups, assignments: assignmentsResult.data ?? [] });
