@@ -91,6 +91,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   adminManage: { href: "/admin/exam-hub/manage", label: "Manage Papers", icon: Settings2 },
   adminBoards: { href: "/admin/exam-hub/boards", label: "Exam Boards", icon: Globe },
   adminContentReview: { href: "/teacher", label: "Teacher Portal", icon: FileCheck2 },
+  adminEducators: { href: "/admin/educators", label: "Educator Applications", icon: GraduationCap },
   adminFeedback: { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 };
 
@@ -107,6 +108,7 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
       NAV_ITEMS.adminModeration,
       NAV_ITEMS.adminQuestions,
       NAV_ITEMS.adminContentReview,
+      NAV_ITEMS.adminEducators,
       NAV_ITEMS.adminBoards,
       NAV_ITEMS.adminFeedback,
     ],
