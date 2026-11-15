@@ -146,6 +146,19 @@ jobs:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_assessment_studio.test.sql
 
+      - name: Apply independent educator applications
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115190000_independent_educator_applications.sql
+      - name: Apply educator help requests and messaging
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115210000_educator_help_requests_and_messaging.sql
+      - name: Test educator request creation, replies and participant isolation
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/educator_help_requests_and_messaging.test.sql
+
   verify:
     name: Typecheck, lint, test, build
     runs-on: ubuntu-latest
