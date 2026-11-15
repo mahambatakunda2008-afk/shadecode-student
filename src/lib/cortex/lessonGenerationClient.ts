@@ -632,6 +632,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
     let data: any = null;
     let lastError: unknown = null;
     const request = resolvedRequest(job);
+    const researchMemoryContext = await buildResearchMemoryContext(request.topic, job.request.subject, 4).catch(() => "");
     const sectionCount = request.broadTopic ? 6 : 4;
     const persistedPartial = job.partial && typeof job.partial === "object" ? job.partial : null;
     let assembledBlocks: Array<Record<string, unknown>> = persistedPartial && Array.isArray((persistedPartial as Record<string, unknown>).blocks)
@@ -696,6 +697,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
               goal: job.request.goal,
               level: job.request.level,
               examBoard: job.request.examBoard,
+              researchMemoryContext: researchMemoryContext.slice(0, 6000),
               generationJobId: job.id,
               generationLeaseId: generationLeaseId(job.id),
             }),
