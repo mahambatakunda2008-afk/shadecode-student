@@ -50,7 +50,7 @@ begin
     raise exception 'leaderboard view must not execute with caller privileges';
   end if;
 
-  select array_agg(attname order by attnum) into v_columns
+  select array_agg(attname::text order by attnum) into v_columns
   from pg_attribute
   where attrelid = 'public.leaderboard_profiles'::regclass
     and attnum > 0 and not attisdropped;
