@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { getTutorialAuthor } from "@/lib/exam/curated/reviewAccess";
 import { validateTutorialBlocks } from "@/lib/teacher/tutorials";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Context) {
-  const reviewer = await getReviewer();
+  const reviewer = await getTutorialAuthor();
   if (!reviewer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await params;
   const { data, error } = await reviewer.supabase
@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: Context) {
 }
 
 export async function PATCH(request: Request, { params }: Context) {
-  const reviewer = await getReviewer();
+  const reviewer = await getTutorialAuthor();
   if (!reviewer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await params;
   const body = await request.json().catch(() => null);
