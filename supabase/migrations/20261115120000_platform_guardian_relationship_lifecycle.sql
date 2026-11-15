@@ -184,6 +184,79 @@ begin
 end;
 $$;
 
+create or replace function public.list_platform_pending_guardian_links(p_institution_id uuid)
+returns table (
+  relationship_id uuid,
+  student_user_id uuid,
+  student_display_name text,
+  guardian_user_id uuid,
+  guardian_display_name text,
+  relationship_type text,
+  requested_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+declare
+  v_actor uuid := auth.uid();
+begin
+  if v_actor is null or not exists (
+    select 1 from public.platform_institution_members
+    where institution_id=p_institution_id and user_id=v_actor
+      and status='active' and membership_role='administrator'
+  ) then
+    raise exception 'active institution administrator required' using errcode='42501';
+  end if;
+
+  return query
+    select r.id,r.subject_user_id,
+      coalesce(nullif(btrim(sp.display_name),''),nullif(btrim(sp.username),''),'Student')::text,
+      r.related_user_id,
+      coalesce(nullif(btrim(gp.display_name),''),nullif(btrim(gp.username),''),'Guardian')::text,
+      r.relationship_type,r.created_at
+    from public.platform_user_relationships r
+    left join public.profiles sp on sp.id=r.subject_user_id
+    left join public.profiles gp on gp.id=r.related_user_id
+    where r.relationship_type in ('parent','guardian')
+      and r.status='pending'
+      and nullif(r.metadata->>'institution_id','')::uuid=p_institution_id
+    order by r.created_at,r.id;
+end;
+$;
+
+create or replace function public.list_my_platform_guardian_links()
+returns table (
+  relationship_id uuid,
+  institution_id uuid,
+  student_user_id uuid,
+  student_display_name text,
+  relationship_type text,
+  relationship_status text,
+  requested_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+declare
+  v_actor uuid := auth.uid();
+begin
+  if v_actor is null then
+    raise exception 'sign in to view guardian links' using errcode='42501';
+  end if;
+
+  return query
+    select r.id,nullif(r.metadata->>'institution_id','')::uuid,r.subject_user_id,
+      coalesce(nullif(btrim(p.display_name),''),nullif(btrim(p.username),''),'Student')::text,
+      r.relationship_type,r.status,r.created_at
+    from public.platform_user_relationships r
+    left join public.profiles p on p.id=r.subject_user_id
+    where r.related_user_id=v_actor and r.relationship_type in ('parent','guardian')
+    order by r.created_at desc,r.id;
+end;
+$;
+
 create or replace function public.review_platform_guardian_link(
   p_relationship_id uuid,
   p_approve boolean
@@ -328,10 +401,10 @@ $$;
 
 revoke all on function public.create_platform_guardian_invite(uuid,uuid,text,text,timestamptz) from public,anon;
 revoke all on function public.redeem_platform_guardian_invite(text) from public,anon;
-revoke all on function public.review_platform_guardian_link(uuid,boolean) from public,anon;
+revoke all on function public.list_platform_pending_guardian_links(uuid) from public,anon;\nrevoke all on function public.list_my_platform_guardian_links() from public,anon;\nrevoke all on function public.review_platform_guardian_link(uuid,boolean) from public,anon;
 revoke all on function public.revoke_platform_guardian_link(uuid) from public,anon;
 
 grant execute on function public.create_platform_guardian_invite(uuid,uuid,text,text,timestamptz) to authenticated;
 grant execute on function public.redeem_platform_guardian_invite(text) to authenticated;
-grant execute on function public.review_platform_guardian_link(uuid,boolean) to authenticated;
+grant execute on function public.list_platform_pending_guardian_links(uuid) to authenticated;\ngrant execute on function public.list_my_platform_guardian_links() to authenticated;\ngrant execute on function public.review_platform_guardian_link(uuid,boolean) to authenticated;
 grant execute on function public.revoke_platform_guardian_link(uuid) to authenticated;
