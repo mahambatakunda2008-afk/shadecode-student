@@ -17,12 +17,21 @@ export async function GET() {
   if (memberships.error) return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
 
   const groupIds = [...new Set((memberships.data ?? []).map((row) => row.group_id))];
-  const groupResult = groupIds.length
-    ? await workspace.supabase.from("platform_groups").select("id,name").in("id", groupIds)
-    : { data: [], error: null };
-  if (groupResult.error) return NextResponse.json({ error: "Could not load teaching groups." }, { status: 500 });
-
-  const groups = (groupResult.data ?? []).sort((a, b) => a.name.localeCompare(b.name));
+  const [groupResult, institutionMemberships] = await Promise.all([
+    groupIds.length
+      ? workspace.supabase.from("platform_groups").select("id,name,institution_id").in("id", groupIds)
+      : Promise.resolve({ data: [], error: null }),
+    workspace.supabase.from("platform_institution_members").select("institution_id")
+      .eq("user_id", workspace.user.id).eq("status", "active")
+      .in("membership_role", [...TEACHING_ROLES]),
+  ]);
+  if (groupResult.error || institutionMemberships.error) {
+    return NextResponse.json({ error: "Could not verify teaching groups." }, { status: 500 });
+  }
+  const institutionIds = new Set((institutionMemberships.data ?? []).map((row) => row.institution_id));
+  const groups = (groupResult.data ?? [])
+    .filter((group) => !group.institution_id || institutionIds.has(group.institution_id))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const authorizedGroupIds = groups.map((group) => group.id);
   if (!authorizedGroupIds.length) return NextResponse.json({ assignments: [], groups: [] });
 
