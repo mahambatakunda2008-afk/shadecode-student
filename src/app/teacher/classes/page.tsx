@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getReviewer } from "@/lib/exam/curated/reviewAccess";
 
@@ -150,6 +151,12 @@ export default async function TeacherClassesPage() {
                     <p className="mt-3 text-xs text-[var(--muted-foreground)]">
                       Your role: {titleCase(membershipRoles.get(group.id) ?? "member")}
                     </p>
+                    <Link
+                      href={`/teacher/classes/${group.id}`}
+                      className="mt-4 inline-flex items-center rounded-xl bg-[var(--primary-glow)] px-3 py-2 text-sm font-medium text-[var(--primary)] transition hover:opacity-80"
+                    >
+                      Open class roster <span className="ml-2" aria-hidden="true">→</span>
+                    </Link>
                   </article>
                 ))}
               </div>
