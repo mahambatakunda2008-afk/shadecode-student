@@ -119,6 +119,15 @@ jobs:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_guardian_relationship_lifecycle.test.sql
 
+      - name: Apply teacher classwork assignment lifecycle
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115140000_teacher_classwork_assignments.sql
+      - name: Test assignment creation, submission, marking and isolation
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_assignment_lifecycle.test.sql
+
   verify:
     name: Typecheck, lint, test, build
     runs-on: ubuntu-latest
@@ -158,12 +167,3 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
-      - name: Apply teacher classwork assignment lifecycle
-        env:
-          PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261115140000_teacher_classwork_assignments.sql
-      - name: Test assignment creation, submission, marking and isolation
-        env:
-          PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d shadecode_test -v ON_ERROR_STOP=1 -f supabase/tests/platform_assignment_lifecycle.test.sql
