@@ -184,11 +184,9 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       const recommendation = await generateRecommendation(input.userId);
       return {
         response: result.feedback,
-        nextAction: result.needsReview
-          ? "review_with_marking_guide"
-          : result.score !== null && result.score >= 80
-            ? "advance_or_recall"
-            : "review_and_retry",
+        // A client-supplied reference match is useful feedback only. It
+        // cannot authorize advancement until a server-owned assessment grades it.
+        nextAction: "review_with_marking_guide",
         recommendation,
         updatedState: await outputState(input.userId),
       };
