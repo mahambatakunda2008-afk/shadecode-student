@@ -47,11 +47,13 @@ export async function resolvePlatformRelationships(
       .from("platform_group_members")
       .select("group_id, membership_role")
       .eq("user_id", userId)
-      .eq("status", "active"),
+      .eq("status", "active")
+      .in("membership_role", ["teacher", "tutor", "administrator", "staff"]),
     supabase
       .from("platform_user_relationships")
       .select("id, subject_user_id, related_user_id, relationship_type, status")
       .or(`subject_user_id.eq.${userId},related_user_id.eq.${userId}`)
+      .in("relationship_type", ["parent", "guardian"])
       .eq("status", "active"),
   ]);
 
@@ -63,10 +65,6 @@ export async function resolvePlatformRelationships(
   const institutionIds = unique(
     (institutions.data ?? []).map((row) => row.institution_id as string),
   );
-  const canViewGroupStudents = (groups.data ?? []).some((row) =>
-    ["teacher", "tutor", "administrator", "staff"].includes(row.membership_role as string),
-  );
-
   let studentIds: string[] = [];
   let groupInstitutionIds: string[] = [];
 
@@ -83,11 +81,9 @@ export async function resolvePlatformRelationships(
     if (members.error) throw new Error(members.error.message);
     if (groupRows.error) throw new Error(groupRows.error.message);
 
-    if (canViewGroupStudents) {
-      studentIds = (members.data ?? [])
-        .filter((row) => row.membership_role === "student" && row.user_id !== userId)
-        .map((row) => row.user_id as string);
-    }
+    studentIds = (members.data ?? [])
+      .filter((row) => row.membership_role === "student" && row.user_id !== userId)
+      .map((row) => row.user_id as string);
 
     groupInstitutionIds = (groupRows.data ?? [])
       .map((row) => row.institution_id as string | null)
