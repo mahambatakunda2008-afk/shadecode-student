@@ -9,6 +9,8 @@
 export interface EventRow {
   name: string;
   user_id: string | null;
+  /** Browser id; present for signed-out visitors too. */
+  anonymous_id?: string | null;
   created_at: string;
   properties?: Record<string, unknown> | null;
 }
@@ -37,8 +39,19 @@ export interface GrowthReport {
   generatedAt: string;
   headline: {
     signups7d: number; signupsPrev7d: number; signupsGrowthPct: number | null;
-    dau: number; wau: number; mau: number; engagedWau: number; stickinessPct: number | null;
+    /** Calendar-day (UTC) actives; reads low early in a new UTC day. */
+    dau: number;
+    /** Students active in the rolling last 24 hours: meaningful at any time of day. */
+    active24h: number;
+    wau: number; mau: number; engagedWau: number; stickinessPct: number | null;
+    /** Distinct browsers seen in the last 7 days, signed in or not. */
+    visitors7d: number;
+    /** New students in the last 7 days as a share of visitors in the same window. */
+    visitorToSignupPct: number | null;
+    exports7d: number;
   };
+  /** Overall rolling retention across the last six weeks of signups. */
+  retention: { d1: number | null; d7: number | null; d30: number | null; students: number };
   series: DayPoint[];
   funnel: FunnelStep[];
   cohorts: CohortRow[];
@@ -109,6 +122,9 @@ export function buildGrowthReport({ events, signups, now = new Date(), funnelWin
   const signups7d = signupsBetween(today - 6, today);
   const signupsPrev7d = signupsBetween(today - 13, today - 7);
 
+  const since24h = now.getTime() - DAY_MS;
+  const active24 = new Set<string>();
+  for (const e of known) if (e.user_id && Date.parse(e.created_at) >= since24h) active24.add(e.user_id);
   const wau = usersBetween(dayActive, today - 6, today);
   const mau = usersBetween(dayActive, today - 29, today);
   let dauSum = 0;
@@ -162,6 +178,17 @@ export function buildGrowthReport({ events, signups, now = new Date(), funnelWin
     weekStart: new Date(w * DAY_MS).toISOString().slice(0, 10), size: ids.length, d1: retained(ids, 1), d7: retained(ids, 7), d30: retained(ids, 30),
   }));
 
+  // Visitors: distinct browsers in the last 7 days (the top of the funnel, mostly signed out).
+  const sevenDaysAgo = Date.parse(`${new Date((today - 6) * DAY_MS).toISOString().slice(0, 10)}T00:00:00Z`);
+  const visitorIds = new Set<string>();
+  let exports7d = 0;
+  for (const e of known) {
+    if (Date.parse(e.created_at) < sevenDaysAgo) continue;
+    if (e.anonymous_id) visitorIds.add(e.anonymous_id);
+    if (e.name === "output_exported") exports7d += 1;
+  }
+  const allCohortIds = [...byWeek.values()].flat();
+
   // Adoption of the retention/activation features.
   const actions = known.filter((e) => e.name === "learning_action_started");
   const firstStepEvents = actions.filter((e) => prop(e, "source") === "dashboard_first_lesson");
@@ -179,8 +206,10 @@ export function buildGrowthReport({ events, signups, now = new Date(), funnelWin
     generatedAt: now.toISOString(),
     headline: {
       signups7d, signupsPrev7d, signupsGrowthPct: signupsPrev7d > 0 ? Math.round(((signups7d - signupsPrev7d) / signupsPrev7d) * 100) : null,
-      dau: uniq(dayActive.get(today)), wau, mau, engagedWau: usersBetween(dayEngaged, today - 6, today), stickinessPct: pct(Math.round(dauSum / 7), mau),
+      dau: uniq(dayActive.get(today)), active24h: active24.size, wau, mau, engagedWau: usersBetween(dayEngaged, today - 6, today), stickinessPct: pct(Math.round(dauSum / 7), mau),
+      visitors7d: visitorIds.size, visitorToSignupPct: pct(signups7d, visitorIds.size), exports7d,
     },
+    retention: { d1: retained(allCohortIds, 1), d7: retained(allCohortIds, 7), d30: retained(allCohortIds, 30), students: allCohortIds.length },
     series, funnel, cohorts,
     adoption: {
       actionSources: countBy(actions, (e) => prop(e, "source")),

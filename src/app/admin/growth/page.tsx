@@ -2,13 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { fetchAllRows } from "@/lib/admin/fetchAllRows";
-import { buildGrowthReport, type CountRow, type EventRow, type SignupRow } from "@/lib/admin/growthReport";
+import { loadGrowthReport, EVENT_WINDOW_DAYS } from "@/lib/admin/loadGrowthReport";
+import type { CountRow } from "@/lib/admin/growthReport";
 
 export const dynamic = "force-dynamic";
-
-/** 45 days covers MAU (30d) and the D30 window of the newest cohorts we show. */
-const EVENT_WINDOW_DAYS = 45;
 
 export default async function GrowthAdminPage() {
   const supabase = await createSupabaseServerClient();
@@ -20,23 +17,7 @@ export default async function GrowthAdminPage() {
   // Admin-only reads use the service role (after the check above) so row-level security can never turn
   // real activity into silent zeros on this page.
   const reader = createSupabaseAdminClient() ?? supabase;
-  const since = new Date(Date.now() - EVENT_WINDOW_DAYS * 86_400_000).toISOString();
-
-  const [events, profiles] = await Promise.all([
-    fetchAllRows<EventRow>((from, to) =>
-      reader.from("traction_events").select("name,user_id,created_at,properties").gte("created_at", since).order("created_at", { ascending: false }).range(from, to)),
-    fetchAllRows<SignupRow>((from, to) => reader.from("profiles").select("id,created_at").order("created_at", { ascending: false }).range(from, to)),
-  ]);
-
-  // If profiles has no usable signup dates, fall back to recorded signup events rather than showing nothing.
-  let signups = profiles.rows.filter((p) => p.created_at);
-  let signupSource = "profiles";
-  if (profiles.failed || signups.length === 0) {
-    signups = events.rows.filter((e) => e.name === "user_signed_up" && e.user_id).map((e) => ({ id: e.user_id as string, created_at: e.created_at }));
-    signupSource = "user_signed_up events";
-  }
-
-  const report = buildGrowthReport({ events: events.rows, signups });
+  const { report, eventsTruncated, eventsFailed, signupSource } = await loadGrowthReport(reader);
   const h = report.headline;
   const maxActive = Math.max(1, ...report.series.map((p) => p.active));
 
@@ -54,9 +35,16 @@ export default async function GrowthAdminPage() {
 
         <section className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat label="New students · 7d" value={h.signups7d} note={h.signupsGrowthPct === null ? "no prior week" : `${h.signupsGrowthPct >= 0 ? "+" : ""}${h.signupsGrowthPct}% vs prior 7d`} />
-          <Stat label="Active today (DAU)" value={h.dau} note={`${h.wau} this week · ${h.mau} this month`} />
+          <Stat label="Active · last 24h" value={h.active24h} note={`${h.wau} this week · ${h.mau} this month`} />
           <Stat label="Learning this week" value={h.engagedWau} note={h.wau ? `${Math.round((h.engagedWau / h.wau) * 100)}% of weekly active` : "no activity"} />
           <Stat label="Stickiness (DAU/MAU)" value={h.stickinessPct === null ? "—" : `${h.stickinessPct}%`} note="avg daily ÷ monthly active" />
+        </section>
+
+        <section className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Stat label="Visitors · 7d" value={h.visitors7d} note="distinct browsers, signed in or not" />
+          <Stat label="Visitor → signup" value={h.visitorToSignupPct === null ? "—" : `${h.visitorToSignupPct}%`} note={`${h.signups7d} new students from ${h.visitors7d} visitors`} />
+          <Stat label="Came back by D1" value={report.retention.d1 === null ? "—" : `${report.retention.d1}%`} note={`rolling, ${report.retention.students} students (6 wks)`} />
+          <Stat label="Came back by D7" value={report.retention.d7 === null ? "—" : `${report.retention.d7}%`} note="active on day 7 or later" />
         </section>
 
         <Card title="Daily active students" sub="Last 14 days · bar = active, cyan = did learning">
@@ -106,7 +94,7 @@ export default async function GrowthAdminPage() {
         </section>
 
         <p className="mt-8 text-xs leading-5 text-zinc-500">
-          Data health: {report.health.eventsAnalysed.toLocaleString()} events analysed{events.truncated ? " (hit the row cap, so older days are partial)" : ""}{events.failed ? " (event query failed, numbers may be incomplete)" : ""};
+          Data health: {report.health.eventsAnalysed.toLocaleString()} events analysed{eventsTruncated ? " (hit the row cap, so older days are partial)" : ""}{eventsFailed ? " (event query failed, numbers may be incomplete)" : ""};
           {" "}{report.health.signupsKnown.toLocaleString()} signups from {signupSource}; {report.health.anonymousPct ?? 0}% of events have no signed-in student and are excluded from student counts. Days are UTC.
         </p>
       </div>

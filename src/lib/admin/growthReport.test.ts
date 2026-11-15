@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildGrowthReport, type EventRow } from "./growthReport";
 
 const now = new Date("2026-11-14T12:00:00Z"); // a Saturday
-const ev = (name: string, user: string | null, at: string, properties?: Record<string, unknown>): EventRow => ({ name, user_id: user, created_at: at, properties });
+const ev = (name: string, user: string | null, at: string, properties?: Record<string, unknown>, anon?: string): EventRow => ({ name, user_id: user, created_at: at, properties, anonymous_id: anon ?? null });
 
 describe("headline metrics", () => {
   const signups = [
@@ -26,6 +26,12 @@ describe("headline metrics", () => {
     expect(r.headline.signups7d).toBe(2);
     expect(r.headline.signupsPrev7d).toBe(2);
     expect(r.headline.signupsGrowthPct).toBe(0);
+  });
+  it("counts the rolling last 24 hours separately from the calendar day", () => {
+    const early = new Date("2026-11-15T01:00:00Z"); // new UTC day, nothing yet today
+    const r = buildGrowthReport({ events: [ev("page_view", "a", "2026-11-14T20:00:00Z"), ev("page_view", "b", "2026-11-14T05:00:00Z")], signups: [], now: early });
+    expect(r.headline.dau).toBe(0);
+    expect(r.headline.active24h).toBe(1); // only a is inside the last 24h
   });
   it("never divides by zero", () => {
     const r = buildGrowthReport({ events: [], signups: [], now });
@@ -124,5 +130,33 @@ describe("adoption of shipped features", () => {
   it("ignores rows with unparseable timestamps", () => {
     const r = buildGrowthReport({ events: [ev("page_view", "u1", "not-a-date")], signups: [], now });
     expect(r.health.eventsAnalysed).toBe(0);
+  });
+});
+
+describe("visitors and overall retention", () => {
+  it("counts distinct browsers in the last 7 days and the visitor-to-signup rate", () => {
+    const r = buildGrowthReport({
+      events: [
+        ev("page_view", null, "2026-11-14T08:00:00Z", undefined, "b1"), ev("page_view", null, "2026-11-14T08:05:00Z", undefined, "b1"),
+        ev("page_view", null, "2026-11-13T08:00:00Z", undefined, "b2"), ev("page_view", "u1", "2026-11-12T08:00:00Z", undefined, "b3"),
+        ev("page_view", null, "2026-10-01T08:00:00Z", undefined, "old"), ev("output_exported", "u1", "2026-11-12T09:00:00Z", undefined, "b3"),
+      ],
+      signups: [{ id: "u1", created_at: "2026-11-12T07:00:00Z" }], now,
+    });
+    expect(r.headline.visitors7d).toBe(3);
+    expect(r.headline.visitorToSignupPct).toBe(33);
+    expect(r.headline.exports7d).toBe(1);
+  });
+  it("reports overall rolling retention with the student count behind it", () => {
+    const r = buildGrowthReport({
+      events: [ev("page_view", "a", "2026-11-03T08:00:00Z"), ev("page_view", "b", "2026-11-02T10:00:00Z")],
+      signups: [{ id: "a", created_at: "2026-11-02T08:00:00Z" }, { id: "b", created_at: "2026-11-02T09:00:00Z" }], now,
+    });
+    expect(r.retention).toEqual({ d1: 50, d7: 0, d30: null, students: 2 });
+  });
+  it("has no retention or visitor rate without data", () => {
+    const r = buildGrowthReport({ events: [], signups: [], now });
+    expect(r.retention).toEqual({ d1: null, d7: null, d30: null, students: 0 });
+    expect(r.headline.visitorToSignupPct).toBeNull();
   });
 });
