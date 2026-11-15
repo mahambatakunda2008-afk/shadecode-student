@@ -300,6 +300,40 @@ describe("Cortex tutor learner continuity", () => {
     expect(response).not.toContain("latest recorded practice score");
   });
 
+  it("adapts the teaching sequence to measured topic mastery", async () => {
+    const response = await generateTutoringResponse("chain-rule", {
+      studentContext: context,
+      subjectName: "Mathematics",
+      curriculum: { identity: { syllabusId: "cambridge-9702" }, knowledge: { items: [] }, required: [], assessment: [] } as any,
+    });
+
+    expect(response).toContain("topic-mastery estimate is 61%");
+    expect(response).toContain("short guided attempt");
+    expect(response).toContain("fresh transfer question");
+  });
+
+  it("uses evidence-backed review suggestions without inventing due dates", async () => {
+    const reviewContext: CortexStudentContext = {
+      ...context,
+      reviewSuggestions: {
+        state: "available",
+        source: "cortex_events",
+        interpretation: "evidence_backed_no_due_dates",
+        items: [{
+          subjectKey: "Mathematics", topicId: "chain-rule", priority: "high",
+          reason: "repeated_errors", distinctAttempts: 2, incorrectResponses: 3,
+          lastObservedAt: "2026-11-12T10:00:00.000Z", observedMedianIntervalDays: null,
+          evidenceState: "evidence_backed_suggestion",
+        }],
+      },
+    };
+    const response = await generateTutoringResponse("chain-rule", {
+      studentContext: reviewContext, subjectName: "Mathematics",
+      curriculum: { identity: { syllabusId: "cambridge-9702" }, knowledge: { items: [] }, required: [], assessment: [] } as any,
+    });
+    expect(response).toContain("prioritising this topic for another focused review");
+    expect(response).not.toContain("overdue");
+  });
   it("does not invent continuity when evidence is absent", async () => {
     const response = await generateTutoringResponse("chain-rule", {
       subjectName: "Mathematics",
