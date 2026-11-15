@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { getTutorialAuthor } from "@/lib/exam/curated/reviewAccess";
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 import { validateTeacherTextImprovement } from "@/lib/teacher/text-improvement";
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   const limited = await applyRateLimit(request, generalApiLimiter);
   if (limited) return limited;
 
-  const reviewer = await getReviewer();
+  const reviewer = await getTutorialAuthor();
   if (!reviewer) return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
 
   const body = await request.json().catch(() => null);
