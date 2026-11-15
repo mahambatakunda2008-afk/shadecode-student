@@ -17,4 +17,4 @@ Independent tutors, subject specialists, independent teachers and educational cr
 - No production migration was run and no production data was changed.
 
 ## Current scope
-This slice provides the application and status experience. The next implementation step is wiring approved profiles into the tutorial-authoring permission path and providing an administrator review queue. Until that integration lands, the existing teacher tutorial studio remains gated by its existing teacher/reviewer role.
+This slice provides the application/status experience, an administrator review queue at `/admin/educators`, and approved independent-educator access to the tutorial studio. Approved educators can author and submit their own tutorials and upload their own private media. They do not receive review-queue, publish, institution, classwork or learner-record permissions. The teacher workspace navigation hides school-only classwork/progress for independent educators.
