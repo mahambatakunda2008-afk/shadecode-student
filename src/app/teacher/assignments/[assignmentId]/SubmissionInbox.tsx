@@ -74,17 +74,19 @@ export function SubmissionInbox({ assignmentId }: { assignmentId: string }) {
         setError("Enter marks for every question before saving.");
         return;
       }
-      const questionMarks = questions.map((question, index) => {
+      const questionMarks: Array<{ questionNumber: number; marksAwarded: number; feedback: string }> = [];
+      for (const [index, question] of questions.entries()) {
         const awarded = Number(marks[index]);
         if (!Number.isFinite(awarded) || awarded < 0 || awarded > question.marks) {
-          throw new Error(`Question ${index + 1}: enter a mark between 0 and ${question.marks}.`);
+          setError(`Question ${index + 1}: enter a mark between 0 and ${question.marks}.`);
+          return;
         }
-        return {
+        questionMarks.push({
           questionNumber: index + 1,
           marksAwarded: awarded,
           feedback: questionFeedback[submission.id]?.[index] ?? "",
-        };
-      });
+        });
+      }
       body = { submissionId: submission.id, questionMarks, feedback: feedback[submission.id] ?? "" };
     } else {
       const score = Number(scores[submission.id]);
