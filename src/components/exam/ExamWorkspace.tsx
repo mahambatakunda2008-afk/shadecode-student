@@ -127,6 +127,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
     setGenerating(true);
     setError(null);
     // Funnel telemetry: exam_started only means the setup screen opened, so record the real steps.
+    setPaperProof(null);
+    setPaperSubjectId(null);
     const requestedAt = Date.now();
     const telemetry = { subject, topic: topic || null, level: LEVELS[level].api, questionCount: count };
     void trackEvent("exam_generation_requested", { ...telemetry, online });
@@ -197,6 +199,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       workId.current = `exam:${id()}`;
       void trackEvent("exam_paper_ready", { ...telemetry, source: source ?? "live", ms: Date.now() - requestedAt });
       setPaperSource(source === "curated-bank" || source === "deterministic-engine" ? source : "live");
+      setPaperProof(typeof data?.metadata?.paperProof === "string" ? data.metadata.paperProof : null);
+      setPaperSubjectId(typeof data?.metadata?.subjectId === "string" ? data.metadata.subjectId : null);
       setQuestions(data.questions);
       setAnswers([]);
       setFlags([]);
