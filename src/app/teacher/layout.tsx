@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandLockup } from "@/components/brand/BrandLockup";
-import { getReviewer } from "@/lib/exam/curated/reviewAccess";
+import { getTeacherWorkspace } from "@/lib/exam/curated/reviewAccess";
 import { TeacherAccountMenu } from "./TeacherAccountMenu";
 import { TeacherNav } from "./TeacherNav";
 
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 /** Own shell for teachers: no student sidebar, no admin tools. Signed-in non-teachers go home. */
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
-  const reviewer = await getReviewer();
+  const reviewer = await getTeacherWorkspace();
   if (!reviewer) redirect("/");
 
   return (
@@ -19,7 +19,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           <Link href="/teacher" aria-label="Teacher portal home"><BrandLockup compact /></Link>
           <TeacherAccountMenu isAdmin={reviewer.isAdmin} />
         </div>
-        <TeacherNav isAdmin={reviewer.isAdmin} />
+        <TeacherNav isAdmin={reviewer.isAdmin} canReviewContent={reviewer.canReviewContent} />
       </header>
       <main className="mx-auto w-full max-w-6xl px-4 py-7 sm:px-6 lg:py-9">{children}</main>
     </div>
