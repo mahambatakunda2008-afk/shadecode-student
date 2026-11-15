@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { BookOpen, Search, Wifi, WifiOff } from "lucide-react";
+import { BookOpen, BookmarkCheck, Search, Wifi, WifiOff } from "lucide-react";
 import { retrieveKnowledge, type KnowledgeRetrievalResult } from "@/lib/shadenet/retrieval";
 import type { ShadeNetResource } from "@/lib/shadenet/content";
 import { assessKnowledgeSources } from "@/lib/shadenet/source-assessment";
+import { listResearchMemory, saveResearchMemory } from "@/lib/shadenet/research-memory";
 
 function trustLabel(status?: string) {
   switch (status) {
@@ -24,6 +25,10 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
   const [readingUrl, setReadingUrl] = useState<string | null>(null);
   const [result, setResult] = useState<KnowledgeRetrievalResult | null>(null);
   const [error, setError] = useState("");
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [memoryCount, setMemoryCount] = useState(0);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [memoryMessage, setMemoryMessage] = useState("");
 
   useEffect(() => {
     if (!subjects.some((item) => item.name === subject)) setSubject(subjects[0]?.name ?? "");
@@ -80,7 +85,7 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
     }
   }
 
-  async function readSource(url: string) {
+  async function saveSource(resource: ShadeNetResource, assessment: ReturnType<typeof assessKnowledgeSources>[number]["assessment"]) {\n    if (savingId) return;\n    setSavingId(resource.contentHash);\n    setMemoryMessage("");\n    try {\n      await saveResearchMemory(resource, assessment, { subject, topic: query.trim(), searchQuery: query.trim() });\n      setSavedIds((current) => new Set(current).add(resource.contentHash));\n      setMemoryCount((current) => savedIds.has(resource.contentHash) ? current : current + 1);\n      setMemoryMessage("Saved with its original source, assessment and curriculum context. Available offline on this device.");\n    } catch {\n      setMemoryMessage("Could not save this source. Check available device storage and try again.");\n    } finally {\n      setSavingId(null);\n    }\n  }\n\n  async function readSource(url: string) {
     if (!subject || readingUrl) return;
     setReadingUrl(url);
     setError("");
@@ -164,7 +169,7 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
         </span>
       </div>
 
-      {error && <p className="mt-4 rounded-xl border border-[var(--card-border)] p-3 text-sm" role="status">{error}</p>}
+      <p className="mt-3 text-xs text-[var(--muted-foreground)]" aria-live="polite">Research memory: {memoryCount} saved source{memoryCount === 1 ? "" : "s"} on this device. Saved material is available offline and can be reused by local knowledge retrieval.</p>\n      {memoryMessage && <p className="mt-2 text-xs text-[var(--muted-foreground)]" role="status">{memoryMessage}</p>}\n      {error && <p className="mt-4 rounded-xl border border-[var(--card-border)] p-3 text-sm" role="status">{error}</p>}
 
       {result && result.results.length > 0 && (
         <div className="mt-5 space-y-3" aria-live="polite">
