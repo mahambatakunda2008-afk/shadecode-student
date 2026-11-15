@@ -37,11 +37,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ass
   ]);
   if (submissionsError) return NextResponse.json({ error: "Could not load submissions." }, { status: 500 });
 
-  const studentIds = [...new Set((submissions ?? []).map((submission) => submission.student_id))];
-  const { data: profiles } = studentIds.length
-    ? await workspace.supabase.from("profiles").select("id,full_name").in("id", studentIds)
-    : { data: [] };
-  const names = new Map((profiles ?? []).map((profile) => [profile.id, profile.full_name]));
+  const { data: roster } = await workspace.supabase.rpc("list_platform_group_roster", {
+    p_group_id: assignment.group_id,
+  });
+  const names = new Map((roster ?? []).map((member: { user_id: string; display_name: string }) => [
+    member.user_id,
+    member.display_name,
+  ]));
   return NextResponse.json({
     assignment,
     group,
