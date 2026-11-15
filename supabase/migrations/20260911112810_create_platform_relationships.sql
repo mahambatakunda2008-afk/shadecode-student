@@ -66,7 +66,7 @@ create table if not exists public.platform_user_relationships (
   approved_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint platform_user_relationships_distinct_users check (subject_user_id <> related_user_id),
+  constraint platform_user_relationships_check check (subject_user_id <> related_user_id),
   constraint platform_user_relationships_subject_user_id_related_user_id_key
     unique (subject_user_id, related_user_id, relationship_type)
 );
