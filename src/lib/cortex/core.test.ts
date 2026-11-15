@@ -105,6 +105,7 @@ describe("CortexCore learning requests", () => {
     });
 
     expect(result.response).toContain("matches the supplied reference answer");
+    expect(result.nextAction).toBe("review_with_marking_guide");
     expect(updateMemory).toHaveBeenCalledWith("learner-1", { lastTopic: "Photosynthesis" });
     expect(updateMemory).not.toHaveBeenCalledWith("learner-1", expect.objectContaining({
       lastPracticeScore: expect.any(Number),
