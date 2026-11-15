@@ -290,7 +290,7 @@ export default function QuizPage() {
       return;
     }
 
-    const checkpointSaved = await saveCheckpoint(newAnswers, current, selected, true);
+    const checkpointSaved = await saveCheckpoint(answers, current, selected, true);
     setSubmissionError(checkpointSaved ? "" : "Local recovery could not be saved. The server will still verify your answers if the connection is available.");
     setSubmitting(true);
     try {
