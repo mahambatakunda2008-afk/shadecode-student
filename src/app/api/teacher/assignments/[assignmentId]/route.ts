@@ -27,14 +27,24 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ass
     .maybeSingle();
   if (membershipError || !membership) return NextResponse.json({ error: "You are not assigned to teach this class." }, { status: 403 });
 
-  const [{ data: group }, { data: submissions, error: submissionsError }] = await Promise.all([
-    workspace.supabase.from("platform_groups").select("id,name").eq("id", assignment.group_id).maybeSingle(),
+  const [{ data: group, error: groupError }, { data: institutionMembership, error: institutionError }, { data: submissions, error: submissionsError }] = await Promise.all([
+    workspace.supabase.from("platform_groups").select("id,name,institution_id").eq("id", assignment.group_id).maybeSingle(),
+    workspace.supabase.from("platform_groups").select("institution_id").eq("id", assignment.group_id).maybeSingle()
+      .then(async ({ data }) => data?.institution_id
+        ? workspace.supabase.from("platform_institution_members").select("institution_id")
+            .eq("institution_id", data.institution_id).eq("user_id", workspace.user.id)
+            .eq("status", "active").in("membership_role", [...TEACHING_ROLES]).maybeSingle()
+        : { data: { institution_id: null }, error: null }),
     workspace.supabase
       .from("platform_assignment_submissions")
       .select("id,student_id,response,submitted_at,status,score,feedback,marked_at")
       .eq("assignment_id", assignmentId)
       .order("submitted_at", { ascending: false }),
   ]);
+  if (groupError || institutionError || !group ||
+      (group.institution_id && !institutionMembership)) {
+    return NextResponse.json({ error: "You are not assigned to teach this institution." }, { status: 403 });
+  }
   if (submissionsError) return NextResponse.json({ error: "Could not load submissions." }, { status: 500 });
 
   const { data: roster } = await workspace.supabase.rpc("list_platform_group_roster", {
