@@ -15,10 +15,19 @@ export default async function TeacherProgressPage() {
     .eq("user_id", workspace.user.id).eq("status", "active")
     .in("membership_role", [...TEACHING_ROLES]);
   const groupIds = [...new Set((memberships.data ?? []).map((row) => row.group_id))];
-  const result = groupIds.length
-    ? await workspace.supabase.from("platform_groups").select("id,name").in("id", groupIds)
-    : { data: [], error: null };
-  const groups = (result.data ?? []).sort((a, b) => a.name.localeCompare(b.name));
+  const [result, institutionMemberships] = await Promise.all([
+    groupIds.length
+      ? workspace.supabase.from("platform_groups").select("id,name,institution_id").in("id", groupIds)
+      : Promise.resolve({ data: [], error: null }),
+    workspace.supabase.from("platform_institution_members").select("institution_id")
+      .eq("user_id", workspace.user.id).eq("status", "active")
+      .in("membership_role", [...TEACHING_ROLES]),
+  ]);
+  const institutionIds = new Set((institutionMemberships.data ?? []).map((row) => row.institution_id));
+  const groups = (result.data ?? [])
+    .filter((group) => !group.institution_id || institutionIds.has(group.institution_id))
+    .map(({ id, name }) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="space-y-6">
@@ -29,7 +38,7 @@ export default async function TeacherProgressPage() {
           Review evidence from classwork and marking to understand how learners are progressing and where they may need support.
         </p>
       </header>
-      {memberships.error || result.error
+      {memberships.error || result.error || institutionMemberships.error
         ? <p role="alert" className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm">We could not load your teaching groups. Your access has not changed.</p>
         : <ProgressClient groups={groups} />}
     </div>
