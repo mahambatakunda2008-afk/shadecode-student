@@ -32,7 +32,7 @@ begin
   if v_user is null then
     raise exception 'Authentication required' using errcode = '42501';
   end if;
-  if jsonb_typeof(p_question_marks) <> 'array'
+  if coalesce(jsonb_typeof(p_question_marks), '') <> 'array'
     or char_length(coalesce(p_feedback, '')) > 5000 then
     raise exception 'Invalid question marking details' using errcode = '22023';
   end if;
