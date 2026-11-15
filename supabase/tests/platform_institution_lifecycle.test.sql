@@ -13,7 +13,7 @@ $$;
 create or replace function public.test_platform_audit_count(p_institution_id uuid)
 returns integer language sql stable security definer
 set search_path=public,pg_temp
-as $ select count(*)::integer from public.platform_membership_audit where institution_id=$1 $;
+as $audit$ select count(*)::integer from public.platform_membership_audit where institution_id=$1 $audit$;
 grant execute on function public.test_platform_audit_count(uuid) to authenticated;
 
 insert into auth.users(id) values
