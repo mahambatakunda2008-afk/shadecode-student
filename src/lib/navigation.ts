@@ -205,7 +205,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.timetable,
       ],
     },
-    { group: "Connect", items: [NAV_ITEMS.whatsapp] },
+    { group: "Connect", items: [NAV_ITEMS.educatorMessages, NAV_ITEMS.whatsapp] },
     {
       group: "Growth",
       items: [NAV_ITEMS.analytics, NAV_ITEMS.cortex, NAV_ITEMS.achievements, NAV_ITEMS.share],
@@ -282,7 +282,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
       NAV_ITEMS.virtualLab,
     ],
   },
-  { group: "Connect", items: [NAV_ITEMS.whatsapp] },
+  { group: "Connect", items: [NAV_ITEMS.educatorMessages, NAV_ITEMS.whatsapp] },
   {
     group: "Progress",
     items: [NAV_ITEMS.analytics, NAV_ITEMS.leaderboard, NAV_ITEMS.achievements],
