@@ -18,7 +18,7 @@ export async function GET() {
   const ids=(requests??[]).map(r=>r.id);
   const {data:messages,error:messageError} = ids.length
     ? await supabase.from("platform_educator_help_messages").select("id,request_id,sender_id,body,created_at").in("request_id",ids).order("created_at",{ascending:true})
-    : {data:[],messageError:null};
+    : {data:[],error:null};
   if(messageError) return NextResponse.json({error:"Could not load conversation messages."},{status:500});
   const participantIds=[...new Set((requests??[]).flatMap(r=>[r.student_id,r.educator_id]))];
   const admin=createSupabaseAdminClient();
