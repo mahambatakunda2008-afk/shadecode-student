@@ -21,7 +21,7 @@ type Payload = { assignment: Assignment; group: { name: string } | null; submiss
 
 function getQuestionResponses(response: string, count: number): string[] {
   const answers = Array.from({ length: count }, () => "");
-  const pattern = /(?:^|\\n\\n)Question (\\d+) \\([\\d.]+ marks\\)\\n([\\s\\S]*?)(?=\\n\\nQuestion \\d+ \\([\\d.]+ marks\\)\\n|$)/g;
+  const pattern = /(?:^|\n\n)Question (\d+) \([\d.]+ marks\)\n([\s\S]*?)(?=\n\nQuestion \d+ \([\d.]+ marks\)\n|$)/g;
   for (const match of response.matchAll(pattern)) {
     const index = Number(match[1]) - 1;
     if (index >= 0 && index < count) answers[index] = match[2].trim();
