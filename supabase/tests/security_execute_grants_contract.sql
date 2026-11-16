@@ -84,7 +84,8 @@ do $test$
 declare
   v_tutorial_id uuid;
 begin
-  insert into public.teacher_tutorials default values returning id into v_tutorial_id;
+  v_tutorial_id := gen_random_uuid();
+  insert into public.teacher_tutorials (id) values (v_tutorial_id);
   update public.teacher_tutorials set id = id where id = v_tutorial_id;
 end
 $test$;
