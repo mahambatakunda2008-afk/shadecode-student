@@ -330,3 +330,32 @@ A third inspected commit, `1a71064ff7827acd96bd41aae93b2bd878a87c2f`, documents 
 - **Not yet verified:** whether the current migration directory can recreate the live schema from an empty database without manual patches or skipped historical migrations.
 
 Do not use the above evidence to mark migrations as applied, alter the remote ledger, or assume a one-to-one mapping. Continue content-level comparison and disposable replay.
+
+
+## Path-specific Git-history pass (2026-11-16)
+
+The current directory listing contains **161 entries: 160 `.sql` files plus the README**. This confirms the earlier 160-SQL-file count; the 161 figure is the directory-entry count, not an additional migration.
+
+I inspected GitHub's path history for five tracked files that appeared in the unmatched tracked-file list. This narrows their provenance but does not prove they were applied under a particular remote version:
+
+| Tracked file | First/only path-history commit | What is established | Reconciliation status |
+| --- | --- | --- | --- |
+| `20261112090000_teacher_portal.sql` | `b838014bed40` (2026-11-11) | Introduced the teacher portal's own schema in the Teacher Client feature commit. The remote ledger separately records `teacher_portal_invites` and `teacher_tutorials` under versions `20261111052639` and `20261111203852`. | Plausible split/combined migration relationship; **not proven equivalent**. Inspect full SQL and deployment history before pairing. |
+| `20260917050000_create_platform_channel_identities.sql` | `a2e6bd09acad` (2026-09-17) | Introduced persistent channel identity schema. | Remote has earlier registry and later channel identity entries; **no exact mapping proven**. |
+| `20260917051000_harden_platform_channel_message_receipts.sql` | `c7cc53f4d4e5` (2026-09-17) | Introduced receipt lifecycle hardening. | Remote ledger has receipt creation and lifecycle-alignment entries; **no exact mapping proven**. |
+| `20260909161000_curriculum_ingestion.sql` | `92ec4ee7ea6a` (2026-09-09) | Introduced curriculum ingestion migration. | Remote ledger has multiple curriculum source/document/coverage entries; **no exact mapping proven**. |
+| `20260816212000_harden_security_definer_function_grants.sql` | `fd5fe658ef96` (2026-08-16) | Introduced SECURITY DEFINER helper grant hardening. | Remote ledger includes multiple search-path and grant-hardening entries; **no exact mapping proven**. |
+
+The path-history endpoint returned one introducing commit for each of these files. It does not expose a remote SQL body for already-applied migration records, so a filename or topical similarity is not enough to claim SQL equivalence.
+
+### Updated classification
+
+- The directory count is reconciled: 160 SQL files, plus README.
+- The earlier deliberate rename/removal examples remain verified.
+- Five additional tracked files now have their introducing commits recorded.
+- None of these five has been upgraded to an exact remote-ledger match without a patch/content proof.
+- The complete 53 remote-only / 44 tracked-only lists remain open for item-by-item reconciliation.
+
+### Next verification step
+
+Retrieve the introducing commit patches for each tracked-only file and compare their SQL effects against the live schema definitions and relevant later migrations. For remote-only entries whose SQL was applied outside tracked history, use commit messages, deployment records, and catalog effects as evidence, but label the result as inferred unless the exact SQL artifact is recovered. Preserve the remote ledger unchanged.
