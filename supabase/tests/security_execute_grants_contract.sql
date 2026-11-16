@@ -72,3 +72,20 @@ begin
   end if;
 end
 $$;
+
+-- Trigger execution must continue to work even though API roles no longer
+-- have direct EXECUTE privileges on the trigger functions.
+insert into public.lesson_votes (lesson_id, helpful)
+values (gen_random_uuid(), true);
+
+do $$
+declare
+  v_tutorial_id uuid;
+begin
+  insert into public.teacher_tutorials default values returning id into v_tutorial_id;
+  update public.teacher_tutorials set id = id where id = v_tutorial_id;
+end
+$$;
+
+insert into public.learn_lessons (progress, blocks)
+values (0, '[]'::jsonb);
