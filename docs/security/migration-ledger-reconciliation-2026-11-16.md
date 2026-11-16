@@ -359,3 +359,37 @@ The path-history endpoint returned one introducing commit for each of these file
 ### Next verification step
 
 Retrieve the introducing commit patches for each tracked-only file and compare their SQL effects against the live schema definitions and relevant later migrations. For remote-only entries whose SQL was applied outside tracked history, use commit messages, deployment records, and catalog effects as evidence, but label the result as inferred unless the exact SQL artifact is recovered. Preserve the remote ledger unchanged.
+
+
+## SQL-patch inspection: five tracked-only files (2026-11-16)
+
+The introducing commit patches were retrieved for the five tracked-only files previously identified. This is stronger evidence than filename/path history, but only establishes what those tracked files actually contain. It does **not** establish that a remote ledger entry with a similar name or purpose contains identical SQL.
+
+| Tracked file | Introducing commit | Exact patch content observed | Reconciliation result |
+| --- | --- | --- | --- |
+| `20261112090000_teacher_portal.sql` | `b838014bed40501f7407f417f026a1285eac0b77` | Creates `teacher_invites`, invite hash/expiry/use fields, RLS policies, and atomic `redeem_teacher_invite(text)`; its `created_by` FK cascades and `used_by` FK sets null. | The live ledger has separate `teacher_portal_invites` (20261111052639) and `teacher_tutorials` (20261111203852), followed by tutorial hardening/state migrations. The tracked file patch is invite-specific and does not define the tutorial schema. **Not equivalent to the complete remote teacher portal history.** |
+| `20260917050000_create_platform_channel_identities.sql` | `a2e6bd09acad` | Creates `platform_channel_identities` with WhatsApp channel constraint, unique external identity, Auth-user CASCADE FK, index, and RLS enabled. | Remote ledger has `create_platform_channel_identity_registry` (20260911232227), preceding the tracked file's introducing commit, plus later platform-channel reconciliation history. Similar object purpose is insufficient to map these entries. **Unresolved; likely later additive/reconciliation SQL.** |
+| `20260917051000_harden_platform_channel_message_receipts.sql` | `c7cc53f4d4e5` | Creates/extends receipt lifecycle columns, backfills null lifecycle values, adds status/channel constraints and processing/user indexes, and enables RLS. | Remote ledger separately records receipt creation (20260916182015) and lifecycle alignment (20260917015059). The tracked patch combines create/upgrade logic, but exact equivalence to either or both remote SQL bodies cannot be proven without recovering those bodies. **Unresolved; candidate combined/squashed migration only.** |
+| `20260909161000_curriculum_ingestion.sql` | `92ec4ee7ea6a` | Creates curriculum source/document/version/objective/mapping/ingestion/verification tables, indexes, RLS, timestamp trigger function, and four source seeds. Its own header says initial schema was applied to production during implementation and this file is the reproducible repository definition for future environments. | The remote ledger has numerous curriculum entries, including source identity/guards, knowledge, document structure, exact profiles, coverage, assessment, and later projections. This 110-line tracked patch is a foundation, not the whole curriculum history. **Confirmed partial baseline artifact; not a one-to-one remote migration match.** |
+| `20260816212000_harden_security_definer_function_grants.sql` | `fd5fe658ef96` | Replaces `has_role`, `has_permission`, and `get_user_permissions` with identity checks and restricted search paths; revokes selected anon execute grants, including helper/trigger functions. | The remote ledger contains multiple function search-path, role-grant, ownership-guard, and service-role regression migrations. The patch is one security-hardening layer, not proof that it subsumes those remote changes. **Unresolved; compare each function definition and ACL in the live catalog.** |
+
+### What this proves, and what it does not
+
+- We now have patch-level evidence for five tracked-only migrations, not merely their filenames and introducing commits.
+- At least three mismatches are clearly multi-stage histories: curriculum ingestion, platform channel receipts, and the teacher portal. The tracked file set is not a one-file-per-ledger-entry representation.
+- The teacher portal tracked migration specifically creates invites only; the live remote ledger separately records tutorial schema and multiple tutorial lifecycle/security migrations. Do not claim the tracked invite migration reproduces the live teacher portal schema.
+- The curriculum migration explicitly documents a production-first application followed by a repository reproducibility artifact. This is direct evidence of out-of-band/production-first schema creation, but not a substitute for recovering every later remote migration's SQL.
+- The platform channel identity file creates the identity table, but the remote ledger's registry entry predates it. This requires examining the live table's columns/constraints and all follow-on reconciliation migrations before assigning a mapping.
+- No remote migration SQL body was recovered by this pass. Therefore **no remote-only migration has been declared equivalent to a tracked file**.
+
+## CI status update
+
+The latest commit on this audit branch, `6c689342f576f94c2a8a41a3cc78ce24d6e64f71`, now reports the Vercel check as **success** (previously pending). This is a deployment/check status only; it does not validate migration replay or database equivalence.
+
+## Remaining authoritative work
+
+1. Recover exact SQL for remote-only entries from deployment artifacts, archived migration files, CI artifacts, or a verified schema-history source. Where no exact artifact exists, record an evidence-based inferred mapping and confidence, never a guessed equivalence.
+2. Compare the five tracked patches above against current live definitions for the affected tables/functions, including RLS policies, grants, triggers, constraints, and indexes.
+3. Expand the same patch-level method across all 44 tracked-only files and 53 remote-only entries; prioritize security, identity, curriculum, and durable assessment/projection migrations.
+4. Export a supported schema-only baseline and prove a disposable replay/restore produces equivalent normalized catalog state.
+5. Keep production migration ledger, production DDL, account data, Storage objects, and deletion-worker settings unchanged until the baseline is independently reproducible and reviewed.
