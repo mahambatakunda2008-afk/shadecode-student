@@ -61,4 +61,4 @@ as $$ select p_event $$;
 grant execute on function public.insert_canonical_cortex_event(uuid, jsonb)
 to anon, authenticated, service_role;
 
-grant insert, update, delete on table public.lesson_votes, public.teacher_tutorials, public.learn_lessons to authenticated;
+grant select, insert, update, delete on table public.lesson_votes, public.teacher_tutorials, public.learn_lessons to authenticated;
