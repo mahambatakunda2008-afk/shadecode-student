@@ -1,5 +1,8 @@
 -- Minimal disposable schema for security_execute_grants_contract.sql.
--- Supabase local startup provides the anon/authenticated/service_role roles.
+-- Reproduce the API roles available in a disposable Supabase database.
+create role anon;
+create role authenticated;
+create role service_role bypassrls;
 
 create table public.challenge_answer_keys (
   challenge_id uuid primary key,
