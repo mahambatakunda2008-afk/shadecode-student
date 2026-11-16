@@ -76,7 +76,7 @@ begin
 end
 $$;
 
--- Runtime isolation check: authenticated user A sees only A's profile.
+-- Runtime isolation check: authenticated user A sees and changes only A's profile.
 begin;
 insert into public.profiles (id, username, display_name, curriculum_board)
 values
@@ -88,20 +88,48 @@ select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111
 do $$
 declare
   v_count integer;
+  v_updated integer;
 begin
   select count(*) into v_count from public.profiles;
   if v_count <> 1 then
     raise exception 'authenticated owner read expected 1 profile, found %', v_count;
   end if;
+
+  update public.profiles
+     set display_name = 'Learner A updated'
+   where id = '11111111-1111-4111-8111-111111111111';
+  get diagnostics v_updated = row_count;
+  if v_updated <> 1 then
+    raise exception 'owner must be able to update own profile, updated % rows', v_updated;
+  end if;
+
+  update public.profiles
+     set display_name = 'Cross-account tamper'
+   where id = '22222222-2222-4222-8222-222222222222';
+  get diagnostics v_updated = row_count;
+  if v_updated <> 0 then
+    raise exception 'owner must not be able to update another learner profile';
+  end if;
 end
 $$;
 reset role;
 
--- Anonymous callers can read the six-field projection, not private base-table fields.
+-- Anonymous callers can read only the six-field projection, never base profiles.
 set local role anon;
 do $$
+declare
+  v_count integer;
 begin
-  perform id from public.leaderboard_profiles limit 1;
+  select count(id) into v_count from public.profiles;
+  if v_count <> 0 then
+    raise exception 'anon unexpectedly read base profile rows: %', v_count;
+  end if;
+
+  select count(*) into v_count from public.leaderboard_profiles;
+  if v_count <> 2 then
+    raise exception 'anon leaderboard projection expected 2 rows, found %', v_count;
+  end if;
+
   begin
     perform curriculum_subjects from public.profiles limit 1;
     raise exception 'anon unexpectedly read private profile fields';
