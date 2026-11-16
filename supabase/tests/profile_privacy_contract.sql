@@ -4,16 +4,14 @@
 do $$
 declare
   v_options text[];
-  v_definition text;
   v_columns text[];
-  v_count integer;
 begin
   if not (select relrowsecurity from pg_class where oid = 'public.profiles'::regclass) then
     raise exception 'profiles RLS must remain enabled';
   end if;
 
   if has_table_privilege('anon', 'public.profiles', 'SELECT') then
-    raise exception 'anon must not have direct profiles SELECT';
+    raise exception 'anon must not have direct table-level profiles SELECT';
   end if;
   if not has_table_privilege('authenticated', 'public.profiles', 'SELECT') then
     raise exception 'authenticated must retain profiles SELECT for owner-scoped reads';
@@ -99,14 +97,14 @@ end
 $$;
 reset role;
 
--- Anonymous callers can read the six-field projection but cannot read profiles.
+-- Anonymous callers can read the six-field projection, not private base-table fields.
 set local role anon;
 do $$
 begin
-  perform 1 from public.leaderboard_profiles limit 1;
+  perform id from public.leaderboard_profiles limit 1;
   begin
-    perform 1 from public.profiles limit 1;
-    raise exception 'anon unexpectedly read public.profiles';
+    perform curriculum_subjects from public.profiles limit 1;
+    raise exception 'anon unexpectedly read private profile fields';
   exception when insufficient_privilege then
     null;
   end;
