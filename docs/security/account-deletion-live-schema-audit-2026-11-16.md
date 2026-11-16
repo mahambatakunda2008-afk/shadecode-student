@@ -76,9 +76,9 @@ These are not interchangeable. For each, decide whether the record is account-ow
 
 ## Storage constraints
 
-The earlier live Storage audit found:
+A fresh aggregate count on 2026-11-16 confirmed:
 - `past-papers`: private, 58 shared product objects. Never delete the bucket or its shared objects during account deletion.
-- `teacher-media`, `community-uploads-pending`, and `shadecode-backups`: private buckets, empty at the time of that audit.
+- `teacher-media`, `community-uploads-pending`, and `shadecode-backups`: private buckets, each currently empty.
 - Cleanup must continue to use exact object keys from a verified manifest and an explicit bucket allowlist. A bucket prefix is not sufficient proof of ownership where shared upload records or other users' references exist.
 
 Recheck bucket/object state at staging time; these are time-sensitive counts.
