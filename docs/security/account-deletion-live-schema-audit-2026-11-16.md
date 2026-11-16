@@ -95,6 +95,13 @@ Recheck bucket/object state at staging time; these are time-sensitive counts.
 8. Add two-account scenarios for: teacher/institution membership and invitations; student/guardian relationship; reviewer whose review belongs to another account; role assigner; and external channel identity/receipt.
 9. Verify local browser and Android stores, provider-side retention, logs, backups, and shared assets separately. Database deletion alone is not a complete account-erasure guarantee.
 
+
+## Migration-history reconciliation blocker
+
+A separate read-only comparison found that the live Supabase migration history and the current repository migration filenames do not align by version prefix: the project reports 169 applied migration entries, while the current `main` tree contains 161 migration files. A direct prefix comparison found 146 live version entries without a matching tracked filename prefix and 130 tracked prefixes absent from the live history. The repository includes older numbered migrations (for example `0001_...`) while the live history uses timestamp versions, so this comparison does **not** prove that the corresponding schema changes are absent; some may have been renamed, squashed, or applied outside the tracked migration sequence.
+
+This is nevertheless a hard release gate: do not claim that a disposable database replaying only the current tracked files reproduces production, and do not push account-deletion DDL to production until the team reconciles the remote migration ledger with the repository and documents the authoritative baseline. The account-deletion integration fixture must be based on a verified schema baseline, not merely on the current list of files.
+
 ## Safety boundary
 
 - No production DDL or migration was applied during this audit.
