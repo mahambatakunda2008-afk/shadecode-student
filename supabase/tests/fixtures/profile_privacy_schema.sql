@@ -16,6 +16,12 @@ create table public.profiles (
   subjects jsonb
 );
 
+-- Supabase applies broad default privileges to newly created public tables.
+-- Revoke those table-level grants, then model the live six-column anon grant.
+revoke all privileges on table public.profiles from public, anon;
+grant select (id, username, xp, season_xp, level, streak)
+  on table public.profiles to anon;
+
 alter table public.profiles enable row level security;
 grant select, insert, update, delete on public.profiles to authenticated;
 
