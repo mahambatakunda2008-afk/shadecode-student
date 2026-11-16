@@ -130,3 +130,36 @@ A second read-only catalog pass enumerated every direct foreign key from `public
 | `traction_events.user_id` | SET NULL | Inspect event properties for embedded identifiers before retaining |
 
 The full direct Auth FK catalog also includes additional CASCADE relationships beyond the eleven tables absent from the historical preview (for example `academic_contexts`, `cortex_events`, `cortex_generation_jobs`, `cortex_memory`, `learner_curriculum_objective_progress`, `platform_group_members`, `platform_institution_members`, and `teacher_tutorials.author_id`). The implementation must compare its explicit inventory against the live catalog as a whole, not treat the eleven-table delta as the complete deletion surface. A fresh staging catalog diff is required immediately before implementation is considered complete.
+
+
+## Read-only catalog census update (2026-11-16)
+
+A second live catalog census was taken after the migration-ledger inventory. It is an aggregate-only snapshot; no row contents or credentials were exported.
+
+| Surface | Live count / observation |
+| --- | ---: |
+| Non-system schemas | 10 |
+| Public relations (tables, partitioned tables, views, materialized views) | 118 |
+| Public base/partitioned tables with RLS disabled | 0 |
+| Public RLS policies | 238 |
+| Public triggers | 41 |
+| Public indexes | 310 |
+| Public functions | 64 |
+| Public SECURITY DEFINER functions | 25 |
+| Foreign keys referencing auth.users, ON DELETE CASCADE | 58 |
+| Foreign keys referencing auth.users, ON DELETE SET NULL | 15 |
+| Foreign keys referencing auth.users, NO ACTION | 4 |
+
+The 15 SET NULL relationships include the previously inventoried 14 application relationships plus the Supabase-managed auth.scim_users.user_id relationship. The 4 NO ACTION relationships are feedback.user_id, exam_results.user_id, user_roles.assigned_by, and exam_question_topic_proposals.reviewer_id.
+
+### Storage ownership check
+
+A fresh aggregate query of storage.objects returned 58 objects in past-papers, with **0 objects carrying a non-null owner_id**. This is stronger than a bucket count alone: the current shared past-paper objects are not owned by an Auth user and should remain untouched. No other bucket had objects in this census. Do not remove the shared bucket or its contents during account deletion.
+
+### Account deletion session and storage constraints
+
+Current Supabase Auth documentation states that deleting an Auth user does not immediately invalidate already-issued JWT access tokens; tokens remain valid until expiry. The product flow must therefore revoke/sign out sessions and account for residual access-token lifetime rather than treating Auth-row deletion as instantaneous token invalidation. Supabase also rejects Auth-user deletion while that user owns Storage objects. The live storage ownership census currently shows no such owned objects, but the deletion workflow must still check ownership at execution time and handle future uploads safely.
+
+### Baseline boundary
+
+This census improves the live schema inventory but is **not** a complete schema-only export and does not reconcile all 53 remote-only and 44 tracked-only migration filename entries. It does not authorize account-deletion DDL or worker activation. Continue with catalog-definition export and migration-content/history reconciliation before implementation.
