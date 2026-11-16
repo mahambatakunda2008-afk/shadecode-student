@@ -138,7 +138,7 @@ A second live catalog census was taken after the migration-ledger inventory. It 
 
 | Surface | Live count / observation |
 | --- | ---: |
-| Non-system schemas | 10 |
+| Non-system application/platform schemas (excluding `pg_*` and `information_schema`) | 9 |
 | Public relations (tables, partitioned tables, views, materialized views) | 118 |
 | Public base/partitioned tables with RLS disabled | 0 |
 | Public RLS policies | 238 |
@@ -163,3 +163,12 @@ Current Supabase Auth documentation states that deleting an Auth user does not i
 ### Baseline boundary
 
 This census improves the live schema inventory but is **not** a complete schema-only export and does not reconcile all 53 remote-only and 44 tracked-only migration filename entries. It does not authorize account-deletion DDL or worker activation. Continue with catalog-definition export and migration-content/history reconciliation before implementation.
+
+
+## Exact Auth foreign-key inventory correction (2026-11-16)
+
+The complete direct-FK query includes Supabase-managed Auth relationships as well as application relationships. The aggregate counts are therefore **58 CASCADE, 15 SET NULL, and 4 NO ACTION = 77 direct references to auth.users**. The 15 SET NULL entries consist of 14 public application relationships plus `auth.scim_users.user_id`. The 58 CASCADE entries include 9 Auth-internal relationships; the remaining 49 are public-schema application relationships. The four NO ACTION entries are all in `public` and are listed above.
+
+This distinction matters: do not compare the 77 total directly with the application's deletion preview. The preview contract should cover application-owned public relations and explicitly document the Supabase-managed Auth-internal constraints as platform-managed. The full public-schema inventory, rather than a partial hand-maintained list, is the coverage assertion.
+
+The fresh catalog count also corrects the schema total: there are **9 non-system schemas** when excluding names beginning `pg_` and `information_schema` (`auth`, `extensions`, `graphql`, `graphql_public`, `public`, `realtime`, `storage`, `supabase_migrations`, and `vault`). The earlier broad information_schema count included PostgreSQL internal namespaces and should not be reported as the application/platform schema count.
