@@ -301,3 +301,13 @@
 ## Safety
 
 No production DDL, data, Auth users, Storage objects, or worker settings were changed to create this report. The account-deletion worker remains disabled.
+
+## Git-history evidence: some mismatches are intentional filename/version repairs
+
+The migration directory's own Git history confirms that at least part of the filename mismatch is caused by deliberate alignment work, not necessarily missing SQL:
+
+- Commit [`532a2c4b51a226caf06daf10f378ed42375ee2ff`](https://github.com/mahambatakunda2008-afk/shadecode-student/commit/532a2c4b51a226caf06daf10f378ed42375ee2ff) renamed the exact curriculum profile migration to a unique version after a duplicate `20260909210000` version was identified.
+- Commit [`7aab2333956d68785714d1609323bb885eb70411`](https://github.com/mahambatakunda2008-afk/shadecode-student/commit/7aab2333956d68785714d1609323bb885eb70411) aligned the lesson-quiz migration filename with the already-applied Supabase version; commit [`9721b35689d4e976bcb33684ce3a60d257c76185`](https://github.com/mahambatakunda2008-afk/shadecode-student/commit/9721b35689d4e976bcb33684ce3a60d257c76185) then removed the superseded filename.
+- Commits [`a466cdaf9ccd15632f38df3b1050b7fa93e970ee`](https://github.com/mahambatakunda2008-afk/shadecode-student/commit/a466cdaf9ccd15632f38df3b1050b7fa93e970ee) and [`9cf6794e0daa1a06870079f2ebaec779e4d590da`](https://github.com/mahambatakunda2008-afk/shadecode-student/commit/9cf6794e0daa1a06870079f2ebaec779e4d590da) show a migration being reintroduced under the applied versioned filename and the old mismatched filename removed.
+
+This is direct evidence that the raw filename/ledger mismatch includes deliberate repair history. It still does not map all 53 unmatched remote names and 44 unmatched tracked files. Continue mapping each item through content, commit history, and remote schema effects. Do not bulk-rename files or mark migrations as applied based only on this evidence.
