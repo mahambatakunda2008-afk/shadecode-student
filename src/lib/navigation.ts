@@ -61,6 +61,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   mathChecker: { href: "/workmate", label: "Cortex Verify", icon: FileCheck2, feature: "workmate" },
   learn: { href: "/learn", label: "Learn", icon: BookOpen, feature: "learn" },
   teacherTutorials: { href: "/learn/tutorials", label: "Tutorials", icon: MonitorPlay, feature: "tutorials" },
+  resources: { href: "/learn/resources", label: "Resources", icon: LibraryBig, feature: "tutorials" },
   compLab: { href: "/comp-lab", label: "Comp Lab", icon: Code2, feature: "code-lab" },
   curriculum: { href: "/curriculum", label: "Courses", icon: BookOpen, feature: "courses" },
   workmate: { href: "/workmate", label: "Cortex Verify", icon: FileCheck2, feature: "workmate" },
@@ -121,7 +122,7 @@ export function getExperienceNavGroups(
     .toLowerCase()
     .includes("biology");
   const foundation: NavGroup[] = [
-    { group: "Start here", items: [NAV_ITEMS.dashboard, NAV_ITEMS.learn] },
+    { group: "Start here", items: [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.resources] },
     {
       group: "Keep exploring",
       items: [
@@ -142,6 +143,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.dashboard,
         NAV_ITEMS.learn,
         NAV_ITEMS.teacherTutorials,
+        NAV_ITEMS.resources,
         NAV_ITEMS.curriculum,
         NAV_ITEMS.study,
         NAV_ITEMS.studyPlan,
@@ -181,6 +183,7 @@ export function getExperienceNavGroups(
         NAV_ITEMS.curriculum,
         NAV_ITEMS.studyspace,
         NAV_ITEMS.learn,
+        NAV_ITEMS.resources,
         NAV_ITEMS.studyPlan,
       ],
     },
@@ -236,7 +239,7 @@ export function getExperienceNavGroups(
             ? hasComputingSubject
             : item.href === NAV_ITEMS.biologyPractical.href
               ? hasBiologySubject
-              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments" || item.href === "/assignments",
+              : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp" || item.href === "/assignments" || item.href === "/learn/resources",
       ),
     }))
     .filter((group) => group.items.length > 0);
@@ -263,6 +266,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
     items: [
       NAV_ITEMS.learn,
       NAV_ITEMS.teacherTutorials,
+      NAV_ITEMS.resources,
       NAV_ITEMS.curriculum,
       NAV_ITEMS.projects,
       NAV_ITEMS.workmate,
@@ -289,6 +293,7 @@ export const BOTTOM_PRIMARY: NavItem[] = [
 
 export const BOTTOM_MORE: NavItem[] = [
   NAV_ITEMS.teacherTutorials,
+  NAV_ITEMS.resources,
   NAV_ITEMS.curriculum,
   NAV_ITEMS.timetable,
   NAV_ITEMS.studyPlan,
@@ -312,7 +317,7 @@ export const BOTTOM_MORE: NavItem[] = [
 
 export function isRouteActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
-  // Teacher tutorials live under /learn but are their own destination, so "Learn" must not also light up.
-  if (href === "/learn" && (pathname === "/learn/tutorials" || pathname.startsWith("/learn/tutorials/"))) return false;
+  // Dedicated learning destinations live under /learn but should not also light up the Learn item.
+  if (href === "/learn" && ["/learn/tutorials", "/learn/resources"].some((route) => pathname === route || pathname.startsWith(`${route}/`))) return false;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
