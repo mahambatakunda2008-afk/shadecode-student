@@ -11,7 +11,7 @@ revoke all privileges on function public.publish_lesson_to_library() from public
 -- Canonical event insertion is authenticated-user scoped by auth.uid(); an
 -- anonymous caller can never satisfy that contract. Keep authenticated and
 -- service_role access unchanged.
-revoke execute on function public.insert_canonical_cortex_event(uuid, jsonb) from anon;
+revoke execute on function public.insert_canonical_cortex_event(uuid, jsonb) from public, anon;
 
 -- Answer keys are server-side assessment material. The application reads them
 -- through its trusted server/service-role path, never directly from browser
