@@ -8,7 +8,7 @@
 
 The old #553 implementation contains valuable safeguards, but its preview list is now stale relative to the live schema. Eleven current identity/attribution-bearing tables are absent from `preview_account_deletion`. Most are protected by `ON DELETE CASCADE`, so the cleanup RPC may remove their rows when Auth is deleted, but the preview currently understates the deletion scope and does not explain the retention semantics.
 
-The live schema also has 15 UUID identity/attribution columns without an Auth FK. Aggregate orphan checks returned **zero** for every one. These are candidates for validated constraints, not permission to apply DDL without staging and migration-history tests.
+The live schema also has 14 UUID identity/attribution columns without an Auth FK (plus the separately handled text-keyed `exam_logs.user_id`). Aggregate orphan checks returned **zero** for every UUID column. These are candidates for validated constraints, not permission to apply DDL without staging and migration-history tests.
 
 ## Newer live tables missing from the historical preview
 
@@ -30,7 +30,7 @@ These rows are currently removed by FK cascade at the final Auth deletion step, 
 
 ## Live identity columns without an Auth foreign key
 
-The following 15 UUID columns were checked against `auth.users`; aggregate orphan count was zero for each.
+The following 14 UUID columns were checked against `auth.users`; aggregate orphan count was zero for each.
 
 | Table.column | Nullability | Proposed FK action | Notes |
 | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ Recheck bucket/object state at staging time; these are time-sensitive counts.
 1. Extend `preview_account_deletion` with the eleven missing tables above, plus any additional identity columns found by scanning current code and migrations.
 2. Extend the preview contract so it asserts every identity/attribution FK in the current schema is represented, or explicitly classified as intentionally excluded.
 3. Reconcile the cleanup RPC against the same inventory. FK cascades are acceptable only when the preview explains them and integration tests prove the scope.
-4. For the 15 no-FK UUID columns, repeat orphan checks in the disposable current-history fixture and add validated FKs with the actions above. Make `generated_course_approvals.approved_by` nullable before adding SET NULL.
+4. For the 14 no-FK UUID columns, repeat orphan checks in the disposable current-history fixture and add validated FKs with the actions above. Make `generated_course_approvals.approved_by` nullable before adding SET NULL.
 5. Preserve explicit handling for the four NO ACTION constraints.
 6. Replace the name-pattern-only write-barrier selection with a reviewed inventory, and assert trigger coverage for every account-owned or attribution-bearing table.
 7. Build the integration fixture from the current tracked migration history, not the old hand-built baseline alone.
