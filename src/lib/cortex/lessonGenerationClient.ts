@@ -723,7 +723,11 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           lastError = new Error(
             providerUnavailable
               ? `Cortex provider unavailable: ${sectionData?.error || "No online AI provider is currently available."}`
-              : (sectionData?.error || `Section generation failed (${response.status})`)
+              : (sectionData?.error
+                ? `${sectionData.error}${Array.isArray(sectionData?.details) && sectionData.details.length
+                  ? `: ${sectionData.details.map((d: { message?: unknown }) => (typeof d?.message === "string" ? d.message : "")).filter(Boolean).slice(0, 2).join("; ")}`
+                  : ""}`
+                : `Section generation failed (${response.status})`)
           );
           if (providerUnavailable) throw lastError;
           const retryable = response.status === 408 || response.status === 409 || response.status === 422 ||
