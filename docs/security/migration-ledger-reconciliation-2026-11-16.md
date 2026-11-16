@@ -393,3 +393,50 @@ The latest commit on this audit branch, `6c689342f576f94c2a8a41a3cc78ce24d6e64f7
 3. Expand the same patch-level method across all 44 tracked-only files and 53 remote-only entries; prioritize security, identity, curriculum, and durable assessment/projection migrations.
 4. Export a supported schema-only baseline and prove a disposable replay/restore produces equivalent normalized catalog state.
 5. Keep production migration ledger, production DDL, account data, Storage objects, and deletion-worker settings unchanged until the baseline is independently reproducible and reviewed.
+
+
+## Live catalog comparison for the five tracked patches (2026-11-16)
+
+A fresh read-only catalog query compared the relevant live tables, columns, constraints, indexes, RLS policies, and selected function definitions. This narrows the comparison but is not a full schema dump.
+
+### Teacher portal: invite migration is present, tutorials are separate
+
+- Live `teacher_invites` has the exact eight columns and defaults defined by the tracked `20261112090000_teacher_portal.sql`: UUID id, unique code hash, optional note, creator, creation/expiry timestamps, optional used-by identity, and used timestamp.
+- Its two Auth foreign keys match the tracked patch's intended delete actions: `created_by ON DELETE CASCADE`; `used_by ON DELETE SET NULL`.
+- The three invite RLS policies match the tracked migration's admin-only read/create/revoke boundaries.
+- Live `redeem_teacher_invite(text)` has the same atomic hash lookup, unused/unexpired condition, teacher-role assignment, and conflict handling as the tracked patch. Its current ACL grants execute to `authenticated` and `service_role`, not `anon` or `PUBLIC`.
+- Live `teacher_tutorials` is a distinct table with author CASCADE and publisher SET NULL Auth FKs, workflow status/version/content constraints, and separate author/reviewer/admin RLS policies. This confirms that the tracked invite migration does not represent the tutorial schema.
+
+**Classification:** the tracked teacher migration's invite component is materially present in the live catalog. It still cannot be mapped one-to-one to the remote ledger entries without their SQL bodies. The separate tutorial schema and its policies must be covered by the remote-history/baseline reconciliation.
+
+### Platform channel receipts: lifecycle patch largely reflected in live catalog
+
+- Live `platform_channel_message_receipts` contains the receipt lifecycle fields, non-null `phone_number_id`, `processing_started_at`, and `lease_until`, plus nullable `user_id`, delivery status, processed/delivered timestamps.
+- Live status, delivery, and channel checks match the tracked lifecycle migration's intended allowed values.
+- Live indexes include the tracked partial lease index and user/time index, plus a separate processing-started index and a uniquely named message index.
+- RLS is enabled, with an explicit deny policy for anon/authenticated API access.
+
+**Classification:** strong catalog evidence that the tracked lifecycle migration's effects are present, with additional later changes. This does not prove whether remote versions 20260916182015 and 20260917015059 individually correspond to the create and lifecycle portions; retain the mapping as a candidate combined history, not exact equivalence.
+
+### Curriculum ingestion: live schema is a later evolved state
+
+The live curriculum tables retain the original foundation but have subsequent changes. Examples from the read-only catalog:
+
+- `curriculum_sources` now has `syllabus_id` and `syllabus_version` plus an identity index, beyond the original tracked foundation.
+- `curriculum_documents` now has extraction metadata (`page_count`, `structure`, `extraction_engine`, `extraction_version`, `extraction_status`) and an extraction-status index. Its current status constraint is narrower/different from the original migration's initial status list.
+- `curriculum_versions` and `curriculum_objectives` now have evolved status constraints and status indexes.
+- `curriculum_ingestion_changes` has additional verification indexing and a later change-type constraint alongside the earlier broader constraint.
+- All inspected curriculum tables have RLS enabled. Current policies deny direct anon/authenticated access to operational ingestion/source/evidence tables, while allowing authenticated reads of non-archived curriculum versions/objectives.
+
+**Classification:** the tracked 110-line curriculum file is a genuine foundation artifact, but the live schema includes later migrations and policy evolution. The tracked file alone cannot be treated as a complete production baseline.
+
+### Platform channel identities and SECURITY DEFINER functions
+
+- The live catalog query confirms `platform_channel_identities` has RLS enabled and an explicit deny policy for direct anon/authenticated access. The full column/constraint inventory should be compared separately against the original identity patch and later reconciliation migrations.
+- Live `has_role`, `has_permission`, and `get_user_permissions` retain same-user/service-role identity checks from the tracked hardening patch. Their live search path is `public`; the tracked introducing patch used `public, pg_temp`. This difference needs explicit reconciliation with later search-path migrations rather than assuming byte-for-byte equivalence.
+- Live ACLs for `has_role` allow authenticated execution; `has_permission` and `get_user_permissions` are limited to postgres/service_role in the observed ACL.
+- Live `set_curriculum_updated_at()` is a non-SECURITY-DEFINER trigger function; its default execute ACL remains broader than the trigger-only runtime need. Review against the least-privilege function inventory, but do not change grants as part of this read-only pass.
+
+### Scope of this comparison
+
+This is evidence of current catalog effects, not proof of the exact historical migration sequence. It does not recover the remote SQL bodies, establish an empty-database replay, or validate all grants/triggers/storage metadata. The migration ledger remains unchanged, and no production DDL or data was modified.
