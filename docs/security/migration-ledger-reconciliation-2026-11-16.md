@@ -311,3 +311,22 @@ The migration directory's own Git history confirms that at least part of the fil
 - Commits [`a466cdaf9ccd15632f38df3b1050b7fa93e970ee`](https://github.com/mahambatakunda2008-afk/shadecode-student/commit/a466cdaf9ccd15632f38df3b1050b7fa93e970ee) and [`9cf6794e0daa1a06870079f2ebaec779e4d590da`](https://github.com/mahambatakunda2008-afk/shadecode-student/commit/9cf6794e0daa1a06870079f2ebaec779e4d590da) show a migration being reintroduced under the applied versioned filename and the old mismatched filename removed.
 
 This is direct evidence that the raw filename/ledger mismatch includes deliberate repair history. It still does not map all 53 unmatched remote names and 44 unmatched tracked files. Continue mapping each item through content, commit history, and remote schema effects. Do not bulk-rename files or mark migrations as applied based only on this evidence.
+
+
+## Additional commit-history reconciliation evidence (2026-11-16)
+
+Two historical commits were inspected by their full commit messages and patches. They establish specific migration-history facts, but do not justify blanket filename pairing:
+
+1. Commit `4dd7c93313dffcfa62d6d7cc83a2ce3518f08ec7` records that `log_ai_usage` and `increment_xp` had been applied directly to production through Supabase MCP, then the repository was repaired so migrations remained the source of truth. The commit explicitly identifies tracked `0020_create_ai_usage_tracking.sql` as applied unchanged and tracked `0022_create_increment_xp_function.sql` as requiring a schema correction because production profiles had no `updated_at` column. The remote ledger's unmatched `create_increment_xp_function_fixed` entry is therefore associated with a directly-applied production function and a later tracked migration repair, but exact SQL equivalence of the remote ledger entry to the final tracked file is **not established** by this commit message alone.
+2. Commit `1249db5d2b1cb1afb15305a82814faf382bd02fd` documents that four divergent daily-challenges migrations were deduplicated after comparing the live production schema and policy name, retaining the versioned migration renamed to `0001_*` and deleting three never-applied variants. It also records RLS repairs for eight tables, including careers/skills, lesson prerequisites, user_careers, generated_course_drafts, and generated_course_approvals. This supports intentional migration cleanup and schema repair as sources of filename mismatch, but does not map every unmatched remote ledger row to a specific tracked file.
+
+A third inspected commit, `1a71064ff7827acd96bd41aae93b2bd878a87c2f`, documents the original AI-assisted study-planning feature and its persisted `study_plans` data structure. It is feature-history evidence only; no migration equivalence was inferred.
+
+### Reconciliation classification update
+
+- **Verified history fact:** some production schema changes were applied directly, outside the normal migration ledger workflow, and later backfilled/repaired in tracked migrations.
+- **Verified history fact:** duplicate/obsolete migration files were intentionally removed after comparison with live production state.
+- **Not yet verified:** the exact SQL body and schema effect for each of the 53 remote-only names and 44 tracked-only files.
+- **Not yet verified:** whether the current migration directory can recreate the live schema from an empty database without manual patches or skipped historical migrations.
+
+Do not use the above evidence to mark migrations as applied, alter the remote ledger, or assume a one-to-one mapping. Continue content-level comparison and disposable replay.
