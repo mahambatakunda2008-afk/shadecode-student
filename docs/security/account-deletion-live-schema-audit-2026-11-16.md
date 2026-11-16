@@ -107,3 +107,26 @@ This is nevertheless a hard release gate: do not claim that a disposable databas
 - No production DDL or migration was applied during this audit.
 - No Auth users, public rows, Storage objects, or external identities were modified.
 - The account-deletion worker must remain disabled until the reconciled feature is reviewed and tested in staging, and production activation is explicitly authorized.
+
+## Follow-up catalog verification: complete SET NULL inventory
+
+A second read-only catalog pass enumerated every direct foreign key from `public` to `auth.users`, rather than relying only on the previously highlighted table list. It confirmed **14 SET NULL references**, including three that were not called out in the initial summary: `ai_anomalies.resolved_by`, `teacher_invites.used_by`, and `teacher_tutorials.published_by`. These must be included in the preview/retention contract and tested explicitly:
+
+| Table.column | Live action | Required review |
+| --- | --- | --- |
+| `ai_anomalies.resolved_by` | SET NULL | Preserve anomaly only if it remains useful without resolver identity; inspect any embedded attribution |
+| `ai_anomalies.user_id` | SET NULL | Decide whether account-owned anomaly should instead be deleted; do not assume SET NULL means anonymized |
+| `ai_usage_logs.user_id` | SET NULL | Retention/analytics policy and identifier removal must be explicit |
+| `challenge_attempts.user_id` | SET NULL | Determine whether attempts are user-owned and should be deleted rather than retained |
+| `challenges.challenger_id` | SET NULL | Preserve challenge only if remaining participants and content remain valid |
+| `community_uploads.moderator_id` | SET NULL | Preserve upload; remove moderator attribution |
+| `export_logs.user_id` | SET NULL | Inspect metadata and object references; clear or delete identifying payloads |
+| `platform_user_relationships.approved_by` | SET NULL | Preserve relationship if the two principals remain; clear approver identity |
+| `platform_user_relationships.created_by` | SET NULL | Preserve relationship if valid for remaining principals; clear creator identity |
+| `published_learning_assets.reviewed_by` | SET NULL | Preserve published asset; clear reviewer identity and inspect review metadata |
+| `survey_responses.user_id` | SET NULL | Do not call anonymous until response payload and metadata are scrubbed |
+| `teacher_invites.used_by` | SET NULL | Preserve invite only if its remaining state is meaningful; test used invite after invitee deletion |
+| `teacher_tutorials.published_by` | SET NULL | Preserve tutorial if authorship/permissions remain valid; clear publisher attribution |
+| `traction_events.user_id` | SET NULL | Inspect event properties for embedded identifiers before retaining |
+
+The full direct Auth FK catalog also includes additional CASCADE relationships beyond the eleven tables absent from the historical preview (for example `academic_contexts`, `cortex_events`, `cortex_generation_jobs`, `cortex_memory`, `learner_curriculum_objective_progress`, `platform_group_members`, `platform_institution_members`, and `teacher_tutorials.author_id`). The implementation must compare its explicit inventory against the live catalog as a whole, not treat the eleven-table delta as the complete deletion surface. A fresh staging catalog diff is required immediately before implementation is considered complete.
