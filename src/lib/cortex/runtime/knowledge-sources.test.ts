@@ -76,6 +76,34 @@ describe("retrieveCortexKnowledge", () => {
     )).resolves.toEqual({ status: "unavailable", sources: [] });
   });
 
+
+  it("independently fetches no more than two pages and retains excerpts for the rest", async () => {
+    const read = vi.fn().mockResolvedValue({
+      ...resource(),
+      content: { kind: "web-document", text: "Fetched source content." },
+    });
+    const result = await retrieveCortexKnowledge(
+      { topic: "cell division" },
+      {
+        search: vi.fn().mockResolvedValue([
+          resource("https://example.org/one"),
+          resource("https://example.org/two"),
+          resource("https://example.org/three"),
+          resource("https://example.org/four"),
+        ]),
+        read,
+      },
+    );
+
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(result.sources.map((item) => item.extraction)).toEqual([
+      "independently_fetched",
+      "independently_fetched",
+      "search_excerpt_only",
+      "search_excerpt_only",
+    ]);
+  });
+
   it("deduplicates source URLs and bounds the number of sources", async () => {
     const search = vi.fn().mockResolvedValue([
       resource(), resource(), resource("https://example.org/second"),
