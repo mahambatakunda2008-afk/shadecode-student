@@ -25,6 +25,12 @@ describe("RouteError", () => {
     expect(render("abc123")).toContain("Reference: abc123");
     expect(render()).not.toContain("Reference:");
   });
+  it("does not promise unsaved work is safe when persistence is unknown", () => {
+    const html = render();
+    expect(html).toContain("Saved work remains available");
+    expect(html).toContain("Changes that had not finished saving may need to be retried");
+    expect(html).not.toContain("Your work and progress are safe");
+  });
   it("uses design tokens, not hard-coded light-on-light colours", () => {
     const html = render();
     expect(html).not.toMatch(/text-slate-100|bg-white\/10/);
