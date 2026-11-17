@@ -29,36 +29,37 @@ function levelForXp(totalXp: number): number {
   return Math.max(1, Math.floor(totalXp / 100) + 1);
 }
 
+/** Pure reward calculation, shared by the IndexedDB writer and its replay tests. */
+export function applyXpReward(current: LocalXpState | null, amount: number, idempotencyKey?: string, now = new Date()): LocalXpState {
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error("XP amount must be positive");
+  if (idempotencyKey !== undefined && !idempotencyKey.trim()) throw new Error("XP idempotency key cannot be empty");
+
+  const appliedEventIds = current?.appliedEventIds ?? [];
+  if (idempotencyKey && appliedEventIds.includes(idempotencyKey)) return current!;
+
+  const totalXp = Math.max(0, Math.floor((current?.totalXp ?? 0) + amount));
+  const nextEventIds = idempotencyKey ? [...appliedEventIds, idempotencyKey].slice(-500) : appliedEventIds;
+  return { totalXp, level: levelForXp(totalXp), updatedAt: now.toISOString(), appliedEventIds: nextEventIds };
+}
+
 export async function getXp(userId: string): Promise<LocalXpState | null> {
   const record = await localFirstStore.get<LocalXpState>(xpId(userId));
   return record?.userId === userId && !record.deletedAt ? record.payload : null;
 }
 
 /**
- * Local XP primitive. When an idempotency key is supplied, the reward is only
- * applied once for that key on the current local record. Cross-tab atomicity
- * remains a responsibility of the underlying IndexedDB transaction layer.
+ * Local XP primitive. Supplying a stable event key makes retries/replays for
+ * the same learner action idempotent on this device. Cross-device reward
+ * authority and reconciliation remain a separate server contract.
  */
 export async function awardXp(userId: string, amount: number, idempotencyKey?: string): Promise<LocalRecord<LocalXpState>> {
   if (!userId) throw new Error("XP requires an authenticated user");
-  if (!Number.isFinite(amount) || amount <= 0) throw new Error("XP amount must be positive");
-  if (idempotencyKey !== undefined && !idempotencyKey.trim()) throw new Error("XP idempotency key cannot be empty");
-
   const current = await getXp(userId);
-  const appliedEventIds = current?.appliedEventIds ?? [];
-  if (idempotencyKey && appliedEventIds.includes(idempotencyKey)) {
+  const next = applyXpReward(current, amount, idempotencyKey);
+  if (current && next === current) {
     return (await localFirstStore.get<LocalXpState>(xpId(userId)))!;
   }
-
-  const totalXp = Math.max(0, Math.floor((current?.totalXp ?? 0) + amount));
-  const level = levelForXp(totalXp);
-  const nextEventIds = idempotencyKey ? [...appliedEventIds, idempotencyKey].slice(-500) : appliedEventIds;
-  return localFirstStore.upsert({
-    id: xpId(userId),
-    entity: "xp",
-    userId,
-    payload: { totalXp, level, updatedAt: new Date().toISOString(), appliedEventIds: nextEventIds },
-  });
+  return localFirstStore.upsert({ id: xpId(userId), entity: "xp", userId, payload: next });
 }
 
 export async function getStreak(userId: string): Promise<LocalStreakState | null> {
