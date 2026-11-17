@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("./memory", () => ({
+vi.mock("./runtime/execution", () => ({ executeCortexText: vi.fn() }));\n\nvi.mock("./runtime/knowledge-sources", () => ({ retrieveCortexKnowledge: vi.fn() }));\n\nvi.mock("./memory", () => ({
   getMemory: vi.fn(),
   updateMemory: vi.fn(),
 }));
@@ -35,7 +35,7 @@ import {
   trackStudySession,
   updateStreak,
 } from "./memoryTracker";
-import { CortexCore } from "./core";
+import { CortexCore } from "./core";\nimport { executeCortexText } from "./runtime/execution";\nimport { retrieveCortexKnowledge } from "./runtime/knowledge-sources";
 
 const memory = {
   level: 1,
@@ -66,7 +66,7 @@ describe("CortexCore learning requests", () => {
     vi.mocked(resolveAuthenticatedCortexStudentContext).mockRejectedValue(new Error("No session context in this unit test."));
     vi.mocked(generateTutoringResponse).mockResolvedValue("A tutoring response.");
     vi.mocked(getCurriculumState).mockRejectedValue(new Error("Curriculum is not needed in this unit test."));
-    vi.mocked(generateRecommendation).mockResolvedValue("Continue with your next topic.");
+    vi.mocked(generateRecommendation).mockResolvedValue("Continue with your next topic.");\n    vi.mocked(executeCortexText).mockResolvedValue(null);\n    vi.mocked(retrieveCortexKnowledge).mockResolvedValue({ status: "not_configured", sources: [] });
   });
 
   it("returns the tutoring answer when optional memory persistence fails", async () => {
@@ -89,7 +89,86 @@ describe("CortexCore learning requests", () => {
     expect(result.updatedState?.snapshot.level).toBe(1);
   });
 
-  it("does not count a tutoring request as a completed study session", async () => {
+
+  it("keeps deterministic tutoring available when opt-in online research is not configured", async () => {
+    const result = await CortexCore({
+      userId: "learner-1",
+      type: "learn",
+      payload: { topic: "Photosynthesis", subjectName: "Biology", research: true },
+    });
+
+    expect(result.response).toBe("A tutoring response.");
+    expect(result.researchStatus).toBe("not_configured");
+    expect(result.sources).toEqual([]);
+    expect(executeCortexText).not.toHaveBeenCalled();
+  });
+
+  it("uses retrieved sources for AI synthesis and returns their provenance separately", async () => {
+    const sources = [{
+      title: "Photosynthesis reference",
+      url: "https://example.org/photosynthesis",
+      publisher: "Example publisher",
+      retrievedAt: "2026-11-17T00:00:00.000Z",
+      verificationStatus: "unverified" as const,
+      extraction: "independently_fetched" as const,
+      content: "Chlorophyll absorbs light energy used in photosynthesis.",
+    }];
+    vi.mocked(retrieveCortexKnowledge).mockResolvedValue({ status: "available", sources });
+    vi.mocked(executeCortexText).mockResolvedValue("Chlorophyll absorbs light energy.");
+
+    const result = await CortexCore({
+      userId: "learner-1",
+      type: "learn",
+      payload: { topic: "Photosynthesis", subjectName: "Biology", research: true },
+    });
+
+    expect(result.response).toBe("Chlorophyll absorbs light energy.");
+    expect(result.researchStatus).toBe("available");
+    expect(result.sources).toEqual(sources);
+    expect(executeCortexText).toHaveBeenCalledWith(
+      expect.stringContaining("UNVERIFIED"),
+      700,
+      expect.objectContaining({ operation: "learn.research.synthesis", userId: "learner-1" }),
+    );
+  });
+
+  it("preserves deterministic tutoring when AI synthesis fails after successful retrieval", async () => {
+    vi.mocked(retrieveCortexKnowledge).mockResolvedValue({
+      status: "available",
+      sources: [{
+        title: "Reference",
+        url: "https://example.org/reference",
+        publisher: "Example",
+        retrievedAt: "2026-11-17T00:00:00.000Z",
+        verificationStatus: "unverified",
+        extraction: "search_excerpt_only",
+        content: "A useful excerpt.",
+      }],
+    });
+    vi.mocked(executeCortexText).mockResolvedValue(null);
+
+    const result = await CortexCore({
+      userId: "learner-1",
+      type: "learn",
+      payload: { topic: "Photosynthesis", research: true },
+    });
+
+    expect(result.response).toBe("A tutoring response.");
+    expect(result.researchStatus).toBe("ai_unavailable");
+    expect(result.sources).toHaveLength(1);
+  });
+
+  it("does not start online retrieval unless the learner explicitly requests it", async () => {
+    const result = await CortexCore({
+      userId: "learner-1",
+      type: "learn",
+      payload: { topic: "Photosynthesis" },
+    });
+
+    expect(result.researchStatus).toBeUndefined();
+    expect(retrieveCortexKnowledge).not.toHaveBeenCalled();
+  });
+\n  it("does not count a tutoring request as a completed study session", async () => {
     await CortexCore({
       userId: "learner-1",
       type: "learn",
