@@ -102,7 +102,7 @@ describe("CortexCore learning requests", () => {
     const result = await CortexCore({
       userId: "learner-1",
       type: "learn",
-      payload: { topic: "Photosynthesis", subjectName: "Biology", research: true },
+      curriculum: { identity: { boardId: "cambridge", qualificationId: "AS", syllabusId: "9700", syllabusVersion: "2025-2027", subjectId: "biology" } } as any,\n      payload: { topic: "Photosynthesis", subjectName: "Biology", research: true },
     });
 
     expect(result.response).toBe("A tutoring response.");
@@ -158,7 +158,7 @@ describe("CortexCore learning requests", () => {
     const result = await CortexCore({
       userId: "learner-1",
       type: "learn",
-      payload: { topic: "Photosynthesis", research: true },
+      curriculum: { identity: { boardId: "cambridge", qualificationId: "AS", syllabusId: "9700", syllabusVersion: "2025-2027", subjectId: "biology" } } as any,\n      payload: { topic: "Photosynthesis", research: true },
     });
 
     expect(result.response).toBe("A tutoring response.");
