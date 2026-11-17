@@ -13,7 +13,7 @@ export type CortexKnowledgeSource = {
   extraction: "independently_fetched" | "search_excerpt_only";
 };
 
-export type CortexKnowledgeResult = {
+export type CortexKnowledgeCitation = Omit<CortexKnowledgeSource, "content"> & { excerpt: string };\n\nexport type CortexKnowledgeResult = {
   status: "available" | "unavailable" | "not_configured";
   sources: CortexKnowledgeSource[];
 };
