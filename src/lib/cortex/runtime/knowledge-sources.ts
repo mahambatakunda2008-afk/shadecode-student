@@ -120,7 +120,7 @@ export async function retrieveCortexKnowledge(
           syllabus: value.syllabus,
         })))(url, query);
         const text = resourceText(document);
-        return { ...base, content: text || resourceText(resource), extraction: text ? "independently_fetched" : "search_excerpt_only" };
+        return { ...base, retrievedAt: retrievedAt(document), content: text || resourceText(resource), extraction: text ? "independently_fetched" : "search_excerpt_only" };
       } catch {
         return { ...base, content: resourceText(resource), extraction: "search_excerpt_only" };
       }
