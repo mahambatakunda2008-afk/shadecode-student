@@ -60,7 +60,7 @@ async function boundedSearch(search: Search, query: KnowledgeQuery): Promise<Sha
 
 /**
  * Server-only online research adapter for Cortex. Search results remain
- * unverified. Up to two result pages are independently fetched through the
+ * unverified. At most two result pages are independently fetched through the
  * SSRF-safe bounded document reader; a page-read failure retains only its
  * original search excerpt and never upgrades its verification status.
  */
@@ -100,7 +100,7 @@ export async function retrieveCortexKnowledge(
       all.findIndex((item) => item.metadata.source === resource.metadata.source) === index
     ).slice(0, 4);
 
-    const sources = await Promise.all(unique.map(async (resource): Promise<CortexKnowledgeSource> => {
+    const sources = await Promise.all(unique.map(async (resource, index): Promise<CortexKnowledgeSource> => {
       const url = resource.metadata.source!;
       const base = {
         title: resource.metadata.title.slice(0, 240),
@@ -109,6 +109,9 @@ export async function retrieveCortexKnowledge(
         retrievedAt: retrievedAt(resource),
         verificationStatus: "unverified" as const,
       };
+      if (index >= 2) {
+        return { ...base, content: resourceText(resource), extraction: "search_excerpt_only" };
+      }
       try {
         const document = await (dependencies?.read ?? ((target, value) => readPublicWebDocument({
           url: target,
