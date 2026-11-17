@@ -27,8 +27,8 @@ create or replace function public.approve_generated_course_draft(
 )
 returns jsonb
 language plpgsql
-security definer
-set search_path = public
+security invoker
+set search_path = public, pg_temp
 as $$
 declare
   v_draft public.generated_course_drafts%rowtype;
@@ -53,7 +53,13 @@ begin
 
   -- The API verifies the bearer token, and this transaction independently
   -- verifies the actor's current approval permission before touching data.
-  if not public.has_permission(p_approved_by, 'approve_drafts') then
+  if not exists (
+    select 1
+      from public.user_roles ur
+      join public.roles r on r.id = ur.role_id
+     where ur.user_id = p_approved_by
+       and r.permissions->>'approve_drafts' = 'true'
+  ) then
     raise exception 'approver does not have approve_drafts permission' using errcode = '42501';
   end if;
 
@@ -82,7 +88,7 @@ begin
     raise exception 'draft is not pending approval' using errcode = '55000';
   end if;
 
-  if jsonb_typeof(v_draft.draft->'lessons') <> 'array' then
+  if coalesce(jsonb_typeof(v_draft.draft->'lessons'), 'null') <> 'array' then
     raise exception 'draft lessons must be an array' using errcode = '22023';
   end if;
 
@@ -91,11 +97,10 @@ begin
     raise exception 'draft must contain between 1 and 100 lessons' using errcode = '22023';
   end if;
 
-  v_subject_name := case
-    when char_length(coalesce(v_draft.draft->>'title', '')) between 1 and 60
-      then btrim(v_draft.draft->>'title')
-    else 'Generated Course'
-  end;
+  v_subject_name := left(
+    coalesce(nullif(btrim(v_draft.draft->>'title'), ''), 'Generated Course'),
+    60
+  );
 
   select id
     into v_subject_id
