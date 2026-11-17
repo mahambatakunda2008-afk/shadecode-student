@@ -25,7 +25,7 @@ create or replace function public.approve_generated_course_draft(
   p_approved_by uuid
 ) returns jsonb
 language plpgsql
-security definer
+security invoker
 set search_path = public
 as $$
 declare
