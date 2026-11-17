@@ -63,7 +63,7 @@ begin
   if v_status = 'approved' then
     if not exists (
       select 1 from public.generated_course_approvals
-      where draft_id = p_draft_id and approved_by = p_approved_by
+      where draft_id = p_draft_id
     ) then
       raise exception 'draft_approval_audit_inconsistent' using errcode = 'P0001';
     end if;
@@ -89,8 +89,10 @@ begin
     raise exception 'invalid_course_draft' using errcode = '22023';
   end if;
 
-  if jsonb_typeof(v_draft->'lessons') <> 'array'
-     or jsonb_array_length(v_draft->'lessons') < 1
+  if jsonb_typeof(v_draft->'lessons') is distinct from 'array' then
+    raise exception 'course_draft_lessons_must_be_an_array' using errcode = '22023';
+  end if;
+  if jsonb_array_length(v_draft->'lessons') < 1
      or jsonb_array_length(v_draft->'lessons') > 50 then
     raise exception 'course_draft_must_contain_1_to_50_lessons' using errcode = '22023';
   end if;
