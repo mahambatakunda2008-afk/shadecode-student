@@ -87,7 +87,32 @@ export async function GET(req: Request) {
       }, { status: 503 });
     }
 
-    return Response.json(data ?? []);
+    const drafts = data ?? [];
+    if (isGlobalAdmin || drafts.length === 0) return Response.json(drafts);
+
+    const institutionIdsForDrafts = [...new Set(drafts
+      .map((draft: { institution_id: string | null }) => draft.institution_id)
+      .filter((id: string | null): id is string => Boolean(id)))];
+    const ownerIdsForDrafts = [...new Set(drafts.map((draft: { user_id: string }) => draft.user_id))];
+    if (!institutionIdsForDrafts.length || !ownerIdsForDrafts.length) return Response.json([]);
+
+    const { data: ownerMemberships, error: ownerMembershipsError } = await supabase
+      .from('platform_institution_members')
+      .select('institution_id, user_id')
+      .in('institution_id', institutionIdsForDrafts)
+      .in('user_id', ownerIdsForDrafts)
+      .eq('status', 'active');
+    if (ownerMembershipsError) {
+      log.cortexFailure({ stage: "get_course_drafts_owner_memberships", error: ownerMembershipsError.message, userId: viewerId });
+      return Response.json({ error: "Unable to verify draft owner institution scope.", code: "DRAFT_SCOPE_UNAVAILABLE" }, { status: 503 });
+    }
+
+    const activeOwnerMemberships = new Set((ownerMemberships ?? []).map((membership: { institution_id: string; user_id: string }) =>
+      `${membership.institution_id}:${membership.user_id}`
+    ));
+    return Response.json(drafts.filter((draft: { institution_id: string | null; user_id: string }) =>
+      Boolean(draft.institution_id && activeOwnerMemberships.has(`${draft.institution_id}:${draft.user_id}`))
+    ));
   } catch (e: any) {
     log.apiFailure({ route: "/api/cortex", method: "GET", error: e.message || String(e) });
     return Response.json({
