@@ -235,6 +235,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
         response,
         nextAction: "continue_learning",
         ...(recommendation ? { recommendation } : {}),
+        ...(wantsResearch ? { researchStatus, sources } : {}),
         updatedState: { snapshot },
       };
     }
