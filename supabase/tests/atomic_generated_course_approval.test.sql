@@ -43,6 +43,7 @@ declare
   v_unknown_prereq_draft uuid;
   v_denied_draft uuid;
   v_unscoped_draft uuid;
+  v_owner_mismatch_draft uuid;
   v_audit_failure_draft uuid;
   v_status_failure_draft uuid;
   v_global_result jsonb;
@@ -52,6 +53,7 @@ declare
   v_prerequisite_count integer;
   v_denied boolean := false;
   v_unscoped_denied boolean := false;
+  v_owner_mismatch_denied boolean := false;
   v_rollback boolean := false;
   v_unknown_prereq_failed boolean := false;
   v_audit_failed boolean := false;
@@ -117,7 +119,9 @@ begin
   returning id into v_institution;
 
   insert into public.platform_institution_members (institution_id, user_id, membership_role, status)
-  values (v_institution, v_moderator, 'administrator', 'active');
+  values
+    (v_institution, v_moderator, 'administrator', 'active'),
+    (v_institution, v_owner, 'student', 'active');
 
   execute 'set local role service_role';
 
@@ -181,6 +185,28 @@ begin
   ) returning id into v_scoped_draft;
 
   perform public.approve_generated_course_draft(v_scoped_draft, v_moderator);
+
+  -- Even a global admin cannot attach an owner who is not an active member
+  -- of the draft's institution.
+  insert into public.generated_course_drafts (user_id, institution_id, draft)
+  values (
+    v_nonmember,
+    v_institution,
+    jsonb_build_object('title', 'Atomic approval owner mismatch fixture',
+      'lessons', jsonb_build_array(jsonb_build_object('title', 'Wrong owner lesson', 'summary', 'Must roll back')))
+  ) returning id into v_owner_mismatch_draft;
+
+  begin
+    perform public.approve_generated_course_draft(v_owner_mismatch_draft, v_admin);
+  exception when insufficient_privilege then
+    v_owner_mismatch_denied := true;
+  end;
+
+  if not v_owner_mismatch_denied
+     or exists (select 1 from public.subjects where user_id = v_nonmember and name = 'Atomic approval owner mismatch fixture')
+     or exists (select 1 from public.generated_course_drafts where id = v_owner_mismatch_draft and status = 'approved') then
+    raise exception 'A draft owner outside the institution was allowed to receive course writes';
+  end if;
 
   -- A moderator cannot approve a legacy/unscoped draft, even when they are an
   -- administrator of some other institution.
