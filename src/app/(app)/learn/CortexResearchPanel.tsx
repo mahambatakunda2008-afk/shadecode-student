@@ -204,7 +204,7 @@ export default function CortexResearchPanel({
           <span>On</span>
         </label>
       </div>
-      {research && offline && <p className="mt-2 flex items-center gap-2 text-xs text-[var(--muted-foreground)]" role="status"><WifiOff size={14} /> Offline: Cortex will answer locally and skip web research.</p>}
+      {offline && <p className="mt-2 flex items-center gap-2 text-xs text-[var(--muted-foreground)]" role="status"><WifiOff size={14} /> Offline: Cortex will answer locally and skip web research.</p>}
 
       <div className="mt-4">
         <label htmlFor="cortex-question" className="mb-2 block text-sm font-semibold">Your question or topic</label>
