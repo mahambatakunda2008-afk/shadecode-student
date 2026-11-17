@@ -176,5 +176,5 @@ export async function generateCourseForUser(userToken: string, params: { topic: 
   const deduped = prereqInserts.filter(r => { const key = `${r.lesson_id}::${r.prerequisite_lesson_id}`; if (seen.has(key)) return false; seen.add(key); return true; });
   if (deduped.length) { const { error: prereqError } = await supabase.from("lesson_prerequisites").insert(deduped); if (prereqError) console.error("Failed inserting prereqs:", prereqError.message); }
   try { await supabase.from("learning_paths").upsert({ user_id: user.id, title: draft.title, description: draft.description, updated_at: new Date().toISOString() }, { onConflict: "user_id" }); } catch {}
-  return { title: draft.title, lessonsInserted: inserted.data?.length ?? 0, moderationIssues: draft.moderationIssues };
+  return { draftId: draft.draftId, title: draft.title, lessonsInserted: inserted.data?.length ?? 0, moderationIssues: draft.moderationIssues };
 }
