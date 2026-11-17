@@ -112,7 +112,7 @@ export async function POST(req: Request) {
 
       body = await req.json().catch(() => ({}));
       const validation = validateRequestBody(body, cortexApproveDraftSchema);
-      if (!validation.success) {
+      if (!validation.success || !validation.data) {
         return Response.json({
           error: 'Validation failed',
           details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })),
