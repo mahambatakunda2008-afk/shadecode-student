@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, BookOpen, ExternalLink, Globe2, Loader2, Sparkles, WifiOff } from "lucide-react";
+import { AlertCircle, BookOpen, ExternalLink, Loader2, Sparkles, WifiOff } from "lucide-react";
 
 type ResearchStatus = "not_requested" | "not_configured" | "unavailable" | "available" | "ai_unavailable";
 type Citation = {
