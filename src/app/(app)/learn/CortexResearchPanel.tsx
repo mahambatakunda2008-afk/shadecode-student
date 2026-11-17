@@ -57,11 +57,20 @@ export default function CortexResearchPanel({
   const [sources, setSources] = useState<Citation[]>([]);
   const [error, setError] = useState("");
   const controllerRef = useRef<AbortController | null>(null);
-  const currentTopicRef = useRef(topic);
+  const currentTopicRef = useRef(topic.trim());
   const currentSubjectRef = useRef(subject);
 
   useEffect(() => {
-    currentTopicRef.current = topic;
+    const nextTopic = topic.trim();
+    if (currentTopicRef.current !== nextTopic) {
+      currentTopicRef.current = nextTopic;
+      controllerRef.current?.abort();
+      setBusy(false);
+      setAnswer("");
+      setSources([]);
+      setStatus(null);
+      setError("");
+    }
   }, [topic]);
 
   useEffect(() => {
@@ -199,7 +208,7 @@ export default function CortexResearchPanel({
 
       <div className="mt-4">
         <label htmlFor="cortex-question" className="mb-2 block text-sm font-semibold">Your question or topic</label>
-        <textarea id="cortex-question" value={topic} onChange={(event) => { const value = event.target.value; currentTopicRef.current = value; clearForInputChange(); onTopicChange(value); }} maxLength={500} rows={3} placeholder="What do you want Cortex to explain?" className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" />
+        <textarea id="cortex-question" value={topic} onChange={(event) => { const value = event.target.value; currentTopicRef.current = value.trim(); clearForInputChange(); onTopicChange(value); }} maxLength={500} rows={3} placeholder="What do you want Cortex to explain?" className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <span className="text-xs text-[var(--muted-foreground)]">Subject: {subject || "Choose a subject above"}</span>
           <button type="button" onClick={() => void ask()} disabled={!token || !userId || !subject || !topic.trim() || busy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-50">
