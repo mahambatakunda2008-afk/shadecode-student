@@ -5,6 +5,7 @@ import { createResource, type ShadeNetResource } from "./content";
 const MAX_BYTES = 8 * 1024 * 1024;
 const MAX_TEXT = 40_000;
 const MAX_PDF_PAGES = 20;
+const DNS_LOOKUP_TIMEOUT_MS = 2_500;
 type Fetcher = typeof fetch;
 type Resolver = (hostname: string) => Promise<string[]>;
 
@@ -29,8 +30,18 @@ function isPrivateAddress(address: string): boolean {
 
 async function defaultResolver(hostname: string): Promise<string[]> {
   if (isIP(hostname)) return [hostname];
-  const addresses = await lookup(hostname, { all: true, verbatim: true });
-  return addresses.map((entry) => entry.address);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const addresses = await Promise.race([
+      lookup(hostname, { all: true, verbatim: true }),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("The source hostname lookup timed out.")), DNS_LOOKUP_TIMEOUT_MS);
+      }),
+    ]);
+    return addresses.map((entry) => entry.address);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 async function validatePublicUrl(value: string, resolver: Resolver): Promise<URL> {
