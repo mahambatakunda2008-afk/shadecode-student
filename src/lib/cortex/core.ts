@@ -6,7 +6,7 @@ import { getCurriculumState } from "@/lib/curriculum";
 import { curriculumSystemPromptContext, type SystemCurriculumContext } from "@/lib/curriculum/system-curriculum-context";
 import { generateRecommendation } from "./memoryTracker";
 import { executeCortexText } from "./runtime/execution";
-import { retrieveCortexKnowledge, type CortexKnowledgeSource } from "./runtime/knowledge-sources";
+import { retrieveCortexKnowledge, type CortexKnowledgeSource, type CortexKnowledgeCitation } from "./runtime/knowledge-sources";
 
 export type CortexInput = {
   userId: string;
@@ -26,7 +26,7 @@ export type CortexOutput = {
     snapshot: CortexSnapshot;
   };
   researchStatus?: "not_requested" | "not_configured" | "unavailable" | "available" | "ai_unavailable";
-  sources?: CortexKnowledgeSource[];
+  sources?: CortexKnowledgeCitation[];
 };
 
 type CortexSnapshot = {
@@ -165,7 +165,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       const wantsResearch = payload.research === true;
       let response = fallbackResponse;
       let researchStatus: CortexOutput["researchStatus"] = wantsResearch ? "unavailable" : "not_requested";
-      let sources: CortexKnowledgeSource[] = [];
+      let sources: CortexKnowledgeCitation[] = [];
       if (wantsResearch && input.curriculum) {
         const research = await retrieveCortexKnowledge({
           topic,
@@ -174,7 +174,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
           syllabus: input.curriculum?.identity.syllabusId,
         });
         researchStatus = research.status;
-        sources = research.sources;
+        sources = research.sources.map(({ content, ...source }) => ({\n          ...source,\n          excerpt: content.slice(0, 500),\n        }));
         if (research.sources.length) {
           const sourceContext = research.sources.map((source, index) => [
             `[Source ${index + 1}]`,
