@@ -5,6 +5,7 @@ import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
 import type { SystemCurriculumContext } from "@/lib/curriculum/system-curriculum-context";
 import { generateRecommendation } from "./memoryTracker";
+import { runOptionalOperation } from "./runtime/optional-operation";
 
 export type CortexInput = {
   userId: string;
@@ -156,16 +157,26 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
         subjectName,
       });
 
-      // Remember the topic for continuity, but do not treat opening an
-      // explanation as a completed session or streak event.
-      await updateMemory(input.userId, { lastTopic: topic });
-      const recommendation = await generateRecommendation(input.userId);
+      // Topic continuity, recommendations and refreshed dashboard state are
+      // enrichment. None may discard the explanation already produced.
+      await runOptionalOperation(() => updateMemory(input.userId, { lastTopic: topic }));
+      const [recommendationResult, stateResult] = await Promise.all([
+        runOptionalOperation(() => generateRecommendation(input.userId)),
+        runOptionalOperation(() => outputState(input.userId)),
+      ]);
+
+      if (!recommendationResult.ok) {
+        console.warn("[cortex] optional learn recommendation unavailable");
+      }
+      if (!stateResult.ok) {
+        console.warn("[cortex] optional learn state refresh unavailable");
+      }
 
       return {
         response,
         nextAction: "continue_learning",
-        recommendation,
-        updatedState: await outputState(input.userId),
+        ...(recommendationResult.ok ? { recommendation: recommendationResult.value } : {}),
+        ...(stateResult.ok ? { updatedState: stateResult.value } : {}),
       };
     }
 
