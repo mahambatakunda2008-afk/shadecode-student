@@ -28,15 +28,58 @@ export async function GET(req: Request) {
     const permissionCheck = await requirePermission(req, 'approve_drafts');
     if (permissionCheck) return permissionCheck;
 
+    const viewerId = await getUserIdFromRequest(req);
+    if (!viewerId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('user_roles')
+      .select('role_id')
+      .eq('user_id', viewerId);
+    if (assignmentsError) {
+      log.cortexFailure({ stage: "get_course_drafts_roles", error: assignmentsError.message, userId: viewerId });
+      return Response.json({ error: "Unable to verify draft access scope.", code: "DRAFT_SCOPE_UNAVAILABLE" }, { status: 503 });
+    }
+
+    const roleIds = (assignments ?? []).map((assignment: { role_id: string }) => assignment.role_id);
+    const { data: roles, error: rolesError } = roleIds.length
+      ? await supabase.from('roles').select('name, permissions').in('id', roleIds)
+      : { data: [], error: null };
+    if (rolesError) {
+      log.cortexFailure({ stage: "get_course_drafts_roles", error: rolesError.message, userId: viewerId });
+      return Response.json({ error: "Unable to verify draft access scope.", code: "DRAFT_SCOPE_UNAVAILABLE" }, { status: 503 });
+    }
+
+    const isGlobalAdmin = (roles ?? []).some((role: { name: string; permissions: Record<string, unknown> | null }) =>
+      role.name === 'admin' && role.permissions?.approve_drafts === true
+    );
+
+    let query = supabase
       .from('generated_course_drafts')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(200);
 
+    if (!isGlobalAdmin) {
+      const { data: memberships, error: membershipsError } = await supabase
+        .from('platform_institution_members')
+        .select('institution_id')
+        .eq('user_id', viewerId)
+        .eq('membership_role', 'administrator')
+        .eq('status', 'active');
+      if (membershipsError) {
+        log.cortexFailure({ stage: "get_course_drafts_memberships", error: membershipsError.message, userId: viewerId });
+        return Response.json({ error: "Unable to verify institution draft access.", code: "DRAFT_SCOPE_UNAVAILABLE" }, { status: 503 });
+      }
+
+      const institutionIds = (memberships ?? []).map((membership: { institution_id: string }) => membership.institution_id);
+      if (!institutionIds.length) return Response.json([]);
+      query = query.in('institution_id', institutionIds);
+    }
+
+    const { data, error } = await query;
     if (error) {
-      log.cortexFailure({ stage: "get_course_drafts", error: error.message });
+      log.cortexFailure({ stage: "get_course_drafts", error: error.message, userId: viewerId });
       return Response.json({
         error: "Draft storage is unavailable. No temporary filesystem copy will be used.",
         code: "DRAFT_STORAGE_UNAVAILABLE",
