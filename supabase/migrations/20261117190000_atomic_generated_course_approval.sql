@@ -184,10 +184,14 @@ begin
       else 'easy'
     end;
 
-    v_blocks := case
-      when jsonb_typeof(v_lesson->'blocks') = 'array' then v_lesson->'blocks'
-      else jsonb_build_array(jsonb_build_object('type', 'text', 'content', left(v_summary, 8000)))
-    end;
+    if jsonb_typeof(v_lesson->'blocks') = 'array'
+       and jsonb_array_length(v_lesson->'blocks') > 0 then
+      v_blocks := v_lesson->'blocks';
+    elsif nullif(btrim(v_summary), '') is not null then
+      v_blocks := jsonb_build_array(jsonb_build_object('type', 'text', 'content', left(v_summary, 8000)));
+    else
+      raise exception 'lesson % needs content blocks or a non-empty summary', v_title using errcode = '22023';
+    end if;
 
     insert into public.learn_lessons (
       user_id, subject_id, title, description, difficulty, blocks, progress
