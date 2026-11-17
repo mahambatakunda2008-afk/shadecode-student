@@ -41,6 +41,7 @@ declare
   v_scoped_draft uuid;
   v_rollback_draft uuid;
   v_denied_draft uuid;
+  v_unscoped_draft uuid;
   v_audit_failure_draft uuid;
   v_status_failure_draft uuid;
   v_global_result jsonb;
@@ -49,6 +50,7 @@ declare
   v_lesson_count integer;
   v_prerequisite_count integer;
   v_denied boolean := false;
+  v_unscoped_denied boolean := false;
   v_rollback boolean := false;
   v_audit_failed boolean := false;
   v_status_failed boolean := false;
@@ -160,8 +162,11 @@ begin
   if not exists (
     select 1 from public.generated_course_drafts
      where id = v_global_draft and status = 'approved' and approved_by = v_admin
+  ) or not exists (
+    select 1 from public.generated_course_approvals
+     where draft_id = v_global_draft and approved_by = v_admin
   ) then
-    raise exception 'Draft status and approver were not committed with the course';
+    raise exception 'Draft status and approval audit actor were not committed with the course';
   end if;
 
   -- A moderator must be an active administrator of the draft's explicit institution.
@@ -174,6 +179,27 @@ begin
   ) returning id into v_scoped_draft;
 
   perform public.approve_generated_course_draft(v_scoped_draft, v_moderator);
+
+  -- A moderator cannot approve a legacy/unscoped draft, even when they are an
+  -- administrator of some other institution.
+  insert into public.generated_course_drafts (user_id, draft)
+  values (
+    v_owner,
+    jsonb_build_object('title', 'Atomic approval unscoped moderator fixture',
+      'lessons', jsonb_build_array(jsonb_build_object('title', 'Must remain pending', 'summary', 'Unscoped draft content')))
+  ) returning id into v_unscoped_draft;
+
+  begin
+    perform public.approve_generated_course_draft(v_unscoped_draft, v_moderator);
+  exception when insufficient_privilege then
+    v_unscoped_denied := true;
+  end;
+
+  if not v_unscoped_denied
+     or exists (select 1 from public.subjects where user_id = v_owner and name = 'Atomic approval unscoped moderator fixture')
+     or exists (select 1 from public.generated_course_drafts where id = v_unscoped_draft and status = 'approved') then
+    raise exception 'A moderator was allowed to approve an unscoped legacy draft';
+  end if;
 
   -- A moderator with the same global permission but no active membership cannot approve.
   insert into public.generated_course_drafts (user_id, institution_id, draft)
