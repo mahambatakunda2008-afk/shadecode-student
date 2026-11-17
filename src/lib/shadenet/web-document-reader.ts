@@ -28,20 +28,28 @@ function isPrivateAddress(address: string): boolean {
   return true;
 }
 
-async function defaultResolver(hostname: string): Promise<string[]> {
+export async function resolvePublicHostname(
+  hostname: string,
+  lookupHost: (value: string) => Promise<Array<{ address: string }>> = (value) => lookup(value, { all: true, verbatim: true }),
+  timeoutMs = DNS_LOOKUP_TIMEOUT_MS,
+): Promise<string[]> {
   if (isIP(hostname)) return [hostname];
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const addresses = await Promise.race([
-      lookup(hostname, { all: true, verbatim: true }),
+      lookupHost(hostname),
       new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error("The source hostname lookup timed out.")), DNS_LOOKUP_TIMEOUT_MS);
+        timer = setTimeout(() => reject(new Error("The source hostname lookup timed out.")), timeoutMs);
       }),
     ]);
     return addresses.map((entry) => entry.address);
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+async function defaultResolver(hostname: string): Promise<string[]> {
+  return resolvePublicHostname(hostname);
 }
 
 async function validatePublicUrl(value: string, resolver: Resolver): Promise<URL> {
