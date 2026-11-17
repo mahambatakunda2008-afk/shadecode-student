@@ -31,8 +31,7 @@ function resourceText(resource: ShadeNetResource): string {
   const value = content as Record<string, unknown>;
   return [value.text, value.pageText, value.snippet]
     .filter((part): part is string => typeof part === "string")
-    .join("
-")
+    .join("\n")
     .slice(0, 8_000);
 }
 
