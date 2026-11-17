@@ -148,7 +148,14 @@ begin
   for v_lesson in
     select value from jsonb_array_elements(v_lessons)
   loop
+    if jsonb_typeof(v_lesson) <> 'object' then
+      raise exception 'each generated lesson must be an object' using errcode = '22023';
+    end if;
+
     v_summary := coalesce(v_lesson->>'summary', '');
+    if nullif(btrim(v_lesson->>'title'), '') is null and nullif(btrim(v_summary), '') is null then
+      raise exception 'each generated lesson needs a title or summary' using errcode = '22023';
+    end if;
     v_title := left(coalesce(nullif(btrim(v_lesson->>'title'), ''), nullif(btrim(v_summary), ''), 'Untitled'), 255);
     if v_lesson_ids ? v_title then
       raise exception 'lesson titles must be unique within a generated course' using errcode = '22023';
