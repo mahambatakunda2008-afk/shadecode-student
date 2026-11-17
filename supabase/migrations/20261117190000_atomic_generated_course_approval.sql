@@ -125,6 +125,10 @@ begin
     raise exception 'draft must contain between 1 and 100 lessons' using errcode = '22023';
   end if;
 
+  -- Serialize approvals for one learner so separate drafts cannot race while
+  -- resolving or creating the same subject.
+  perform pg_advisory_xact_lock(hashtextextended(v_draft.user_id::text, 0));
+
   v_subject_name := left(
     coalesce(nullif(btrim(v_draft.draft->>'title'), ''), 'Generated Course'),
     60
@@ -157,8 +161,8 @@ begin
       raise exception 'each generated lesson needs a title or summary' using errcode = '22023';
     end if;
     v_title := left(coalesce(nullif(btrim(v_lesson->>'title'), ''), nullif(btrim(v_summary), ''), 'Untitled'), 255);
-    if v_lesson_ids ? v_title then
-      raise exception 'lesson titles must be unique within a generated course' using errcode = '22023';
+    if v_lesson_ids ? lower(v_title) then
+      raise exception 'lesson titles must be unique within a generated course (case-insensitive)' using errcode = '22023';
     end if;
 
     v_difficulty := case
@@ -184,7 +188,7 @@ begin
     )
     returning id into v_lesson_id;
 
-    v_lesson_ids := v_lesson_ids || jsonb_build_object(v_title, v_lesson_id::text);
+    v_lesson_ids := v_lesson_ids || jsonb_build_object(lower(v_title), v_lesson_id::text);
     v_lesson_count := v_lesson_count + 1;
   end loop;
 
@@ -195,23 +199,27 @@ begin
   loop
     v_summary := coalesce(v_lesson->>'summary', '');
     v_title := left(coalesce(nullif(btrim(v_lesson->>'title'), ''), nullif(btrim(v_summary), ''), 'Untitled'), 255);
-    v_lesson_id := (v_lesson_ids->>v_title)::uuid;
+    v_lesson_id := (v_lesson_ids->>lower(v_title))::uuid;
 
     if jsonb_typeof(v_lesson->'prerequisites') = 'array' then
       for v_prerequisite_title in
         select value from jsonb_array_elements_text(v_lesson->'prerequisites')
       loop
-        v_prerequisite_id := (v_lesson_ids->>left(btrim(v_prerequisite_title), 255))::uuid;
-        if v_prerequisite_id is not null and v_prerequisite_id <> v_lesson_id then
-          insert into public.lesson_prerequisites (lesson_id, prerequisite_lesson_id)
-          values (v_lesson_id, v_prerequisite_id)
-          on conflict (lesson_id, prerequisite_lesson_id) do nothing;
+        v_prerequisite_id := (v_lesson_ids->>lower(left(btrim(v_prerequisite_title), 255)))::uuid;
+        if v_prerequisite_id is null then
+          raise exception 'unknown prerequisite % for lesson %', v_prerequisite_title, v_title using errcode = '22023';
         end if;
+        if v_prerequisite_id = v_lesson_id then
+          raise exception 'lesson % cannot be its own prerequisite', v_title using errcode = '22023';
+        end if;
+        insert into public.lesson_prerequisites (lesson_id, prerequisite_lesson_id)
+        values (v_lesson_id, v_prerequisite_id)
+        on conflict (lesson_id, prerequisite_lesson_id) do nothing;
       end loop;
     end if;
   end loop;
 
-  v_result := jsonb_build_object('lessonsInserted', v_lesson_count);
+  v_result := jsonb_build_object('lessonsInserted', v_lesson_count, 'subjectId', v_subject_id);
 
   insert into public.generated_course_approvals (draft_id, approved_by, notes)
   values (p_draft_id, p_approved_by, jsonb_build_object('source', 'admin_api', 'transactional', true));
