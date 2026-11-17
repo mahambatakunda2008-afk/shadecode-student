@@ -156,16 +156,28 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
         subjectName,
       });
 
-      // Remember the topic for continuity, but do not treat opening an
-      // explanation as a completed session or streak event.
-      await updateMemory(input.userId, { lastTopic: topic });
-      const recommendation = await generateRecommendation(input.userId);
+      // The explanation is the primary result. Memory continuity and a next-step
+      // recommendation are optional enrichment: neither may turn a valid answer
+      // into a failed request. The initial snapshot is already available and is
+      // returned without a second round of dependent reads.
+      try {
+        await updateMemory(input.userId, { lastTopic: topic });
+      } catch (error) {
+        console.error("[cortex] topic continuity update failed; preserving tutoring response:", error);
+      }
+
+      let recommendation: string | undefined;
+      try {
+        recommendation = await generateRecommendation(input.userId);
+      } catch (error) {
+        console.error("[cortex] recommendation unavailable; preserving tutoring response:", error);
+      }
 
       return {
         response,
         nextAction: "continue_learning",
-        recommendation,
-        updatedState: await outputState(input.userId),
+        ...(recommendation ? { recommendation } : {}),
+        updatedState: { snapshot },
       };
     }
 

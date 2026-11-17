@@ -69,6 +69,26 @@ describe("CortexCore learning requests", () => {
     vi.mocked(generateRecommendation).mockResolvedValue("Continue with your next topic.");
   });
 
+  it("returns the tutoring answer when optional memory persistence fails", async () => {
+    vi.mocked(updateMemory).mockRejectedValueOnce(new Error("temporary storage failure"));
+
+    const result = await CortexCore({ userId: "learner-1", type: "learn", payload: { topic: "Photosynthesis" } });
+
+    expect(result.response).toBe("A tutoring response.");
+    expect(result.nextAction).toBe("continue_learning");
+    expect(result.updatedState?.snapshot.level).toBe(1);
+  });
+
+  it("returns the tutoring answer when recommendation enrichment fails", async () => {
+    vi.mocked(generateRecommendation).mockRejectedValueOnce(new Error("recommendation unavailable"));
+
+    const result = await CortexCore({ userId: "learner-1", type: "learn", payload: { topic: "Photosynthesis" } });
+
+    expect(result.response).toBe("A tutoring response.");
+    expect(result.recommendation).toBeUndefined();
+    expect(result.updatedState?.snapshot.level).toBe(1);
+  });
+
   it("does not count a tutoring request as a completed study session", async () => {
     await CortexCore({
       userId: "learner-1",
