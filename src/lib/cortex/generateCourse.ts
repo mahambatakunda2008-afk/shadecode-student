@@ -151,7 +151,7 @@ Before returning, silently verify that the sequence forms a coherent learning jo
   return { ...normalized, draftId: persistedDraft.id, moderationIssues };
 }
 
-export async function generateCourseForUser(userToken: string, params: { topic: string; goal: string; level?: string }) {
+export async function generateCourseForUser(userToken: string, params: { topic: string; goal: string; level?: string; institutionId?: string | null }) {
   const draft = await generateCourseDraft(userToken, params);
   const supabase = getSupabaseAdmin();
   const { data: { user }, error } = await supabase.auth.getUser(userToken);
