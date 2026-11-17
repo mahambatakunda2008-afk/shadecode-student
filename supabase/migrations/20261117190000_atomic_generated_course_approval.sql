@@ -53,6 +53,9 @@ declare
   v_prerequisite_title text;
   v_prerequisite_id uuid;
   v_lesson_ids jsonb := '{}'::jsonb;
+  v_lesson_titles text[] := array[]::text[];
+  v_lesson_index integer;
+  v_prerequisite_index integer;
   v_lesson_count integer := 0;
   v_result jsonb;
   v_has_approval_permission boolean;
@@ -207,13 +210,15 @@ begin
     returning id into v_lesson_id;
 
     v_lesson_ids := v_lesson_ids || jsonb_build_object(lower(v_title), v_lesson_id::text);
+    v_lesson_titles := array_append(v_lesson_titles, lower(v_title));
     v_lesson_count := v_lesson_count + 1;
   end loop;
 
   -- Second pass: link prerequisites only when both titles resolve to lessons
   -- created in this same transaction. Unknown or self-referential links abort the transaction.
-  for v_lesson in
-    select value from jsonb_array_elements(v_lessons)
+  for v_lesson, v_lesson_index in
+    select value, ordinality::integer
+      from jsonb_array_elements(v_lessons) with ordinality
   loop
     v_summary := coalesce(v_lesson->>'summary', '');
     v_title := left(coalesce(nullif(btrim(v_lesson->>'title'), ''), nullif(btrim(v_summary), ''), 'Untitled'), 255);
@@ -223,12 +228,16 @@ begin
       for v_prerequisite_title in
         select value from jsonb_array_elements_text(v_lesson->'prerequisites')
       loop
+        v_prerequisite_index := array_position(v_lesson_titles, lower(left(btrim(v_prerequisite_title), 255)));
+        if v_prerequisite_index is null then
+          raise exception 'unknown prerequisite % for lesson %', v_prerequisite_title, v_title using errcode = '22023';
+        end if;
+        if v_prerequisite_index >= v_lesson_index then
+          raise exception 'prerequisite % must appear before lesson %', v_prerequisite_title, v_title using errcode = '22023';
+        end if;
         v_prerequisite_id := (v_lesson_ids->>lower(left(btrim(v_prerequisite_title), 255)))::uuid;
         if v_prerequisite_id is null then
           raise exception 'unknown prerequisite % for lesson %', v_prerequisite_title, v_title using errcode = '22023';
-        end if;
-        if v_prerequisite_id = v_lesson_id then
-          raise exception 'lesson % cannot be its own prerequisite', v_title using errcode = '22023';
         end if;
         insert into public.lesson_prerequisites (lesson_id, prerequisite_lesson_id)
         values (v_lesson_id, v_prerequisite_id)
