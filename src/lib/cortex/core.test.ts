@@ -112,6 +112,20 @@ describe("CortexCore learning requests", () => {
     expect(executeCortexText).not.toHaveBeenCalled();
   });
 
+
+  it("does not search the web without a verified curriculum context", async () => {
+    const result = await CortexCore({
+      userId: "learner-1",
+      type: "learn",
+      payload: { topic: "Photosynthesis", research: true },
+    });
+
+    expect(result.response).toBe("A tutoring response.");
+    expect(result.researchStatus).toBe("unavailable");
+    expect(result.sources).toEqual([]);
+    expect(retrieveCortexKnowledge).not.toHaveBeenCalled();
+  });
+
   it("uses retrieved sources for AI synthesis and returns their provenance separately", async () => {
     const sources = [{
       title: "Photosynthesis reference",
