@@ -54,12 +54,13 @@ describe("Cortex Learn research panel", () => {
         subject="Physics"
         topic="Waves"
         onTopicChange={() => undefined}
-        token="session-token"
-        userId="00000000-0000-4000-8000-000000000001"
+        token={null}
+        userId={null}
         offline
       />,
     );
 
     expect(html).toContain("Offline: Cortex will answer locally and skip web research.");
+    expect(html).not.toContain('aria-label="Enable online research for this Cortex question" disabled');
   });
 });
