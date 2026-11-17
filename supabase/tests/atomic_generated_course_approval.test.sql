@@ -2,24 +2,35 @@
 -- Exercises transaction rollback, owner-scoped writes, institution authorization and replay idempotency.
 begin;
 
-create function pg_temp.reject_course_approval_audit()
-returns trigger language plpgsql as $
+create function public.test_atomic_course_approval_fail_audit()
+returns trigger language plpgsql as $fn$
 begin
-  raise exception 'injected course approval audit failure';
+  if current_setting('app.test_fail_course_audit', true) = 'on' then
+    raise exception 'injected course approval audit failure';
+  end if;
+  return new;
 end;
-$;
+$fn$;
 
-create function pg_temp.reject_course_draft_approval_update()
-returns trigger language plpgsql as $
+create function public.test_atomic_course_approval_fail_status()
+returns trigger language plpgsql as $fn$
 begin
-  if new.status = 'approved' then
+  if new.status = 'approved' and current_setting('app.test_fail_course_status', true) = 'on' then
     raise exception 'injected course draft status update failure';
   end if;
   return new;
 end;
-$;
+$fn$;
 
-do $
+create trigger test_atomic_course_approval_audit_failure
+before insert on public.generated_course_approvals
+for each row execute function public.test_atomic_course_approval_fail_audit();
+
+create trigger test_atomic_course_approval_status_failure
+before update of status on public.generated_course_drafts
+for each row execute function public.test_atomic_course_approval_fail_status();
+
+do $test$
 declare
   v_admin uuid;
   v_moderator uuid;
@@ -193,8 +204,8 @@ begin
     raise exception 'Denied approval left partial writes';
   end if;
 
-  -- Duplicate lesson titles fail after subject creation would have begun.
-  -- The nested exception block must roll back the subject and every lesson write.
+  -- Duplicate lesson titles fail after subject creation and the first lesson insert.
+  -- The exception subtransaction must roll back the subject and every lesson write.
   v_subject_name := 'Atomic approval rollback fixture';
   insert into public.generated_course_drafts (user_id, draft)
   values (
@@ -222,8 +233,7 @@ begin
     raise exception 'Failed approval did not roll back all side effects';
   end if;
 
-  -- Inject an audit-write failure after the subject, lessons and prerequisite
-  -- rows have been inserted. Every earlier write must roll back.
+  -- Inject an audit-write failure after the subject and lesson have been inserted.
   v_subject_name := 'Atomic approval audit failure fixture';
   insert into public.generated_course_drafts (user_id, draft)
   values (
@@ -234,13 +244,13 @@ begin
       ))
   ) returning id into v_audit_failure_draft;
 
-  execute 'create trigger test_fail_course_approval_audit before insert on public.generated_course_approvals for each row execute function pg_temp.reject_course_approval_audit()';
+  perform set_config('app.test_fail_course_audit', 'on', true);
   begin
     perform public.approve_generated_course_draft(v_audit_failure_draft, v_admin);
   exception when raise_exception then
     v_audit_failed := true;
   end;
-  execute 'drop trigger test_fail_course_approval_audit on public.generated_course_approvals';
+  perform set_config('app.test_fail_course_audit', 'off', true);
 
   if not v_audit_failed
      or exists (select 1 from public.subjects where user_id = v_owner and name = v_subject_name)
@@ -249,8 +259,8 @@ begin
     raise exception 'Audit failure did not roll back the complete course approval';
   end if;
 
-  -- Inject a failure after the approval audit insert. The audit, subject,
-  -- lessons and status must still commit or roll back as one unit.
+  -- Inject a failure after the approval audit insert. The audit and course
+  -- rows must still commit or roll back as one unit.
   v_subject_name := 'Atomic approval status failure fixture';
   insert into public.generated_course_drafts (user_id, draft)
   values (
@@ -261,13 +271,13 @@ begin
       ))
   ) returning id into v_status_failure_draft;
 
-  execute 'create trigger test_fail_course_draft_approval_update before update of status on public.generated_course_drafts for each row execute function pg_temp.reject_course_draft_approval_update()';
+  perform set_config('app.test_fail_course_status', 'on', true);
   begin
     perform public.approve_generated_course_draft(v_status_failure_draft, v_admin);
   exception when raise_exception then
     v_status_failed := true;
   end;
-  execute 'drop trigger test_fail_course_draft_approval_update on public.generated_course_drafts';
+  perform set_config('app.test_fail_course_status', 'off', true);
 
   if not v_status_failed
      or exists (select 1 from public.subjects where user_id = v_owner and name = v_subject_name)
@@ -276,6 +286,6 @@ begin
     raise exception 'Status update failure did not roll back the approval audit and course rows';
   end if;
 end
-$;
+$test$;
 
 rollback;
