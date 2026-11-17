@@ -62,8 +62,31 @@ begin
     raise exception 'draft id and approver are required' using errcode = '22004';
   end if;
 
+  select *
+    into v_draft
+    from public.generated_course_drafts
+   where id = p_draft_id
+   for update;
+
+  if not found then
+    raise exception 'generated course draft not found' using errcode = 'P0002';
+  end if;
+
+  -- Check the draft owner's institution relationship as well as the approver's.
+  -- A global administrator can approve across institutions, but cannot attach a
+  -- learner who is not an active member of the draft's institution.
+  if v_draft.institution_id is not null and not exists (
+    select 1
+      from public.platform_institution_members owner_membership
+     where owner_membership.institution_id = v_draft.institution_id
+       and owner_membership.user_id = v_draft.user_id
+       and owner_membership.status = 'active'
+  ) then
+    raise exception 'draft owner is not an active member of this institution' using errcode = '42501';
+  end if;
+
   -- The API verifies the bearer token, and this transaction independently
-  -- verifies the actor's current approval permission before touching data.
+  -- verifies the actor's current approval permission after locking the draft.
   select
     coalesce(bool_or(r.permissions->>'approve_drafts' = 'true'), false),
     coalesce(bool_or(r.name = 'admin' and r.permissions->>'approve_drafts' = 'true'), false)
@@ -74,16 +97,6 @@ begin
 
   if not v_has_approval_permission then
     raise exception 'approver does not have approve_drafts permission' using errcode = '42501';
-  end if;
-
-  select *
-    into v_draft
-    from public.generated_course_drafts
-   where id = p_draft_id
-   for update;
-
-  if not found then
-    raise exception 'generated course draft not found' using errcode = 'P0002';
   end if;
 
   if v_draft.institution_id is null then
@@ -106,8 +119,9 @@ begin
     if not exists (
       select 1 from public.generated_course_approvals
        where draft_id = p_draft_id
+         and approved_by = v_draft.approved_by
     ) then
-      raise exception 'draft is marked approved without an approval audit record' using errcode = '55000';
+      raise exception 'draft is marked approved without a matching approval audit record' using errcode = '55000';
     end if;
     return coalesce(v_draft.result, '{}'::jsonb) || jsonb_build_object('alreadyApproved', true);
   end if;
@@ -193,7 +207,7 @@ begin
   end loop;
 
   -- Second pass: link prerequisites only when both titles resolve to lessons
-  -- created in this same transaction. Unknown references are ignored, not guessed.
+  -- created in this same transaction. Unknown or self-referential links abort the transaction.
   for v_lesson in
     select value from jsonb_array_elements(v_lessons)
   loop
