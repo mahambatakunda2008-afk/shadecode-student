@@ -1,9 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
-import { readPublicWebDocument } from "../web-document-reader";
+import { readPublicWebDocument, resolvePublicHostname } from "../web-document-reader";
 
 const publicResolver = async () => ["93.184.216.34"];
 
 describe("public web document reader", () => {
+
+  it("bounds DNS resolution when a hostname lookup never settles", async () => {
+    const neverResolves = () => new Promise<Array<{ address: string }>>(() => undefined);
+    await expect(resolvePublicHostname("slow.example.org", neverResolves, 10))
+      .rejects.toThrow("hostname lookup timed out");
+  });
+
   it("extracts readable text from HTML and preserves provenance", async () => {
     const html = "<html><head><title>Wave motion</title><script>tracking()</script></head><body><nav>Menu</nav><main><h1>Wave motion</h1><p>Waves transfer energy from one place to another without transferring matter overall. This is a sufficiently long educational paragraph.</p></main></body></html>";
     const fetcher = vi.fn(async () => new Response(html, { status: 200, headers: { "content-type": "text/html" } }));
