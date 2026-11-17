@@ -61,6 +61,10 @@ export default function CortexResearchPanel({
   const currentSubjectRef = useRef(subject);
 
   useEffect(() => {
+    currentTopicRef.current = topic;
+  }, [topic]);
+
+  useEffect(() => {
     currentSubjectRef.current = subject;
     controllerRef.current?.abort();
     setBusy(false);
