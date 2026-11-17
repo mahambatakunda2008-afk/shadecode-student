@@ -33,6 +33,7 @@ import { getMemory, updateMemory } from "./memory";
 import { resolveAuthenticatedCortexStudentContext } from "./student-context";
 import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
+import { buildSystemCurriculumContext } from "@/lib/curriculum/system-curriculum-context";
 import {
   generateRecommendation,
   trackExamResult,
@@ -102,7 +103,7 @@ describe("CortexCore learning requests", () => {
     const result = await CortexCore({
       userId: "learner-1",
       type: "learn",
-      curriculum: { identity: { boardId: "cambridge", qualificationId: "AS", syllabusId: "9700", syllabusVersion: "2025-2027", subjectId: "biology" } } as any,
+      curriculum: buildSystemCurriculumContext({ boardId: "cambridge", qualificationId: "AS", level: "AS", syllabusId: "9700", syllabusVersion: "2025-2027", subjectId: "biology" }, []),
       payload: { topic: "Photosynthesis", subjectName: "Biology", research: true },
     });
 
@@ -142,7 +143,7 @@ describe("CortexCore learning requests", () => {
     const result = await CortexCore({
       userId: "learner-1",
       type: "learn",
-      curriculum: { identity: { boardId: "cambridge", qualificationId: "AS", syllabusId: "9700", syllabusVersion: "2025-2027", subjectId: "biology" } } as any,
+      curriculum: buildSystemCurriculumContext({ boardId: "cambridge", qualificationId: "AS", level: "AS", syllabusId: "9700", syllabusVersion: "2025-2027", subjectId: "biology" }, []),
       payload: { topic: "Photosynthesis", subjectName: "Biology", research: true },
     });
 
@@ -174,7 +175,7 @@ describe("CortexCore learning requests", () => {
     const result = await CortexCore({
       userId: "learner-1",
       type: "learn",
-      curriculum: { identity: { boardId: "cambridge", qualificationId: "AS", syllabusId: "9700", syllabusVersion: "2025-2027", subjectId: "biology" } } as any,
+      curriculum: buildSystemCurriculumContext({ boardId: "cambridge", qualificationId: "AS", level: "AS", syllabusId: "9700", syllabusVersion: "2025-2027", subjectId: "biology" }, []),
       payload: { topic: "Photosynthesis", research: true },
     });
 
