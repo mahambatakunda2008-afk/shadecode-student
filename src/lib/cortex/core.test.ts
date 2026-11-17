@@ -149,7 +149,16 @@ describe("CortexCore learning requests", () => {
 
     expect(result.response).toBe("Chlorophyll absorbs light energy.");
     expect(result.researchStatus).toBe("available");
-    expect(result.sources).toEqual(sources);
+    expect(result.sources).toEqual([{
+      title: "Photosynthesis reference",
+      url: "https://example.org/photosynthesis",
+      publisher: "Example publisher",
+      retrievedAt: "2026-11-17T00:00:00.000Z",
+      verificationStatus: "unverified",
+      extraction: "independently_fetched",
+      excerpt: "Chlorophyll absorbs light energy used in photosynthesis.",
+    }]);
+    expect(result.sources?.[0]).not.toHaveProperty("content");
     expect(executeCortexText).toHaveBeenCalledWith(
       expect.stringContaining("UNVERIFIED"),
       700,
@@ -182,6 +191,8 @@ describe("CortexCore learning requests", () => {
     expect(result.response).toBe("A tutoring response.");
     expect(result.researchStatus).toBe("ai_unavailable");
     expect(result.sources).toHaveLength(1);
+    expect(result.sources?.[0]).toMatchObject({ excerpt: "A useful excerpt.", verificationStatus: "unverified" });
+    expect(result.sources?.[0]).not.toHaveProperty("content");
   });
 
   it("does not start online retrieval unless the learner explicitly requests it", async () => {
