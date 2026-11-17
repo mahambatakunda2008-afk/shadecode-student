@@ -13,7 +13,9 @@ export type CortexKnowledgeSource = {
   extraction: "independently_fetched" | "search_excerpt_only";
 };
 
-export type CortexKnowledgeCitation = Omit<CortexKnowledgeSource, "content"> & { excerpt: string };\n\nexport type CortexKnowledgeResult = {
+export type CortexKnowledgeCitation = Omit<CortexKnowledgeSource, "content"> & { excerpt: string };
+
+export type CortexKnowledgeResult = {
   status: "available" | "unavailable" | "not_configured";
   sources: CortexKnowledgeSource[];
 };
@@ -29,7 +31,8 @@ function resourceText(resource: ShadeNetResource): string {
   const value = content as Record<string, unknown>;
   return [value.text, value.pageText, value.snippet]
     .filter((part): part is string => typeof part === "string")
-    .join("\n")
+    .join("
+")
     .slice(0, 8_000);
 }
 
