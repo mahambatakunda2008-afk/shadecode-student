@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("./runtime/execution", () => ({ executeCortexText: vi.fn() }));\n\nvi.mock("./runtime/knowledge-sources", () => ({ retrieveCortexKnowledge: vi.fn() }));\n\nvi.mock("./memory", () => ({
+vi.mock("./runtime/execution", () => ({ executeCortexText: vi.fn() }));
+
+vi.mock("./runtime/knowledge-sources", () => ({ retrieveCortexKnowledge: vi.fn() }));
+
+vi.mock("./memory", () => ({
   getMemory: vi.fn(),
   updateMemory: vi.fn(),
 }));
@@ -35,7 +39,9 @@ import {
   trackStudySession,
   updateStreak,
 } from "./memoryTracker";
-import { CortexCore } from "./core";\nimport { executeCortexText } from "./runtime/execution";\nimport { retrieveCortexKnowledge } from "./runtime/knowledge-sources";
+import { CortexCore } from "./core";
+import { executeCortexText } from "./runtime/execution";
+import { retrieveCortexKnowledge } from "./runtime/knowledge-sources";
 
 const memory = {
   level: 1,
@@ -66,7 +72,9 @@ describe("CortexCore learning requests", () => {
     vi.mocked(resolveAuthenticatedCortexStudentContext).mockRejectedValue(new Error("No session context in this unit test."));
     vi.mocked(generateTutoringResponse).mockResolvedValue("A tutoring response.");
     vi.mocked(getCurriculumState).mockRejectedValue(new Error("Curriculum is not needed in this unit test."));
-    vi.mocked(generateRecommendation).mockResolvedValue("Continue with your next topic.");\n    vi.mocked(executeCortexText).mockResolvedValue(null);\n    vi.mocked(retrieveCortexKnowledge).mockResolvedValue({ status: "not_configured", sources: [] });
+    vi.mocked(generateRecommendation).mockResolvedValue("Continue with your next topic.");
+    vi.mocked(executeCortexText).mockResolvedValue(null);
+    vi.mocked(retrieveCortexKnowledge).mockResolvedValue({ status: "not_configured", sources: [] });
   });
 
   it("returns the tutoring answer when optional memory persistence fails", async () => {
@@ -168,7 +176,8 @@ describe("CortexCore learning requests", () => {
     expect(result.researchStatus).toBeUndefined();
     expect(retrieveCortexKnowledge).not.toHaveBeenCalled();
   });
-\n  it("does not count a tutoring request as a completed study session", async () => {
+
+  it("does not count a tutoring request as a completed study session", async () => {
     await CortexCore({
       userId: "learner-1",
       type: "learn",
