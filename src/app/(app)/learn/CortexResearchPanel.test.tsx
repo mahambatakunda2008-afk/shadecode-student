@@ -61,6 +61,6 @@ describe("Cortex Learn research panel", () => {
     );
 
     expect(html).toContain("Offline: Cortex will answer locally and skip web research.");
-    expect(html).not.toContain('aria-label="Enable online research for this Cortex question" disabled');
+    expect(html).not.toMatch(/<button[^>]*disabled/);
   });
 });
