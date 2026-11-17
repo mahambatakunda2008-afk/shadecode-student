@@ -43,6 +43,7 @@ declare
   v_scoped_draft uuid;
   v_rollback_draft uuid;
   v_unknown_prereq_draft uuid;
+  v_forward_prereq_draft uuid;
   v_denied_draft uuid;
   v_unscoped_draft uuid;
   v_owner_mismatch_draft uuid;
@@ -59,6 +60,7 @@ declare
   v_owner_mismatch_denied boolean := false;
   v_rollback boolean := false;
   v_unknown_prereq_failed boolean := false;
+  v_forward_prereq_failed boolean := false;
   v_audit_failed boolean := false;
   v_status_failed boolean := false;
   v_subject_name text;
@@ -346,6 +348,32 @@ begin
      or exists (select 1 from public.generated_course_approvals where draft_id = v_unknown_prereq_draft)
      or exists (select 1 from public.generated_course_drafts where id = v_unknown_prereq_draft and status = 'approved') then
     raise exception 'Unknown prerequisite did not abort and roll back the course approval';
+  end if;
+
+  -- Forward references would permit circular or ill-ordered learning paths.
+  -- The approval transaction requires every prerequisite to precede its lesson.
+  v_subject_name := 'Atomic approval forward prerequisite fixture';
+  insert into public.generated_course_drafts (user_id, draft)
+  values (
+    v_owner,
+    jsonb_build_object('title', v_subject_name,
+      'lessons', jsonb_build_array(
+        jsonb_build_object('title', 'First lesson', 'summary', 'First lesson content', 'prerequisites', jsonb_build_array('Second lesson')),
+        jsonb_build_object('title', 'Second lesson', 'summary', 'Second lesson content')
+      ))
+  ) returning id into v_forward_prereq_draft;
+
+  begin
+    perform public.approve_generated_course_draft(v_forward_prereq_draft, v_admin);
+  exception when invalid_parameter_value then
+    v_forward_prereq_failed := true;
+  end;
+
+  if not v_forward_prereq_failed
+     or exists (select 1 from public.subjects where user_id = v_owner and name = v_subject_name)
+     or exists (select 1 from public.generated_course_approvals where draft_id = v_forward_prereq_draft)
+     or exists (select 1 from public.generated_course_drafts where id = v_forward_prereq_draft and status = 'approved') then
+    raise exception 'Forward prerequisite did not abort and roll back the course approval';
   end if;
 
   -- Inject an audit-write failure after the subject and lesson have been inserted.
