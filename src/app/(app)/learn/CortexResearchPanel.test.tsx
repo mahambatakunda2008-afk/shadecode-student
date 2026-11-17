@@ -43,9 +43,9 @@ describe("Cortex Learn research panel", () => {
       />,
     );
 
-    expect(withoutSession).toContain("disabled");
+    expect(withoutSession).toMatch(/<button[^>]*\\sdisabled(?:=|\\s|>)/);
     expect(withoutSubject).toContain("Choose a subject above");
-    expect(withoutSubject).toContain("disabled");
+    expect(withoutSubject).toMatch(/<button[^>]*\\sdisabled(?:=|\\s|>)/);
   });
 
   it("explains that offline research falls back to local tutoring", () => {
@@ -61,6 +61,6 @@ describe("Cortex Learn research panel", () => {
     );
 
     expect(html).toContain("Offline: Cortex will answer locally and skip web research.");
-    expect(html).not.toMatch(/<button[^>]*disabled/);
+    expect(html).not.toMatch(/<button[^>]*\\sdisabled(?:=|\\s|>)/);
   });
 });
