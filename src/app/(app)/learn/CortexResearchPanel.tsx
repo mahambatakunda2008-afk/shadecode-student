@@ -163,8 +163,10 @@ export default function CortexResearchPanel({
       }
     } finally {
       window.clearTimeout(timeout);
-      if (controllerRef.current === controller) controllerRef.current = null;
-      setBusy(false);
+      if (controllerRef.current === controller) {
+        controllerRef.current = null;
+        setBusy(false);
+      }
     }
   }
 
