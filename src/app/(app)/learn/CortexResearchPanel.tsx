@@ -103,7 +103,7 @@ export default function CortexResearchPanel({
   async function ask() {
     const submittedTopic = topic.trim();
     const submittedSubject = subject.trim();
-    if (!token || !userId || !submittedSubject || !submittedTopic || busy) return;
+    if (!submittedSubject || !submittedTopic || busy) return;
     setBusy(true);
     setError("");
     setAnswer("");
@@ -118,6 +118,12 @@ export default function CortexResearchPanel({
       } finally {
         setBusy(false);
       }
+      return;
+    }
+
+    if (!token || !userId) {
+      setError("Sign in and reconnect to use online Cortex. The local tutor remains available offline.");
+      setBusy(false);
       return;
     }
 
@@ -211,7 +217,7 @@ export default function CortexResearchPanel({
         <textarea id="cortex-question" value={topic} onChange={(event) => { const value = event.target.value; currentTopicRef.current = value.trim(); clearForInputChange(); onTopicChange(value); }} maxLength={500} rows={3} placeholder="What do you want Cortex to explain?" className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <span className="text-xs text-[var(--muted-foreground)]">Subject: {subject || "Choose a subject above"}</span>
-          <button type="button" onClick={() => void ask()} disabled={!token || !userId || !subject || !topic.trim() || busy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={() => void ask()} disabled={(!offline && (!token || !userId)) || !subject || !topic.trim() || busy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-50">
             {busy ? <><Loader2 size={16} className="animate-spin" /> Cortex is working</> : <><BookOpen size={16} /> Explain this</>}
           </button>
         </div>
