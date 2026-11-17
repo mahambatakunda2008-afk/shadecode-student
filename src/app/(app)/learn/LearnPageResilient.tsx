@@ -14,6 +14,7 @@ import type { LearnLesson, LearnSubject, LearnSummary } from "./types";
 import PaperStudyLauncher from "./PaperStudyLauncher";
 import LearnBrainStatus from "./LearnBrainStatus";
 import ShadeNetKnowledgeSearch from "./ShadeNetKnowledgeSearch";
+import CortexResearchPanel from "./CortexResearchPanel";
 import GeographyRevisionKit from "./GeographyRevisionKit";
 import NextTopicSuggestion from "./components/NextTopicSuggestion";
 import { MAX_TOPIC_CHARS, applyTeachingApproach, topicTooLongMessage } from "@/lib/learn/teachingApproach";
@@ -62,6 +63,7 @@ export default function LearnPageResilient() {
   const router = useRouter();
   const params = useSearchParams();
   const [token, setToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<LearnSubject[]>([]);
   const [lessons, setLessons] = useState<LearnLesson[]>([]);
   const [summary, setSummary] = useState<LearnSummary | null>(null);
@@ -133,7 +135,10 @@ export default function LearnPageResilient() {
         ]);
         if (result.error) throw result.error;
         session = result.data.session;
-        if (session && !cancelled) setToken(session.access_token);
+        if (session && !cancelled) {
+          setToken(session.access_token);
+          setUserId(session.user.id);
+        }
       } catch (authFailure) {
         console.error("[Learn] could not restore the current session:", authFailure);
         if (!cancelled) {
@@ -403,6 +408,8 @@ export default function LearnPageResilient() {
             </section>
           </aside>
         </div>
+
+        <CortexResearchPanel subject={subject} topic={topic} onTopicChange={setTopic} token={token} userId={userId} offline={offline} />
 
         <div className="mt-6"><ShadeNetKnowledgeSearch subjects={subjects.map((item) => ({ id: item.id, name: item.name }))} /></div>
 
