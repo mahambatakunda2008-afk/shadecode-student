@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertCircle, BookOpen, ExternalLink, Loader2, Sparkles, WifiOff } from "lucide-react";
+import { generateTutoringResponse } from "@/lib/cortex/tools/tutor";
 
 type ResearchStatus = "not_requested" | "not_configured" | "unavailable" | "available" | "ai_unavailable";
+type PanelStatus = ResearchStatus | "offline" | "local_fallback" | null;
 type Citation = {
   title: string;
   url: string;
@@ -20,14 +22,15 @@ type CortexResponse = {
   error?: string;
 };
 
-function statusMessage(status: ResearchStatus | "offline" | null) {
+function statusMessage(status: PanelStatus) {
   switch (status) {
-    case "not_requested": return "Research was not requested. Cortex used its local tutoring path.";
+    case "not_requested": return "Research was not requested. Cortex used its deterministic tutoring path.";
     case "not_configured": return "Online research is not configured on the server. Your tutoring answer is still available.";
     case "unavailable": return "Online search or source retrieval was unavailable. Your tutoring answer is still available.";
     case "ai_unavailable": return "Sources were retrieved, but AI synthesis was unavailable. The local tutoring answer is shown instead.";
     case "available": return "Research-assisted answer. Sources are unverified and should be checked before relying on them.";
-    case "offline": return "You are offline. Cortex used its local tutoring path; online research was not attempted.";
+    case "offline": return "Offline local tutor response. No web sources or unverified curriculum claims were used.";
+    case "local_fallback": return "The server did not respond in time. A local tutoring starter is shown; reconnect for a fuller explanation.";
     default: return "";
   }
 }
@@ -50,44 +53,93 @@ export default function CortexResearchPanel({
   const [research, setResearch] = useState(false);
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState("");
-  const [status, setStatus] = useState<ResearchStatus | "offline" | null>(null);
+  const [status, setStatus] = useState<PanelStatus>(null);
   const [sources, setSources] = useState<Citation[]>([]);
   const [error, setError] = useState("");
+  const controllerRef = useRef<AbortController | null>(null);
+  const currentTopicRef = useRef(topic);
+  const currentSubjectRef = useRef(subject);
+
+  useEffect(() => {
+    currentSubjectRef.current = subject;
+    controllerRef.current?.abort();
+    setBusy(false);
+    setAnswer("");
+    setSources([]);
+    setStatus(null);
+    setError("");
+  }, [subject]);
+
+  function clearForInputChange() {
+    controllerRef.current?.abort();
+    setBusy(false);
+    setAnswer("");
+    setSources([]);
+    setStatus(null);
+    setError("");
+  }
+
+  async function showLocalTutorResponse(topicValue: string, subjectValue: string, label: "offline" | "local_fallback") {
+    const response = await generateTutoringResponse(topicValue, { subjectName: subjectValue });
+    if (currentTopicRef.current !== topicValue || currentSubjectRef.current !== subjectValue) return;
+    setAnswer(response);
+    setSources([]);
+    setStatus(label);
+  }
 
   async function ask() {
-    if (!token || !userId || !subject.trim() || !topic.trim() || busy) return;
+    const submittedTopic = topic.trim();
+    const submittedSubject = subject.trim();
+    if (!token || !userId || !submittedSubject || !submittedTopic || busy) return;
     setBusy(true);
     setError("");
     setAnswer("");
     setSources([]);
-    setStatus(research && offline ? "offline" : research ? null : "not_requested");
+    setStatus(null);
+
+    if (offline || (typeof navigator !== "undefined" && !navigator.onLine)) {
+      try {
+        await showLocalTutorResponse(submittedTopic, submittedSubject, "offline");
+      } catch {
+        setError("The local tutoring starter could not load. Your topic remains available to retry.");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 55_000);
+    controllerRef.current = controller;
+    let timedOut = false;
+    const timeout = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 55_000);
     try {
       const response = await fetch("/api/cortex", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: "Bearer " + token,
         },
         body: JSON.stringify({
           userId,
           type: "learn",
           payload: {
-            topic: topic.trim().slice(0, 500),
-            // The server resolver matches this exact selected label against the
-            // learner's saved curriculum subject identity/name. It never guesses
-            // from the topic text or chooses among multiple subjects.
-            subjectId: subject.trim(),
-            subjectName: subject.trim(),
-            research: research && !offline,
+            topic: submittedTopic.slice(0, 500),
+            // Resolve only the learner's explicit selection. Never infer a
+            // curriculum subject from free-text topic content.
+            subjectId: submittedSubject,
+            subjectName: submittedSubject,
+            research,
           },
         }),
         cache: "no-store",
         signal: controller.signal,
       });
       const data = await response.json().catch(() => ({})) as CortexResponse;
-      if (!response.ok) throw new Error(data.error || `Cortex could not respond (${response.status}).`);
+      if (currentTopicRef.current !== submittedTopic || currentSubjectRef.current !== submittedSubject) return;
+      if (!response.ok) throw new Error(data.error || "Cortex could not respond (" + response.status + ").");
       if (typeof data.response !== "string" || !data.response.trim()) {
         throw new Error("Cortex returned no tutoring answer. Your topic has not been changed.");
       }
@@ -96,13 +148,22 @@ export default function CortexResearchPanel({
         item && typeof item.title === "string" && typeof item.url === "string" &&
         typeof item.excerpt === "string" && item.verificationStatus === "unverified"
       ) : []);
-      setStatus(research && !offline ? data.researchStatus ?? "unavailable" : research ? "offline" : "not_requested");
+      setStatus(research ? data.researchStatus || "unavailable" : "not_requested");
     } catch (cause) {
-      setError(cause instanceof Error && cause.name === "AbortError"
-        ? "Cortex took too long to respond. Try again; your lesson and topic remain unchanged."
-        : cause instanceof Error ? cause.message : "Cortex could not complete this request.");
+      if (currentTopicRef.current !== submittedTopic || currentSubjectRef.current !== submittedSubject) return;
+      const networkUnavailable = typeof navigator !== "undefined" && !navigator.onLine;
+      if (timedOut || networkUnavailable || cause instanceof TypeError) {
+        try {
+          await showLocalTutorResponse(submittedTopic, submittedSubject, networkUnavailable ? "offline" : "local_fallback");
+        } catch {
+          setError("Cortex could not connect and the local tutoring starter could not load. Your topic remains available to retry.");
+        }
+      } else if (!controller.signal.aborted) {
+        setError(cause instanceof Error ? cause.message : "Cortex could not complete this request.");
+      }
     } finally {
       window.clearTimeout(timeout);
+      if (controllerRef.current === controller) controllerRef.current = null;
       setBusy(false);
     }
   }
@@ -132,7 +193,7 @@ export default function CortexResearchPanel({
 
       <div className="mt-4">
         <label htmlFor="cortex-question" className="mb-2 block text-sm font-semibold">Your question or topic</label>
-        <textarea id="cortex-question" value={topic} onChange={(event) => onTopicChange(event.target.value)} maxLength={500} rows={3} placeholder="What do you want Cortex to explain?" className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" />
+        <textarea id="cortex-question" value={topic} onChange={(event) => { const value = event.target.value; currentTopicRef.current = value; clearForInputChange(); onTopicChange(value); }} maxLength={500} rows={3} placeholder="What do you want Cortex to explain?" className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <span className="text-xs text-[var(--muted-foreground)]">Subject: {subject || "Choose a subject above"}</span>
           <button type="button" onClick={() => void ask()} disabled={!token || !userId || !subject || !topic.trim() || busy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-50">
@@ -143,12 +204,12 @@ export default function CortexResearchPanel({
 
       {error && <p className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-sm" role="alert"><AlertCircle size={16} className="mt-0.5 shrink-0" />{error}</p>}
       {answer && <article className="mt-5 rounded-xl border border-[var(--card-border)] p-4" aria-labelledby="cortex-answer-title">
-        <h3 id="cortex-answer-title" className="font-semibold">Cortex's explanation</h3>
+        <h3 id="cortex-answer-title" className="font-semibold">{status === "offline" || status === "local_fallback" ? "Cortex's local tutoring response" : "Cortex's explanation"}</h3>
         <div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[var(--foreground)]">{answer}</div>
         {status && <p className="mt-4 border-t border-[var(--card-border)] pt-3 text-xs leading-5 text-[var(--muted-foreground)]" role="status">{statusMessage(status)}</p>}
         {sources.length > 0 && <div className="mt-4 space-y-3" aria-label="Research sources">
           <h4 className="text-sm font-semibold">Sources to inspect</h4>
-          {sources.map((source, index) => <article key={`${source.url}-${index}`} className="rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] p-3">
+          {sources.map((source, index) => <article key={source.url + "-" + index} className="rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] p-3">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0"><h5 className="text-sm font-semibold">{source.title}</h5><p className="mt-1 text-xs text-[var(--muted-foreground)]">{source.publisher} · {source.retrievedAt ? new Date(source.retrievedAt).toLocaleString() : "Retrieval time unavailable"}</p></div>
               <a href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--card-border)] px-2 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]">Open source <ExternalLink size={13} aria-hidden="true" /></a>
