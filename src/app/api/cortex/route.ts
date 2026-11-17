@@ -9,6 +9,7 @@ import { cortexApproveDraftSchema, cortexRequestSchema, validateRequestBody } fr
 import { applyRateLimit, aiEndpointLimiter } from '@/lib/rate-limit/limiter';
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // Bounds the optional search + document read + AI synthesis path within Hobby limits.
 
 const DRAFTS_DIR = path.join(process.cwd(), 'src', 'app', 'api', 'cortex', 'generate-course');
 const DRAFTS_FILE = path.join(DRAFTS_DIR, 'drafts.json');
