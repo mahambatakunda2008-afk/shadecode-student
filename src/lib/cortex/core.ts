@@ -174,7 +174,10 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
           syllabus: input.curriculum?.identity.syllabusId,
         });
         researchStatus = research.status;
-        sources = research.sources.map(({ content, ...source }) => ({\n          ...source,\n          excerpt: content.slice(0, 500),\n        }));
+        sources = research.sources.map(({ content, ...source }) => ({
+          ...source,
+          excerpt: content.slice(0, 500),
+        }));
         if (research.sources.length) {
           const sourceContext = research.sources.map((source, index) => [
             `[Source ${index + 1}]`,
