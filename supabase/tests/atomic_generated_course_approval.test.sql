@@ -40,6 +40,7 @@ declare
   v_global_draft uuid;
   v_scoped_draft uuid;
   v_rollback_draft uuid;
+  v_unknown_prereq_draft uuid;
   v_denied_draft uuid;
   v_unscoped_draft uuid;
   v_audit_failure_draft uuid;
@@ -52,6 +53,7 @@ declare
   v_denied boolean := false;
   v_unscoped_denied boolean := false;
   v_rollback boolean := false;
+  v_unknown_prereq_failed boolean := false;
   v_audit_failed boolean := false;
   v_status_failed boolean := false;
   v_subject_name text;
@@ -239,7 +241,7 @@ begin
     jsonb_build_object('title', v_subject_name,
       'lessons', jsonb_build_array(
         jsonb_build_object('title', 'Duplicate', 'summary', 'First duplicate'),
-        jsonb_build_object('title', 'Duplicate', 'summary', 'Second duplicate')
+        jsonb_build_object('title', 'duplicate', 'summary', 'Second duplicate')
       ))
   ) returning id into v_rollback_draft;
 
@@ -257,6 +259,32 @@ begin
      or exists (select 1 from public.generated_course_approvals where draft_id = v_rollback_draft)
      or exists (select 1 from public.generated_course_drafts where id = v_rollback_draft and status = 'approved') then
     raise exception 'Failed approval did not roll back all side effects';
+  end if;
+
+  -- Unknown prerequisite titles are rejected after lesson creation, and the
+  -- complete transaction must roll back rather than silently dropping the link.
+  v_subject_name := 'Atomic approval unknown prerequisite fixture';
+  insert into public.generated_course_drafts (user_id, draft)
+  values (
+    v_owner,
+    jsonb_build_object('title', v_subject_name,
+      'lessons', jsonb_build_array(
+        jsonb_build_object('title', 'First lesson', 'summary', 'First lesson content'),
+        jsonb_build_object('title', 'Second lesson', 'summary', 'Second lesson content', 'prerequisites', jsonb_build_array('Missing lesson'))
+      ))
+  ) returning id into v_unknown_prereq_draft;
+
+  begin
+    perform public.approve_generated_course_draft(v_unknown_prereq_draft, v_admin);
+  exception when invalid_parameter_value then
+    v_unknown_prereq_failed := true;
+  end;
+
+  if not v_unknown_prereq_failed
+     or exists (select 1 from public.subjects where user_id = v_owner and name = v_subject_name)
+     or exists (select 1 from public.generated_course_approvals where draft_id = v_unknown_prereq_draft)
+     or exists (select 1 from public.generated_course_drafts where id = v_unknown_prereq_draft and status = 'approved') then
+    raise exception 'Unknown prerequisite did not abort and roll back the course approval';
   end if;
 
   -- Inject an audit-write failure after the subject and lesson have been inserted.
