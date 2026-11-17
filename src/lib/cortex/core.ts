@@ -131,7 +131,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
   switch (input.type) {
     case "learn": {
       const payload = asRecord(input.payload);
-      const topic = asString(payload.topic) ?? "your current topic";
+      const topic = (asString(payload.topic) ?? "your current topic").slice(0, 500);
       const subjectId = asString(payload.subjectId);
       const subjectName = asString(payload.subjectName);
       let studentContext = null;
@@ -169,7 +169,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       if (wantsResearch && input.curriculum) {
         const research = await retrieveCortexKnowledge({
           topic,
-          subject: subjectName ?? input.curriculum.identity.subjectId,
+          subject: input.curriculum.identity.subjectId,
           qualification: input.curriculum?.identity.qualificationId,
           syllabus: input.curriculum?.identity.syllabusId,
         });
@@ -194,7 +194,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
             "Every supplied web source is UNVERIFIED, even if its page was independently fetched. Do not describe it as official, teacher-approved, or fact-checked.",
             "If the sources do not support a reliable answer, say so and provide only safe general guidance.",
             `Student topic: ${topic}`,
-            `Subject: ${subjectName ?? "Not specified"}`,
+            `Subject: ${input.curriculum.identity.subjectId}`,
             `VERIFIED CURRICULUM CONTEXT:\n${verifiedCurriculumContext}`,
             "Reference sources:",
             sourceContext,
