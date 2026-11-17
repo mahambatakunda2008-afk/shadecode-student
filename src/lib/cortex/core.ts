@@ -166,10 +166,10 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       let response = fallbackResponse;
       let researchStatus: CortexOutput["researchStatus"] = wantsResearch ? "unavailable" : "not_requested";
       let sources: CortexKnowledgeSource[] = [];
-      if (wantsResearch) {
+      if (wantsResearch && input.curriculum) {
         const research = await retrieveCortexKnowledge({
           topic,
-          subject: subjectName,
+          subject: subjectName ?? input.curriculum.identity.subjectId,
           qualification: input.curriculum?.identity.qualificationId,
           syllabus: input.curriculum?.identity.syllabusId,
         });
