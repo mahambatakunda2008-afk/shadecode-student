@@ -7,6 +7,7 @@ import { cortexApproveDraftSchema, cortexRequestSchema, validateRequestBody } fr
 import { applyRateLimit, aiEndpointLimiter } from '@/lib/rate-limit/limiter';
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // Bound multi-stage Cortex retrieval and synthesis within one request.
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
