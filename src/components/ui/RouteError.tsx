@@ -58,7 +58,7 @@ export default function RouteError({ error, reset, boundary, fullPage = false }:
           </div>
           <h1 className="mb-2 text-xl font-semibold tracking-tight text-[var(--foreground)]">You&apos;re offline</h1>
           <p className="mb-6 text-sm leading-relaxed text-[var(--text-secondary)]">
-            This screen isn&apos;t saved on your device yet, so it can&apos;t open without internet. Your work is safe, and this page will reload by itself when you reconnect.
+            This screen isn&apos;t saved on your device yet, so it can&apos;t open without internet. Anything already saved remains available. Changes that had not finished saving may need to be retried after you reconnect.
           </p>
           {saved.length > 0 && (
             <div className="mb-6 text-left">
@@ -88,7 +88,7 @@ export default function RouteError({ error, reset, boundary, fullPage = false }:
             <RefreshCw className="h-7 w-7" aria-hidden />
           </div>
           <h1 className="mb-2 text-xl font-semibold tracking-tight text-[var(--foreground)]">Shadecode was updated</h1>
-          <p className="mb-6 text-sm leading-relaxed text-[var(--text-secondary)]">Reload to get the latest version. Your work and progress are safe.</p>
+          <p className="mb-6 text-sm leading-relaxed text-[var(--text-secondary)]">Reload to get the latest version. Before continuing, check that any recent changes were saved.</p>
           <button type="button" onClick={() => window.location.reload()} className="ssc-button">
             <RefreshCw className="h-4 w-4" aria-hidden /> Reload
           </button>
@@ -105,7 +105,7 @@ export default function RouteError({ error, reset, boundary, fullPage = false }:
         </div>
         <h1 className="mb-2 text-xl font-semibold tracking-tight text-[var(--foreground)]">This page hit a problem</h1>
         <p className="mb-6 text-sm leading-relaxed text-[var(--text-secondary)]">
-          Your work and progress are safe. Try again, or head back to your dashboard. If it keeps happening, tell us the reference below.
+          Saved work remains available. Changes that had not finished saving may need to be retried. Try again, or head back to your dashboard. If it keeps happening, tell us the reference below.
         </p>
         {error.digest && (
           <p className="mb-6 break-all rounded-lg bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-tertiary)] select-all">
