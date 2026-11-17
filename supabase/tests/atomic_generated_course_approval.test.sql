@@ -36,8 +36,10 @@ declare
   v_moderator uuid;
   v_nonmember uuid;
   v_owner uuid;
+  v_no_permission uuid;
   v_institution uuid;
   v_global_draft uuid;
+  v_permission_denied_draft uuid;
   v_scoped_draft uuid;
   v_rollback_draft uuid;
   v_unknown_prereq_draft uuid;
@@ -52,6 +54,7 @@ declare
   v_lesson_count integer;
   v_prerequisite_count integer;
   v_denied boolean := false;
+  v_permission_denied boolean := false;
   v_unscoped_denied boolean := false;
   v_owner_mismatch_denied boolean := false;
   v_rollback boolean := false;
@@ -94,7 +97,18 @@ begin
    order by p.id
    limit 1;
 
-  if v_moderator is null or v_nonmember is null or v_owner is null then
+  select p.id into v_no_permission
+    from public.profiles p
+   where p.id not in (v_admin, v_moderator, v_nonmember, v_owner)
+     and not exists (
+       select 1 from public.user_roles ur
+       join public.roles r on r.id = ur.role_id
+       where ur.user_id = p.id and r.permissions->>'approve_drafts' = 'true'
+     )
+   order by p.id
+   limit 1;
+
+  if v_moderator is null or v_nonmember is null or v_owner is null or v_no_permission is null then
     raise exception 'Missing distinct profile fixtures for approval tests';
   end if;
 
@@ -124,6 +138,27 @@ begin
     (v_institution, v_owner, 'student', 'active');
 
   execute 'set local role service_role';
+
+  -- An authenticated actor without the global approval permission is rejected
+  -- before any subject or lesson write occurs.
+  insert into public.generated_course_drafts (user_id, draft)
+  values (
+    v_owner,
+    jsonb_build_object('title', 'Atomic approval permission denied fixture',
+      'lessons', jsonb_build_array(jsonb_build_object('title', 'Must not be inserted', 'summary', 'Denied content')))
+  ) returning id into v_permission_denied_draft;
+
+  begin
+    perform public.approve_generated_course_draft(v_permission_denied_draft, v_no_permission);
+  exception when insufficient_privilege then
+    v_permission_denied := true;
+  end;
+
+  if not v_permission_denied
+     or exists (select 1 from public.subjects where user_id = v_owner and name = 'Atomic approval permission denied fixture')
+     or exists (select 1 from public.generated_course_drafts where id = v_permission_denied_draft and status = 'approved') then
+    raise exception 'An actor without approve_drafts permission was allowed to approve a course';
+  end if;
 
   -- Global administrators can approve legacy/unscoped drafts.
   insert into public.generated_course_drafts (user_id, draft)
