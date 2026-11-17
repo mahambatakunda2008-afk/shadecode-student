@@ -1,0 +1,206 @@
+-- Run only in a disposable Supabase test database after the atomic approval migration.
+-- Exercises transaction rollback, owner-scoped writes, institution authorization and replay idempotency.
+begin;
+
+do $$
+declare
+  v_admin uuid;
+  v_moderator uuid;
+  v_nonmember uuid;
+  v_owner uuid;
+  v_institution uuid;
+  v_global_draft uuid;
+  v_scoped_draft uuid;
+  v_rollback_draft uuid;
+  v_denied_draft uuid;
+  v_global_result jsonb;
+  v_retry_result jsonb;
+  v_approval_count integer;
+  v_lesson_count integer;
+  v_prerequisite_count integer;
+  v_denied boolean := false;
+  v_rollback boolean := false;
+  v_subject_name text;
+begin
+  select ur.user_id into v_admin
+    from public.user_roles ur
+    join public.roles r on r.id = ur.role_id
+   where r.name = 'admin'
+     and r.permissions->>'approve_drafts' = 'true'
+   limit 1;
+
+  if v_admin is null then
+    raise exception 'Missing global admin fixture';
+  end if;
+
+  select p.id into v_moderator
+    from public.profiles p
+   where p.id <> v_admin
+     and not exists (
+       select 1 from public.user_roles ur
+       join public.roles r on r.id = ur.role_id
+       where ur.user_id = p.id and r.permissions->>'approve_drafts' = 'true'
+     )
+   order by p.id
+   limit 1;
+
+  select p.id into v_nonmember
+    from public.profiles p
+   where p.id not in (v_admin, v_moderator)
+   order by p.id
+   limit 1;
+
+  select p.id into v_owner
+    from public.profiles p
+   where p.id not in (v_admin, v_moderator, v_nonmember)
+   order by p.id
+   limit 1;
+
+  if v_moderator is null or v_nonmember is null or v_owner is null then
+    raise exception 'Missing distinct profile fixtures for approval tests';
+  end if;
+
+  if has_function_privilege('anon', 'public.approve_generated_course_draft(uuid,uuid)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.approve_generated_course_draft(uuid,uuid)', 'EXECUTE') then
+    raise exception 'Public or authenticated role can execute the privileged approval RPC';
+  end if;
+  if not has_function_privilege('service_role', 'public.approve_generated_course_draft(uuid,uuid)', 'EXECUTE') then
+    raise exception 'service_role cannot execute the approval RPC';
+  end if;
+
+  insert into public.user_roles (user_id, role_id)
+  select v_moderator, id from public.roles where name = 'moderator'
+  on conflict (user_id, role_id) do nothing;
+
+  insert into public.user_roles (user_id, role_id)
+  select v_nonmember, id from public.roles where name = 'moderator'
+  on conflict (user_id, role_id) do nothing;
+
+  insert into public.platform_institutions (name, institution_type)
+  values ('Atomic approval test institution', 'school')
+  returning id into v_institution;
+
+  insert into public.platform_institution_members (institution_id, user_id, membership_role, status)
+  values (v_institution, v_moderator, 'administrator', 'active');
+
+  execute 'set local role service_role';
+
+  -- Global administrators can approve legacy/unscoped drafts.
+  insert into public.generated_course_drafts (user_id, draft)
+  values (
+    v_owner,
+    jsonb_build_object(
+      'title', 'Atomic approval global fixture',
+      'lessons', jsonb_build_array(
+        jsonb_build_object('title', 'Foundations', 'summary', 'Foundation lesson content', 'blocks', jsonb_build_array(jsonb_build_object('type','concept','content','Foundation lesson content'))),
+        jsonb_build_object('title', 'Applications', 'summary', 'Application lesson content', 'prerequisites', jsonb_build_array('Foundations'), 'blocks', jsonb_build_array(jsonb_build_object('type','concept','content','Application lesson content')))
+      )
+    )
+  ) returning id into v_global_draft;
+
+  select public.approve_generated_course_draft(v_global_draft, v_admin) into v_global_result;
+  if (v_global_result->>'lessonsInserted')::integer <> 2 then
+    raise exception 'Expected two lessons in the global approval result: %', v_global_result;
+  end if;
+
+  select public.approve_generated_course_draft(v_global_draft, v_admin) into v_retry_result;
+  if v_retry_result->>'alreadyApproved' <> 'true' then
+    raise exception 'Repeated approval was not acknowledged as an idempotent replay: %', v_retry_result;
+  end if;
+
+  select count(*) into v_approval_count
+    from public.generated_course_approvals where draft_id = v_global_draft;
+  select count(*) into v_lesson_count
+    from public.learn_lessons where user_id = v_owner and subject_id in (
+      select id from public.subjects where user_id = v_owner and name = 'Atomic approval global fixture'
+    );
+  select count(*) into v_prerequisite_count
+    from public.lesson_prerequisites lp
+    join public.learn_lessons l on l.id = lp.lesson_id
+   where l.user_id = v_owner
+     and l.subject_id in (select id from public.subjects where user_id = v_owner and name = 'Atomic approval global fixture');
+
+  if v_approval_count <> 1 or v_lesson_count <> 2 or v_prerequisite_count <> 1 then
+    raise exception 'Idempotent approval duplicated side effects: approvals %, lessons %, prerequisites %',
+      v_approval_count, v_lesson_count, v_prerequisite_count;
+  end if;
+
+  if not exists (
+    select 1 from public.generated_course_drafts
+     where id = v_global_draft and status = 'approved' and approved_by = v_admin
+  ) then
+    raise exception 'Draft status and approver were not committed with the course';
+  end if;
+
+  -- A moderator must be an active administrator of the draft's explicit institution.
+  insert into public.generated_course_drafts (user_id, institution_id, draft)
+  values (
+    v_owner,
+    v_institution,
+    jsonb_build_object('title', 'Atomic approval institution fixture',
+      'lessons', jsonb_build_array(jsonb_build_object('title', 'Institution lesson', 'summary', 'Institution lesson content')))
+  ) returning id into v_scoped_draft;
+
+  perform public.approve_generated_course_draft(v_scoped_draft, v_moderator);
+
+  -- A moderator with the same global permission but no active membership cannot approve.
+  insert into public.generated_course_drafts (user_id, institution_id, draft)
+  values (
+    v_owner,
+    v_institution,
+    jsonb_build_object('title', 'Atomic approval denied fixture',
+      'lessons', jsonb_build_array(jsonb_build_object('title', 'Must not be inserted', 'summary', 'Denied content')))
+  ) returning id into v_denied_draft;
+
+  begin
+    perform public.approve_generated_course_draft(v_denied_draft, v_nonmember);
+  exception when insufficient_privilege then
+    v_denied := true;
+  end;
+
+  if not v_denied then
+    raise exception 'A moderator without active institution administrator membership was allowed to approve';
+  end if;
+
+  if exists (
+    select 1 from public.generated_course_drafts
+     where id = v_denied_draft and status = 'approved'
+  ) or exists (
+    select 1 from public.subjects
+     where user_id = v_owner and name = 'Atomic approval denied fixture'
+  ) then
+    raise exception 'Denied approval left partial writes';
+  end if;
+
+  -- Duplicate lesson titles fail after subject creation would have begun.
+  -- The nested exception block must roll back the subject and every lesson write.
+  v_subject_name := 'Atomic approval rollback fixture';
+  insert into public.generated_course_drafts (user_id, draft)
+  values (
+    v_owner,
+    jsonb_build_object('title', v_subject_name,
+      'lessons', jsonb_build_array(
+        jsonb_build_object('title', 'Duplicate', 'summary', 'First duplicate'),
+        jsonb_build_object('title', 'Duplicate', 'summary', 'Second duplicate')
+      ))
+  ) returning id into v_rollback_draft;
+
+  begin
+    perform public.approve_generated_course_draft(v_rollback_draft, v_admin);
+  exception when invalid_parameter_value then
+    v_rollback := true;
+  end;
+
+  if not v_rollback then
+    raise exception 'Invalid duplicate-title draft was unexpectedly approved';
+  end if;
+
+  if exists (select 1 from public.subjects where user_id = v_owner and name = v_subject_name)
+     or exists (select 1 from public.generated_course_approvals where draft_id = v_rollback_draft)
+     or exists (select 1 from public.generated_course_drafts where id = v_rollback_draft and status = 'approved') then
+    raise exception 'Failed approval did not roll back all side effects';
+  end if;
+end
+$$;
+
+rollback;
