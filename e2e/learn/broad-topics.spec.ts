@@ -24,7 +24,7 @@ test.describe("Learn deep-generation browser contract", () => {
       const selected = requestedSubject
         ? options.find((option) => option.label.toLowerCase() === requestedSubject.toLowerCase())
         : options[0];
-      expect(selected, requestedSubject ? `Subject "${requestedSubject}" is not available in this user's Learn subjects.` : "No usable Learn subject was available.").toBeTruthy();
+      expect(selected, requestedSubject ? `Subject "${requestedSubject}" is not available in this user's Learn subjects. Available: ${options.map((option) => option.label).join(" | ")}` : "No usable Learn subject was available.").toBeTruthy();
       await subjectSelect.selectOption({ value: selected!.value });
       expect(requestedTopic, "E2E_LEARN_TOPICS must name a real broad topic from the signed-in user curriculum; no synthetic fallback is allowed.").toBeTruthy();
       const topic = requestedTopic;
