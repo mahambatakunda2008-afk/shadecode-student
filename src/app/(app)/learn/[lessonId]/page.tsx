@@ -16,6 +16,7 @@ import LessonDiagram from "@/components/learn/LessonDiagram";
 import TeacherTutorials from "@/components/learn/TeacherTutorials";
 import { downloadManager } from "@/lib/offline/downloadManager";
 import { offlineStorage } from "@/lib/offline/storage";
+import { offlineSync } from "@/lib/offline/sync";
 import { localFirstStore } from "@/lib/local-first/store";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { useLessonNarration } from "@/hooks/useLessonNarration";
@@ -279,8 +280,21 @@ export default function LessonDetailPage() {
   }, [lessonId]);
 
   useEffect(() => {
-    const online = () => { if (currentUser) void downloadManager.syncProgress(currentUser).catch(() => undefined); };
-    window.addEventListener("online", online); return () => window.removeEventListener("online", online);
+    // Keep queued lesson creation alive after navigating from Learn into the
+    // recovered lesson viewer, and retry when connectivity returns.
+    offlineSync.startAutoSync();
+    return () => offlineSync.stopAutoSync();
+  }, []);
+
+  useEffect(() => {
+    const online = () => {
+      if (currentUser) {
+        void downloadManager.syncProgress(currentUser).catch(() => undefined);
+        void offlineSync.syncAll();
+      }
+    };
+    window.addEventListener("online", online);
+    return () => window.removeEventListener("online", online);
   }, [currentUser]);
 
   useEffect(() => {
