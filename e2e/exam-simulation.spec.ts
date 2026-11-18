@@ -35,7 +35,27 @@ test.describe("Exam Simulation acceptance journey", () => {
       await expect(answer).toBeVisible();
       await answer.fill(`Acceptance test answer for question ${index}. Show the relevant method and conclusion.`);
 
-      if (index < 5) {
+      if (index === 1) {
+        // Verify that an in-progress attempt survives a full page reload, not just component navigation.
+        await page.getByRole("button", { name: "Next" }).click();
+        await expect(page.locator('[id^="question-heading-"]')).toContainText("Question 2 of 5");
+        await expect.poll(() => page.evaluate(() => {
+          const key = Object.keys(localStorage).find((candidate) => candidate.startsWith("shadecode-exam-workspace:"));
+          const raw = key ? localStorage.getItem(key) : null;
+          return Boolean(raw && raw.includes("Acceptance test answer for question 1.") && raw.includes('"current":1'));
+        }), { timeout: 15_000 }).toBe(true);
+
+        await page.reload();
+        await expect(page.getByRole("heading", { name: "Build your exam room." })).toBeVisible({ timeout: 20_000 });
+        await expect(page.getByText("Unfinished exam saved")).toBeVisible({ timeout: 15_000 });
+        await page.getByRole("button", { name: "Resume" }).click();
+        await expect(page.locator('[id^="question-heading-"]')).toContainText("Question 2 of 5", { timeout: 15_000 });
+
+        await page.getByRole("button", { name: /Question 1:/ }).click();
+        await expect(page.getByLabel("Answer for question 1")).toHaveValue("Acceptance test answer for question 1. Show the relevant method and conclusion.");
+        await page.getByRole("button", { name: "Next" }).click();
+        await expect(page.locator('[id^="question-heading-"]')).toContainText("Question 2 of 5");
+      } else if (index < 5) {
         await page.getByRole("button", { name: "Next" }).click();
         await expect(page.locator('[id^="question-heading-"]')).toContainText(`Question ${index + 1} of 5`);
       }

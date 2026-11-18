@@ -131,7 +131,7 @@ export default function TasksLocalFirstV2() {
     try {
       const updated = await localTasks.complete(task.id, userId); if (!updated) return;
       setTasks(prev => prev.map(item => item.id === task.id ? { ...item, completed: true } : item));
-      const [xpState] = await Promise.all([awardXp(userId, 10), recordStudyDay(userId)]);
+      const [xpState] = await Promise.all([awardXp(userId, 10, `task-complete:${task.id}`), recordStudyDay(userId)]);
       setXp(xpState.payload.totalXp); setLevel(xpState.payload.level);
       void taskCompletedEvent(task.id, task.subject_id, {
         xpEarned: 10,

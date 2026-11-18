@@ -156,9 +156,19 @@ export class PerformanceService {
 
       const subjectByLesson = new Map<string, string>();
       if (lessonIds.length > 0) {
-        const { data: lessons } = await supabase.from("learn_lessons").select("id, subject").in("id", lessonIds);
+        // learn_lessons stores subject_id (there is no "subject" column); resolve display names via subjects.
+        const { data: lessons } = await supabase.from("learn_lessons").select("id, subject_id").in("id", lessonIds);
+        const subjectIds = [...new Set((lessons ?? []).map((l) => l.subject_id).filter((id): id is string => typeof id === "string"))];
+        const nameById = new Map<string, string>();
+        if (subjectIds.length > 0) {
+          const { data: subjects } = await supabase.from("subjects").select("id, name").in("id", subjectIds);
+          for (const subject of subjects ?? []) {
+            if (typeof subject.id === "string" && typeof subject.name === "string") nameById.set(subject.id, subject.name);
+          }
+        }
         for (const lesson of lessons ?? []) {
-          if (typeof lesson.id === "string" && typeof lesson.subject === "string") subjectByLesson.set(lesson.id, lesson.subject);
+          const name = typeof lesson.subject_id === "string" ? nameById.get(lesson.subject_id) : undefined;
+          if (typeof lesson.id === "string" && name) subjectByLesson.set(lesson.id, name);
         }
       }
 

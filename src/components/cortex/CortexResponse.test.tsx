@@ -208,3 +208,23 @@ $$c=\sqrt{a^2+b^2}$$`;
   });
 
 });
+describe("inline math keeps its full content (regression: first and last characters were stripped)", () => {
+  it("renders $116^\\circ$ and a one-letter $O$ intact", () => {
+    const html = renderToStaticMarkup(<CortexResponse text={"Angle $116^\\circ$ at centre $O$ and $F=ma$."} />);
+    expect(html).toContain('class="mord">11</span>'); // KaTeX splits 116 as "11" + "6^circ"
+    expect(html).not.toContain('class="mord">1</span><span class="mord"><span class="mord">6'); // the old "16^\\cir" output
+    expect(html).toMatch(/mathnormal[^>]*>O</);
+    expect(html).toMatch(/mathnormal[^>]*>F</);
+    expect(html).not.toContain('role="math"'); // inline, not display
+  });
+  it("keeps \\text{ cm} balanced", () => {
+    const html = renderToStaticMarkup(<CortexResponse text={"So $PT = 12\\text{ cm}$."} />);
+    expect(html).toContain(">12<");
+    expect(html).toContain("cm<");
+    expect(html).not.toContain("katex-error");
+  });
+  it("still renders $$...$$ as display math", () => {
+    const html = renderToStaticMarkup(<CortexResponse text={"Result:\n\n$$x^2+1$$"} />);
+    expect(html).toContain('role="math"');
+  });
+});

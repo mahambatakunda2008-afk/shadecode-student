@@ -29,6 +29,8 @@ async function cloudflareErrorMessage(res: Response): Promise<string> {
 const DEFAULT_MAX_CHAIN_MS = 28000;
 const DEFAULT_PER_PROVIDER_MAX_MS = 6500;
 const TELEMETRY_BUDGET_MS = 500;
+/** Fraction of the remaining chain Gemini may use before other configured text providers get a turn. */
+const GEMINI_PHASE_SHARE = 0.55;
 const ALLOW_PAID_AI = process.env.ALLOW_PAID_AI === "true";
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL?.replace(/\/$/, "") || "";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:7b";
@@ -152,7 +154,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (process.env.GROQ_API_KEY) shareable.add("groq");
     if (process.env.OPENROUTER_API_KEY) shareable.add("openrouter");
     if (process.env.CLOUDFLARE_API_TOKEN) shareable.add("cloudflare");
-    // Reserve a fair slice for direct Gemini too. It is currently the last fallback, so leaving it
+    // Reserve a fair slice for direct Gemini too (it runs right after the Gateway), so leaving it
     // outside the shared pool lets earlier providers consume nearly the entire lesson budget before
     // the newly prioritized Flash-Lite model is reached. Keep each Gemini call hard-bounded; the
     // model/key circuit still skips unavailable models and the remaining chain can continue. 
@@ -291,6 +293,95 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
+  // Direct Google Gemini. Model list is explicit and stable; secondary keys cover key-specific
+  // quota buckets. Keyless installs skip this phase entirely.
+  const geminiKeys = [process.env.GEMINI_API_KEY_4, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
+  // Prefer the official high-throughput Flash-Lite model first: production telemetry shows
+  // repeated timeouts/503s for 3.8 Flash and timeouts for 3.6 Flash. Quality gates still
+  // validate its output, and the larger stable models remain available as fallbacks.
+  const geminiModels = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"];
+
+  // A 503 is a model-capacity signal, not usually an API-key-specific failure.
+  // Do not spend the remaining lesson budget retrying the same overloaded model with every key.
+  const unavailableGeminiModels = new Set<string>();
+  async function callGemini(key: string, model: string, keyIndex: number): Promise<string | null> {
+    if (unavailableGeminiModels.has(model)) return null;
+    return tryProvider("gemini", model, async timeout => {
+      let res: Response;
+      try {
+        res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: groundedPrompt },
+                ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
+              ],
+            }],
+            generationConfig: { maxOutputTokens: maxTokens, temperature: media.length ? 0.1 : 0.35, ...(media.length && options.jsonResponse ? { responseMimeType: "application/json" } : {}) },
+          }),
+        }, timeout);
+      } catch (error) {
+        // An aborted request is not proof the key is bad, but retrying the same slow model with
+        // every backup key wastes this request's entire budget. Try a different model instead.
+        if (error instanceof Error && (error.name === "AbortError" || /timeout|aborted/i.test(error.message))) {
+          unavailableGeminiModels.add(model);
+        }
+        throw error;
+      }
+      if (!res.ok) {
+        const detail = (await res.text().catch(() => "")).slice(0, 300);
+        if (res.status === 503) unavailableGeminiModels.add(model);
+        throw new Error(`Gemini HTTP ${res.status}: ${detail}`);
+      }
+      const data = await res.json() as any;
+      // Vision responses can contain more than one text part. Joining every textual
+      // part avoids silently truncating OCR output to the first segment. A blocked
+      // candidate is not a successful empty transcription and must fall through
+      // to the next configured Gemini model/key.
+      if (data?.promptFeedback?.blockReason) {
+        throw new Error(`Gemini blocked the vision request: ${String(data.promptFeedback.blockReason).slice(0, 120)}`);
+      }
+      const candidate = data?.candidates?.[0];
+      if (candidate?.finishReason === "SAFETY" || candidate?.finishReason === "RECITATION") {
+        throw new Error(`Gemini vision response blocked: ${String(candidate.finishReason)}`);
+      }
+      const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
+      const textParts = parts
+        .map((part: { text?: unknown }) => typeof part?.text === "string" ? part.text : "")
+        .filter(Boolean);
+      return textParts.length ? textParts.join("\n") : null;
+    }, `gemini:${model}:key-${keyIndex + 1}`);
+  }
+
+  // Gemini is the only provider with consistent production successes (2-3.5s per call in the
+  // 2026-11-18 lesson logs), while OpenRouter and Cloudflare timed out for 6-10s on every section.
+  // Run it right after the Gateway. When other text providers are configured, cap the Gemini phase
+  // at a share of the chain so a Gemini outage cannot starve them; media requests have no
+  // alternative provider, so they keep the full budget.
+  async function runGeminiPhase(): Promise<string | null> {
+    if (!geminiKeys.length) return null;
+    const hasOtherTextProviders = !media.length && Boolean(
+      process.env.GROQ_API_KEY || process.env.OPENROUTER_API_KEY || process.env.CLOUDFLARE_API_TOKEN,
+    );
+    const phaseEndsAt = hasOtherTextProviders
+      ? Date.now() + Math.floor(remaining() * GEMINI_PHASE_SHARE)
+      : Number.POSITIVE_INFINITY;
+    const canTryGemini = () => canTry() && Date.now() < phaseEndsAt;
+    for (const model of geminiModels) {
+      for (const key of geminiKeys) {
+        if (!canTryGemini()) return null;
+        const text = await callGemini(key, model, geminiKeys.indexOf(key));
+        if (text) return text;
+      }
+    }
+    return null;
+  }
+
+  const geminiText = await runGeminiPhase();
+  if (geminiText) return geminiText;
+
   // Groq: a genuinely free (no card required), independent-vendor provider with typically sub-2s
   // inference, added 2026-09-23 after Gemini, OpenRouter and Cloudflare were all found failing
   // simultaneously in production. Diversifying vendors reduces the chance every provider is down at
@@ -354,80 +445,6 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     }
   }
 
-  // Google fallback after the independent free-provider lanes.
-  // Gemini is a later fallback after Gateway, Groq, OpenRouter, and Cloudflare.
-  // Production telemetry showed repeated Gemini timeouts/503s and no successful lesson responses,
-  // while the independent providers have recorded occasional successes. Trying those lanes first
-  // preserves the bounded chain budget for providers with observed production recovery.
-  // Keep the Google model list explicit and stable; secondary keys cover key-specific quota buckets.
-  const geminiKeys = [process.env.GEMINI_API_KEY_4, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-  // Prefer the official high-throughput Flash-Lite model first: production telemetry shows
-  // repeated timeouts/503s for 3.8 Flash and timeouts for 3.6 Flash. Quality gates still
-  // validate its output, and the larger stable models remain available as fallbacks.
-  const geminiModels = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"];
-
-  // A 503 is a model-capacity signal, not usually an API-key-specific failure.
-  // Do not spend the remaining lesson budget retrying the same overloaded model with every key.
-  const unavailableGeminiModels = new Set<string>();
-  async function callGemini(key: string, model: string, keyIndex: number): Promise<string | null> {
-    if (unavailableGeminiModels.has(model)) return null;
-    return tryProvider("gemini", model, async timeout => {
-      let res: Response;
-      try {
-        res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: groundedPrompt },
-                ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
-              ],
-            }],
-            generationConfig: { maxOutputTokens: maxTokens, temperature: media.length ? 0.1 : 0.35, ...(media.length && options.jsonResponse ? { responseMimeType: "application/json" } : {}) },
-          }),
-        }, timeout);
-      } catch (error) {
-        // An aborted request is not proof the key is bad, but retrying the same slow model with
-        // every backup key wastes this request's entire budget. Try a different model instead.
-        if (error instanceof Error && (error.name === "AbortError" || /timeout|aborted/i.test(error.message))) {
-          unavailableGeminiModels.add(model);
-        }
-        throw error;
-      }
-      if (!res.ok) {
-        const detail = (await res.text().catch(() => "")).slice(0, 300);
-        if (res.status === 503) unavailableGeminiModels.add(model);
-        throw new Error(`Gemini HTTP ${res.status}: ${detail}`);
-      }
-      const data = await res.json() as any;
-      // Vision responses can contain more than one text part. Joining every textual
-      // part avoids silently truncating OCR output to the first segment. A blocked
-      // candidate is not a successful empty transcription and must fall through
-      // to the next configured Gemini model/key.
-      if (data?.promptFeedback?.blockReason) {
-        throw new Error(`Gemini blocked the vision request: ${String(data.promptFeedback.blockReason).slice(0, 120)}`);
-      }
-      const candidate = data?.candidates?.[0];
-      if (candidate?.finishReason === "SAFETY" || candidate?.finishReason === "RECITATION") {
-        throw new Error(`Gemini vision response blocked: ${String(candidate.finishReason)}`);
-      }
-      const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
-      const textParts = parts
-        .map((part: { text?: unknown }) => typeof part?.text === "string" ? part.text : "")
-        .filter(Boolean);
-      return textParts.length ? textParts.join("\n") : null;
-    }, `gemini:${model}:key-${keyIndex + 1}`);
-  }
-
-  for (const model of geminiModels) {
-    for (const key of geminiKeys) {
-      if (!canTry()) break;
-      const text = await callGemini(key, model, geminiKeys.indexOf(key));
-      if (text) return text;
-    }
-    if (!canTry()) break;
-  }
 
 
   if (!media.length && ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {

@@ -14,8 +14,10 @@ import type { LearnLesson, LearnSubject, LearnSummary } from "./types";
 import PaperStudyLauncher from "./PaperStudyLauncher";
 import LearnBrainStatus from "./LearnBrainStatus";
 import ShadeNetKnowledgeSearch from "./ShadeNetKnowledgeSearch";
+import CortexResearchPanel from "./CortexResearchPanel";
 import GeographyRevisionKit from "./GeographyRevisionKit";
 import NextTopicSuggestion from "./components/NextTopicSuggestion";
+import { MAX_TOPIC_CHARS, applyTeachingApproach, topicTooLongMessage } from "@/lib/learn/teachingApproach";
 import { normalizeSubjectKey } from "@/lib/academic/subjectContract";
 import { getLearningMode, setLearningMode, type LearningMode } from "@/lib/learningMode";
 
@@ -61,6 +63,7 @@ export default function LearnPageResilient() {
   const router = useRouter();
   const params = useSearchParams();
   const [token, setToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<LearnSubject[]>([]);
   const [lessons, setLessons] = useState<LearnLesson[]>([]);
   const [summary, setSummary] = useState<LearnSummary | null>(null);
@@ -132,7 +135,10 @@ export default function LearnPageResilient() {
         ]);
         if (result.error) throw result.error;
         session = result.data.session;
-        if (session && !cancelled) setToken(session.access_token);
+        if (session && !cancelled) {
+          setToken(session.access_token);
+          setUserId(session.user.id);
+        }
       } catch (authFailure) {
         console.error("[Learn] could not restore the current session:", authFailure);
         if (!cancelled) {
@@ -207,6 +213,7 @@ export default function LearnPageResilient() {
 
   async function generate() {
     const request = topic.trim();
+    if (request.length > MAX_TOPIC_CHARS) { setError(topicTooLongMessage(request.length)); return; }
     if (!subject || !request || ["queued", "warming", "generating", "partial"].includes(generationJob?.status ?? "")) return;
     setError(null);
     localStorage.setItem(LAST_REQUEST_KEY, JSON.stringify({ subject, topic: request, mode }));
@@ -389,7 +396,7 @@ export default function LearnPageResilient() {
             <section className="rounded-[24px] border border-[var(--card-border)] bg-[var(--surface)] p-5 shadow-sm dark:border-[var(--card-border)] dark:bg-[var(--surface)] sm:p-6">
               <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted-foreground)] dark:text-[var(--primary)]">A good place to begin</p><h2 className="mt-1.5 text-xl font-semibold tracking-tight">Choose your mission</h2></div><Compass size={20} className="mt-1 text-[var(--muted-foreground)]" /></div>
               <div className="mt-4 space-y-2">
-                {QUICK_STARTS.map(({ title, prompt, icon: Icon }) => <button key={title} type="button" onClick={() => setTopic(current => current.trim() ? `${current.trim()}\n\nTeaching approach: ${prompt}` : prompt)} className="group flex w-full items-start gap-3 rounded-xl border border-[var(--card-border)] p-3 text-left transition hover:border-[var(--primary)]/50 hover:bg-[var(--interactive-hover)] dark:border-[var(--card-border)] dark:hover:bg-[var(--interactive-hover)]"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--primary-glow)] text-[var(--primary)] dark:bg-[var(--surface-2)] dark:text-[var(--primary)]"><Icon size={17} /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{title}</span><span className="mt-1 block text-sm leading-5 text-[var(--muted-foreground)] dark:text-[var(--muted-foreground)]">{title === "Teach me from zero" ? "Start with the idea, not memorisation." : title === "Fix what I keep getting wrong" ? "Find the misconception behind the mistake." : "Definitions, worked solutions, and exam practice."}</span></span><ChevronRight size={16} className="mt-2 shrink-0 text-[var(--muted-foreground)] transition group-hover:translate-x-0.5" /></button>)}
+                {QUICK_STARTS.map(({ title, prompt, icon: Icon }) => <button key={title} type="button" onClick={() => { const next = applyTeachingApproach(topic, prompt); if (!next.fits) { setError(topicTooLongMessage(topic.trim().length + prompt.length)); return; } setError(null); setTopic(next.text); }} className="group flex w-full items-start gap-3 rounded-xl border border-[var(--card-border)] p-3 text-left transition hover:border-[var(--primary)]/50 hover:bg-[var(--interactive-hover)] dark:border-[var(--card-border)] dark:hover:bg-[var(--interactive-hover)]"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--primary-glow)] text-[var(--primary)] dark:bg-[var(--surface-2)] dark:text-[var(--primary)]"><Icon size={17} /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{title}</span><span className="mt-1 block text-sm leading-5 text-[var(--muted-foreground)] dark:text-[var(--muted-foreground)]">{title === "Teach me from zero" ? "Start with the idea, not memorisation." : title === "Fix what I keep getting wrong" ? "Find the misconception behind the mistake." : "Definitions, worked solutions, and exam practice."}</span></span><ChevronRight size={16} className="mt-2 shrink-0 text-[var(--muted-foreground)] transition group-hover:translate-x-0.5" /></button>)}
               </div>
             </section>
 
@@ -401,6 +408,8 @@ export default function LearnPageResilient() {
             </section>
           </aside>
         </div>
+
+        <CortexResearchPanel subject={subject} topic={topic} onTopicChange={setTopic} token={token} userId={userId} offline={offline} />
 
         <div className="mt-6"><ShadeNetKnowledgeSearch subjects={subjects.map((item) => ({ id: item.id, name: item.name }))} /></div>
 

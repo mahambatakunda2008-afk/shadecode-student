@@ -6,8 +6,10 @@ import { log } from "@/lib/observability";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getUserIdFromRequest, requirePermission } from '@/lib/auth/rbac';
 import { cortexApproveDraftSchema, cortexRequestSchema, validateRequestBody } from '@/lib/validation/schemas';
+import { applyRateLimit, aiEndpointLimiter } from '@/lib/rate-limit/limiter';
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // Bounds the optional search + document read + AI synthesis path within Hobby limits.
 
 const DRAFTS_DIR = path.join(process.cwd(), 'src', 'app', 'api', 'cortex', 'generate-course');
 const DRAFTS_FILE = path.join(DRAFTS_DIR, 'drafts.json');
@@ -166,6 +168,10 @@ export async function POST(req: Request) {
         if (!res) return Response.json({ error: 'not found' }, { status: 404 });
         return Response.json({ success: true, ...res });
       } catch (e: any) { return Response.json({ error: e.message || 'failed' }, { status: 500 }); }
+    }
+    if (validatedType === 'learn' && validatedPayload?.research === true) {
+      const rateLimit = await applyRateLimit(req, aiEndpointLimiter);
+      if (rateLimit) return rateLimit;
     }
     const curriculum = await resolveUserSystemCurriculum(
       validatedUserId,
