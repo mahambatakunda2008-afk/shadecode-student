@@ -10,6 +10,8 @@ import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import LearnerPracticeRecommendations from "./components/LearnerPracticeRecommendations";
 import { readVerifyLearnerModel } from "@/lib/cortex/verify/learner-model-store";
 import { offlineStorage } from "@/lib/offline/storage";
+import { offlineSync } from "@/lib/offline/sync";
+import { localFirstStore } from "@/lib/local-first/store";
 
 const REQUEST_TIMEOUT_MS = 12000;
 const GENERATE_TIMEOUT_MS = 65000;
@@ -154,7 +156,27 @@ export default function LearnPageClientV2() {
             size: JSON.stringify(recovered).length,
           };
           await offlineStorage.saveLesson(localLesson);
-          setGenerateError("Cloud saving failed, but your generated lesson has been saved on this device. Opening the recovered copy.");
+          // The mutation queue is durable in IndexedDB and retries with backoff.
+          // Keep the lesson copy until the server acknowledges this stable UUID.
+          await offlineSync.queueMutation({
+            operation: "create",
+            store: "learn_lessons",
+            payload: {
+              id: recovered.id,
+              subject_id: recovered.subjectId,
+              topic: recovered.topic,
+              title: recovered.title,
+              description: recovered.description,
+              difficulty: recovered.difficulty,
+              progress: recovered.progress,
+              blocks: recovered.blocks,
+            },
+            clientVersion: 1,
+            baseVersion: 0,
+            deviceId: await localFirstStore.deviceId(),
+          });
+          if (navigator.onLine) void offlineSync.syncAll();
+          setGenerateError("Cloud saving failed, but your lesson is safe on this device and queued for automatic sync. Opening it now.");
           router.push(`/learn/${recovered.id}`);
           return;
         } catch (saveError) {
