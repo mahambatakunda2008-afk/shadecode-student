@@ -667,8 +667,13 @@ Repair only the defective section. Preserve correct material where possible. Do 
           })),
         }, request);
 
+        // Topic drift is judged on the assembled lesson (finalization re-runs lessonQualityFailures on
+        // the whole lesson). A single sub-section of a broad topic, such as "scalars vs vectors" inside
+        // "Kinematics", rarely repeats the topic word, so rejecting it here sent healthy AI sections to
+        // the curated fallback after three attempts (production 2026-11-18).
+        const perSectionIgnored = generationSectionCount > 1 ? ["topic-drift"] : [];
         sectionFailures = sectionQuality.failures.filter((failure) =>
-          !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "summary", "teach-example", "exam"].includes(failure)
+          !perSectionIgnored.includes(failure) && !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "summary", "teach-example", "exam"].includes(failure)
         );
 
         if (sectionFailures.length > 0) {
