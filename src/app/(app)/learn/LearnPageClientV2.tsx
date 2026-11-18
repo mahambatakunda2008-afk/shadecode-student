@@ -123,6 +123,13 @@ export default function LearnPageClientV2() {
     return () => { alive = false; window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
   }, [params, router, refresh]);
 
+  useEffect(() => {
+    // Keep durable queued lesson writes retrying while Learn is open, including
+    // after a connection returns or a previous tab was closed.
+    offlineSync.startAutoSync();
+    return () => offlineSync.stopAutoSync();
+  }, []);
+
   const visibleLessons = useMemo(() => subject ? data.lessons.filter((lesson) => lesson.subject === subject || lesson.subjectId === subject) : data.lessons, [data.lessons, subject]);
 
   async function generate() {
