@@ -286,7 +286,17 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
           ...(gatewayFallbackModels.length ? { providerOptions: { gateway: { models: gatewayFallbackModels } } } : {}),
         }),
       }, timeout);
-      if (!res.ok) throw new Error(`AI Gateway HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+      if (!res.ok) {
+        const detail = (await res.text().catch(() => "")).slice(0, 300);
+        // Authentication/account-verification failures cannot be repaired by retrying
+        // the same Gateway credentials. Open the instance-local breaker immediately
+        // so subsequent requests skip this known-unavailable route and reach Gemini.
+        if ([401, 402, 403].includes(res.status)) {
+          const gatewayBreaker = providerBreaker("vercel-ai-gateway");
+          for (let failure = 0; failure < 4; failure += 1) gatewayBreaker.recordFailure();
+        }
+        throw new Error(`AI Gateway HTTP ${res.status}: ${detail}`);
+      }
       const data = await res.json() as any;
       return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null;
     });
