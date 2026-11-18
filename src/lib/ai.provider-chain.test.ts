@@ -8,8 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // success or failure), and OpenRouter — the only provider with any real success rate that week —
 // was gone. With Cloudflare and Gemini both failing, lesson generation had effectively no working
 // fallback for ~22 hours. These tests pin: OpenRouter is present and reachable, it is skipped
-// cleanly when its key is absent (never throws), and the chain order is Gateway -> OpenRouter ->
-// Cloudflare -> Gemini -> OpenAI, so no provider silently drops out of the chain again.
+// cleanly when its key is absent (never throws), and the chain order is Gateway -> Gemini -> Groq ->
+// OpenRouter -> Cloudflare -> OpenAI, so no provider silently drops out of the chain again.
 
 vi.mock("@/lib/ai/tracker", () => ({ logAIUsage: vi.fn().mockResolvedValue({}) }));
 vi.mock("@/lib/curriculum/ai-grounding", () => ({ getVerifiedCurriculumPromptContext: vi.fn().mockResolvedValue("") }));
@@ -320,12 +320,9 @@ describe("callAI shareChainBudget and Cloudflare diagnostics", () => {
 
     expect(result).toBe("a complete lesson from gemini");
     const calledUrls = fetchMock.mock.calls.map(([url]) => String(url));
-    expect(calledUrls).toHaveLength(5);
+    expect(calledUrls).toHaveLength(2);
     expect(calledUrls[0]).toContain("ai-gateway.vercel.sh");
-    expect(calledUrls[1]).toContain("api.groq.com");
-    expect(calledUrls[2]).toContain("openrouter.ai");
-    expect(calledUrls[3]).toContain("cloudflare.com");
-    expect(calledUrls[4]).toContain("generativelanguage.googleapis.com");
+    expect(calledUrls[1]).toContain("generativelanguage.googleapis.com");
   }, 12000);
 
   it("records Cloudflare's own reason for a failure, not just the status code", async () => {
@@ -394,5 +391,41 @@ describe("callAI shareChainBudget and Cloudflare diagnostics", () => {
     const { callAI } = await import("./ai");
     expect(await callAI("teach me waves", 500, OPTIONS)).toBe("a lesson from the first model");
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  describe("Gemini priority", () => {
+    const ALL_KEYS: Record<string, string> = { AI_GATEWAY_API_KEY: "gw-key", GROQ_API_KEY: "groq-key", OPENROUTER_API_KEY: "or-key", CLOUDFLARE_API_TOKEN: "cf-key", GEMINI_API_KEY: "gemini-key" };
+    const geminiOk = () => jsonResponse({ candidates: [{ content: { parts: [{ text: "a complete lesson from gemini" }] } }] });
+
+    it("reaches Gemini right after a failing Gateway and never calls the slower providers", async () => {
+      for (const [k, v] of Object.entries(ALL_KEYS)) vi.stubEnv(k, v);
+      fetchMock.mockImplementation(async (url: string) => (String(url).includes("generativelanguage") ? geminiOk() : jsonResponse({ error: "card required" }, false, 403)));
+      const { callAI } = await import("./ai");
+      expect(await callAI("teach me waves", 500, { skipCurriculumGrounding: true, curriculumContext: "" })).toBe("a complete lesson from gemini");
+      const urls = fetchMock.mock.calls.map(([url]) => String(url));
+      expect(urls).toHaveLength(2);
+      expect(urls[0]).toContain("ai-gateway.vercel.sh");
+      expect(urls[1]).toContain("generativelanguage");
+    });
+
+    it("still reaches the other providers when Gemini hangs (Gemini phase is budget-capped)", async () => {
+      for (const [k, v] of Object.entries(ALL_KEYS)) vi.stubEnv(k, v);
+      fetchMock.mockImplementation(async (url: string) => {
+        const u = String(url);
+        if (u.includes("groq.com")) return jsonResponse({ choices: [{ message: { content: "a complete lesson from groq" } }] });
+        return new Promise<Response>(() => {});
+      });
+      const { callAI } = await import("./ai");
+      const result = await callAI("teach me waves", 500, { skipCurriculumGrounding: true, curriculumContext: "", maxChainMs: 8000, perProviderMaxMs: 2000 });
+      expect(result).toBe("a complete lesson from groq");
+    }, 15000);
+
+    it("skips Gemini cleanly when no Gemini key is configured", async () => {
+      vi.stubEnv("OPENROUTER_API_KEY", "or-key");
+      fetchMock.mockResolvedValue(jsonResponse({ choices: [{ message: { content: "a complete lesson from openrouter" } }] }));
+      const { callAI } = await import("./ai");
+      expect(await callAI("teach me waves", 500, { skipCurriculumGrounding: true, curriculumContext: "" })).toBe("a complete lesson from openrouter");
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes("generativelanguage"))).toBe(false);
+    });
   });
 });

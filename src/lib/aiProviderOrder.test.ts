@@ -4,13 +4,13 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync(new URL("./ai.ts", import.meta.url), "utf8");
 
 describe("AI provider fallback order", () => {
-  it("tries independent free-provider lanes before repeated Gemini attempts", () => {
+  it("tries the Gateway, then Gemini, then the independent free-provider lanes, then paid OpenAI", () => {
     const positions = [
       source.indexOf('tryProvider("vercel-ai-gateway"'),
+      source.indexOf('tryProvider("gemini"'),
       source.indexOf('tryProvider("groq"'),
       source.indexOf('tryProvider("openrouter"'),
       source.indexOf('tryProvider("cloudflare"'),
-      source.indexOf('tryProvider("gemini"'),
       source.indexOf('tryProvider("openai"'),
     ];
 
