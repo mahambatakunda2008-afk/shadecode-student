@@ -9,6 +9,7 @@ import { AlertCircle, BookOpen, CheckCircle2, Clock3, RefreshCw, Sparkles, WifiO
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import LearnerPracticeRecommendations from "./components/LearnerPracticeRecommendations";
 import { readVerifyLearnerModel } from "@/lib/cortex/verify/learner-model-store";
+import { offlineStorage } from "@/lib/offline/storage";
 
 const REQUEST_TIMEOUT_MS = 12000;
 const GENERATE_TIMEOUT_MS = 65000;
@@ -31,7 +32,10 @@ async function requestJson<T>(url: string, init: RequestInit, timeoutMs: number)
     try { data = text ? JSON.parse(text) : {}; } catch { throw new Error("Invalid server response."); }
     if (!response.ok) {
       const message = typeof data === "object" && data && "error" in data ? String((data as { error?: unknown }).error ?? "Request failed") : `Request failed (${response.status})`;
-      throw new Error(message);
+      const recoverableLesson = typeof data === "object" && data && "recoverableLesson" in data
+        ? (data as { recoverableLesson?: { id: string; title: string; blocks: Array<Record<string, unknown>>; subject: string; subjectId: string; topic: string; description: string; difficulty: string; progress: number; completed: boolean } }).recoverableLesson
+        : undefined;
+      throw Object.assign(new Error(message), recoverableLesson ? { recoverableLesson } : {});
     }
     return data as T;
   } catch (error) {
@@ -139,8 +143,28 @@ export default function LearnPageClientV2() {
       if (!result.id) throw new Error(result.error || "The lesson was not created.");
       router.push(`/learn/${result.id}`);
     } catch (e) {
+      const recovered = e && typeof e === "object" && "recoverableLesson" in e
+        ? (e as { recoverableLesson?: { id: string; title: string; blocks: Array<Record<string, unknown>>; subject: string; subjectId: string; topic: string; description: string; difficulty: string; progress: number; completed: boolean } }).recoverableLesson
+        : undefined;
+      if (recovered && userId) {
+        try {
+          const localLesson = {
+            ...recovered,
+            downloadedAt: new Date().toISOString(),
+            size: JSON.stringify(recovered).length,
+          };
+          await offlineStorage.saveLesson(localLesson);
+          setGenerateError("Cloud saving failed, but your generated lesson has been saved on this device. Opening the recovered copy.");
+          router.push(`/learn/${recovered.id}`);
+          return;
+        } catch (saveError) {
+          console.error("[Learn] Could not preserve recoverable generated lesson locally:", saveError);
+          setGenerateError("The lesson was generated, but this device could not store the recovery copy. Keep this page open and try again.");
+          return;
+        }
+      }
       const message = e instanceof Error ? e.message : "Generation failed.";
-      setGenerateError(message === "REQUEST_TIMEOUT" ? "Generation took too long. Try again or use a smaller topic." : message);
+      setGenerateError(message === "REQUEST_TIMEOUT" ? "Generation took too long. The server may still have completed it. Refresh your lessons before retrying to avoid duplicates." : message);
     } finally { setGenerating(false); }
   }
 
