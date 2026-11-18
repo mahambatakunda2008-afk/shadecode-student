@@ -654,6 +654,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
         section = safeParseSectionJSON(rawSection);
         if (!section) {
           sectionFailures = ["invalid-section-json-or-structure"];
+          console.info("[LEARN] section rejected", { generationJobId: durableJobId, sectionIndex: generationSectionIndex, attempt, failures: sectionFailures, responseTail: rawSection.slice(-120) });
           continue;
         }
 
@@ -670,7 +671,10 @@ Repair only the defective section. Preserve correct material where possible. Do 
           !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "summary", "teach-example", "exam"].includes(failure)
         );
 
-        if (sectionFailures.length > 0) section = null;
+        if (sectionFailures.length > 0) {
+          console.info("[LEARN] section rejected", { generationJobId: durableJobId, sectionIndex: generationSectionIndex, attempt, failures: sectionFailures });
+          section = null;
+        }
       }
 
       if (!section) {
