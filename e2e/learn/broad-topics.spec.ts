@@ -35,7 +35,11 @@ test.describe("Learn deep-generation browser contract", () => {
       await page.locator("#learn-topic").fill(topic);
       await page.getByRole("button", { name: /Start learning/ }).click();
 
-      await expect.poll(async () => page.evaluate(() => {
+      await expect.poll(async () => {
+        // A successful generation navigates to /learn/<id>, which destroys the evaluate context mid-poll.
+        if (/\/learn\/[^/?#]+$/.test(new URL(page.url()).pathname)) return "navigated";
+        try {
+          return await page.evaluate(() => {
         if (/\/learn\/[^/]+$/.test(window.location.pathname)) return "navigated";
         try {
           const raw = localStorage.getItem("shadecode:cortex:generation-jobs:v2");
@@ -47,7 +51,11 @@ test.describe("Learn deep-generation browser contract", () => {
         } catch {
           return "waiting";
         }
-      }), { timeout: 130_000, intervals: [1000] }).toMatch(/^(navigated|complete)$/);
+      })
+        } catch {
+          return "navigated";
+        }
+      }, { timeout: 130_000, intervals: [1000] }).toMatch(/^(navigated|complete)$/);
       await expect(page.locator("h1.lesson-title")).toBeVisible({ timeout: 15_000 });
 
       const units = page.locator(".lesson-unit");
