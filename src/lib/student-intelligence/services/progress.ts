@@ -110,7 +110,7 @@ export class ProgressService {
 
       let query = supabase
         .from("learn_lessons")
-        .select("id, title, subject_id, progress, updated_at, time_spent, attempts")
+        .select("id, title, subject_id, progress, updated_at")
         .eq("user_id", userId);
 
       if (lessonId) {
@@ -131,8 +131,11 @@ export class ProgressService {
         progress: lesson.progress || 0,
         completed: (lesson.progress || 0) >= 100,
         lastAttempted: lesson.updated_at || new Date().toISOString(),
-        timeSpent: lesson.time_spent || 0,
-        attempts: lesson.attempts || 1,
+        // learn_lessons has no time_spent/attempts columns (live schema, 2026-11-18). Selecting them made
+        // every call fail with HTTP 400 and silently return no lessons. Report "not tracked" as 0
+        // rather than inventing values; real time/attempt data lives in learning events and quiz attempts.
+        timeSpent: 0,
+        attempts: 0,
       }));
     } catch (error) {
       console.error("[ProgressService] Error getting lesson progress:", error);
@@ -198,8 +201,6 @@ export class ProgressService {
           .update({
             progress: progress.progress,
             updated_at: new Date().toISOString(),
-            ...(progress.timeSpent !== undefined && { time_spent: progress.timeSpent }),
-            ...(progress.attempts !== undefined && { attempts: progress.attempts }),
           })
           .eq("user_id", userId)
           .eq("id", progress.lessonId);

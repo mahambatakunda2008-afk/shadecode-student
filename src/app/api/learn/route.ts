@@ -168,6 +168,9 @@ export async function GET(req: Request) {
     const subjectById = new Map(subjects.map(s => [s.id, s.name])); const level = profile?.level ?? 1;
     const summary = { currentXP: profile?.xp ?? 0, currentStreak: profile?.streak ?? 0, level, xpGoal: Math.max(100, level * 100) };
     if (lessonId) {
+      // A non-UUID id (e.g. the "tutorials" path segment resolving to /learn/[lessonId]) makes Postgres
+      // reject the query with HTTP 400. It cannot be a lesson, so answer 404 without a database round trip.
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lessonId)) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
       const { data: lessonData, error: lessonError } = await supabase.from("learn_lessons").select("id, subject_id, topic, title, description, difficulty, progress, updated_at, blocks").eq("user_id", user.id).eq("id", lessonId).maybeSingle();
       if (lessonError) return NextResponse.json({ error: "Unable to load lesson." }, { status: 500 });
       if (!lessonData) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
