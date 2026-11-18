@@ -9,11 +9,11 @@ test.describe("Learn deep-generation browser contract", () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page);
     await page.goto("/learn");
-    await expect(page.getByRole("heading", { name: "Learn with intent." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Make the hard stuff/ })).toBeVisible();
   });
 
   test("builds and renders a substantive lesson from the signed-in user curriculum", async ({ page }) => {
-      const subjectSelect = page.getByRole("combobox", { name: "Subject" });
+      const subjectSelect = page.locator("#learn-subject");
       await expect(subjectSelect).toBeVisible({ timeout: 15_000 });
       await expect.poll(async () => subjectSelect.locator("option").count(), { timeout: 15_000 }).toBeGreaterThan(1);
 
@@ -28,8 +28,12 @@ test.describe("Learn deep-generation browser contract", () => {
       await subjectSelect.selectOption({ value: selected!.value });
       expect(requestedTopic, "E2E_LEARN_TOPICS must name a real broad topic from the signed-in user curriculum; no synthetic fallback is allowed.").toBeTruthy();
       const topic = requestedTopic;
-      await page.getByLabel("What do you need help with?").fill(topic);
-      await page.getByRole("button", { name: "Start learning" }).click();
+      const aiSwitch = page.getByRole("switch", { name: "Enable Cortex AI" });
+      await expect(aiSwitch).toBeVisible({ timeout: 10_000 });
+      if ((await aiSwitch.getAttribute("aria-checked")) !== "true") await aiSwitch.click();
+      await expect(aiSwitch).toHaveAttribute("aria-checked", "true");
+      await page.locator("#learn-topic").fill(topic);
+      await page.getByRole("button", { name: /Start learning/ }).click();
 
       await expect.poll(async () => page.evaluate(() => {
         if (/\/learn\/[^/]+$/.test(window.location.pathname)) return "navigated";
