@@ -7,6 +7,52 @@ on:
     branches: [main, fix/exam-hub-subject-access]
 
 jobs:
+  security_execute_grants_contract:
+    name: Trigger and answer-key grant contract
+    if: github.event_name == 'pull_request' && github.head_ref == 'fix/security-definer-trigger-grants'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shadecode_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d shadecode_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Prepare isolated security fixture
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 \
+            --file supabase/tests/fixtures/security_execute_grants_schema.sql
+
+      - name: Apply least-privilege migration
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 \
+            --file supabase/migrations/20261116101500_restrict_trigger_and_answer_key_grants.sql
+
+      - name: Verify grants and prove trigger execution
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 \
+            --file supabase/tests/security_execute_grants_contract.sql
+
   verify:
     name: Typecheck, lint, test, build
     runs-on: ubuntu-latest
