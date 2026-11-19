@@ -1072,9 +1072,11 @@ private fun LearnNativeScreen(
                                     } else {
                                         val saved = generated.copy(subjectId = subject.id)
                                         val queuedForCloud = withContext(Dispatchers.IO) {
-                                            database.lessons().replaceAll(listOf(saved))
                                             val cloudBackedId = runCatching { java.util.UUID.fromString(saved.id) }.isSuccess
-                                            if (cloudBackedId) {
+                                            // Persist the retry first. If Android is killed between these writes,
+                                            // the worker can still finish the cloud save and the next refresh
+                                            // will repopulate the local cache.
+                                            val queued = if (cloudBackedId) runCatching {
                                                 val payload = org.json.JSONObject()
                                                     .put("id", saved.id)
                                                     .put("subjectId", saved.subjectId)
@@ -1085,8 +1087,9 @@ private fun LearnNativeScreen(
                                                     .put("blocksJson", saved.blocksJson)
                                                     .put("progress", saved.progress.toDouble())
                                                 store.enqueuePendingOperation(session.userId, "lesson_create", payload)
-                                            }
-                                            cloudBackedId
+                                            }.isSuccess else false
+                                            database.lessons().replaceAll(listOf(saved))
+                                            queued
                                         }
                                         if (queuedForCloud) NativeSyncWorker.schedule(context)
                                         lessons = withContext(Dispatchers.IO) { database.lessons().forSubject(subject.id) }
