@@ -441,7 +441,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         } else when (selected) {
             0 -> DashboardScreen(padding, session, api, profile, subjects, loading, error, onOpenExamHub = { showExamHub = true }, onOpenExamSimulation = { showExamSimulation = true })
             5 -> NativeTimetableScreen(padding, session, api, subjects)
-            1 -> LearnNativeScreen(padding, session, profile, subjects, database, api)
+            1 -> LearnNativeScreen(padding, session, profile, subjects, database, api, sessionStore)
             2 -> NativePracticeScreen(
                 padding = padding,
                 subjects = subjects,
@@ -983,6 +983,7 @@ private fun LearnNativeScreen(
     subjects: List<NativeSubjectEntity>,
     database: NativeDatabase,
     api: NativeApi,
+    sessionStore: NativeStore,
 ) {
     val context = LocalContext.current
     val cortex = remember { NativeCortexOrchestrator() }
@@ -1086,7 +1087,7 @@ private fun LearnNativeScreen(
                                                     .put("difficulty", saved.difficulty)
                                                     .put("blocksJson", saved.blocksJson)
                                                     .put("progress", saved.progress.toDouble())
-                                                store.enqueuePendingOperation(session.userId, "lesson_create", payload)
+                                                sessionStore.enqueuePendingOperation(session.userId, "lesson_create", payload)
                                             }.isSuccess else false
                                             database.lessons().replaceAll(listOf(saved))
                                             queued
