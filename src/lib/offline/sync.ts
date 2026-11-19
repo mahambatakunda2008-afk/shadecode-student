@@ -1,5 +1,5 @@
 /** Offline synchronization. The device is the primary data plane; the mutation queue is network transport. */
-import { mutationQueue, type OfflineMutation } from "./mutationQueue";
+import { isCloudSyncLessonId, mutationQueue, type OfflineMutation } from "./mutationQueue";
 import { createClient } from "@/lib/supabase/client";
 import { localFirstStore } from "@/lib/local-first/store";
 import { localTasks } from "@/lib/local-first/tasks";
@@ -30,7 +30,7 @@ export class OfflineSync {
     const auth = await this.getCurrentUser();
     if (!auth || auth.user.id !== userId) return;
     const pending = (await offlineStorage.getAllLessons()).filter((lesson) =>
-      lesson.pendingSync === true && lesson.userId === userId && !!lesson.id && !!lesson.blocks?.length
+      lesson.pendingSync === true && lesson.userId === userId && isCloudSyncLessonId(lesson.id) && !!lesson.blocks?.length
     );
     if (!pending.length) return;
     const { data: sessionData } = await auth.supabase.auth.getSession();
