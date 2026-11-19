@@ -48,6 +48,14 @@ function generationLeaseId(jobId: string) {
   generationLeaseIds.set(jobId, id);
   return id;
 }
+
+/** Checkpoints title an unfinished lesson "Cortex is building ..."; never let that shell title reach the finished lesson. */
+export function finalLessonTitle(title: string | undefined, topic: string): string {
+  const cleaned = (title ?? "").trim();
+  if (!cleaned || /^cortex is building\b/i.test(cleaned)) return topic.trim().slice(0, 120) || "Lesson";
+  return cleaned;
+}
+
 async function heartbeatGenerationLease(token: string, jobId: string, leaseId: string): Promise<"ok" | "lost" | "unknown"> {
   try {
     const response = await fetch("/api/cortex/generation", {
@@ -783,7 +791,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
 
     data = {
       id: job.id,
-      title: assembledTitle,
+      title: finalLessonTitle(assembledTitle, request.topic),
       blocks: assembledBlocks,
     };
     if (!data?.id || !Array.isArray(data?.blocks)) throw lastError instanceof Error ? lastError : new Error("The lesson service returned an incomplete lesson.");
