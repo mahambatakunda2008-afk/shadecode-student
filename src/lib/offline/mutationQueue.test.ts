@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMutationReady, isSameMutation, retryDelayMs, type OfflineMutation } from "./mutationQueue";
+import { isCloudSyncLessonId, isMutationReady, isSameMutation, retryDelayMs, type OfflineMutation } from "./mutationQueue";
 
 const mutation = (overrides: Partial<OfflineMutation> = {}): OfflineMutation => ({
   id: "m1",
@@ -10,6 +10,19 @@ const mutation = (overrides: Partial<OfflineMutation> = {}): OfflineMutation => 
   createdAt: new Date(0).toISOString(),
   attempts: 0,
   ...overrides,
+});
+
+describe("cloud lesson ID eligibility", () => {
+  it("accepts UUID lesson IDs for authenticated cloud sync", () => {
+    expect(isCloudSyncLessonId("550e8400-e29b-41d4-a716-446655440000")).toBe(true);
+  });
+
+  it("rejects local-only and malformed IDs", () => {
+    expect(isCloudSyncLessonId("offline-unavailable-abc123")).toBe(false);
+    expect(isCloudSyncLessonId("local:lesson-1")).toBe(false);
+    expect(isCloudSyncLessonId("lesson_123_random")).toBe(false);
+    expect(isCloudSyncLessonId("")).toBe(false);
+  });
 });
 
 describe("offline mutation retry identity", () => {
