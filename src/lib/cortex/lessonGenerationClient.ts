@@ -200,7 +200,7 @@ function validateResult(result: LessonGenerationResult, request: ReturnType<type
   if (result.offlineFallback) return { ...result, blocks: normalized };
   const quality = lessonQualityFailures({ title: result.title, blocks: normalized.map((block) => ({ type: String(block.type), title: typeof block.title === "string" ? block.title : undefined, content: String(block.content ?? "") })) }, request);
   if (quality.failures.length) {
-    console.info("[LEARN] lesson rejected by client quality gate", { failures: quality.failures, topic: request.topic });
+    console.info("[LEARN] lesson rejected by client quality gate", { failures: quality.failures.join(","), topic: request.topic, blocks: normalized.length });
     return null;
   }
   return { ...result, blocks: normalized };
