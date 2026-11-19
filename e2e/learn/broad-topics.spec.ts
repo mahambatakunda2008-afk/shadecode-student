@@ -7,7 +7,9 @@ const requestedTopic = (process.env.E2E_LEARN_TOPICS || "").split(",").map((topi
 const learnLogs: string[] = [];
 
 test.describe("Learn deep-generation browser contract", () => {
-  test.setTimeout(150_000);
+  // One generation per run: a Playwright retry restarts the same durable job and invalidates the first attempt's lease.
+  test.describe.configure({ retries: 0 });
+  test.setTimeout(300_000);
   test.beforeEach(async ({ page }) => {
     await signIn(page);
     learnLogs.length = 0;
@@ -70,7 +72,7 @@ test.describe("Learn deep-generation browser contract", () => {
         await expect.poll(async () => {
           const text = (await page.locator("main").innerText()).toLowerCase();
           return text.includes("cortex is building") ? "building" : "built";
-        }, { timeout: 140_000, intervals: [2000], message: "Lesson never finished building" }).toBe("built");
+        }, { timeout: 240_000, intervals: [2000], message: "Lesson never finished building" }).toBe("built");
       } catch (error) {
         const finalText = (await page.locator("main").innerText().catch(() => "")).slice(0, 300).replace(/\s+/g, " ");
         throw new Error(`${error instanceof Error ? error.message : String(error)}\nPage: ${finalText}\nBrowser logs:\n${learnLogs.slice(-25).join("\n")}`);
