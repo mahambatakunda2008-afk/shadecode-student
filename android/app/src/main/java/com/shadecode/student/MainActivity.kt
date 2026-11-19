@@ -1071,9 +1071,30 @@ private fun LearnNativeScreen(
                                         generationMessage = if (localAvailable) "Local Cortex could not complete that lesson, and cloud fallback was unavailable." else "Cloud Cortex could not complete that lesson. Cached lessons remain available offline."
                                     } else {
                                         val saved = generated.copy(subjectId = subject.id)
-                                        withContext(Dispatchers.IO) { database.lessons().replaceAll(listOf(saved)) }
+                                        val queuedForCloud = withContext(Dispatchers.IO) {
+                                            database.lessons().replaceAll(listOf(saved))
+                                            val cloudBackedId = runCatching { java.util.UUID.fromString(saved.id) }.isSuccess
+                                            if (cloudBackedId) {
+                                                val payload = org.json.JSONObject()
+                                                    .put("id", saved.id)
+                                                    .put("subjectId", saved.subjectId)
+                                                    .put("topic", saved.topic)
+                                                    .put("title", saved.title)
+                                                    .put("description", saved.description)
+                                                    .put("difficulty", saved.difficulty)
+                                                    .put("blocksJson", saved.blocksJson)
+                                                    .put("progress", saved.progress.toDouble())
+                                                store.enqueuePendingOperation(session.userId, "lesson_create", payload)
+                                            }
+                                            cloudBackedId
+                                        }
+                                        if (queuedForCloud) NativeSyncWorker.schedule(context)
                                         lessons = withContext(Dispatchers.IO) { database.lessons().forSubject(subject.id) }
-                                        generationMessage = "Generated with Cortex and saved on this device for offline study."
+                                        generationMessage = if (queuedForCloud) {
+                                            "Lesson saved on this device. Cloud sync is queued and will retry safely."
+                                        } else {
+                                            "Generated on-device and saved locally for offline study."
+                                        }
                                         activeLesson = saved
                                     }
                                     generating = false
