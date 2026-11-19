@@ -4,11 +4,13 @@ import { signIn } from "./auth";
 const requestedSubject = (process.env.E2E_LEARN_SUBJECT || "").trim();
 const requestedTopic = (process.env.E2E_LEARN_TOPICS || "").split(",").map((topic) => topic.trim()).filter(Boolean)[0] || "";
 
+const learnLogs: string[] = [];
+
 test.describe("Learn deep-generation browser contract", () => {
   test.setTimeout(150_000);
   test.beforeEach(async ({ page }) => {
     await signIn(page);
-    const learnLogs: string[] = [];
+    learnLogs.length = 0;
       page.on("console", (message) => {
         const text = message.text();
         if (text.includes("[LEARN]") || text.includes("[Cortex")) learnLogs.push(text.slice(0, 400));
