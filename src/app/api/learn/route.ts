@@ -1,3 +1,4 @@
+import { cleanJsonText, extractJSONObject, parseSectionJson } from "@/lib/cortex/lessonJson";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
@@ -87,20 +88,6 @@ function buildSubjectTabs(subjects: SubjectRow[], lessons: LearnLessonRow[]): Le
   const counts = lessons.reduce<Record<string, number>>((acc, l) => { acc[l.subject_id] = (acc[l.subject_id] ?? 0) + 1; return acc; }, {});
   return subjects.map(s => ({ id: s.id, name: s.name, lessonCount: counts[s.id] ?? 0 }));
 }
-function extractJSONObject(raw: string): string | null {
-  const text = raw.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-  const start = text.indexOf("{"); if (start < 0) return null;
-  let depth = 0; let inString = false; let escaped = false;
-  for (let i = start; i < text.length; i++) {
-    const ch = text[i];
-    if (inString) { if (escaped) escaped = false; else if (ch === "\\") escaped = true; else if (ch === '"') inString = false; continue; }
-    if (ch === '"') { inString = true; continue; }
-    if (ch === "{") depth++;
-    else if (ch === "}") { depth--; if (depth === 0) return text.slice(start, i + 1); }
-  }
-  return null;
-}
-function cleanJsonText(text: string) { return text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/\\(?!["\\/bfnrtu])/g, "\\\\"); }
 function validateLesson(value: unknown): { title: string; blocks: LessonBlock[] } | null {
   if (!value || typeof value !== "object") return null;
   const p = value as { title?: unknown; blocks?: unknown };
@@ -112,19 +99,7 @@ function validateLesson(value: unknown): { title: string; blocks: LessonBlock[] 
   return { title: p.title.trim().slice(0, 255), blocks };
 }
 function safeParseSectionJSON(raw: string): { title: string; blocks: LessonBlock[] } | null {
-  const json = extractJSONObject(raw);
-  if (!json) return null;
-  try {
-    const value = JSON.parse(json) as { title?: unknown; blocks?: unknown };
-    if (typeof value.title !== "string" || !Array.isArray(value.blocks)) return null;
-    const blocks = value.blocks.filter((b): b is LessonBlock =>
-      !!b && typeof b === "object" &&
-      typeof (b as LessonBlock).type === "string" &&
-      typeof (b as LessonBlock).content === "string" &&
-      (b as LessonBlock).content.trim().length >= 40
-    ).slice(0, 6);
-    return blocks.length >= 3 ? { title: value.title.trim().slice(0,255), blocks } : null;
-  } catch { return null; }
+  return parseSectionJson<LessonBlock>(raw);
 }
 function safeParseJSON(raw: string): { title: string; blocks: LessonBlock[] } | null {
   const candidates = [extractJSONObject(raw), extractJSONObject(cleanJsonText(raw)), extractJSONObject(raw.replace(/\\/g, ""))].filter((v): v is string => Boolean(v));
@@ -671,7 +646,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
         // the whole lesson). A single sub-section of a broad topic, such as "scalars vs vectors" inside
         // "Kinematics", rarely repeats the topic word, so rejecting it here sent healthy AI sections to
         // the curated fallback after three attempts (production 2026-11-18).
-        const perSectionIgnored = generationSectionCount > 1 ? ["topic-drift"] : [];
+        const perSectionIgnored = generationSectionCount > 1 ? ["topic-drift", "concept"] : [];
         sectionFailures = sectionQuality.failures.filter((failure) =>
           !perSectionIgnored.includes(failure) && !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "summary", "teach-example", "exam"].includes(failure)
         );
