@@ -8,7 +8,12 @@ test.describe("Learn deep-generation browser contract", () => {
   test.setTimeout(150_000);
   test.beforeEach(async ({ page }) => {
     await signIn(page);
-    await page.goto("/learn");
+    const learnLogs: string[] = [];
+      page.on("console", (message) => {
+        const text = message.text();
+        if (text.includes("[LEARN]") || text.includes("[Cortex")) learnLogs.push(text.slice(0, 400));
+      });
+      await page.goto("/learn");
     await expect(page.getByRole("heading", { name: /Make the hard stuff/ })).toBeVisible();
   });
 
@@ -59,10 +64,15 @@ test.describe("Learn deep-generation browser contract", () => {
       await expect(page.locator("h1.lesson-title")).toBeVisible({ timeout: 15_000 });
       // The app opens the lesson shell immediately ("Cortex is building ...") and fills it in section by
       // section from the browser, so wait for the finished lesson before judging its content.
-      await expect.poll(async () => {
-        const text = (await page.locator("main").innerText()).toLowerCase();
-        return text.includes("cortex is building") ? "building" : "built";
-      }, { timeout: 170_000, intervals: [2000], message: "Lesson never finished building" }).toBe("built");
+      try {
+        await expect.poll(async () => {
+          const text = (await page.locator("main").innerText()).toLowerCase();
+          return text.includes("cortex is building") ? "building" : "built";
+        }, { timeout: 140_000, intervals: [2000], message: "Lesson never finished building" }).toBe("built");
+      } catch (error) {
+        const finalText = (await page.locator("main").innerText().catch(() => "")).slice(0, 300).replace(/\s+/g, " ");
+        throw new Error(`${error instanceof Error ? error.message : String(error)}\nPage: ${finalText}\nBrowser logs:\n${learnLogs.slice(-25).join("\n")}`);
+      }
 
       const units = page.locator(".lesson-unit");
       await expect.poll(async () => units.count(), { timeout: 15_000 }).toBeGreaterThanOrEqual(16);
