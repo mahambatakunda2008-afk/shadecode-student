@@ -1086,7 +1086,7 @@ private fun LearnNativeScreen(
                                                     .put("description", saved.description)
                                                     .put("difficulty", saved.difficulty)
                                                     .put("blocksJson", saved.blocksJson)
-                                                    .put("progress", saved.progress.toDouble())
+                                                    .put("progress", kotlin.math.round(saved.progress.coerceIn(0f, 1f) * 100f).toInt())
                                                 sessionStore.enqueuePendingOperation(session.userId, "lesson_create", payload)
                                             }.isSuccess else false
                                             database.lessons().replaceAll(listOf(saved))
