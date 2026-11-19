@@ -7,6 +7,10 @@ const MAX_ATTEMPTS = 8;
 const BASE_RETRY_MS = 5_000;
 const MAX_RETRY_MS = 15 * 60_000;
 export const USER_SCOPED_MUTATION_STORES = new Set(["tasks", "subjects", "learn_lessons", "projects", "project_evidence", "project_milestones"]);
+/** Cloud learn_lessons use UUID primary keys; local-only IDs must never enter PostgREST sync. */
+export function isCloudSyncLessonId(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+}
 function createMutationId(): string { if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID(); return `${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 export function retryDelayMs(attempts: number): number { if (attempts <= 0) return 0; return Math.min(BASE_RETRY_MS * 2 ** (attempts - 1), MAX_RETRY_MS); }
 export function isMutationReady(mutation: OfflineMutation, now = Date.now()): boolean { if (mutation.attempts >= MAX_ATTEMPTS) return false; if (!mutation.lastAttemptAt) return true; const lastAttempt = Date.parse(mutation.lastAttemptAt); if (!Number.isFinite(lastAttempt)) return true; return now - lastAttempt >= retryDelayMs(mutation.attempts); }
