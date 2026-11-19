@@ -93,6 +93,39 @@ class NativeApi {
         return result
     }
 
+    /**
+     * Idempotently upsert a generated lesson under the current learner's RLS identity.
+     * Stable lesson IDs make retrying this operation safe after process death or a lost response.
+     */
+    fun saveGeneratedLesson(session: NativeSession, payload: JSONObject) {
+        val lessonId = payload.optString("id").trim()
+        require(runCatching { java.util.UUID.fromString(lessonId) }.isSuccess) {
+            "A cloud lesson must have a valid stable ID before it can sync."
+        }
+        val subjectId = payload.optString("subjectId").trim()
+        require(subjectId.isNotBlank()) { "A subject is required before the lesson can sync." }
+        val blocks = JSONArray(payload.optString("blocksJson", "[]"))
+        require(blocks.length() >= 8) { "The recovered lesson is incomplete and cannot sync." }
+        val row = JSONObject()
+            .put("id", lessonId)
+            .put("user_id", session.userId)
+            .put("subject_id", subjectId)
+            .put("topic", payload.optString("topic").take(500))
+            .put("title", payload.optString("title").take(255))
+            .put("description", payload.optString("description").take(1000))
+            .put("difficulty", payload.optString("difficulty").ifBlank { "adaptive" })
+            .put("blocks", blocks)
+            .put("progress", payload.optDouble("progress", 0.0).coerceIn(0.0, 1.0))
+            .put("updated_at", java.time.Instant.now().toString())
+        request(
+            "POST",
+            "/rest/v1/learn_lessons?on_conflict=id",
+            JSONArray().put(row).toString(),
+            accessToken = session.accessToken,
+            prefer = "resolution=merge-duplicates,return=minimal",
+        )
+    }
+
     /** Atomically replace the authenticated learner's timetable using the existing RLS-protected RPC. */
     fun saveTimetable(session: NativeSession, slots: List<NativeTimetableSlot>) {
         require(slots.isNotEmpty() && slots.size <= 100) { "Generate between 1 and 100 timetable slots." }
