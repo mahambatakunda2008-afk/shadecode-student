@@ -1072,7 +1072,7 @@ private fun LearnNativeScreen(
                                         generationMessage = if (localAvailable) "Local Cortex could not complete that lesson, and cloud fallback was unavailable." else "Cloud Cortex could not complete that lesson. Cached lessons remain available offline."
                                     } else {
                                         val saved = generated.copy(subjectId = subject.id)
-                                        val queuedForCloud = withContext(Dispatchers.IO) {
+                                        val syncState = withContext(Dispatchers.IO) {
                                             val cloudBackedId = runCatching { java.util.UUID.fromString(saved.id) }.isSuccess
                                             // Persist the retry first. If Android is killed between these writes,
                                             // the worker can still finish the cloud save and the next refresh
@@ -1090,14 +1090,14 @@ private fun LearnNativeScreen(
                                                 sessionStore.enqueuePendingOperation(session.userId, "lesson_create", payload)
                                             }.isSuccess else false
                                             database.lessons().replaceAll(listOf(saved))
-                                            queued
+                                            cloudBackedId to queued
                                         }
-                                        if (queuedForCloud) NativeSyncWorker.schedule(context)
+                                        if (syncState.second) NativeSyncWorker.schedule(context)
                                         lessons = withContext(Dispatchers.IO) { database.lessons().forSubject(subject.id) }
-                                        generationMessage = if (queuedForCloud) {
-                                            "Lesson saved on this device. Cloud sync is queued and will retry safely."
-                                        } else {
-                                            "Generated on-device and saved locally for offline study."
+                                        generationMessage = when {
+                                            syncState.second -> "Lesson saved on this device. Cloud sync is queued and will retry safely."
+                                            syncState.first -> "Lesson is saved on this device, but cloud sync could not be queued. Retry sync when connected."
+                                            else -> "Generated on-device and saved locally for offline study."
                                         }
                                         activeLesson = saved
                                     }
