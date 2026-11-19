@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMutationReady, retryDelayMs, type OfflineMutation } from "./mutationQueue";
+import { isMutationReady, isSameMutation, retryDelayMs, type OfflineMutation } from "./mutationQueue";
 
 const mutation = (overrides: Partial<OfflineMutation> = {}): OfflineMutation => ({
   id: "m1",
@@ -10,6 +10,46 @@ const mutation = (overrides: Partial<OfflineMutation> = {}): OfflineMutation => 
   createdAt: new Date(0).toISOString(),
   attempts: 0,
   ...overrides,
+});
+
+describe("offline mutation retry identity", () => {
+  it("preserves retry history when the same mutation is discovered again", () => {
+    const existing = mutation({
+      attempts: 5,
+      lastAttemptAt: "2026-11-19T10:00:00.000Z",
+      lastError: "Temporary network failure",
+    });
+    expect(isSameMutation(existing, {
+      operation: "update",
+      store: "tasks",
+      payload: { id: "t1", user_id: "u1", completed: true },
+    })).toBe(true);
+  });
+
+  it("starts a fresh retry cycle when the payload changes", () => {
+    const existing = mutation({ attempts: 5, lastAttemptAt: "2026-11-19T10:00:00.000Z" });
+    expect(isSameMutation(existing, {
+      operation: "update",
+      store: "tasks",
+      payload: { id: "t1", user_id: "u1", completed: false },
+    })).toBe(false);
+  });
+
+  it("treats a changed operation or version as new work", () => {
+    const existing = mutation({ attempts: 5, clientVersion: 3 });
+    expect(isSameMutation(existing, {
+      operation: "delete",
+      store: "tasks",
+      payload: { id: "t1", user_id: "u1" },
+      clientVersion: 3,
+    })).toBe(false);
+    expect(isSameMutation(existing, {
+      operation: "update",
+      store: "tasks",
+      payload: { id: "t1", user_id: "u1", completed: true },
+      clientVersion: 4,
+    })).toBe(false);
+  });
 });
 
 describe("offline mutation retry policy", () => {
