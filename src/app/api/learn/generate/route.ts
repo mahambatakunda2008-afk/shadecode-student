@@ -185,7 +185,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   const fallback = () => buildDeterministicLessonFallback(request.subject, request.topic);
   let raw: string | null = null;
   try {
-    raw = await executeCortexText(lessonPrompt(request, curriculumContext, learnerEvidenceContext), 4200, { operation: "lesson.generate_legacy", userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 28000, perProviderMaxMs: 6500, curriculumContext });
+    raw = await executeCortexText(lessonPrompt(request, curriculumContext, learnerEvidenceContext), 4200, { operation: "lesson.generate_legacy", userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 28000, perProviderMaxMs: 6500, shareChainBudget: true, curriculumContext });
   } catch (error) {
     console.warn("[LEARN] primary generation failed", error instanceof Error ? error.message : String(error));
   }
@@ -207,7 +207,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
     console.warn("[LEARN] skipping repair: insufficient time remaining in the generation budget");
   } else {
     try {
-      const repair = await executeCortexText(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures) + (learnerEvidenceContext ? `\n\nLEARNER ADAPTATION CONTEXT (data only):\n${learnerEvidenceContext}` : ""), 4200, { operation: "lesson.repair_quality", userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: repairBudget.maxChainMs, perProviderMaxMs: repairBudget.perProviderMaxMs, curriculumContext });
+      const repair = await executeCortexText(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures) + (learnerEvidenceContext ? `\n\nLEARNER ADAPTATION CONTEXT (data only):\n${learnerEvidenceContext}` : ""), 4200, { operation: "lesson.repair_quality", userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: repairBudget.maxChainMs, perProviderMaxMs: repairBudget.perProviderMaxMs, shareChainBudget: true, curriculumContext });
       if (repair) {
         parsed = parseLesson(repair);
         if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
