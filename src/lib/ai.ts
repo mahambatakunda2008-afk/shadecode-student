@@ -179,7 +179,11 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     // grace inside the fair share so N slow providers cannot overrun the chain
     // budget by N * 250ms.
     const fairShare = Math.max(1000, Math.floor(remaining() / slots) - HARD_TIMEOUT_GRACE_MS);
-    return Math.min(remaining(), SHAREABLE_PROVIDER_MAX_MS, fairShare);
+    // Gemini is the provider that reliably answers (4-7s for a lesson section in production on
+    // 2026-11-19), so an equal 1/N slice of a 16s chain (about 5s) aborted healthy calls and then
+    // starved the repair attempt. Give it up to its phase share; the other providers keep the rest.
+    const geminiPriorityShare = provider === "gemini" ? Math.floor(remaining() * GEMINI_PHASE_SHARE) - HARD_TIMEOUT_GRACE_MS : 0;
+    return Math.min(remaining(), SHAREABLE_PROVIDER_MAX_MS, Math.max(fairShare, geminiPriorityShare));
   };
   const canTry = () => remaining() >= 1000;
   // Grace period is included in providerTimeout's fair-share calculation above.

@@ -420,6 +420,20 @@ describe("callAI shareChainBudget and Cloudflare diagnostics", () => {
       expect(result).toBe("a complete lesson from groq");
     }, 15000);
 
+    it("lets a healthy but slower Gemini call (6.5s) finish instead of aborting it at an equal slice", async () => {
+      for (const [k, v] of Object.entries(ALL_KEYS)) vi.stubEnv(k, v);
+      fetchMock.mockImplementation(async (url: string) => {
+        if (String(url).includes("generativelanguage")) {
+          await new Promise((resolve) => setTimeout(resolve, 6500));
+          return geminiOk();
+        }
+        return jsonResponse({ error: "unavailable" }, false, 503);
+      });
+      const { callAI } = await import("./ai");
+      const result = await callAI("teach me waves", 500, { skipCurriculumGrounding: true, curriculumContext: "", maxChainMs: 16000, shareChainBudget: true });
+      expect(result).toBe("a complete lesson from gemini");
+    }, 20000);
+
     it("skips Gemini cleanly when no Gemini key is configured", async () => {
       vi.stubEnv("OPENROUTER_API_KEY", "or-key");
       fetchMock.mockResolvedValue(jsonResponse({ choices: [{ message: { content: "a complete lesson from openrouter" } }] }));

@@ -57,6 +57,12 @@ test.describe("Learn deep-generation browser contract", () => {
         }
       }, { timeout: 130_000, intervals: [1000] }).toMatch(/^(navigated|complete)$/);
       await expect(page.locator("h1.lesson-title")).toBeVisible({ timeout: 15_000 });
+      // The app opens the lesson shell immediately ("Cortex is building ...") and fills it in section by
+      // section from the browser, so wait for the finished lesson before judging its content.
+      await expect.poll(async () => {
+        const text = (await page.locator("main").innerText()).toLowerCase();
+        return text.includes("cortex is building") ? "building" : "built";
+      }, { timeout: 170_000, intervals: [2000], message: "Lesson never finished building" }).toBe("built");
 
       const units = page.locator(".lesson-unit");
       await expect.poll(async () => units.count(), { timeout: 15_000 }).toBeGreaterThanOrEqual(16);
