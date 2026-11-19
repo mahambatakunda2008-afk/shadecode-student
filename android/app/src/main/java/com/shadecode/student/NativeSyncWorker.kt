@@ -82,6 +82,7 @@ class NativeSyncWorker(
     ) {
         val payload = JSONObject(item.payload)
         when (item.operation) {
+            "lesson_create" -> api.saveGeneratedLesson(session, payload)
             "task_create" -> {
                 val localId = payload.getString("localId")
                 val remote = api.createTask(
