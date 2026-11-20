@@ -158,6 +158,8 @@ Before rehearsal, the team must fill in:
 - **Candidate workflow:** Exam Simulation → A-Level Physics → Waves → 5 questions.
 - **Question source:** The code contains a deterministic Physics wave-speed generator. The candidate should be started with airplane mode enabled after the app and account have been prepared.
 - **Marking:** The local numeric marker can mark supported generated numeric questions without a model provider. Treat the result as practice feedback, not verified exam-history evidence.
+- **Primary presentation device:** Laptop running the current stable Chrome browser, connected to the projector. Prepare the demo account and route in advance. Use the Android APK as a separately tested backup, not the primary live path.
+- **Why laptop first:** A larger projected interface is easier for an audience to follow, keyboard/mouse navigation is more controlled, and the presenter can keep the demo and backup material ready. This is a presentation decision, not evidence that the Android build is less capable.
 - **Exact starting route:** `/exam-sim`.
 - **What the learner does:** Start the prepared paper, answer a short set of questions, submit and inspect the feedback.
 - **What is saved and reopened:** The exam workspace has local draft/resume storage. It must pass reload/reopen testing on the presentation device before being shown.
@@ -200,7 +202,8 @@ The presenter should be able to explain the product without reading this documen
 - [ ] Knows which features are verified, partial or planned.
 - [ ] Knows the exact curriculum coverage shown in the demo.
 - [ ] Knows which demonstrated actions require internet or AI.
-- [ ] Can complete the chosen demo without assistance.
+- [ ] Can complete the chosen demo without assistance on the primary laptop/Chrome setup.
+- [ ] Android APK backup has been installed and its fallback route separately checked.
 - [ ] Can answer the likely questions honestly.
 - [ ] Knows the backup plan and how to switch to it.
 - [ ] Does not make unsupported claims about offline operation, grade improvement, universal curriculum coverage or institutional endorsement.
