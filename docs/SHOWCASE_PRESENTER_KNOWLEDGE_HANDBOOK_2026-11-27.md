@@ -62,7 +62,7 @@ The repository and product include these areas, with different levels of maturit
 - **Gamification:** XP, levels, achievements, streaks, challenges and leaderboards.
 - **PWA and local-first foundations:** Work to preserve supported learning activity and make selected workflows more resilient to unreliable connectivity.
 
-**Important:** A feature appearing in the navigation or source code does not prove every part is complete. The presenter must demonstrate only the exact workflows that have passed rehearsal. The final demo selection is still to be recorded in the readiness checklist.
+**Important:** A feature appearing in the navigation or source code does not prove every part is complete. The presenter must demonstrate only the exact workflows that have passed rehearsal. The current candidate is Exam Simulation → A-Level Physics → Waves → 5 questions, using the deterministic local question engine and offline marking. This is a candidate, not an approved live demo, until it passes the actual-device tests.
 
 ## 6. How the technology works, without jargon
 
@@ -155,14 +155,14 @@ Use this structure:
 8. Close with the product's purpose and an invitation for feedback or a responsible pilot discussion.
 
 Before rehearsal, the team must fill in:
-- **Chosen workflow:** To be selected after end-to-end testing.
-- **Demo subject and topic:** To be verified.
-- **Exact starting route:** To be recorded.
-- **What the learner does:** To be rehearsed.
-- **What result appears:** To be captured accurately.
-- **What is saved and reopened:** To be tested.
-- **Offline step:** Omit unless tested in airplane mode, including reload/reopen and reconnect.
-- **Backup:** A locally stored recording or screenshots, clearly described as a recording/backup.
+- **Candidate workflow:** Exam Simulation → A-Level Physics → Waves → 5 questions.
+- **Question source:** The code contains a deterministic Physics wave-speed generator. The candidate should be started with airplane mode enabled after the app and account have been prepared.
+- **Marking:** The local numeric marker can mark supported generated numeric questions without a model provider. Treat the result as practice feedback, not verified exam-history evidence.
+- **Exact starting route:** `/exam-sim`.
+- **What the learner does:** Start the prepared paper, answer a short set of questions, submit and inspect the feedback.
+- **What is saved and reopened:** The exam workspace has local draft/resume storage. It must pass reload/reopen testing on the presentation device before being shown.
+- **Offline step:** Candidate only. Test airplane mode, reload/reopen, resume, submit and reconnect. Do not claim every app feature works offline.
+- **Backup:** A locally stored recording of the same verified workflow, clearly described as a recording/backup.
 
 Do not improvise by clicking through untested screens. If a live step fails once, switch to the prepared backup.
 
