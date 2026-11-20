@@ -290,7 +290,25 @@ export async function POST(req: Request) {
           .gt("lease_until", now)
           .maybeSingle();
         if (leaseError) return NextResponse.json({ error: "Unable to verify generation lease.", retryable: true }, { status: 503 });
-        if (!leaseRow) return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
+        if (!leaseRow) {
+          const { data: jobRow } = await supabase
+            .from("cortex_generation_jobs")
+            .select("status, stage, lease_id, lease_until, heartbeat_at")
+            .eq("id", durableJobId)
+            .eq("user_id", user.id)
+            .maybeSingle();
+          console.warn("[LEARN] persist rejected: generation lease not valid", {
+            generationJobId: durableJobId,
+            sentLease: generationLeaseId.slice(0, 8),
+            dbLease: typeof jobRow?.lease_id === "string" ? jobRow.lease_id.slice(0, 8) : null,
+            leaseUntil: jobRow?.lease_until ?? null,
+            heartbeatAt: jobRow?.heartbeat_at ?? null,
+            status: jobRow?.status ?? null,
+            stage: jobRow?.stage ?? null,
+            now,
+          });
+          return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
+        }
       }
       const generated = sanitizeLessonText(body.generatedLesson);
       if (!generated || typeof generated !== "object" || typeof generated.title !== "string" || !Array.isArray(generated.blocks)) {
