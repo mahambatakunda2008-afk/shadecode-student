@@ -13,7 +13,7 @@ import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
-import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/lessonQuality";
+import { lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
@@ -93,9 +93,8 @@ function validateLesson(value: unknown): { title: string; blocks: LessonBlock[] 
   const p = value as { title?: unknown; blocks?: unknown };
   if (typeof p.title !== "string" || !p.title.trim() || !Array.isArray(p.blocks)) return null;
   const blocks = p.blocks.filter((b): b is LessonBlock => !!b && typeof b === "object" && typeof (b as LessonBlock).type === "string" && typeof (b as LessonBlock).content === "string" && (b as LessonBlock).content.trim().length >= 40).slice(0, 36);
-  const required = new Set(["objective", "concept", "example", "checkpoint", "exam", "mistake", "summary"]);
   const types = new Set(blocks.map(b => normalizeLessonBlockType(b.type)));
-  if (blocks.length < 14 || ![...required].every(type => types.has(type))) return null;
+  if (blocks.length < 14 || !hasRequiredLessonStructure(types)) return null;
   return { title: p.title.trim().slice(0, 255), blocks };
 }
 function safeParseSectionJSON(raw: string): { title: string; blocks: LessonBlock[] } | null {

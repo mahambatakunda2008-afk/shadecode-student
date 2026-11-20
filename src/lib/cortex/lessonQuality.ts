@@ -38,6 +38,18 @@ const aliases: Record<string, string> = {
   next: "next", continuation: "next", "next steps": "next",
 };
 
+/**
+ * Server persistence contract: a lesson needs an objective, concept, example, checkpoint, exam practice,
+ * a mistake/misconception and a summary. The lesson quality gate already treats "practice" as exam
+ * practice and "misconception" as a mistake block, and generated sections use those names, so the
+ * contract accepts them too instead of rejecting otherwise complete lessons with a 422.
+ */
+export function hasRequiredLessonStructure(types: ReadonlySet<string>): boolean {
+  const need = (...accepted: string[]) => accepted.some(type => types.has(type));
+  return need("objective") && need("concept") && need("example") && need("checkpoint")
+    && need("exam", "practice") && need("mistake", "misconception") && need("summary");
+}
+
 export function normalizeLessonBlockType(value: string) {
   const key = value.trim().toLowerCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ");
   return aliases[key] ?? key;

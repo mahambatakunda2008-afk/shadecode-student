@@ -19,3 +19,21 @@ describe("lesson block cap", () => {
     expect(failuresFor(25, {})).toContain("too-many-blocks");
   });
 });
+
+import { hasRequiredLessonStructure } from "./lessonQuality";
+
+describe("server lesson contract structure", () => {
+  const full = ["objective", "concept", "example", "checkpoint", "exam", "mistake", "summary"];
+  it("accepts the strict names", () => {
+    expect(hasRequiredLessonStructure(new Set(full))).toBe(true);
+  });
+  it("accepts practice for exam and misconception for mistake", () => {
+    const types = new Set(full.filter(type => type !== "exam" && type !== "mistake").concat(["practice", "misconception"]));
+    expect(hasRequiredLessonStructure(types)).toBe(true);
+  });
+  it("still rejects a lesson with no exam practice, no mistake or no summary", () => {
+    for (const missing of ["exam", "mistake", "summary", "objective"]) {
+      expect(hasRequiredLessonStructure(new Set(full.filter(type => type !== missing)))).toBe(false);
+    }
+  });
+});
