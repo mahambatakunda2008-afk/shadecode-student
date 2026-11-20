@@ -50,6 +50,36 @@ export function hasRequiredLessonStructure(types: ReadonlySet<string>): boolean 
     && need("exam", "practice") && need("mistake", "misconception") && need("summary");
 }
 
+/** The lesson diagram a topic must include (the id is a render key for a built-in diagram), or null. */
+export function requiredDiagramFor(request: Pick<LessonQualityRequest, "topic" | "subject">): string | null {
+  const topicLower = request.topic.toLowerCase();
+  const subjectLower = request.subject.toLowerCase();
+  return /coordinate geometry|gradient|straight.line equation/.test(topicLower) ? "coordinate-plane"
+    : /\bwaves?\b|amplitude|wavelength/.test(topicLower) ? "wave-shape"
+    : /newton.s laws|newton.s third law|action.reaction/.test(topicLower) ? "force-pairs"
+    : /numerical solution|bisection|root.bracketing/.test(topicLower) ? "root-bracket"
+    : /trigonometric identities|trigonometry/.test(topicLower) ? "unit-circle"
+    : /binary number systems|binary conversion/.test(topicLower) ? "binary-place-values"
+    : /biology/.test(subjectLower) && /cell|organelles|plant cell|animal cell/.test(topicLower) ? "cell-structure"
+    : /chemistry/.test(subjectLower) && /particle theory|states of matter|particle model|diffusion/.test(topicLower) ? "particle-model"
+    : /computer science/.test(subjectLower) && /algorithm|flowchart|selection|iteration|pseudocode/.test(topicLower) ? "flowchart"
+    : /physics/.test(subjectLower) && /series circuit|electric circuit|circuit diagrams|ohm.s law|resistance in series|current electricity/.test(topicLower) ? "series-circuit" : null;
+}
+
+/** Adds the topic's required built-in diagram when the model did not emit it, placing it after the first concepts. */
+export function ensureRequiredDiagram<T extends { type?: unknown; content?: unknown }>(
+  blocks: T[],
+  request: Pick<LessonQualityRequest, "topic" | "subject">,
+): Array<T | { type: string; title: string; content: string }> {
+  const required = requiredDiagramFor(request);
+  if (!required) return blocks;
+  const has = blocks.some(block => normalizeLessonBlockType(String(block.type)) === "diagram" && String(block.content).trim() === required);
+  if (has) return blocks;
+  const withoutBadDiagrams = blocks.filter(block => normalizeLessonBlockType(String(block.type)) !== "diagram");
+  const at = Math.min(3, withoutBadDiagrams.length);
+  return [...withoutBadDiagrams.slice(0, at), { type: "diagram", title: "Diagram", content: required }, ...withoutBadDiagrams.slice(at)];
+}
+
 export function normalizeLessonBlockType(value: string) {
   const key = value.trim().toLowerCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ");
   return aliases[key] ?? key;
@@ -90,18 +120,8 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const diagramBlocks = normalized.filter(block => block.normalizedType === "diagram");
   const supportedDiagrams = new Set(["coordinate-plane", "wave-shape", "force-pairs", "root-bracket", "unit-circle", "binary-place-values", "particle-model", "cell-structure", "flowchart", "series-circuit"]);
   if (diagramBlocks.some(block => !supportedDiagrams.has(block.content.trim()))) failures.push("unsupported-diagram");
-  const topicLower = request.topic.toLowerCase();
-  const subjectLower = request.subject.toLowerCase();
-  const requiredDiagram = /coordinate geometry|gradient|straight.line equation/.test(topicLower) ? "coordinate-plane"
-    : /\bwaves?\b|amplitude|wavelength/.test(topicLower) ? "wave-shape"
-    : /newton.s laws|newton.s third law|action.reaction/.test(topicLower) ? "force-pairs"
-    : /numerical solution|bisection|root.bracketing/.test(topicLower) ? "root-bracket"
-    : /trigonometric identities|trigonometry/.test(topicLower) ? "unit-circle"
-    : /binary number systems|binary conversion/.test(topicLower) ? "binary-place-values"
-    : /biology/.test(subjectLower) && /cell|organelles|plant cell|animal cell/.test(topicLower) ? "cell-structure"
-    : /chemistry/.test(subjectLower) && /particle theory|states of matter|particle model|diffusion/.test(topicLower) ? "particle-model"
-    : /computer science/.test(subjectLower) && /algorithm|flowchart|selection|iteration|pseudocode/.test(topicLower) ? "flowchart"
-    : /physics/.test(subjectLower) && /series circuit|electric circuit|circuit diagrams|ohm.s law|resistance in series|current electricity/.test(topicLower) ? "series-circuit" : null;
+  const requiredDiagram = requiredDiagramFor(request);
+
   if (request.intent === "teach" && requiredDiagram && !diagramBlocks.some(block => block.content.trim() === requiredDiagram)) {
     failures.push("missing-relevant-diagram");
   }

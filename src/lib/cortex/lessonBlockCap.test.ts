@@ -37,3 +37,33 @@ describe("server lesson contract structure", () => {
     }
   });
 });
+
+import { ensureRequiredDiagram, requiredDiagramFor } from "./lessonQuality";
+
+describe("required diagram", () => {
+  const request = { topic: "Waves", subject: "Physics" };
+  const concept = (n: number) => ({ type: "concept", title: `c${n}`, content: `Concept ${n} about waves and how they carry energy without carrying matter along.` });
+
+  it("maps topics to their built-in diagram", () => {
+    expect(requiredDiagramFor(request)).toBe("wave-shape");
+    expect(requiredDiagramFor({ topic: "Kinematics", subject: "Physics" })).toBeNull();
+  });
+
+  it("adds the diagram after the opening blocks when the model omitted it", () => {
+    const out = ensureRequiredDiagram([concept(1), concept(2), concept(3), concept(4)], request);
+    expect(out).toHaveLength(5);
+    expect(out[3]).toMatchObject({ type: "diagram", content: "wave-shape" });
+  });
+
+  it("keeps an existing correct diagram and replaces an unsupported one", () => {
+    const withDiagram = [concept(1), { type: "diagram", title: "d", content: "wave-shape" }, concept(2)];
+    expect(ensureRequiredDiagram(withDiagram, request)).toBe(withDiagram);
+    const wrong = ensureRequiredDiagram([concept(1), { type: "diagram", title: "d", content: "made-up" }, concept(2)], request);
+    expect(wrong.filter(block => block.type === "diagram")).toEqual([{ type: "diagram", title: "Diagram", content: "wave-shape" }]);
+  });
+
+  it("does nothing for topics with no required diagram", () => {
+    const blocks = [concept(1), concept(2)];
+    expect(ensureRequiredDiagram(blocks, { topic: "Kinematics", subject: "Physics" })).toBe(blocks);
+  });
+});

@@ -5,7 +5,7 @@ import { getLocalCurriculumGrounding, readLocalCurriculumGrounding, readLocalCur
 import { readOfflineCurriculumPack, buildOfflineCurriculumScope } from "@/lib/cortex/offlineCurriculumPack";
 import { readLocalLearnerMemory, buildLocalLearnerContext, rememberLocalTopic } from "@/lib/cortex/localLearnerMemory";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
-import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
+import { ensureRequiredDiagram, lessonQualityFailures } from "@/lib/cortex/lessonQuality";
 import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
@@ -792,7 +792,8 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
     data = {
       id: job.id,
       title: finalLessonTitle(assembledTitle, request.topic),
-      blocks: assembledBlocks,
+      // Sections cannot each carry the topic's built-in diagram, so the assembled lesson gets it here.
+      blocks: ensureRequiredDiagram(assembledBlocks, request) as Array<Record<string, unknown>>,
     };
     if (!data?.id || !Array.isArray(data?.blocks)) throw lastError instanceof Error ? lastError : new Error("The lesson service returned an incomplete lesson.");
     updateGenerationJob(job.id, { status: "partial", progress: 92 });
