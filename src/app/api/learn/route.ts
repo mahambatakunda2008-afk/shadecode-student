@@ -290,7 +290,11 @@ export async function POST(req: Request) {
           .gt("lease_until", now)
           .maybeSingle();
         if (leaseError) return NextResponse.json({ error: "Unable to verify generation lease.", retryable: true }, { status: 503 });
-        if (!leaseRow) {
+        // A resumed job whose sections are all done goes straight to this save step with a lease id
+        // this browser session never claimed. claim_cortex_generation_job only grants the lease when
+        // the job has none, it has expired, or it already belongs to this id, so a live worker keeps it.
+        const takeover = leaseRow ? null : await claimGenerationLease(supabase, user.id, durableJobId, generationLeaseId);
+        if (!leaseRow && !takeover?.claimed) {
           const { data: jobRow } = await supabase
             .from("cortex_generation_jobs")
             .select("status, stage, lease_id, lease_until, heartbeat_at")
