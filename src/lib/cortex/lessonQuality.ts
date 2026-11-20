@@ -95,8 +95,8 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   }
 
   const broadOrDeep = request.broadTopic || request.depth === "deep";
-  // Sectioned deep lessons assemble 6 sections of 5-6 blocks (30-32 blocks); the server persists up to 36.
-  if (normalized.length > (broadOrDeep ? 36 : 18)) failures.push("too-many-blocks");
+  // Sectioned generation keeps at most 6 blocks per section: 6 sections for broad/deep topics (up to 36), 4 otherwise (up to 24).
+  if (normalized.length > (broadOrDeep ? 36 : 24)) failures.push("too-many-blocks");
   if (normalized.length < 4) failures.push("insufficient-structure");
   if (request.depth === "deep" && normalized.length < 10) failures.push("deep-session-too-thin");
   if (request.broadTopic && normalized.length < 16) failures.push("broad-topic-too-thin");
