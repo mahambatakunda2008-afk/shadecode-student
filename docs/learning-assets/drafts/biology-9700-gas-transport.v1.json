@@ -1,0 +1,167 @@
+{
+  "asset_key": "biology-9700-gas-transport",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Transport of oxygen and carbon dioxide",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "8",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus, 2028–2030, Version 1, September 2025, Topic 8, pp. 28–29. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 8.2.1, 8.2.2, 8.2.3, 8.2.4, 8.2.5, 8.2.6.",
+    "syllabus_outcome_codes": [
+      "8.2.1",
+      "8.2.2",
+      "8.2.3",
+      "8.2.4",
+      "8.2.5",
+      "8.2.6"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation, assessment review and accessibility review before import or publication.",
+      "Questions are original learning checks, not Cambridge past-paper questions or official mark schemes. Diagrams are original explanatory schematics, not photomicrographs."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Describe the roles of haemoglobin, carbonic anhydrase, haemoglobinic acid and carbaminohaemoglobin in gas transport.",
+      "Describe the chloride shift and explain its importance.",
+      "Describe the role of plasma in carbon dioxide transport.",
+      "Describe and explain the oxygen dissociation curve of adult haemoglobin.",
+      "Explain the significance of the curve at the partial pressures of oxygen in lungs and respiring tissues.",
+      "Describe the Bohr shift and explain its importance."
+    ],
+    "sections": [
+      {
+        "heading": "Haemoglobin and oxygen transport",
+        "body": "Haemoglobin is a globular protein in red blood cells. Each molecule has four polypeptide subunits, each containing a haem group with an iron ion that can bind one oxygen molecule reversibly. Oxygen binds to form oxyhaemoglobin. In the lungs, where partial pressure of oxygen is high, haemoglobin loads oxygen. In respiring tissues, where partial pressure is lower, oxyhaemoglobin dissociates and releases oxygen. Reversible binding allows loading and unloading as conditions change."
+      },
+      {
+        "heading": "Carbon dioxide transport in red blood cells",
+        "body": "Carbon dioxide diffuses from respiring tissues into blood and then into red blood cells. Some carbon dioxide binds to amino groups in haemoglobin to form carbaminohaemoglobin. Most is converted to hydrogencarbonate ions. Carbonic anhydrase in red blood cells catalyses the reversible reaction between carbon dioxide and water to form carbonic acid, which dissociates into hydrogen ions and hydrogencarbonate ions. Hydrogen ions are buffered by haemoglobin, forming haemoglobinic acid when they bind to haemoglobin."
+      },
+      {
+        "heading": "The chloride shift",
+        "body": "As hydrogencarbonate ions are produced in red blood cells, they diffuse into plasma down their concentration gradient. Chloride ions move into red blood cells to maintain electrical neutrality. This exchange is the chloride shift. It allows large quantities of carbon dioxide to be transported in plasma as hydrogencarbonate ions while maintaining charge balance across the red blood cell membrane. In the lungs, the process reverses: hydrogencarbonate ions re-enter red blood cells and are converted back to carbon dioxide for exhalation."
+      },
+      {
+        "heading": "Carbon dioxide in plasma",
+        "body": "Most carbon dioxide is transported in blood as hydrogencarbonate ions dissolved in plasma after formation in red blood cells and movement out through the chloride shift. A smaller amount is carried dissolved directly in plasma. Some is carried bound to haemoglobin as carbaminohaemoglobin. Avoid saying that most carbon dioxide is transported simply dissolved as molecular carbon dioxide."
+      },
+      {
+        "heading": "The oxygen dissociation curve",
+        "body": "An oxygen dissociation curve plots percentage saturation of haemoglobin with oxygen against partial pressure of oxygen. It is sigmoid because binding of the first oxygen molecule changes haemoglobin's shape and increases the affinity of remaining haem groups for oxygen. This cooperative binding produces a steep middle region and a plateau at high partial pressures. The plateau helps maintain high saturation in the lungs even if alveolar partial pressure falls slightly. The steep region allows substantial oxygen unloading when tissue partial pressure decreases."
+      },
+      {
+        "heading": "Loading in lungs and unloading in tissues",
+        "body": "In the lungs, partial pressure of oxygen is high, placing haemoglobin on the plateau of the curve and giving high saturation. In respiring tissues, oxygen is used and partial pressure is lower. The steep part of the curve means a relatively small fall in partial pressure produces a substantial release of oxygen. This supports diffusion into cells for aerobic respiration."
+      },
+      {
+        "heading": "The Bohr shift",
+        "body": "Respiring tissues produce carbon dioxide. Increased carbon dioxide causes more hydrogen ions to be produced and lowers pH. Hydrogen ions bind to haemoglobin and reduce its affinity for oxygen, shifting the oxygen dissociation curve to the right. At the same partial pressure of oxygen, haemoglobin is then less saturated and releases more oxygen. In the lungs, carbon dioxide is removed, pH rises and haemoglobin affinity increases, favouring oxygen loading. The Bohr shift matches oxygen delivery to metabolically active tissues."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Describe how haemoglobin transports oxygen.",
+        "answer": "Oxygen binds reversibly to iron ions in the four haem groups of haemoglobin to form oxyhaemoglobin. It loads oxygen at high partial pressure in the lungs and releases it at lower partial pressure in respiring tissues.",
+        "mark_points": [
+          "Oxygen binds reversibly to haem groups / iron",
+          "Oxyhaemoglobin formed",
+          "Loads in lungs at high pO2",
+          "Unloads in tissues at lower pO2"
+        ]
+      },
+      {
+        "question": "Explain the roles of carbonic anhydrase and haemoglobin in carbon dioxide transport.",
+        "answer": "Carbonic anhydrase catalyses the conversion of carbon dioxide and water to carbonic acid, which dissociates into hydrogencarbonate and hydrogen ions. Haemoglobin buffers hydrogen ions, forming haemoglobinic acid, and some carbon dioxide binds to haemoglobin to form carbaminohaemoglobin.",
+        "mark_points": [
+          "Carbonic anhydrase catalyses reaction",
+          "Carbonic acid dissociates",
+          "Haemoglobin binds / buffers H+",
+          "Haemoglobinic acid formed",
+          "Some CO2 binds haemoglobin as carbaminohaemoglobin"
+        ]
+      },
+      {
+        "question": "Describe the chloride shift and explain its importance.",
+        "answer": "Hydrogencarbonate ions leave red blood cells and chloride ions enter to maintain electrical neutrality. This enables carbon dioxide to be transported in plasma mainly as hydrogencarbonate ions.",
+        "mark_points": [
+          "Hydrogencarbonate leaves red blood cell",
+          "Chloride enters red blood cell",
+          "Electrical neutrality maintained",
+          "Enables transport of CO2 as plasma hydrogencarbonate"
+        ]
+      },
+      {
+        "question": "State the main form in which carbon dioxide is transported in blood.",
+        "answer": "Most carbon dioxide is transported as hydrogencarbonate ions dissolved in plasma.",
+        "mark_points": [
+          "Hydrogencarbonate ions",
+          "Dissolved in plasma"
+        ]
+      },
+      {
+        "question": "Explain why the oxygen dissociation curve is sigmoid.",
+        "answer": "Binding of the first oxygen molecule causes a conformational change in haemoglobin that increases the affinity of the remaining haem groups for oxygen. This cooperative binding produces the sigmoid curve.",
+        "mark_points": [
+          "First oxygen binding changes haemoglobin shape",
+          "Increases affinity of remaining haem groups",
+          "Cooperative binding"
+        ]
+      },
+      {
+        "question": "Explain why the steep section of the oxygen dissociation curve is useful in respiring tissues.",
+        "answer": "At tissue partial pressures of oxygen, a small decrease in pO2 causes a relatively large decrease in haemoglobin saturation. This releases substantial oxygen for diffusion into respiring cells.",
+        "mark_points": [
+          "Small decrease in pO2",
+          "Large decrease in saturation",
+          "Substantial oxygen released to tissues"
+        ]
+      },
+      {
+        "question": "Describe the Bohr shift and explain its benefit to active tissues.",
+        "answer": "Carbon dioxide from respiring tissues increases hydrogen ion concentration and lowers pH. Hydrogen ions bind to haemoglobin, reducing its oxygen affinity and shifting the dissociation curve to the right. More oxygen is unloaded at a given pO2, supplying active tissues.",
+        "mark_points": [
+          "CO2 increases H+ / lowers pH",
+          "H+ binds haemoglobin",
+          "Affinity for oxygen decreases",
+          "Curve shifts right",
+          "More oxygen released at same pO2"
+        ]
+      },
+      {
+        "question": "Explain why haemoglobin loads oxygen efficiently in the lungs.",
+        "answer": "The partial pressure of oxygen in the lungs is high, placing haemoglobin on the plateau of its dissociation curve where it becomes highly saturated. The plateau helps maintain loading despite small changes in pO2.",
+        "mark_points": [
+          "High pO2 in lungs",
+          "Curve plateau",
+          "High saturation / robust loading"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/oxygen-dissociation.svg",
+        "alt": "Original sigmoid oxygen dissociation curve with axes, plateau, steep section and labelled lung and tissue partial-pressure regions.",
+        "caption": "Adult haemoglobin oxygen dissociation curve."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-mammals/bohr-shift.svg",
+        "alt": "Original graph comparing oxygen dissociation curves at higher and lower carbon dioxide concentration, showing rightward Bohr shift.",
+        "caption": "Bohr shift: increased carbon dioxide reduces haemoglobin oxygen affinity."
+      }
+    ]
+  }
+}
