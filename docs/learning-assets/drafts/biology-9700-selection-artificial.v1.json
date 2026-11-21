@@ -1,0 +1,175 @@
+{
+  "asset_key": "biology-9700-selection-artificial",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Selection and evolution: artificial selection and selective breeding",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "17",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 17, p. 44–45.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "17.2.6",
+      "17.2.7"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Describe the principles and stages of selective breeding.",
+      "Explain the introduction of disease resistance into wheat and rice.",
+      "Explain inbreeding and hybridisation in maize production.",
+      "Explain selective breeding to improve dairy cattle milk yield."
+    ],
+    "sections": [
+      [
+        "Artificial selection",
+        "Artificial selection occurs when humans choose organisms with desirable heritable characteristics to breed. Selected parents contribute alleles to the next generation. Repeated selection over many generations increases the frequency of alleles associated with the desired characteristic."
+      ],
+      [
+        "A selective breeding programme",
+        "Identify the desired characteristic and select parents that show it. Breed selected individuals, assess offspring, and select those with the strongest desired phenotype. Repeat over many generations. Keep records and maintain sufficient genetic diversity to reduce inbreeding problems."
+      ],
+      [
+        "Disease resistance in wheat and rice",
+        "Breeders identify plants with resistance to a disease, often using resistant varieties or wild relatives as sources of alleles. They cross these plants with high-yielding varieties, then select offspring that combine disease resistance with desirable crop characteristics. Repeated backcrossing and selection can retain the resistance while recovering much of the elite variety's characteristics."
+      ],
+      [
+        "Inbreeding in maize",
+        "Inbreeding involves crossing closely related plants or self-pollinating over generations to produce homozygous inbred lines. This makes lines genetically uniform, but inbreeding can expose harmful recessive alleles and reduce vigour (inbreeding depression)."
+      ],
+      [
+        "Hybridisation and hybrid vigour",
+        "Hybridisation crosses selected, genetically distinct inbred lines. The resulting F1 hybrids are often uniform and may show hybrid vigour (heterosis), such as increased growth or yield. Hybrid seed production requires controlled crosses and fresh seed may be needed each generation to retain the desired uniformity."
+      ],
+      [
+        "Improving dairy cattle milk yield",
+        "Breeders select cows with high milk yield and desirable health and fertility traits, and bulls from high-yielding lineages. Records and estimated breeding values help identify animals with heritable merit. Selected animals are mated, and offspring are assessed; selection is repeated across generations."
+      ],
+      [
+        "Benefits and risks of selective breeding",
+        "Selective breeding can improve yield, quality, disease resistance and uniformity. Repeated selection from a narrow gene pool can reduce genetic diversity, increase inbreeding and make populations more vulnerable to new diseases or environmental change."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Define artificial selection.",
+        "answer": "The process in which humans choose organisms with desirable heritable characteristics to reproduce, increasing the frequency of alleles associated with those characteristics.",
+        "mark_points": [
+          "Humans choose parents",
+          "Desirable heritable traits",
+          "Allele frequencies increase"
+        ]
+      },
+      {
+        "question": "Outline four stages in a selective breeding programme.",
+        "answer": "Select parents with the desired trait; breed them; assess offspring; select the best offspring as parents for the next generation; repeat over generations.",
+        "mark_points": [
+          "Select parents",
+          "Breed",
+          "Assess offspring",
+          "Select and repeat"
+        ]
+      },
+      {
+        "question": "Explain how disease resistance can be introduced into wheat or rice varieties.",
+        "answer": "Cross a resistant plant or wild relative with a high-yielding variety, then select offspring that have resistance and retain desirable crop features; repeat crosses and selection.",
+        "mark_points": [
+          "Resistant source crossed with crop",
+          "Select resistant offspring",
+          "Retain yield/quality traits"
+        ]
+      },
+      {
+        "question": "What is inbreeding in maize?",
+        "answer": "Crossing closely related plants or self-pollinating over generations to produce genetically uniform, homozygous inbred lines.",
+        "mark_points": [
+          "Related plants/selfing",
+          "Over generations",
+          "Homozygous uniform lines"
+        ]
+      },
+      {
+        "question": "State one disadvantage of inbreeding.",
+        "answer": "It can increase homozygosity of harmful recessive alleles and reduce vigour or fertility (inbreeding depression).",
+        "mark_points": [
+          "Harmful recessive alleles expressed",
+          "Reduced vigour/fertility"
+        ]
+      },
+      {
+        "question": "Explain why hybridisation of maize inbred lines can produce vigorous, uniform crops.",
+        "answer": "Crossing genetically distinct, homozygous inbred lines produces F1 hybrids that are genetically similar to one another and may show heterosis, with increased growth or yield.",
+        "mark_points": [
+          "Distinct inbred lines crossed",
+          "Uniform F1",
+          "Hybrid vigour/heterosis"
+        ]
+      },
+      {
+        "question": "Why may farmers need to buy new hybrid maize seed each generation?",
+        "answer": "Seed saved from F1 hybrids produces a genetically variable next generation as alleles segregate, so offspring may not retain the uniformity and vigour of the original F1.",
+        "mark_points": [
+          "F1 alleles segregate",
+          "Next generation variable",
+          "Desired uniformity/vigour not maintained"
+        ]
+      },
+      {
+        "question": "How can selective breeding improve milk yield in dairy cattle?",
+        "answer": "Select cows and bulls with high heritable milk-yield performance, mate them, record offspring performance and use the best offspring as parents in subsequent generations.",
+        "mark_points": [
+          "Select high-yield parents",
+          "Use breeding records",
+          "Repeat selection"
+        ]
+      },
+      {
+        "question": "Give two risks of selecting only for high milk yield.",
+        "answer": "Genetic diversity may decrease and correlated traits such as fertility, health or longevity may deteriorate if they are not included in selection.",
+        "mark_points": [
+          "Reduced diversity",
+          "Health/fertility/longevity trade-offs"
+        ]
+      },
+      {
+        "question": "Why should disease resistance be considered alongside yield in crop breeding?",
+        "answer": "A high-yielding variety that is susceptible to disease may suffer severe losses. Resistance improves crop survival and stable yield under disease pressure.",
+        "mark_points": [
+          "Disease can reduce yield",
+          "Resistance improves survival/stability"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/selection-and-evolution/selective-breeding-cycle.svg",
+        "role": "Stages of a selective breeding programme"
+      },
+      {
+        "path": "/learning-assets/biology/9700/selection-and-evolution/maize-hybridisation.svg",
+        "role": "Inbred lines and F1 hybrid maize"
+      },
+      {
+        "path": "/learning-assets/biology/9700/selection-and-evolution/crop-disease-resistance.svg",
+        "role": "Crossing disease resistance into crop varieties"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions and numerical datasets are original learning checks, not official Cambridge questions or mark schemes.",
+      "Graphs are explanatory schematics; practical measurement and data handling must also be practised."
+    ]
+  }
+}
