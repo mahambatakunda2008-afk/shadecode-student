@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t d">
+<title id="t">Replicated chromosome structure</title><desc id="d">Two sister chromatids joined at a centromere with telomeres at their ends, with DNA wrapped around histone proteins.</desc>
+<rect width="900" height="520" rx="24" fill="#f7fafc"/><text x="450" y="48" text-anchor="middle" font-family="Arial" font-size="28" font-weight="700" fill="#17324d">Replicated chromosome</text>
+<path d="M300 120 C360 180 360 280 450 320 C540 280 540 180 600 120" fill="none" stroke="#0e7490" stroke-width="38" stroke-linecap="round"/>
+<path d="M600 120 C540 180 540 280 450 320 C360 280 360 180 300 120" fill="none" stroke="#0891b2" stroke-width="38" stroke-linecap="round"/>
+<circle cx="450" cy="320" r="26" fill="#f59e0b" stroke="#92400e" stroke-width="4"/>
+<g fill="#dc2626"><circle cx="300" cy="120" r="10"/><circle cx="600" cy="120" r="10"/><circle cx="300" cy="120" r="10"/><circle cx="600" cy="120" r="10"/></g>
+<g stroke="#334155" stroke-width="2" fill="none"><path d="M300 120 L160 100 L70 100"/><path d="M600 120 L740 100 L830 100"/><path d="M450 320 L450 400 L580 430"/><path d="M340 230 L170 280 L70 280"/><path d="M560 230 L730 280 L830 280"/></g>
+<g font-family="Arial" font-size="20" fill="#17324d"><text x="70" y="82">Telomere</text><text x="830" y="82" text-anchor="end">Telomere</text><text x="590" y="450">Centromere</text><text x="70" y="265">Sister chromatid</text><text x="830" y="265" text-anchor="end">Sister chromatid</text><text x="450" y="490" text-anchor="middle" font-size="17">DNA is associated with histone proteins (chromatin)</text></g>
+</svg>
