@@ -1193,8 +1193,10 @@ const RESUMABLE_DURABLE_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 export function isResumableDurableLessonJob(row: Record<string, unknown>, now = Date.now()): boolean {
   if (row.kind !== "lesson" || !row.request || typeof row.request !== "object") return false;
   if (!RESUMABLE_DURABLE_STATUSES.has(String(row.status))) return false;
-  const updated = Date.parse(String(row.updated_at ?? row.created_at ?? ""));
-  return Number.isFinite(updated) && now - updated <= RESUMABLE_DURABLE_MAX_AGE_MS;
+  // Age is measured from creation: every resume bumps updated_at, so a job that keeps failing would
+  // otherwise look fresh forever and be resumed on every visit.
+  const created = Date.parse(String(row.created_at ?? ""));
+  return Number.isFinite(created) && now - created <= RESUMABLE_DURABLE_MAX_AGE_MS;
 }
 
 export async function resumeLessonGeneration(token: string | null) { if (!isBrowser() || !token) return null; markInterruptedJobsForRetry(); let active = getActiveGenerationJobs().filter(job => job.kind === "lesson").map(job => job as GenerationJob<LessonGenerationInput>); const preferredId = getActiveId(); let job = (preferredId && active.find(item => item.id === preferredId)) || active[0]; if (!job) { const durable = await listDurableGenerationJobs(token); const remote = durable.find((item) => isResumableDurableLessonJob(item as Record<string, unknown>)) as Record<string, unknown> | undefined; if (remote) {
