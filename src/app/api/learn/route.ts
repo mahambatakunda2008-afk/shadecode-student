@@ -343,7 +343,7 @@ export async function POST(req: Request) {
         console.info("[LEARN] persist rejected by server contract", {
           topic: request.topic,
           blockCount: normalizedGeneratedBlocks.length,
-          types: Array.from(new Set(normalizedGeneratedBlocks.map((block) => normalizeLessonBlockType(block.type)))),
+          types: Array.from(new Set(normalizedGeneratedBlocks.map((block: LessonBlock) => normalizeLessonBlockType(block.type)))),
           title: typeof generated.title === "string" ? generated.title.slice(0, 80) : null,
         });
         return NextResponse.json({ error: "Generated lesson failed the server lesson contract.", retryable: true }, { status: 422 });
