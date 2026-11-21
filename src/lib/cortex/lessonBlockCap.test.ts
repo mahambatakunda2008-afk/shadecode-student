@@ -84,3 +84,24 @@ describe("broad topic drift", () => {
     expect(lessonQualityFailures({ title: "Electricity", blocks: mixed(2) }, request).failures).toContain("topic-drift");
   });
 });
+
+import { breakUpLongParagraphs } from "./lessonQuality";
+
+describe("breakUpLongParagraphs", () => {
+  const dense = Array.from({ length: 9 }, (_, i) => `Radioactive decay sentence number ${i} explains one idea about nuclei and rates.`).join(" ");
+  const request = { intent: "teach", subject: "Physics", topic: "Radioactivity", prompt: "Radioactivity", requestedParts: [] } as never;
+
+  it("turns a dense single paragraph into short paragraphs that pass the wall-of-text check", () => {
+    const before = lessonQualityFailures({ title: "Radioactivity", blocks: [{ type: "concept", title: "Decay", content: dense }] }, request).failures;
+    expect(before).toContain("wall-of-text");
+    const [fixed] = breakUpLongParagraphs([{ type: "concept", title: "Decay", content: dense }]);
+    expect(fixed.content.split(/\n\n/).length).toBeGreaterThan(2);
+    expect(fixed.content.replace(/\s+/g, " ")).toBe(dense);
+    expect(lessonQualityFailures({ title: "Radioactivity", blocks: [fixed] }, request).failures).not.toContain("wall-of-text");
+  });
+
+  it("leaves short or already structured content alone", () => {
+    const blocks = [{ content: "Short block." }, { content: `${dense}\n- a\n- b` }];
+    expect(breakUpLongParagraphs(blocks)).toEqual(blocks);
+  });
+});

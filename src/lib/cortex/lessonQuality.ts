@@ -80,6 +80,34 @@ export function ensureRequiredDiagram<T extends { type?: unknown; content?: unkn
   return [...withoutBadDiagrams.slice(0, at), { type: "diagram", title: "Diagram", content: required }, ...withoutBadDiagrams.slice(at)];
 }
 
+/**
+ * Splits over-long single-paragraph block content into short paragraphs at sentence boundaries.
+ * Models often return one dense paragraph for a deep explanation; that is a formatting problem,
+ * not a reason to discard the section (production 2026-11-21: three wall-of-text rejections in a
+ * row exhausted a section's repair attempts). Content that is already structured is untouched.
+ */
+export function breakUpLongParagraphs<T extends { content: string }>(blocks: T[]): T[] {
+  return blocks.map((block) => {
+    const content = block.content.trim();
+    const lineCount = content.split(/\n+/).map((line) => line.trim()).filter(Boolean).length;
+    if (content.length <= 600 || lineCount >= 3) return block;
+    const sentences = content.split(/(?<=[.!?])\s+(?=[A-Z\\$(])/);
+    if (sentences.length < 3) return block;
+    const paragraphs: string[] = [];
+    let current = "";
+    for (const sentence of sentences) {
+      if (current && current.length + sentence.length > 320) {
+        paragraphs.push(current);
+        current = sentence;
+      } else {
+        current = current ? `${current} ${sentence}` : sentence;
+      }
+    }
+    if (current) paragraphs.push(current);
+    return { ...block, content: paragraphs.join("\n\n") };
+  });
+}
+
 export function normalizeLessonBlockType(value: string) {
   const key = value.trim().toLowerCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ");
   return aliases[key] ?? key;

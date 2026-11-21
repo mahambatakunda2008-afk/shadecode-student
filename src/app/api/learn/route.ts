@@ -13,7 +13,7 @@ import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
-import { lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure } from "@/lib/cortex/lessonQuality";
+import { breakUpLongParagraphs, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
@@ -657,6 +657,8 @@ Repair only the defective section. Preserve correct material where possible. Do 
           continue;
         }
 
+        section = { ...section, blocks: breakUpLongParagraphs(section.blocks) };
+
         const sectionQuality = lessonQualityFailures({
           title: section.title,
           blocks: section.blocks.map((block) => ({
@@ -670,7 +672,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
         // the whole lesson). A single sub-section of a broad topic, such as "scalars vs vectors" inside
         // "Kinematics", rarely repeats the topic word, so rejecting it here sent healthy AI sections to
         // the curated fallback after three attempts (production 2026-11-18).
-        const perSectionIgnored = generationSectionCount > 1 ? ["topic-drift", "concept", "missing-relevant-diagram"] : [];
+        const perSectionIgnored = generationSectionCount > 1 ? ["topic-drift", "concept", "example", "checkpoint", "missing-relevant-diagram"] : [];
         sectionFailures = sectionQuality.failures.filter((failure) =>
           !perSectionIgnored.includes(failure) && !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "summary", "teach-example", "exam"].includes(failure)
         );
