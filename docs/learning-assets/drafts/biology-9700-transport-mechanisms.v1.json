@@ -1,0 +1,237 @@
+{
+  "asset_key": "biology-9700-transport-mechanisms",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Transport mechanisms",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "7",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 7, p. 27. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 7.2.1, 7.2.2, 7.2.3, 7.2.4, 7.2.5, 7.2.6, 7.2.7, 7.2.8.",
+    "syllabus_outcome_codes": [
+      "7.2.1",
+      "7.2.2",
+      "7.2.3",
+      "7.2.4",
+      "7.2.5",
+      "7.2.6",
+      "7.2.7",
+      "7.2.8"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, exact objective UUID reconciliation against the verified 2028–2030 curriculum version, assessment review and accessibility review before import or learner publication.",
+      "Questions are original learning checks, not Cambridge past-paper questions or official mark schemes. Diagrams are original explanatory schematics, not photomicrographs."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "State that some mineral ions and organic compounds are transported dissolved in water.",
+      "Describe apoplast and symplast pathways from soil to xylem, including lignin, cellulose, endodermis, Casparian strip and suberin.",
+      "Explain transpiration as evaporation from internal leaf surfaces followed by diffusion of water vapour to the atmosphere.",
+      "Explain cohesion-tension, transpiration pull and adhesion using hydrogen bonding.",
+      "Annotate transverse sections of xerophytic leaves to explain adaptations that reduce transpiration.",
+      "Describe movement of assimilates dissolved in water from sources to sinks in phloem sieve tubes.",
+      "Explain companion-cell loading with proton pumps and cotransporter proteins.",
+      "Explain phloem mass flow down a hydrostatic pressure gradient from source to sink."
+    ],
+    "sections": [
+      {
+        "heading": "Transport in plants: the big picture",
+        "body": "Water and mineral ions enter roots, while organic assimilates are made in leaves or other tissues and moved to places where they are used or stored. Some mineral ions and organic compounds are transported dissolved in water. Xylem carries water and dissolved mineral ions, mainly from roots towards leaves. Phloem carries assimilates such as sucrose and amino acids from sources to sinks. A source is a region where an assimilate enters the phloem; a sink is a region where it is removed for use or storage."
+      },
+      {
+        "heading": "From soil to the xylem: the apoplast pathway",
+        "body": "The apoplast pathway is movement through cell walls and intercellular spaces, outside the plasma membranes and cytoplasm. Water can move through cellulose-containing cell walls. Lignin in xylem walls contributes strength and waterproofing, but the key selective barrier in the root is the Casparian strip. The apoplast route is interrupted at the endodermis, where the Casparian strip is impregnated with suberin and lignin and blocks movement through cell walls. Water and dissolved ions must cross a plasma membrane to enter the symplast before reaching the xylem."
+      },
+      {
+        "heading": "From soil to the xylem: the symplast pathway",
+        "body": "The symplast pathway is movement through the cytoplasm of living cells, connected by plasmodesmata. Water first crosses a plasma membrane and then moves from cell to cell through the cytoplasm. At the endodermis, the Casparian strip, impregnated with suberin and lignin, blocks the apoplast route and forces water and dissolved mineral ions to cross a selectively permeable membrane. This helps regulate which ions enter the vascular tissue. Water then moves into the xylem."
+      },
+      {
+        "heading": "Transpiration: evaporation and diffusion",
+        "body": "Transpiration is the loss of water vapour from a plant, mainly from leaves. Water evaporates from the moist surfaces of mesophyll cells into the leaf air spaces. Water vapour then diffuses down a water vapour concentration gradient through stomata to the atmosphere. The evaporation step occurs at internal leaf surfaces; diffusion is the movement of water vapour out through the stomata. Keep these two linked stages distinct in an explanation."
+      },
+      {
+        "heading": "Cohesion, adhesion and transpiration pull",
+        "body": "Water molecules form hydrogen bonds with one another. Cohesion between water molecules maintains a continuous column of water in xylem. Evaporation from leaves lowers water potential in leaf tissues and creates tension (negative pressure) that pulls the water column upwards. This is the cohesion-tension mechanism, also called transpiration pull. Adhesion occurs when water molecules form hydrogen bonds with cellulose in xylem cell walls, helping water remain in contact with the vessel walls. Do not describe the column as being pushed upwards by root pressure in the cohesion-tension explanation."
+      },
+      {
+        "heading": "Xerophyte leaves reduce water loss",
+        "body": "Xerophytes are plants adapted to environments where water is scarce. Features that may reduce transpiration include a thick waxy cuticle, a reduced leaf surface area, sunken stomata, hairs around stomata that trap still humid air, and rolled leaves that reduce exposure of stomata to moving air. Some xerophytes have multiple epidermal layers or water-storage tissue. When interpreting a transverse section, identify only features visible in the specimen and annotate how each reduces the water vapour gradient or the movement of air around stomata. Not every xerophyte has every feature."
+      },
+      {
+        "heading": "Sources, sinks and assimilates in phloem",
+        "body": "Assimilates are organic substances transported in phloem sap, dissolved in water. Examples include sucrose and amino acids. A source is a region where assimilates are loaded into sieve tubes, such as a photosynthesising leaf or a storage organ releasing sugars. A sink is a region where assimilates are unloaded and used or stored, such as a growing root, fruit, developing seed or storage organ. A plant organ can act as a source at one time and a sink at another, depending on its developmental stage and metabolic activity."
+      },
+      {
+        "heading": "Companion-cell loading: proton pumps and cotransporters",
+        "body": "Companion cells use ATP-powered proton pumps to move hydrogen ions (H+) out of the cell, creating an electrochemical gradient across the plasma membrane. Hydrogen ions then move back down this gradient through proton-sucrose cotransporter proteins. The cotransporter carries sucrose into the companion cell against its concentration gradient. Sucrose can then move into sieve tube elements through plasmodesmata. The proton pump uses ATP directly; the cotransporter uses the energy stored in the H+ gradient, so sucrose uptake is a form of secondary active transport."
+      },
+      {
+        "heading": "Mass flow from source to sink",
+        "body": "Loading sucrose into phloem at a source lowers the water potential of the sieve tube. Water enters from adjacent xylem by osmosis, increasing hydrostatic pressure at the source. At a sink, sucrose is unloaded and used or stored, so the water potential in the sieve tube becomes less negative and water leaves, often returning to the xylem. Hydrostatic pressure is therefore higher at the source than at the sink. Phloem sap moves by mass flow down this hydrostatic pressure gradient from source to sink. Different sieve tubes can transport assimilates in different directions at the same time, but flow within an individual sieve tube is in one direction at a given time."
+      },
+      {
+        "heading": "Exam explanations: keep the mechanisms separate",
+        "body": "For water movement from soil to xylem, distinguish apoplast (cell walls and spaces) from symplast (cytoplasm through plasmodesmata), and explain how the suberin-containing Casparian strip blocks the apoplast at the endodermis. For transpiration, state evaporation from internal leaf surfaces followed by diffusion of water vapour to the atmosphere. For xylem transport, link hydrogen bonding to cohesion, adhesion and tension. For phloem, link proton pumps to the H+ gradient, cotransporters to sucrose loading, and source-to-sink movement to a hydrostatic pressure gradient."
+      }
+    ],
+    "questions": [
+      {
+        "question": "State what is meant by a source and a sink in phloem transport.",
+        "answer": "A source is a region where assimilates enter the phloem; a sink is a region where assimilates are removed from the phloem for use or storage.",
+        "mark_points": [
+          "Source loads assimilates into phloem",
+          "Sink unloads assimilates for use or storage"
+        ]
+      },
+      {
+        "question": "Describe the apoplast pathway for water movement across a root.",
+        "answer": "Water moves through cell walls and intercellular spaces without crossing plasma membranes at each cell. At the endodermis, the suberin-containing Casparian strip blocks this route, so water must cross a plasma membrane and enter the symplast.",
+        "mark_points": [
+          "Movement through cell walls / intercellular spaces",
+          "Does not pass through cytoplasm",
+          "Casparian strip blocks route at endodermis",
+          "Water forced across plasma membrane"
+        ]
+      },
+      {
+        "question": "Describe the symplast pathway for water movement across a root.",
+        "answer": "Water crosses a plasma membrane into the cytoplasm and moves between cells through plasmodesmata. It passes through the endodermis and then enters the xylem.",
+        "mark_points": [
+          "Water enters cytoplasm across plasma membrane",
+          "Moves through cytoplasm",
+          "Passes between cells via plasmodesmata",
+          "Reaches xylem"
+        ]
+      },
+      {
+        "question": "Explain the role of the Casparian strip in water and mineral ion uptake.",
+        "answer": "The Casparian strip contains suberin and is impermeable to water through the cell wall route. It blocks apoplast movement at the endodermis and forces water and dissolved ions to cross a selectively permeable plasma membrane, allowing uptake to be regulated.",
+        "mark_points": [
+          "Contains suberin",
+          "Blocks apoplast pathway at endodermis",
+          "Forces crossing of plasma membrane",
+          "Allows selective regulation of ions"
+        ]
+      },
+      {
+        "question": "Explain how transpiration occurs in a leaf.",
+        "answer": "Water evaporates from moist internal surfaces of mesophyll cells into leaf air spaces. Water vapour then diffuses down its concentration gradient through stomata to the atmosphere.",
+        "mark_points": [
+          "Evaporation from internal leaf surfaces",
+          "Water vapour enters air spaces",
+          "Diffusion down concentration gradient",
+          "Diffusion out through stomata"
+        ]
+      },
+      {
+        "question": "Explain the cohesion-tension mechanism of water transport in xylem.",
+        "answer": "Hydrogen bonds cause cohesion between water molecules, maintaining a continuous column. Evaporation from leaves creates tension that pulls the column upwards. Adhesion, through hydrogen bonding to cellulose in xylem walls, helps water remain in contact with the walls.",
+        "mark_points": [
+          "Hydrogen bonds cause cohesion",
+          "Continuous water column maintained",
+          "Evaporation creates tension / transpiration pull",
+          "Tension pulls water upwards",
+          "Adhesion to cellulose in xylem walls"
+        ]
+      },
+      {
+        "question": "A xerophyte leaf has sunken stomata and leaf hairs. Explain how these features reduce water loss.",
+        "answer": "Sunken stomata and hairs trap a layer of still, humid air around the stomata. This reduces air movement and the water vapour concentration gradient between the leaf and atmosphere, reducing diffusion of water vapour out of the leaf.",
+        "mark_points": [
+          "Trap still, humid air near stomata",
+          "Reduce air movement / maintain humid boundary layer",
+          "Reduce water vapour gradient",
+          "Reduce diffusion / transpiration"
+        ]
+      },
+      {
+        "question": "Describe the role of proton pumps and proton-sucrose cotransporters in phloem loading.",
+        "answer": "ATP-powered proton pumps move H+ out of companion cells, establishing an electrochemical gradient. H+ returns down this gradient through cotransporters, which carry sucrose into the companion cell against its concentration gradient.",
+        "mark_points": [
+          "Proton pump uses ATP to export H+",
+          "Creates electrochemical gradient",
+          "H+ returns through cotransporter",
+          "Sucrose carried into companion cell against gradient"
+        ]
+      },
+      {
+        "question": "Explain mass flow of assimilates from a source to a sink in phloem.",
+        "answer": "Sucrose loading at the source lowers sieve-tube water potential, so water enters from xylem by osmosis. This raises hydrostatic pressure. At the sink, sucrose is unloaded and water leaves, lowering pressure. Phloem sap moves from higher pressure at source to lower pressure at sink.",
+        "mark_points": [
+          "Sucrose loaded at source",
+          "Water potential decreases",
+          "Water enters by osmosis from xylem",
+          "Hydrostatic pressure rises at source",
+          "Unloading at sink causes water to leave / pressure falls",
+          "Sap moves down hydrostatic pressure gradient"
+        ]
+      },
+      {
+        "question": "Distinguish between transport in xylem and transport in phloem.",
+        "answer": "Xylem transports water and dissolved mineral ions, mainly from roots to leaves, through dead hollow vessel elements. Phloem transports assimilates such as sucrose and amino acids from sources to sinks through living sieve tube elements supported by companion cells.",
+        "mark_points": [
+          "Xylem carries water and mineral ions",
+          "Xylem vessel elements dead / hollow",
+          "Phloem carries assimilates",
+          "Phloem sieve tubes living and associated with companion cells",
+          "Phloem transport source to sink"
+        ]
+      },
+      {
+        "question": "Explain why a leaf can be a source at one time and a sink at another.",
+        "answer": "A mature photosynthesising leaf produces more assimilates than it uses and can load sucrose into phloem, acting as a source. A young developing leaf may use imported assimilates for growth and therefore act as a sink.",
+        "mark_points": [
+          "Mature photosynthesising leaf produces excess assimilates",
+          "Loads assimilates and acts as source",
+          "Developing leaf imports assimilates for growth",
+          "Acts as sink"
+        ]
+      },
+      {
+        "question": "Describe the direction of water movement at a source and a sink during phloem mass flow.",
+        "answer": "At a source, water enters the sieve tube from xylem by osmosis after sucrose loading. At a sink, water leaves the sieve tube after sucrose unloading and may return to the xylem.",
+        "mark_points": [
+          "Water enters sieve tube at source by osmosis",
+          "Water leaves sieve tube at sink",
+          "May return to xylem"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/transport-plants/root-water-pathways.svg",
+        "alt": "Original root cross-section schematic comparing apoplast movement through cell walls with symplast movement through cytoplasm and plasmodesmata, showing the suberin Casparian strip.",
+        "caption": "Apoplast and symplast pathways across the root."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-plants/cohesion-tension.svg",
+        "alt": "Original diagram showing evaporation from leaf mesophyll, transpiration pull, a continuous cohesive water column in xylem and adhesion to cellulose vessel walls.",
+        "caption": "Cohesion-tension and transpiration pull in xylem."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-plants/xerophyte-leaf-ts.svg",
+        "alt": "Original annotated schematic transverse section of a xerophytic leaf showing thick cuticle, sunken stomata and hairs trapping humid air.",
+        "caption": "Xerophyte leaf features that reduce transpiration."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-plants/phloem-mass-flow.svg",
+        "alt": "Original phloem mass-flow diagram showing ATP-powered proton pumps, proton-sucrose cotransport, sucrose loading, osmosis at source and sink, and a hydrostatic pressure gradient.",
+        "caption": "Phloem loading and mass flow from source to sink."
+      }
+    ]
+  }
+}
