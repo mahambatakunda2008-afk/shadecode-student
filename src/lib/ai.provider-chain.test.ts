@@ -42,7 +42,7 @@ describe("callAI provider fallback chain", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("https://api.groq.com/openai/v1/chat/completions");
-    expect(JSON.parse((init as RequestInit).body as string).model).toBe("llama-3.3-70b-versatile");
+    expect(JSON.parse((init as RequestInit).body as string).model).toBe("openai/gpt-oss-120b");
   });
 
   it("tries Groq before OpenRouter, falling through to OpenRouter on failure", async () => {
@@ -56,7 +56,9 @@ describe("callAI provider fallback chain", () => {
     const { callAI } = await import("./ai");
     const result = await callAI("teach me quadratics", 500, { skipCurriculumGrounding: true, curriculumContext: "" });
     expect(result).toBe("a lesson from openrouter");
+    // Both Groq models are tried (gpt-oss-120b, then qwen3.6-27b) before falling through.
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
+      "https://api.groq.com/openai/v1/chat/completions",
       "https://api.groq.com/openai/v1/chat/completions",
       "https://openrouter.ai/api/v1/chat/completions",
     ]);
