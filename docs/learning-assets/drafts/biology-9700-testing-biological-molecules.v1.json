@@ -1,0 +1,172 @@
+{
+  "asset_key": "biology-9700-testing-biological-molecules",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Testing for biological molecules",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "2",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 2.1, syllabus pp. 18–20, learning outcomes 1–3. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "2.1.1",
+      "2.1.2",
+      "2.1.3"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Describe and carry out Benedict’s test for reducing sugars, the iodine test for starch, the emulsion test for lipids and the Biuret test for proteins.",
+      "Describe and carry out a semi-quantitative Benedict’s test by standardising the procedure and using time to first colour change or colour standards to estimate reducing sugar concentration.",
+      "Describe and carry out a test for non-reducing sugars using acid hydrolysis followed by Benedict’s test."
+    ],
+    "sections": [
+      {
+        "heading": "Why biological tests work",
+        "body": "Food tests use chemical reagents that produce observable changes when they react with particular molecular features. A positive result is evidence for the tested chemical group under the conditions used; it is not automatically proof of the identity or amount of a particular food molecule. Use controls, consistent sample volumes and clearly recorded observations."
+      },
+      {
+        "heading": "Benedict’s test for reducing sugars",
+        "body": "Add a measured volume of Benedict’s solution to the sample and heat the mixture in a hot water bath. If a reducing sugar is present, blue Benedict’s solution changes through green, yellow and orange towards a brick-red precipitate as the amount of reducing sugar increases. The exact colour depends on concentration and test conditions. Glucose, fructose and maltose are reducing sugars. Sucrose is non-reducing and gives a negative result unless it is first hydrolysed. Use a water bath rather than a naked flame because the mixture is heated and ethanol is used elsewhere in food tests."
+      },
+      {
+        "heading": "Iodine test for starch",
+        "body": "Add iodine–potassium iodide solution to the sample. A positive result changes from yellow-brown to blue-black. If starch is absent, the iodine solution remains yellow-brown. Iodine is a test for starch, not a general test for every carbohydrate."
+      },
+      {
+        "heading": "Emulsion test for lipids",
+        "body": "Add ethanol to the sample and mix thoroughly so that any lipid dissolves in the ethanol. Then add water. A positive result is a cloudy white emulsion because lipid droplets form when the lipid solution is diluted with water. If lipid is absent, the mixture remains clear. Ethanol is highly flammable: keep it away from flames and hot surfaces."
+      },
+      {
+        "heading": "Biuret test for proteins",
+        "body": "Add sodium hydroxide solution to make the sample alkaline, then add a small amount of dilute copper(II) sulfate solution (or use prepared Biuret reagent). A positive result changes from blue to lilac or purple, indicating peptide bonds. A negative result remains blue. The test detects peptide bonds, so free amino acids alone do not give the typical positive protein result."
+      },
+      {
+        "heading": "Testing for non-reducing sugars",
+        "body": "First perform Benedict’s test on a fresh portion of the original sample to check for reducing sugars. For the non-reducing sugar test, use a separate fresh portion: add dilute hydrochloric acid and heat in a water bath to hydrolyse glycosidic bonds. Cool, then neutralise the acid with sodium hydrogencarbonate or an appropriate alkali, checking that the solution is no longer acidic. Add Benedict’s solution and heat in a water bath. A positive result after hydrolysis, when the original sample was negative or had a lower reducing-sugar result, indicates a non-reducing sugar such as sucrose. Neutralisation is essential because Benedict’s test requires alkaline conditions."
+      },
+      {
+        "heading": "Semi-quantitative Benedict’s test",
+        "body": "To estimate reducing sugar concentration, prepare a series of known glucose concentrations and use identical sample and reagent volumes, heating conditions, mixing and timing. Either record the time to the first defined colour change or compare the final colour/precipitate with a set of standards. Plot a calibration curve when appropriate. Test the unknown using the same procedure and estimate its concentration from the curve or nearest standard. Keep temperature, heating time, volumes, tube diameter and observation criteria constant. Repeat measurements and use a mean. A colour comparison is an estimate, not a precise measurement, and can be affected by subjective colour judgement and precipitate settling. In general, a higher reducing-sugar concentration produces the defined colour change sooner under otherwise identical conditions; use the actual calibration data rather than assuming a universal time-to-concentration relationship."
+      },
+      {
+        "heading": "Controls, reliability and safety",
+        "body": "Use a positive control known to contain the target molecule and a negative control known not to contain it. Label tubes, use clean apparatus to avoid cross-contamination, measure volumes with suitable apparatus and keep heating conditions constant. Wear eye protection. Benedict’s reagent contains alkaline copper(II) compounds; avoid skin and eye contact. Handle dilute acid and alkali carefully. Ethanol is flammable and must not be heated directly or used near a naked flame. Heat Benedict’s mixtures using a water bath."
+      }
+    ],
+    "questions": [
+      {
+        "question": "A student adds iodine solution to a food sample. The mixture changes from yellow-brown to blue-black. State the conclusion.",
+        "answer": "Starch is present.",
+        "mark_points": [
+          "Identifies starch"
+        ]
+      },
+      {
+        "question": "Describe the method and positive result for Benedict’s test for reducing sugars.",
+        "answer": "Add Benedict’s solution to the sample and heat in a hot water bath. A positive result changes from blue towards green, yellow, orange or brick-red precipitate.",
+        "mark_points": [
+          "Benedict’s solution added",
+          "Heated in a water bath",
+          "Blue changes towards green/yellow/orange/brick-red precipitate"
+        ]
+      },
+      {
+        "question": "A sample gives a negative Benedict’s test before treatment but a positive result after acid hydrolysis, cooling and neutralisation. Explain the result.",
+        "answer": "The original sample contained a non-reducing sugar. Acid hydrolysis broke glycosidic bonds to release reducing monosaccharides; neutralisation restored alkaline conditions needed for Benedict’s test.",
+        "mark_points": [
+          "Non-reducing sugar present",
+          "Acid hydrolysis breaks glycosidic bond(s)",
+          "Reducing sugars are released",
+          "Neutralisation restores alkaline conditions"
+        ]
+      },
+      {
+        "question": "Describe the emulsion test for lipids and state one safety precaution.",
+        "answer": "Mix the sample with ethanol, then add water. A cloudy white emulsion indicates lipid. Ethanol is flammable, so keep it away from naked flames and hot surfaces.",
+        "mark_points": [
+          "Add and mix with ethanol",
+          "Add water",
+          "Cloudy white emulsion indicates lipid",
+          "Ethanol kept away from ignition sources"
+        ]
+      },
+      {
+        "question": "Explain how a student could estimate the concentration of glucose in an unknown solution using a semi-quantitative Benedict’s test.",
+        "answer": "Prepare known glucose standards; test equal volumes with the same Benedict’s volume and heating conditions; record time to first colour change or compare colours with standards; construct/use a calibration curve; test the unknown identically and estimate its concentration; repeat for reliability.",
+        "mark_points": [
+          "Known concentration standards prepared",
+          "Volumes and heating conditions standardised",
+          "Defined colour/time endpoint recorded",
+          "Calibration curve or colour standards used",
+          "Unknown tested identically and concentration estimated",
+          "Repeats/mean improve reliability"
+        ]
+      },
+      {
+        "question": "Why must the hydrolysed sample be neutralised before Benedict’s solution is added?",
+        "answer": "Benedict’s test requires alkaline conditions. Residual acid would neutralise the alkaline reagent and interfere with the test.",
+        "mark_points": [
+          "Benedict’s test requires alkaline conditions",
+          "Acid would neutralise the alkaline reagent/interfere"
+        ]
+      }
+    ],
+    "visual_tasks": [],
+    "common_mistakes": [
+      "Calling iodine a test for all carbohydrates rather than starch.",
+      "Heating Benedict’s mixture directly over a flame.",
+      "Using the same sample portion for the original reducing-sugar test and the non-reducing-sugar procedure without recording the baseline.",
+      "Adding Benedict’s solution before neutralising the acid-hydrolysed sample.",
+      "Claiming the Benedict’s colour gives an exact concentration without standardisation.",
+      "Heating ethanol directly or near a naked flame.",
+      "Calling a purple Biuret result a test for free amino acids."
+    ],
+    "retrieval_check": {
+      "questions": [
+        "Which reagent tests for starch?",
+        "What colour change indicates reducing sugar with Benedict’s solution?",
+        "Why is acid neutralised before Benedict’s test for non-reducing sugars?",
+        "What does a cloudy white emulsion indicate?",
+        "What does Biuret reagent detect?",
+        "Name two variables that must be standardised in a semi-quantitative Benedict’s test."
+      ],
+      "answers": [
+        "Iodine–potassium iodide solution.",
+        "Blue towards green, yellow, orange or brick-red precipitate after heating.",
+        "Benedict’s test requires alkaline conditions.",
+        "Lipids.",
+        "Peptide bonds in proteins/polypeptides.",
+        "Examples: sample volume, Benedict’s volume, temperature, heating time, tube dimensions, mixing and endpoint criterion."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025",
+        "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+        "use": "Controlling the required methods and outcomes for Topic 2.1, syllabus p. 18."
+      },
+      {
+        "title": "OpenStax Biology 2e, Biological Macromolecules",
+        "url": "https://openstax.org/books/biology-2e/pages/3-2-carbohydrates",
+        "use": "Supplementary explanation only; Cambridge syllabus controls scope."
+      }
+    ]
+  }
+}
