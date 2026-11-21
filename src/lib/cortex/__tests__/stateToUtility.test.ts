@@ -10,8 +10,13 @@ describe("Learning State → SLU", () => {
     expect(candidate.mastery).toBe(30);
   });
 
-  it("uses uncertainty and recent improvement as decision signals", () => {
-    const state = { ...createInitialLearningState("algebra"), uncertainty: 90, recentImprovement: -20 };
+  it("uses uncertainty and recent improvement as decision signals for an observed skill", () => {
+    const state = {
+      ...createInitialLearningState("algebra"),
+      exposure: 1,
+      uncertainty: 90,
+      recentImprovement: -20,
+    };
     const candidate = learningStateToCandidate({ id: "algebra", type: "practice", state });
     expect(candidate.uncertainty).toBe(90);
     expect(candidate.trendRisk).toBe(70);

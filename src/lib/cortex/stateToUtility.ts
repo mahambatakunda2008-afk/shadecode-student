@@ -26,7 +26,10 @@ export function learningStateToCandidate(context: StateCandidateContext): Learni
     goalAlignment: context.goalAlignment ?? 50,
     curriculumGap: context.curriculumGap ?? 100 - state.mastery,
     trendRisk: Math.max(0, 50 - state.recentImprovement),
-    uncertainty: state.uncertainty,
+    // The initial mastery value is a neutral placeholder, not evidence. Keep
+    // unseen skills maximally uncertain so the ranker does not mistake that
+    // placeholder for a measured learner weakness.
+    uncertainty: state.exposure === 0 ? 100 : state.uncertainty,
     momentum: Math.max(0, 50 + state.recentImprovement),
     estimatedMinutes: context.estimatedMinutes ?? 15,
   };
