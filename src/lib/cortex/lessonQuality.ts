@@ -80,6 +80,12 @@ export function ensureRequiredDiagram<T extends { type?: unknown; content?: unkn
   return [...withoutBadDiagrams.slice(0, at), { type: "diagram", title: "Diagram", content: required }, ...withoutBadDiagrams.slice(at)];
 }
 
+/** The section prompt asks for 3-5 blocks; fewer than 3 in a multi-section lesson is a thin section. */
+export const MIN_SECTION_BLOCKS = 3;
+export function isSectionTooThin(blockCount: number, sectionCount: number): boolean {
+  return sectionCount > 1 && blockCount < MIN_SECTION_BLOCKS;
+}
+
 /**
  * Splits over-long single-paragraph block content into short paragraphs at sentence boundaries.
  * Models often return one dense paragraph for a deep explanation; that is a formatting problem,

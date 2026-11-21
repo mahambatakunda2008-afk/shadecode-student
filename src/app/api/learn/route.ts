@@ -13,7 +13,7 @@ import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
-import { breakUpLongParagraphs, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure } from "@/lib/cortex/lessonQuality";
+import { breakUpLongParagraphs, isSectionTooThin, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
@@ -683,6 +683,8 @@ Repair only the defective section. Preserve correct material where possible. Do 
         sectionFailures = sectionQuality.failures.filter((failure) =>
           !perSectionIgnored.includes(failure) && !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "summary", "teach-example", "exam"].includes(failure)
         );
+
+        if (isSectionTooThin(section.blocks.length, generationSectionCount)) sectionFailures = [...sectionFailures, "section-too-thin"];
 
         if (sectionFailures.length > 0) {
           console.info("[LEARN] section rejected", { generationJobId: durableJobId, sectionIndex: generationSectionIndex, attempt, failures: sectionFailures });

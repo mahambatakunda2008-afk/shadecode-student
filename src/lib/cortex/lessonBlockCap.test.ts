@@ -136,3 +136,13 @@ describe("empty-application", () => {
     expect(lessonQualityFailures({ title: "Electromagnetism", blocks: app("Short.") }, request).failures).toContain("empty-application");
   });
 });
+
+import { isSectionTooThin } from "./lessonQuality";
+
+describe("isSectionTooThin", () => {
+  it("rejects sections under 3 blocks only in multi-section lessons", () => {
+    expect(isSectionTooThin(2, 7)).toBe(true);
+    expect(isSectionTooThin(3, 7)).toBe(false);
+    expect(isSectionTooThin(1, 1)).toBe(false);
+  });
+});
