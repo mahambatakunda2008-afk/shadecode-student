@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="title desc"><title id="title">Effect of substrate concentration on enzyme rate</title><desc id="desc">Conceptual Michaelis-Menten saturation curve showing Vmax and Km at half Vmax.</desc><rect x="12" y="12" width="936" height="536" rx="24" fill="#fff" stroke="#94a3b8" stroke-width="2"/><style>text{font-family:Arial,Helvetica,sans-serif;fill:#0f172a}.h{font-size:28px;font-weight:700}.s{font-size:21px;font-weight:700}.t{font-size:17px}.small{font-size:14px}.line{stroke:#0f172a;stroke-width:4;fill:none;stroke-linecap:round}.axis{stroke:#334155;stroke-width:3;fill:none}.enzyme{fill:#dbeafe;stroke:#1d4ed8;stroke-width:4}.sub{fill:#fde68a;stroke:#b45309;stroke-width:3}.product{fill:#bbf7d0;stroke:#15803d;stroke-width:3}.dash{stroke:#64748b;stroke-width:3;stroke-dasharray:8 8;fill:none}</style>
+<text x="480" y="55" text-anchor="middle" class="h">Substrate concentration and reaction rate</text>
+<path d="M130 455 L850 455 M130 455 L130 105" class="axis"/><text x="490" y="520" text-anchor="middle" class="t">Substrate concentration</text><text x="65" y="280" text-anchor="middle" class="t" transform="rotate(-90 65 280)">Initial rate</text>
+<path d="M130 455 C200 260 310 180 440 150 S700 135 840 135" class="line"/>
+<path d="M130 135 L840 135" class="dash"/><text x="860" y="140" class="s">Vmax</text>
+<path d="M130 295 L510 295" class="dash"/><path d="M510 455 L510 295" class="dash"/><text x="100" y="300" class="t">½ Vmax</text><text x="510" y="485" text-anchor="middle" class="s">Km</text>
+<text x="500" y="100" text-anchor="middle" class="small">Conceptual curve, not experimental data</text>
+</svg>
