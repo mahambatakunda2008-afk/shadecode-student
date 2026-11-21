@@ -105,3 +105,19 @@ describe("breakUpLongParagraphs", () => {
     expect(breakUpLongParagraphs(blocks)).toEqual(blocks);
   });
 });
+
+describe("long blocks and application phrasing", () => {
+  const request = { intent: "teach", subject: "Physics", topic: "Electromagnetism", prompt: "Electromagnetism", requestedParts: [] } as never;
+  const long = Array.from({ length: 16 }, (_, i) => `Electromagnetic induction sentence ${i} links changing flux to an induced emf in a loop.`).join(" ");
+
+  it("splits a 1,100+ character paragraph into enough lines to pass the gate", () => {
+    const [fixed] = breakUpLongParagraphs([{ type: "concept", title: "Induction", content: long }]);
+    expect(long.length).toBeGreaterThan(1100);
+    expect(lessonQualityFailures({ title: "Electromagnetism", blocks: [fixed] }, request).failures).not.toContain("wall-of-text");
+  });
+
+  it("accepts an application scenario phrased as a question", () => {
+    const blocks = [{ type: "application", title: "Real use", content: "A student moves a magnet through a coil of wire at constant speed. What happens to the induced emf if the speed doubles, and why?" }];
+    expect(lessonQualityFailures({ title: "Electromagnetism", blocks }, request).failures).not.toContain("empty-application");
+  });
+});

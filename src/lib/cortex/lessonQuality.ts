@@ -96,7 +96,7 @@ export function breakUpLongParagraphs<T extends { content: string }>(blocks: T[]
     const paragraphs: string[] = [];
     let current = "";
     for (const sentence of sentences) {
-      if (current && current.length + sentence.length > 320) {
+      if (current && current.length + sentence.length > 220) {
         paragraphs.push(current);
         current = sentence;
       } else {
@@ -217,7 +217,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   if (normalized.some(block => artificialHeadings.some(heading => `${block.title ?? ""} ${block.content}`.toLowerCase().startsWith(heading)))) failures.push("template-heading");
 
   const applications = normalized.filter(block => block.normalizedType === "application");
-  if (applications.some(block => !/question:|task:|scenario:|apply|use this|calculate|determine|find/i.test(block.searchable))) failures.push("empty-application");
+  if (applications.some(block => !/question:|task:|scenario:|apply|use this|calculate|determine|find|\?|suppose|consider|imagine|predict|explain|estimate|design|decide|a (?:student|car|ball|wire|circuit|particle|gas|sample)\b/i.test(block.searchable))) failures.push("empty-application");
 
   const numericalBlocks = normalized.filter(block => /\d/.test(block.content));
   if (numericalBlocks.some(block => hasBareNumericalResult(block.content))) failures.push("bare-numerical-result");
