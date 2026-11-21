@@ -1,0 +1,287 @@
+{
+  "asset_key": "biology-9700-photosynthesis-limiting-factors",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Photosynthesis: limiting factors and practical investigations",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "13",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 13, pp. 36-38.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "13.2.1",
+      "13.2.2",
+      "13.2.3",
+      "13.2.4"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain the effects of light intensity, carbon dioxide concentration and temperature.",
+      "Interpret limiting-factor graphs.",
+      "Plan and evaluate DCPIP/chloroplast and whole-plant investigations."
+    ],
+    "sections": [
+      [
+        "Limiting factors",
+        "A limiting factor is the factor in shortest supply relative to demand that restricts the rate of a process. For photosynthesis, light intensity, carbon dioxide concentration and temperature can limit rate. Increasing a non-limiting factor may have little effect until it becomes limiting."
+      ],
+      [
+        "Light intensity",
+        "At low light intensity, increasing light intensity usually increases photosynthetic rate because more photons are available. The rate eventually plateaus when another factor, such as carbon dioxide concentration or temperature, limits the process."
+      ],
+      [
+        "Carbon dioxide concentration",
+        "At low carbon dioxide concentration, increasing CO2 increases the supply of substrate for carbon fixation and can increase rate. A plateau occurs when another factor limits photosynthesis."
+      ],
+      [
+        "Temperature",
+        "Photosynthesis involves enzyme-catalysed reactions. Increasing temperature can increase rate up to an optimum because molecules have more kinetic energy and successful collisions become more frequent. Above the optimum, rate falls as enzymes lose functional structure and other cellular effects occur."
+      ],
+      [
+        "Interpreting limiting-factor graphs",
+        "A rising section indicates the variable on the x-axis is limiting. A plateau indicates another factor has become limiting. A temperature curve commonly rises to an optimum then falls. Read axes, units, scales and experimental conditions before making comparisons."
+      ],
+      [
+        "DCPIP and chloroplast suspensions",
+        "DCPIP is an artificial electron acceptor. Its oxidised form is blue and its reduced form is colourless. In illuminated chloroplast suspensions, electron transfer can reduce DCPIP. Rate can be estimated from time to decolourisation or absorbance change. This is an indirect measure of light-dependent electron transfer, not a direct measurement of carbon fixation."
+      ],
+      [
+        "Testing light intensity and wavelength",
+        "Use equal chloroplast suspension volumes and concentrations, equal DCPIP concentration, fixed pH and temperature, and identical path length. Vary light intensity by changing measured irradiance or distance, or vary wavelength using filters/LEDs. Keep photon flux comparable for wavelength comparisons and prevent lamps heating samples. Include dark and boiled-chloroplast controls."
+      ],
+      [
+        "Controls, repeats and data quality",
+        "Include a dark control and a boiled-chloroplast control to test whether light and functional chloroplasts are required. Keep chlorophyll concentration, DCPIP volume, pH, temperature, path length and timing constant. Repeat each condition, calculate means and identify anomalous results. A colorimeter provides a more objective endpoint than visual judgement."
+      ],
+      [
+        "Whole-plant investigations",
+        "Aquatic plants can be used to investigate effects of light intensity, carbon dioxide concentration and temperature. Photosynthetic rate may be estimated from oxygen volume collected over time; counting bubbles is less reliable because bubble size varies. Allow the plant to acclimatise before readings."
+      ],
+      [
+        "Planning a fair aquatic-plant experiment",
+        "Change one independent variable at a time. For light intensity, measure irradiance at the plant rather than relying only on distance. For carbon dioxide, use controlled sodium hydrogencarbonate concentrations. For temperature, use a thermostatically controlled water bath. Keep plant species, shoot length or leaf area, solution volume, pH and acclimatisation time consistent."
+      ],
+      [
+        "Evaluation and limitations",
+        "Use several values across a suitable range, repeats and a defined measurement interval. Prevent temperature changes when varying light. Ensure carbon dioxide is not depleted during a run. Collect oxygen in a gas syringe or calibrated capillary where possible. Bubble counts, variable plant condition, leaks and poor temperature control reduce reliability."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Define a limiting factor.",
+        "answer": "A factor in shortest supply relative to demand that restricts the rate of a process.",
+        "mark_points": [
+          "Factor in shortest supply/limiting availability",
+          "Restricts rate"
+        ]
+      },
+      {
+        "question": "Explain why photosynthetic rate rises with light intensity at low light levels.",
+        "answer": "More photons are absorbed, increasing the rate of light-dependent reactions and supplying more ATP and reduced NADP, until another factor limits.",
+        "mark_points": [
+          "More photons absorbed",
+          "Light-dependent reactions increase",
+          "Another factor eventually limits"
+        ]
+      },
+      {
+        "question": "Why does a graph of photosynthetic rate against carbon dioxide concentration reach a plateau?",
+        "answer": "At higher CO2 concentration, another factor such as light intensity or temperature becomes limiting.",
+        "mark_points": [
+          "CO2 no longer limiting",
+          "Another factor limits"
+        ]
+      },
+      {
+        "question": "Explain why photosynthetic rate may fall above the optimum temperature.",
+        "answer": "High temperature changes the structure of enzymes involved in photosynthesis, reducing their activity; other cellular effects may also contribute.",
+        "mark_points": [
+          "Above optimum",
+          "Enzyme structure/activity affected",
+          "Rate decreases"
+        ]
+      },
+      {
+        "question": "What does a plateau on a light-intensity graph indicate?",
+        "answer": "Light is no longer the limiting factor; another factor limits the rate.",
+        "mark_points": [
+          "Light no longer limiting",
+          "Another factor limits"
+        ]
+      },
+      {
+        "question": "State the colour change of DCPIP when it is reduced.",
+        "answer": "Blue to colourless.",
+        "mark_points": [
+          "Blue",
+          "Colourless"
+        ]
+      },
+      {
+        "question": "Why is DCPIP described as an artificial electron acceptor?",
+        "answer": "It accepts electrons in place of the natural electron acceptor in an experimental chloroplast suspension.",
+        "mark_points": [
+          "Accepts electrons",
+          "Substitutes experimentally for natural acceptor"
+        ]
+      },
+      {
+        "question": "Describe a control for a DCPIP chloroplast experiment.",
+        "answer": "Keep a sample in darkness or use boiled chloroplasts, with all other conditions the same. Little or no decolourisation should occur.",
+        "mark_points": [
+          "Dark or boiled control",
+          "Other variables same",
+          "Expected no/less decolourisation"
+        ]
+      },
+      {
+        "question": "Give four variables to control when comparing DCPIP reduction at different light intensities.",
+        "answer": "Any four: chloroplast/chlorophyll concentration, DCPIP concentration and volume, temperature, pH, path length, total volume, timing.",
+        "mark_points": [
+          "Four valid controlled variables"
+        ]
+      },
+      {
+        "question": "Why should lamp temperature be controlled when investigating light intensity?",
+        "answer": "A lamp can heat the suspension, changing enzyme activity and confounding the effect of light intensity.",
+        "mark_points": [
+          "Lamp heats sample",
+          "Temperature affects photosynthesis",
+          "Confounding variable"
+        ]
+      },
+      {
+        "question": "How can a student compare the effect of wavelength on light-dependent reactions?",
+        "answer": "Illuminate equal chloroplast-DCPIP samples using different wavelength filters or LEDs, with comparable photon flux, temperature and other conditions; measure DCPIP reduction rate.",
+        "mark_points": [
+          "Different wavelengths",
+          "Comparable photon flux",
+          "Control temperature/other variables",
+          "Measure reduction rate"
+        ]
+      },
+      {
+        "question": "Why is a colorimeter preferable to judging DCPIP colour by eye?",
+        "answer": "It gives an objective quantitative absorbance measurement and can detect smaller differences.",
+        "mark_points": [
+          "Objective measurement",
+          "Quantitative absorbance"
+        ]
+      },
+      {
+        "question": "Suggest a suitable dependent variable for an aquatic-plant photosynthesis experiment.",
+        "answer": "Oxygen volume produced per unit time, measured with a gas syringe or calibrated capillary.",
+        "mark_points": [
+          "Oxygen volume",
+          "Per unit time"
+        ]
+      },
+      {
+        "question": "Why is counting oxygen bubbles less reliable than measuring gas volume?",
+        "answer": "Bubble sizes vary, so equal bubble counts may represent different oxygen volumes.",
+        "mark_points": [
+          "Bubble size varies",
+          "Counts do not equal volume"
+        ]
+      },
+      {
+        "question": "Describe how to investigate the effect of carbon dioxide concentration using an aquatic plant.",
+        "answer": "Use different known sodium hydrogencarbonate concentrations, measure oxygen volume per unit time, and keep light intensity, temperature, plant size and other conditions constant; repeat.",
+        "mark_points": [
+          "Vary CO2 availability/concentration",
+          "Measure oxygen rate",
+          "Control other variables",
+          "Repeat"
+        ]
+      },
+      {
+        "question": "Explain why a plant should acclimatise before measurements.",
+        "answer": "It allows photosynthetic rate and gas output to adjust to the new experimental conditions before data collection.",
+        "mark_points": [
+          "Adjust to conditions",
+          "Stable/representative readings"
+        ]
+      },
+      {
+        "question": "A plant produces 12 cm3 oxygen in 4 minutes. Calculate the mean rate.",
+        "answer": "12 ÷ 4 = 3.0 cm3 min−1.",
+        "mark_points": [
+          "Volume divided by time",
+          "3.0 cm3 min−1"
+        ]
+      },
+      {
+        "question": "A student varies light intensity and temperature simultaneously. Explain the flaw.",
+        "answer": "The effects cannot be separated because two independent variables change; vary one factor at a time and control the other.",
+        "mark_points": [
+          "Two variables changed",
+          "Confounded result",
+          "One variable at a time"
+        ]
+      },
+      {
+        "question": "Give two improvements to increase reliability in a whole-plant investigation.",
+        "answer": "Repeat readings and calculate a mean; use a gas syringe/calibrated capillary, control temperature and irradiance, or standardise plant material.",
+        "mark_points": [
+          "Any two valid improvements"
+        ]
+      },
+      {
+        "question": "Why should irradiance be measured rather than inferred only from lamp distance?",
+        "answer": "Light output and geometry may not follow a simple inverse-square relationship in the apparatus; direct measurement gives a more reliable intensity value.",
+        "mark_points": [
+          "Distance alone may not represent irradiance",
+          "Measure irradiance"
+        ]
+      },
+      {
+        "question": "A rate rises as CO2 increases then levels off. Explain the pattern.",
+        "answer": "At first CO2 is limiting so more CO2 increases carbon fixation. At the plateau another factor, such as light or temperature, limits rate.",
+        "mark_points": [
+          "CO2 initially limiting",
+          "Rate increases",
+          "Another factor limits at plateau"
+        ]
+      },
+      {
+        "question": "State one limitation of DCPIP as a measure of photosynthesis.",
+        "answer": "It indicates electron transfer in the light-dependent stage, not the overall rate of carbon fixation or carbohydrate production.",
+        "mark_points": [
+          "Indirect proxy",
+          "Does not measure carbon fixation directly"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/photosynthesis/limiting-factor-graphs.svg",
+        "role": "limiting factor graphs"
+      },
+      {
+        "path": "/learning-assets/biology/9700/photosynthesis/dcpip-investigation.svg",
+        "role": "dcpip investigation"
+      },
+      {
+        "path": "/learning-assets/biology/9700/photosynthesis/aquatic-plant-investigation.svg",
+        "role": "aquatic plant investigation"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires practical and subject-editor review; no experiment has been performed.",
+      "Questions are original learning checks, not official Cambridge questions or mark schemes."
+    ]
+  }
+}
