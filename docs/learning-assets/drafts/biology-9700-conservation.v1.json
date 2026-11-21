@@ -1,0 +1,202 @@
+{
+  "asset_key": "biology-9700-conservation",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Conservation: extinction, endangered species and global action",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "18",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030, Topic 18, pp. 46–47.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "18.3.1",
+      "18.3.2",
+      "18.3.3",
+      "18.3.4",
+      "18.3.5",
+      "18.3.6"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain causes of extinction and reasons for maintaining biodiversity.",
+      "Compare in situ and ex situ conservation strategies.",
+      "Describe IVF, embryo transfer and surrogacy in mammal conservation.",
+      "Explain why invasive alien species are controlled.",
+      "Outline the roles of IUCN and CITES."
+    ],
+    "sections": [
+      [
+        "Extinction and vulnerability",
+        "Extinction occurs when the last individual of a species dies. Populations decline when births and immigration no longer balance deaths and emigration. Small populations are vulnerable to random events, loss of genetic variation and inbreeding."
+      ],
+      [
+        "Climate change",
+        "Changes in temperature, rainfall, sea level and seasonal patterns can remove suitable habitats, disrupt breeding or migration and alter food availability. Species with narrow tolerances or limited ability to move may be unable to track suitable conditions."
+      ],
+      [
+        "Competition and hunting",
+        "Competitors may reduce access to food, space, nesting sites or mates. Hunting can remove individuals faster than populations replace them, particularly when slow-reproducing animals are targeted or trade creates high demand."
+      ],
+      [
+        "Habitat degradation and loss",
+        "Land clearance, drainage, pollution, fragmentation, intensive agriculture and development reduce habitat area and quality. Fragmentation isolates populations, reduces gene flow and increases edge effects, raising inbreeding and local extinction risks."
+      ],
+      [
+        "Why maintain biodiversity",
+        "Biodiversity supports ecosystem processes and resilience, provides food, medicines and genetic resources, and has economic, cultural, aesthetic and ethical value. Species interactions support pollination, nutrient cycling, soil formation and water purification."
+      ],
+      [
+        "Zoos and botanic gardens",
+        "Zoos maintain animal populations, support captive breeding, research and education, and may supply individuals for reintroduction when habitat threats are controlled. Botanic gardens maintain living plant collections, propagate rare species and support research and restoration."
+      ],
+      [
+        "Conserved areas",
+        "National parks and marine parks protect habitats and ecological processes in situ. Management may include habitat protection, anti-poaching, zoning, invasive-species control and monitoring. Protected status alone is insufficient without enforcement, connectivity and community support."
+      ],
+      [
+        "Frozen zoos and seed banks",
+        "Frozen zoos preserve genetic material such as sperm, eggs, embryos or tissue at low temperatures. Seed banks store viable seeds under controlled dry, cool conditions, testing viability and regenerating collections. Some species produce seeds that do not tolerate storage."
+      ],
+      [
+        "IVF",
+        "In vitro fertilisation involves collecting eggs and sperm, fertilising the egg outside the female’s body, then developing embryos before transfer to a recipient female. It can help when natural mating is difficult or valuable gametes are available."
+      ],
+      [
+        "Embryo transfer and surrogacy",
+        "Embryo transfer places an embryo into the reproductive tract of a recipient female. Surrogacy uses a female to carry and give birth to offspring genetically derived from other individuals. These methods require specialist care and attention to welfare and genetic diversity."
+      ],
+      [
+        "Invasive alien species",
+        "An invasive alien species is introduced outside its natural range and causes or is likely to cause harm. It may outcompete native species, prey on them, introduce pathogens, hybridise with them or alter habitats and ecosystem processes."
+      ],
+      [
+        "IUCN and CITES",
+        "The IUCN assesses conservation status, including through the Red List, and provides knowledge and guidance. CITES is an international agreement that regulates international trade in listed wild animal and plant species through permits and controls."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Define extinction.",
+        "answer": "The death of the last individual of a species.",
+        "mark_points": [
+          "Last individual dies"
+        ]
+      },
+      {
+        "question": "Explain how habitat fragmentation can increase extinction risk.",
+        "answer": "It isolates populations, reduces gene flow and access to resources, increases edge effects and leaves small populations vulnerable to inbreeding and random events.",
+        "mark_points": [
+          "Isolation",
+          "Reduced gene flow",
+          "Small-population vulnerability"
+        ]
+      },
+      {
+        "question": "Explain one way climate change can cause extinction.",
+        "answer": "A shift in temperature or rainfall may remove suitable habitat or disrupt breeding and food availability; a species unable to move or adapt may decline to extinction.",
+        "mark_points": [
+          "Environmental conditions shift",
+          "Habitat/resources or breeding disrupted",
+          "Unable to move/adapt"
+        ]
+      },
+      {
+        "question": "Give two reasons for maintaining biodiversity.",
+        "answer": "It supports ecosystem processes and resilience and provides resources such as food, medicines and genetic material; economic, cultural and ethical reasons are also valid.",
+        "mark_points": [
+          "Two distinct reasons"
+        ]
+      },
+      {
+        "question": "Distinguish in situ and ex situ conservation.",
+        "answer": "In situ protects species in their natural habitats; ex situ maintains them outside their natural habitats, for example in zoos or seed banks.",
+        "mark_points": [
+          "Natural habitat",
+          "Outside natural habitat"
+        ]
+      },
+      {
+        "question": "Describe two roles of a zoo in conservation.",
+        "answer": "A zoo can maintain a managed breeding population and support research, education or carefully planned reintroduction when habitat threats are addressed.",
+        "mark_points": [
+          "Managed breeding",
+          "Research/education/reintroduction"
+        ]
+      },
+      {
+        "question": "Explain why seed banks periodically test seed viability.",
+        "answer": "Seeds may lose viability during storage; testing identifies when collections need regeneration to maintain viable genetic resources.",
+        "mark_points": [
+          "Viability declines",
+          "Need to regenerate"
+        ]
+      },
+      {
+        "question": "Distinguish a frozen zoo from a seed bank.",
+        "answer": "A frozen zoo cryopreserves animal genetic material such as gametes, embryos or tissues; a seed bank stores viable plant seeds under controlled conditions.",
+        "mark_points": [
+          "Animal genetic material",
+          "Plant seeds"
+        ]
+      },
+      {
+        "question": "Outline IVF in endangered mammal conservation.",
+        "answer": "Eggs and sperm are collected and fertilised outside the female’s body; the resulting embryo is cultured before transfer to a recipient female.",
+        "mark_points": [
+          "Collect gametes",
+          "Fertilise in vitro",
+          "Embryo transferred"
+        ]
+      },
+      {
+        "question": "Explain why surrogacy may help conserve an endangered mammal.",
+        "answer": "An embryo from genetically valuable parents can be carried by a suitable recipient female, enabling reproduction when the genetic mother cannot carry the pregnancy.",
+        "mark_points": [
+          "Recipient carries embryo",
+          "Addresses reproductive constraint"
+        ]
+      },
+      {
+        "question": "Give two reasons for controlling invasive alien species.",
+        "answer": "They may compete with or prey on native species, spread disease, hybridise with native species or alter habitats and ecosystem processes.",
+        "mark_points": [
+          "Two valid impacts"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/extinction-threat-pathways.svg",
+        "alt": "extinction threat pathways",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/in-situ-ex-situ-conservation.svg",
+        "alt": "in situ ex situ conservation",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/seed-bank-and-frozen-zoo.svg",
+        "alt": "seed bank and frozen zoo",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/assisted-reproduction.svg",
+        "alt": "assisted reproduction",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/invasive-species-impact.svg",
+        "alt": "invasive species impact",
+        "type": "svg"
+      }
+    ]
+  }
+}

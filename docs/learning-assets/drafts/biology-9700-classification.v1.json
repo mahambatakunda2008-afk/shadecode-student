@@ -1,0 +1,194 @@
+{
+  "asset_key": "biology-9700-classification",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Classification: species, domains and kingdoms",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "18",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030, Topic 18, pp. 46–47.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "18.1.1",
+      "18.1.2",
+      "18.1.3",
+      "18.1.4",
+      "18.1.5",
+      "18.1.6"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Compare biological, morphological and ecological species concepts and their limitations.",
+      "Describe the three domains and distinguish Archaea from Bacteria using specified features.",
+      "Apply the Eukarya taxonomic hierarchy and outline the four kingdoms.",
+      "Classify viruses by nucleic-acid type and strandedness."
+    ],
+    "sections": [
+      [
+        "Purpose of classification",
+        "Classification organises organisms using shared characteristics and evolutionary relationships. A useful system supports identification, comparison and the study of common ancestry. Similar appearance alone can mislead because unrelated organisms can evolve similar adaptations."
+      ],
+      [
+        "Biological species concept",
+        "A species is a group of organisms that can interbreed naturally to produce fertile offspring and are reproductively isolated from other such groups. It is difficult to apply to fossils, asexual organisms and geographically separated populations whose ability to interbreed cannot be tested."
+      ],
+      [
+        "Morphological species concept",
+        "This concept groups organisms using observable structural features. It can be applied to fossils and asexual organisms, but variation within a species and cryptic species can make identification difficult."
+      ],
+      [
+        "Ecological species concept",
+        "This concept identifies a species by its ecological niche, including its resource use, environmental tolerances and interactions. Niches may overlap and can change, so this concept also has limitations."
+      ],
+      [
+        "Three domains",
+        "Cellular organisms are classified into Archaea, Bacteria or Eukarya. Archaea and Bacteria are prokaryotes without a membrane-bound nucleus. Eukarya have a nucleus and membrane-bound organelles. The three-domain system reflects molecular evidence, especially ribosomal RNA comparisons."
+      ],
+      [
+        "Archaea and Bacteria",
+        "They differ in membrane lipids, ribosomal RNA sequences and cell-wall composition. Archaeal membrane lipids have distinctive ether-linked chains; bacterial membranes generally have ester-linked fatty acids. Bacterial walls commonly contain peptidoglycan, which is absent from archaeal walls. Not all Archaea are extremophiles."
+      ],
+      [
+        "Taxonomic hierarchy",
+        "From broad to specific: kingdom, phylum, class, order, family, genus, species. Each lower rank contains fewer organisms with more characteristics in common. A species name is binomial: genus begins with a capital letter and the specific epithet is lower case; both are italicised when typed."
+      ],
+      [
+        "Protoctista",
+        "Protoctists are diverse eukaryotes that do not fit the plant, animal or fungi kingdoms. Many are unicellular, although some are multicellular. Some photosynthesise while others ingest or absorb organic nutrients."
+      ],
+      [
+        "Fungi",
+        "Fungi are eukaryotic and usually have hyphae forming a mycelium. Their cell walls contain chitin. They feed by extracellular digestion and absorption, store carbohydrate as glycogen and commonly reproduce using spores. Yeasts are unicellular fungi."
+      ],
+      [
+        "Plantae and Animalia",
+        "Plants are multicellular eukaryotes with cellulose cell walls and chloroplasts in photosynthetic cells; they store carbohydrate mainly as starch. Animals are multicellular eukaryotes without cell walls or chloroplasts, obtain nutrients by ingestion and usually show movement at some stage."
+      ],
+      [
+        "Virus classification",
+        "Viruses are acellular infectious agents. For this syllabus, classify them by whether their genome is DNA or RNA and whether it is single-stranded or double-stranded. Viruses depend on host cells for replication and are not members of the three cellular domains."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Define the biological species concept.",
+        "answer": "A species is a group of organisms that can interbreed naturally to produce fertile offspring and are reproductively isolated from other groups.",
+        "mark_points": [
+          "Natural interbreeding",
+          "Fertile offspring",
+          "Reproductive isolation"
+        ]
+      },
+      {
+        "question": "Give one limitation of the biological species concept.",
+        "answer": "It cannot be applied reliably to fossils or asexual organisms because interbreeding and fertility cannot be assessed.",
+        "mark_points": [
+          "Fossils or asexual organisms",
+          "Interbreeding/fertility cannot be tested"
+        ]
+      },
+      {
+        "question": "Give one strength and one limitation of the morphological species concept.",
+        "answer": "It can classify fossils using observable structures, but different species may look very similar or members of one species may vary in appearance.",
+        "mark_points": [
+          "Applicable to fossils",
+          "Cryptic species or within-species variation"
+        ]
+      },
+      {
+        "question": "Name the three domains.",
+        "answer": "Archaea, Bacteria and Eukarya.",
+        "mark_points": [
+          "Archaea",
+          "Bacteria",
+          "Eukarya"
+        ]
+      },
+      {
+        "question": "State two differences between Archaea and Bacteria.",
+        "answer": "They differ in membrane lipid chemistry, ribosomal RNA sequences and cell-wall composition; any two are acceptable.",
+        "mark_points": [
+          "Two valid specified differences"
+        ]
+      },
+      {
+        "question": "Why are Archaea and Bacteria both prokaryotes?",
+        "answer": "Their cells lack a membrane-bound nucleus.",
+        "mark_points": [
+          "No membrane-bound nucleus"
+        ]
+      },
+      {
+        "question": "Write the taxonomic hierarchy from kingdom to species.",
+        "answer": "Kingdom, phylum, class, order, family, genus, species.",
+        "mark_points": [
+          "All seven ranks in correct order"
+        ]
+      },
+      {
+        "question": "State two characteristic features of fungi.",
+        "answer": "They have chitin cell walls and feed by extracellular digestion followed by absorption; hyphae/mycelium and spores are also valid.",
+        "mark_points": [
+          "Two correct fungal features"
+        ]
+      },
+      {
+        "question": "Give two differences between plants and animals.",
+        "answer": "Plants typically have cellulose cell walls and chloroplasts and store starch; animals lack cell walls and chloroplasts and obtain nutrients by ingestion.",
+        "mark_points": [
+          "Two paired contrasts"
+        ]
+      },
+      {
+        "question": "A virus has a single-stranded RNA genome. Classify it using the syllabus criteria.",
+        "answer": "It is an RNA virus with a single-stranded genome.",
+        "mark_points": [
+          "RNA",
+          "Single stranded"
+        ]
+      },
+      {
+        "question": "Explain why viruses are not placed in one of the three domains.",
+        "answer": "The domains classify cellular organisms, whereas viruses are acellular and depend on host cells for replication.",
+        "mark_points": [
+          "Acellular",
+          "Not cellular organisms / host-dependent replication"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/taxonomy-hierarchy.svg",
+        "alt": "taxonomy hierarchy",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/three-domains.svg",
+        "alt": "three domains",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/archaea-bacteria-comparison.svg",
+        "alt": "archaea bacteria comparison",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/eukaryote-kingdoms.svg",
+        "alt": "eukaryote kingdoms",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/classification-biodiversity-conservation/virus-genome-classification.svg",
+        "alt": "virus genome classification",
+        "type": "svg"
+      }
+    ]
+  }
+}
