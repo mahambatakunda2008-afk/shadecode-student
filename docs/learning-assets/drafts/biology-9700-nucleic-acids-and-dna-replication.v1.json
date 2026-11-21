@@ -1,0 +1,173 @@
+{
+  "asset_key": "biology-9700-nucleic-acids-and-dna-replication",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Nucleic acids and DNA replication",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "6",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 6, pp. 25–27. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 6.1.1–6.1.5.",
+    "syllabus_outcome_codes": [
+      "6.1.1",
+      "6.1.2",
+      "6.1.3",
+      "6.1.4",
+      "6.1.5"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Describe the structure of nucleotides, including the nucleotide structure of ATP.",
+      "Distinguish purines from pyrimidines and identify the bases in DNA and RNA.",
+      "Describe DNA structure, complementary base pairing and the bonds within and between strands.",
+      "Explain semi-conservative DNA replication, including the roles of DNA polymerase and DNA ligase and the difference between leading and lagging strands.",
+      "Describe the structure of mRNA."
+    ],
+    "sections": [
+      {
+        "heading": "Nucleotides are the building blocks",
+        "body": "A nucleotide contains three components: a pentose sugar, a phosphate group and a nitrogen-containing base. A DNA nucleotide contains deoxyribose; an RNA nucleotide contains ribose. The four DNA bases are adenine (A), thymine (T), cytosine (C) and guanine (G). RNA uses uracil (U) instead of thymine. Nucleotides join when the phosphate group attached to the 5′ carbon of one sugar forms a phosphodiester bond with the 3′ hydroxyl group of the next sugar. This produces a sugar–phosphate backbone with bases projecting from it."
+      },
+      {
+        "heading": "ATP is also a nucleotide",
+        "body": "ATP (adenosine triphosphate) consists of adenine attached to ribose, together forming adenosine, and three phosphate groups. It is therefore a ribonucleotide derivative. ATP is used as an immediate energy-transfer molecule in cells. Do not describe ATP as a DNA nucleotide: it contains ribose and three phosphate groups, whereas a DNA nucleotide has deoxyribose and one phosphate group in the polymer."
+      },
+      {
+        "heading": "Purines and pyrimidines",
+        "body": "Adenine and guanine are purines. Each has a nitrogenous base with two fused rings. Cytosine, thymine and uracil are pyrimidines, each with one ring. DNA contains A, T, C and G; RNA contains A, U, C and G. A useful memory check is that the two purines are A and G, while the three pyrimidines are C, T and U."
+      },
+      {
+        "heading": "The DNA double helix",
+        "body": "DNA consists of two polynucleotide strands coiled into a double helix. The strands run in opposite directions, so they are antiparallel: one runs 5′ to 3′ and the other 3′ to 5′. The sugar–phosphate backbones are on the outside and the bases face inwards. Complementary base pairing means adenine pairs with thymine and cytosine pairs with guanine. A–T pairs form two hydrogen bonds; C–G pairs form three hydrogen bonds. Phosphodiester bonds link adjacent nucleotides within each strand. Hydrogen bonds hold complementary bases on opposite strands together. Do not confuse these two bond types."
+      },
+      {
+        "heading": "Why complementary pairing matters",
+        "body": "Each base can pair with only its complementary partner in the standard DNA double helix. Therefore, the base sequence of one strand determines the sequence of the other. If one strand is 5′-A T G C C A-3′, the complementary strand is 3′-T A C G G T-5′. When writing both strands in the 5′ to 3′ direction, reverse the order of the complementary sequence: 5′-T G G C A T-3′. Always show strand direction if the question asks for it."
+      },
+      {
+        "heading": "Semi-conservative DNA replication",
+        "body": "DNA replication takes place during the S phase of interphase. The double helix unwinds and the hydrogen bonds between complementary bases break, separating the two parental strands. Each original strand acts as a template. Free DNA nucleotides pair with exposed bases by complementary base pairing. DNA polymerase joins nucleotides by forming phosphodiester bonds, building a new strand in the 5′ to 3′ direction. Each resulting DNA molecule contains one original parental strand and one newly synthesised strand. This is why replication is described as semi-conservative."
+      },
+      {
+        "heading": "Leading and lagging strands",
+        "body": "Because the two template strands are antiparallel and DNA polymerase can add nucleotides only to the 3′ end of a growing strand, new DNA is synthesised only in the 5′ to 3′ direction. At a replication fork, one new strand can be made continuously towards the fork: the leading strand. The other is made discontinuously in short sections called Okazaki fragments, away from the fork: the lagging strand. DNA ligase joins the Okazaki fragments by sealing breaks in the sugar–phosphate backbone. DNA polymerase synthesises DNA; ligase joins DNA fragments. Do not swap their roles."
+      },
+      {
+        "heading": "mRNA structure",
+        "body": "Messenger RNA (mRNA) is a single-stranded polynucleotide. It contains ribose sugar and the bases adenine, uracil, cytosine and guanine. Its sugar–phosphate backbone contains phosphodiester bonds. The sequence of bases is read in groups of three called codons during translation. mRNA carries a copy of the genetic information from DNA to a ribosome, where it helps determine the order of amino acids in a polypeptide."
+      },
+      {
+        "heading": "Exam precision: bond, base and strand language",
+        "body": "Use phosphodiester bond for the covalent link between adjacent nucleotides in one strand. Use hydrogen bond for attraction between complementary bases on opposite DNA strands. State that A pairs with T in DNA and A pairs with U in RNA. DNA strands are antiparallel, not parallel. DNA polymerase adds to the 3′ end, so the new strand grows 5′ to 3′. Semi-conservative means one parental strand is retained in each daughter DNA molecule."
+      }
+    ],
+    "questions": [
+      {
+        "question": "State the three components of a DNA nucleotide and identify the sugar found in it.",
+        "answer": "A DNA nucleotide contains a phosphate group, deoxyribose sugar and a nitrogenous base.",
+        "mark_points": [
+          "Phosphate group",
+          "Deoxyribose",
+          "Nitrogenous base"
+        ]
+      },
+      {
+        "question": "Explain why adenine and guanine are classified as purines, whereas cytosine and thymine are pyrimidines.",
+        "answer": "Adenine and guanine each have a double-ring nitrogenous base. Cytosine and thymine each have a single-ring nitrogenous base.",
+        "mark_points": [
+          "Adenine and guanine have two rings",
+          "Cytosine and thymine have one ring"
+        ]
+      },
+      {
+        "question": "A DNA strand has the sequence 5′-A G T C C A-3′. Write the complementary strand, showing its direction.",
+        "answer": "The complementary strand is 3′-T C A G G T-5′.",
+        "mark_points": [
+          "Correct complementary bases T C A G G T",
+          "Correct antiparallel direction 3′ to 5′"
+        ]
+      },
+      {
+        "question": "Distinguish between a phosphodiester bond and a hydrogen bond in DNA.",
+        "answer": "A phosphodiester bond covalently joins adjacent nucleotides within one polynucleotide strand. Hydrogen bonds form between complementary bases on opposite strands.",
+        "mark_points": [
+          "Phosphodiester joins nucleotides in the same strand",
+          "Hydrogen bonds link complementary bases between strands"
+        ]
+      },
+      {
+        "question": "Explain why DNA replication is described as semi-conservative.",
+        "answer": "The two parental strands separate and each acts as a template for a new complementary strand. Each daughter DNA molecule therefore contains one original strand and one newly synthesised strand.",
+        "mark_points": [
+          "Parental strands separate",
+          "Each original strand acts as a template",
+          "A new complementary strand is made on each template",
+          "Each daughter molecule contains one old and one new strand"
+        ]
+      },
+      {
+        "question": "Describe the roles of DNA polymerase and DNA ligase during DNA replication.",
+        "answer": "DNA polymerase adds complementary DNA nucleotides to the 3′ end of a growing strand, forming phosphodiester bonds. DNA ligase joins Okazaki fragments on the lagging strand by sealing breaks in the sugar–phosphate backbone.",
+        "mark_points": [
+          "DNA polymerase adds nucleotides",
+          "Synthesis is 5′ to 3′ / addition at 3′ end",
+          "DNA ligase joins Okazaki fragments",
+          "Ligase seals the sugar–phosphate backbone"
+        ]
+      },
+      {
+        "question": "Explain why one new DNA strand is synthesised continuously and the other discontinuously.",
+        "answer": "The parental strands are antiparallel, but DNA polymerase can synthesise only in the 5′ to 3′ direction. One strand is therefore made continuously towards the replication fork, while the other is made in Okazaki fragments away from the fork.",
+        "mark_points": [
+          "Parental strands are antiparallel",
+          "DNA polymerase works only 5′ to 3′",
+          "Leading strand is continuous",
+          "Lagging strand is discontinuous / Okazaki fragments"
+        ]
+      },
+      {
+        "question": "Give two structural differences between DNA and mRNA.",
+        "answer": "DNA is usually double-stranded whereas mRNA is single-stranded. DNA contains deoxyribose and thymine, whereas mRNA contains ribose and uracil.",
+        "mark_points": [
+          "DNA usually double-stranded; mRNA single-stranded",
+          "DNA has deoxyribose; mRNA has ribose",
+          "DNA has thymine; mRNA has uracil"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/nucleic-acids/dna-double-helix.svg",
+        "alt": "Schematic DNA double-stranded ladder showing antiparallel 5-prime to 3-prime backbones, complementary A-T and C-G base pairs, hydrogen bonds and phosphodiester-linked backbones.",
+        "caption": "DNA structure and complementary base pairing."
+      },
+      {
+        "path": "/learning-assets/biology/9700/nucleic-acids/dna-replication.svg",
+        "alt": "Semi-conservative DNA replication diagram showing two parental strands separating and each acting as a template for a new complementary strand.",
+        "caption": "Each daughter DNA molecule retains one parental strand."
+      },
+      {
+        "path": "/learning-assets/biology/9700/nucleic-acids/leading-lagging-strands.svg",
+        "alt": "Replication fork diagram comparing continuous leading-strand synthesis with discontinuous lagging-strand synthesis in Okazaki fragments and DNA ligase joining.",
+        "caption": "Why DNA replication has leading and lagging strands."
+      }
+    ]
+  }
+}
