@@ -1182,7 +1182,22 @@ async function runJob(
   } finally { if (runningJobId === job.id) runningJobId = null; }
 }
 export function queueLessonGeneration(input: LessonGenerationInput) { return createGenerationJob("lesson", input); }
-export async function resumeLessonGeneration(token: string | null) { if (!isBrowser() || !token) return null; markInterruptedJobsForRetry(); let active = getActiveGenerationJobs().filter(job => job.kind === "lesson").map(job => job as GenerationJob<LessonGenerationInput>); const preferredId = getActiveId(); let job = (preferredId && active.find(item => item.id === preferredId)) || active[0]; if (!job) { const durable = await listDurableGenerationJobs(token); const remote = durable.find((item) => { const row = item as Record<string, unknown>; return row.kind === "lesson" && row.request && typeof row.request === "object"; }) as Record<string, unknown> | undefined; if (remote) {
+const RESUMABLE_DURABLE_STATUSES = new Set(["queued", "warming", "generating", "partial", "interrupted"]);
+const RESUMABLE_DURABLE_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * Only a recent, unfinished lesson job may be resumed from the server on page load. Without this,
+ * an old failed/stuck job hijacked every later Learn session (production E2E 2026-11-21: starting
+ * "Quantum physics" reopened a stale "Dynamics" shell).
+ */
+export function isResumableDurableLessonJob(row: Record<string, unknown>, now = Date.now()): boolean {
+  if (row.kind !== "lesson" || !row.request || typeof row.request !== "object") return false;
+  if (!RESUMABLE_DURABLE_STATUSES.has(String(row.status))) return false;
+  const updated = Date.parse(String(row.updated_at ?? row.created_at ?? ""));
+  return Number.isFinite(updated) && now - updated <= RESUMABLE_DURABLE_MAX_AGE_MS;
+}
+
+export async function resumeLessonGeneration(token: string | null) { if (!isBrowser() || !token) return null; markInterruptedJobsForRetry(); let active = getActiveGenerationJobs().filter(job => job.kind === "lesson").map(job => job as GenerationJob<LessonGenerationInput>); const preferredId = getActiveId(); let job = (preferredId && active.find(item => item.id === preferredId)) || active[0]; if (!job) { const durable = await listDurableGenerationJobs(token); const remote = durable.find((item) => isResumableDurableLessonJob(item as Record<string, unknown>)) as Record<string, unknown> | undefined; if (remote) {
   // The id-scoped read reconciles the lesson row from the durable checkpoint
   // before the browser resumes generation.
   const reconciled = await getDurableGenerationJob(token, String(remote.id));
