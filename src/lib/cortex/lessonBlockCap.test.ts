@@ -121,3 +121,18 @@ describe("long blocks and application phrasing", () => {
     expect(lessonQualityFailures({ title: "Electromagnetism", blocks }, request).failures).not.toContain("empty-application");
   });
 });
+
+describe("empty-application", () => {
+  const request = { intent: "teach", subject: "Physics", topic: "Electromagnetism", prompt: "Electromagnetism", requestedParts: [] } as never;
+  const app = (content: string) => [{ type: "real_world", title: "Generators", content }];
+
+  it("accepts an explanatory real-world block that sets no task", () => {
+    const content = "Power station generators spin coils inside strong magnets so the flux through each coil keeps changing, which induces the alternating emf sent to homes.";
+    expect(lessonQualityFailures({ title: "Electromagnetism", blocks: app(content) }, request).failures).not.toContain("empty-application");
+  });
+
+  it("still rejects an empty or placeholder application block", () => {
+    expect(lessonQualityFailures({ title: "Electromagnetism", blocks: app("TBD") }, request).failures).toContain("empty-application");
+    expect(lessonQualityFailures({ title: "Electromagnetism", blocks: app("Short.") }, request).failures).toContain("empty-application");
+  });
+});

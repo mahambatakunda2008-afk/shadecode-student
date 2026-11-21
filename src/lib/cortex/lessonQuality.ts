@@ -217,7 +217,10 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   if (normalized.some(block => artificialHeadings.some(heading => `${block.title ?? ""} ${block.content}`.toLowerCase().startsWith(heading)))) failures.push("template-heading");
 
   const applications = normalized.filter(block => block.normalizedType === "application");
-  if (applications.some(block => !/question:|task:|scenario:|apply|use this|calculate|determine|find|\?|suppose|consider|imagine|predict|explain|estimate|design|decide|a (?:student|car|ball|wire|circuit|particle|gas|sample)\b/i.test(block.searchable))) failures.push("empty-application");
+  // "Application" also covers real-world and transfer blocks, which explain rather than set a task, so
+  // only genuinely empty or placeholder content is rejected (production 2026-11-21: valid sections
+  // were rejected three times in a row for lacking task keywords).
+  if (applications.some(block => block.content.trim().length < 60 || /^(tbd|todo|placeholder|n\/a)\b/i.test(block.content.trim()))) failures.push("empty-application");
 
   const numericalBlocks = normalized.filter(block => /\d/.test(block.content));
   if (numericalBlocks.some(block => hasBareNumericalResult(block.content))) failures.push("bare-numerical-result");
