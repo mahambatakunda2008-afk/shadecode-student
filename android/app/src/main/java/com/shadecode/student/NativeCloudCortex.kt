@@ -8,8 +8,7 @@ import java.net.URL
 /**
  * Remote Cortex adapter. The Android client does not choose a cloud model.
  * /api/learn/generate owns the provider chain, quality gates and curriculum
- * grounding, so the native app benefits from the same multi-provider system as
- * the web client.
+ * grounding, so the native app benefits from the same multi-provider system.
  */
 class NativeCloudCortex(
     private val baseUrl: String = "https://shadecodestudent.vercel.app",
@@ -39,23 +38,37 @@ class NativeCloudCortex(
                 .put("prompt", "Teach $topic clearly and practically.")
 
             connection.outputStream.use { it.write(request.toString().toByteArray(Charsets.UTF_8)) }
-            if (connection.responseCode !in 200..299) return null
-            val body = connection.inputStream.bufferedReader().use { it.readText() }
-            val value = JSONObject(body)
+
+            // A generated lesson can be returned with 503 when only its cloud
+            // insert failed. Read that error body and recover the exact lesson
+            // instead of discarding it and forcing the student to regenerate.
+            val responseCode = connection.responseCode
+            val responseStream = if (responseCode in 200..299) connection.inputStream else connection.errorStream
+            val body = responseStream?.bufferedReader()?.use { it.readText() } ?: return null
+            val envelope = JSONObject(body)
+            val recoverable = responseCode !in 200..299 &&
+                envelope.optString("code") == "LESSON_SAVE_FAILED_RECOVERABLE"
+            if (responseCode !in 200..299 && !recoverable) return null
+
+            val value = if (recoverable) envelope.optJSONObject("recoverableLesson") ?: return null else envelope
             val id = value.optString("id").trim()
             val title = value.optString("title").trim().ifBlank { topic }
             val blocks = value.optJSONArray("blocks") ?: return null
             if (id.isBlank() || blocks.length() < 8) return null
 
+            val normalizedBlocks = normalizeBlocks(blocks)
+            if (JSONArray(normalizedBlocks).length() < 8) return null
+
             NativeLessonEntity(
                 id = id,
                 subjectId = subjectId,
-                topic = topic.take(500),
+                topic = value.optString("topic").trim().ifBlank { topic }.take(500),
                 title = title.take(255),
-                description = "A Cortex lesson on ${topic.trim()}".take(1000),
-                difficulty = "adaptive",
-                blocksJson = normalizeBlocks(blocks),
-                progress = 0f,
+                description = value.optString("description").trim()
+                    .ifBlank { "A Cortex lesson on ${topic.trim()}" }.take(1000),
+                difficulty = value.optString("difficulty").trim().ifBlank { "adaptive" },
+                blocksJson = normalizedBlocks,
+                progress = value.optDouble("progress", 0.0).toFloat().coerceIn(0f, 1f),
             )
         } catch (_: Exception) {
             null

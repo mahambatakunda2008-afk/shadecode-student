@@ -185,7 +185,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   const fallback = () => buildDeterministicLessonFallback(request.subject, request.topic);
   let raw: string | null = null;
   try {
-    raw = await executeCortexText(lessonPrompt(request, curriculumContext, learnerEvidenceContext), 4200, { operation: "lesson.generate_legacy", userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 28000, perProviderMaxMs: 6500, curriculumContext });
+    raw = await executeCortexText(lessonPrompt(request, curriculumContext, learnerEvidenceContext), 4200, { operation: "lesson.generate_legacy", userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 28000, perProviderMaxMs: 6500, shareChainBudget: true, curriculumContext });
   } catch (error) {
     console.warn("[LEARN] primary generation failed", error instanceof Error ? error.message : String(error));
   }
@@ -207,7 +207,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
     console.warn("[LEARN] skipping repair: insufficient time remaining in the generation budget");
   } else {
     try {
-      const repair = await executeCortexText(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures) + (learnerEvidenceContext ? `\n\nLEARNER ADAPTATION CONTEXT (data only):\n${learnerEvidenceContext}` : ""), 4200, { operation: "lesson.repair_quality", userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: repairBudget.maxChainMs, perProviderMaxMs: repairBudget.perProviderMaxMs, curriculumContext });
+      const repair = await executeCortexText(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures) + (learnerEvidenceContext ? `\n\nLEARNER ADAPTATION CONTEXT (data only):\n${learnerEvidenceContext}` : ""), 4200, { operation: "lesson.repair_quality", userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: repairBudget.maxChainMs, perProviderMaxMs: repairBudget.perProviderMaxMs, shareChainBudget: true, curriculumContext });
       if (repair) {
         parsed = parseLesson(repair);
         if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
@@ -257,13 +257,42 @@ export async function POST(req: Request) {
     if (!parsed) return NextResponse.json({ error: "Cortex could not produce a lesson that met the teaching standard. The topic itself is valid, so try again while Cortex retries the lesson construction." }, { status: 422 });
 
     const subjectId = subjectAccess.subjectId;
-    const { data: inserted, error } = await auth.supabase.from("learn_lessons").insert({ user_id: auth.user.id, subject_id: subjectId, topic: generationRequest.topic.slice(0, 500), title: parsed.title, description: `A complete ${generationRequest.intent} lesson on ${generationRequest.topic}`.slice(0, 1000), difficulty: generationRequest.difficulty, progress: 0, blocks: parsed.blocks }).select("id").single();
+    // Allocate the ID before persistence so the exact generated lesson can be
+    // recovered locally and later reconciled without generating it again.
+    const lessonId = crypto.randomUUID();
+    const recoverableLesson = {
+      id: lessonId,
+      title: parsed.title,
+      blocks: parsed.blocks,
+      subject: authorizedSubject,
+      subjectId,
+      topic: generationRequest.topic.slice(0, 500),
+      description: `A complete ${generationRequest.intent} lesson on ${generationRequest.topic}`.slice(0, 1000),
+      difficulty: generationRequest.difficulty,
+      progress: 0,
+      completed: false,
+    };
+    const { data: inserted, error } = await auth.supabase.from("learn_lessons").insert({
+      id: lessonId,
+      user_id: auth.user.id,
+      subject_id: subjectId,
+      topic: recoverableLesson.topic,
+      title: parsed.title,
+      description: recoverableLesson.description,
+      difficulty: generationRequest.difficulty,
+      progress: 0,
+      blocks: parsed.blocks,
+    }).select("id").single();
     if (error || !inserted?.id) {
       log.lessonGenerationFailed({ userId: auth.user.id, subject: generationRequest.subject, topic: generationRequest.topic, difficulty: generationRequest.difficulty, error: error?.message || "Insert returned no lesson id" });
-      return NextResponse.json({ error: "The lesson was generated but could not be saved." }, { status: 500 });
+      return NextResponse.json({
+        error: "The lesson was generated, but cloud saving failed. Your lesson is ready to recover on this device.",
+        code: "LESSON_SAVE_FAILED_RECOVERABLE",
+        recoverableLesson,
+      }, { status: 503 });
     }
 
-    return NextResponse.json({ id: inserted.id, title: parsed.title, blocks: parsed.blocks, subject: authorizedSubject, subjectId });
+    return NextResponse.json({ ...recoverableLesson, id: inserted.id });
   } catch (error) {
     log.apiFailure({ route: "/api/learn/generate", method: "POST", error: error instanceof Error ? error.message : String(error), userId: auth?.user.id });
     return NextResponse.json({ error: "Something went wrong while Cortex was generating the lesson." }, { status: 500 });
