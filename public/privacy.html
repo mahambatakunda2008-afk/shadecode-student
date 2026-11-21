@@ -1,56 +1,89 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy - Shadecode Student</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Privacy Policy for Shadecode Student. Learn what data we process, why we process it, and how to request deletion.">
+  <link rel="canonical" href="https://shadecodestudent.vercel.app/privacy.html">
+  <title>Privacy Policy | Shadecode Student</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      line-height: 1.6;
-      color: #333;
-    }
-    h1, h2 {
-      color: #6366f1;
-    }
+    :root { color-scheme: light dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; background: #0b1220; color: #eef3ff; line-height: 1.7; }
+    main { width: min(100% - 36px, 850px); margin: 0 auto; padding: 54px 0 80px; }
+    h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.1; letter-spacing: -.035em; }
+    h2 { margin-top: 34px; font-size: 1.35rem; }
+    p, li { color: #c7d2e5; }
+    a { color: #9db7ff; }
+    .meta, .notice { color: #a6b4cc; font-size: .94rem; }
+    .notice { border: 1px solid #2b3a55; background: #121c2d; border-radius: 16px; padding: 16px 18px; }
+    footer { margin-top: 42px; padding-top: 20px; border-top: 1px solid #2b3a55; color: #a6b4cc; }
   </style>
 </head>
 <body>
+<main>
   <h1>Privacy Policy for Shadecode Student</h1>
-  <p><strong>Effective Date:</strong> May 4, 2026</p>
+  <p class="meta"><strong>Effective date:</strong> 4 November 2026</p>
+  <p>This policy explains how Shadecode ("we", "us") handles information when you use Shadecode Student on the web or Android. Shadecode Student is an educational platform with account-based learning tools, saved progress, offline features and optional AI-assisted features.</p>
+  <p class="notice"><strong>Account deletion:</strong> You can request deletion of your Shadecode Student account and associated personal data using our <a href="/delete-account.html">account deletion page</a>. The request route is available without signing in or reinstalling the app.</p>
 
-  <h2>1. Information We Collect</h2>
+  <h2>1. Information we process</h2>
   <ul>
-    <li>No sensitive personal data is required to use Shadecode Student.</li>
-    <li>Optional data: if you create a profile, we may store your name or email for login purposes.</li>
-    <li>Anonymous usage statistics may be collected to improve app performance.</li>
+    <li><strong>Account and profile information:</strong> email address and authentication identifiers; profile details such as display name, username, education stage, selected subjects and onboarding preferences.</li>
+    <li><strong>Learning information:</strong> lessons, study plans, timetable entries, tasks, focus sessions, saved papers, exam attempts, answers, scores, feedback, progress, achievements, revision activity and other learning records you create or that the service generates for your account.</li>
+    <li><strong>Information you submit:</strong> messages, feedback, support requests, questions, text, files or other content you choose to provide through a feature.</li>
+    <li><strong>Connected messaging information:</strong> if you choose to link WhatsApp, we process the linking information and the messages and delivery metadata needed to provide that integration.</li>
+    <li><strong>Technical and diagnostic information:</strong> service logs, error reports, feature events, request timing, device/app diagnostics and security information used to operate, troubleshoot and protect the service. These records may contain account identifiers or contextual details needed to diagnose an issue.</li>
+    <li><strong>Device-stored information:</strong> the web app and Android app may store session credentials, preferences, profile details, cached learning content and queued changes locally so supported features can work offline and synchronize later.</li>
+  </ul>
+  <p>Some information is necessary to provide account-based features. Other information is optional and is processed only when you use the relevant feature or provide it.</p>
+
+  <h2>2. How we use information</h2>
+  <ul>
+    <li>Create and secure accounts and authenticate users.</li>
+    <li>Provide learning content, study tools, saved progress, offline access and synchronization.</li>
+    <li>Personalize learning recommendations and show progress, insights and performance feedback.</li>
+    <li>Generate optional AI-assisted explanations, lessons, questions, feedback and other requested outputs.</li>
+    <li>Operate optional integrations you choose to connect, including WhatsApp.</li>
+    <li>Diagnose errors, monitor reliability, prevent abuse, protect users and improve the service.</li>
+    <li>Respond to support, privacy and account-deletion requests and meet applicable legal obligations.</li>
   </ul>
 
-  <h2>2. How We Use Information</h2>
+  <h2>3. Service providers and sharing</h2>
+  <p>We do not sell personal information. We use service providers to host, secure and operate Shadecode Student. Depending on the features you use and the configuration active at the time, these providers may process relevant information on our behalf:</p>
   <ul>
-    <li>Provide access to study tools and dashboards.</li>
-    <li>Improve app performance and user experience.</li>
-    <li>Maintain security and prevent misuse.</li>
+    <li><strong>Supabase:</strong> account authentication and application database/storage services.</li>
+    <li><strong>Vercel:</strong> application hosting, delivery, server execution and AI Gateway services.</li>
+    <li><strong>AI model providers:</strong> optional AI requests may be routed through Vercel AI Gateway or configured providers such as Groq, OpenRouter, Cloudflare and Google Gemini. When you use an AI feature, the text, question, relevant learning context or other input needed to answer the request may be sent to the provider handling that request. Do not submit information you do not want processed by an AI provider.</li>
+    <li><strong>Sentry:</strong> error monitoring and diagnostics. Technical events and relevant diagnostic context may be processed to identify and resolve failures.</li>
+    <li><strong>Meta / WhatsApp:</strong> if you link and use the optional WhatsApp integration, account-linking identifiers and message content are processed to deliver the messaging feature.</li>
   </ul>
+  <p>The specific AI provider may vary based on availability and service configuration. Providers process information under their own terms and privacy documentation. We may also disclose information where required by law, to protect users or the service, or to handle a legitimate security or legal claim.</p>
 
-  <h2>3. Sharing of Information</h2>
-  <p>We do not sell or share your personal information with third parties. Data may be shared only if required by law or to protect our rights.</p>
+  <h2>4. AI-assisted features</h2>
+  <p>AI features are optional. A request may include the prompt or question you submit and relevant context such as subject, syllabus, lesson or learning-performance information needed to produce a useful response. Requests are routed through our server-side AI layer; provider credentials are not intentionally exposed to the app client. AI outputs can be inaccurate and should be checked against trusted course materials and teachers.</p>
 
-  <h2>4. Cookies and Local Storage</h2>
-  <p>Shadecode Student may use browser local storage or cookies to save preferences and login sessions. You can clear these at any time in your browser settings.</p>
+  <h2>5. Cookies, local storage and offline data</h2>
+  <p>The web app uses cookies and browser storage for authentication, preferences and supported offline behavior. The Android app stores session and cached learning information on the device to support offline use and later synchronization. Signing out removes the active session, but may not remove every cached learning item from the device. Uninstalling the Android app removes app-private local data managed by Android; it does not delete your server-side account or records. Use the account deletion process to request server-side deletion.</p>
 
-  <h2>5. Children’s Privacy</h2>
-  <p>Shadecode Student is designed for educational use. We do not knowingly collect personal information from children under 13.</p>
+  <h2>6. Security</h2>
+  <p>We use access controls and server-side protections intended to limit access to account information, and use encrypted network connections for service traffic. No online service or storage method can be guaranteed completely secure. Keep your sign-in credentials private and tell us promptly if you suspect unauthorized account access.</p>
 
-  <h2>6. Your Rights</h2>
-  <ul>
-    <li>You can request deletion of your account data at any time.</li>
-    <li>You can uninstall the app to stop all data collection.</li>
-  </ul>
+  <h2>7. Retention</h2>
+  <p>We retain account and learning information while it is needed to provide the service and maintain your account. If you request account deletion, we delete or de-identify associated personal data in systems we control and request deletion from relevant service providers where applicable. Limited information may be retained where reasonably necessary for security, fraud prevention, legal compliance or dispute resolution. Encrypted backups and operational logs may remain in provider-managed retention cycles for a limited period before expiry. We restrict retained information to the purpose for which it is kept.</p>
 
-  <h2>7. Contact Us</h2>
-  <p>If you have questions about this policy, contact us at: <strong>shadecodetech@gmail.com</strong></p>
+  <h2>8. Account and data deletion</h2>
+  <p>To request deletion, visit <a href="/delete-account.html">Shadecode Student account deletion</a> and follow the instructions. You can submit a request without signing in. We verify account ownership before processing a request to prevent unauthorized deletion. Deletion is permanent and may remove saved lessons, progress, exam attempts and other account-linked work. If you cannot access the email address associated with your account, contact us and explain the issue. Never send your password or one-time sign-in code.</p>
+
+  <h2>9. Children's privacy</h2>
+  <p>Shadecode Student is an educational product and may be used by school-age learners. Users under 13 should not create an account or provide personal information without the involvement and authorization of a parent or legal guardian. If you believe a child has provided personal information inappropriately, contact us so we can review the request.</p>
+
+  <h2>10. Your choices and questions</h2>
+  <p>You can review and update supported profile information in account settings, choose whether to use optional AI and messaging features, sign out, and request account deletion. For privacy questions or requests, contact <a href="mailto:shadecodetech@gmail.com">shadecodetech@gmail.com</a>.</p>
+
+  <footer>
+    <p><strong>Shadecode Student</strong> · Provided by Shadecode</p>
+    <p><a href="/delete-account.html">Request account deletion</a> · <a href="/">Return to Shadecode Student</a></p>
+  </footer>
+</main>
 </body>
 </html>
