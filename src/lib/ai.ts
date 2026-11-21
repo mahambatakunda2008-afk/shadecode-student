@@ -78,6 +78,16 @@ function fetchWithTimeout(url: string, options: RequestInit, timeout: number): P
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
+/**
+ * Groq retired llama-3.3-70b-versatile on 2026-08-16 (every call returned HTTP 404). Models are tried
+ * in order; set GROQ_MODEL to put a specific model first when Groq retires another one.
+ */
+export function groqModelChain(override = process.env.GROQ_MODEL): string[] {
+  const defaults = ["openai/gpt-oss-120b", "qwen/qwen3.6-27b"];
+  const first = override?.trim();
+  return first ? [first, ...defaults.filter((model) => model !== first)] : defaults;
+}
+
 export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOptions = {}): Promise<string | null> {
   const { userId, feature = "ai_assistant", subfeature = "generate", media = [] } = options;
   const maxChainMs = Math.max(3000, Math.min(options.maxChainMs ?? DEFAULT_MAX_CHAIN_MS, 60000));
@@ -403,20 +413,29 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   // (unlike OpenRouter's free router, which recently returned empty responses), the most likely to
   // succeed. No-op until GROQ_API_KEY is set (free sign-up at console.groq.com, no card required).
   if (!media.length && process.env.GROQ_API_KEY && canTry()) {
-    const text = await tryProvider("groq", "llama-3.3-70b-versatile", async timeout => {
-      const res = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
-      }, timeout);
-      if (!res.ok) throw new Error(`Groq HTTP ${res.status}`);
-      const data = await res.json() as any;
-      return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null;
-    });
-    if (text) return text;
+    for (const groqModel of groqModelChain()) {
+      if (!canTry()) break;
+      const text = await tryProvider("groq", groqModel, async timeout => {
+        const res = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: groqModel,
+            messages: [{ role: "user", content: groundedPrompt }],
+            max_tokens: maxTokens,
+            // gpt-oss models reason before answering; keep latency low for lesson sections.
+            ...(groqModel.startsWith("openai/gpt-oss") ? { reasoning_effort: "low" } : {}),
+          }),
+        }, timeout);
+        if (!res.ok) throw new Error(`Groq HTTP ${res.status} (${groqModel})`);
+        const data = await res.json() as any;
+        return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null;
+      });
+      if (text) return text;
+    }
   }
 
   // OpenRouter's free tier is currently the only provider with a proven production success
