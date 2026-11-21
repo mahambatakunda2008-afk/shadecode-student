@@ -1,0 +1,228 @@
+{
+  "asset_key": "biology-9700-osmosis-diffusion-and-water-potential",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Investigating diffusion, osmosis and water potential",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "4",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 4, syllabus pp. 22–24. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 4.2.2–4.2.6.",
+    "syllabus_outcome_codes": [
+      "4.2.2",
+      "4.2.3",
+      "4.2.4",
+      "4.2.5",
+      "4.2.6"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced.",
+      "Practical activities are outlines only. Complete local school risk assessments and follow teacher supervision before practical use."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Describe investigations of diffusion and osmosis using plant tissue, Visking tubing and agar.",
+      "Calculate surface area-to-volume ratios for simple three-dimensional shapes and relate them to diffusion.",
+      "Plan and interpret an agar-block investigation of the effect of surface area-to-volume ratio on diffusion.",
+      "Investigate plant tissue in solutions of different water potentials and estimate the water potential of the tissue.",
+      "Explain water movement in terms of water potential and predict effects on plant and animal cells."
+    ],
+    "sections": [
+      {
+        "heading": "Investigating diffusion with agar",
+        "body": "Agar can be used as a model to investigate diffusion. Cubes of agar containing an indicator or coloured substance are placed in a surrounding solution that diffuses into the cube and changes its colour. After a fixed time, the cubes can be removed, cut open and the depth of colour change measured. Keep agar composition, solution concentration, temperature, immersion time and cube preparation consistent. Agar is a model, not a living cell, so conclusions should be limited to diffusion geometry."
+      },
+      {
+        "heading": "Investigating osmosis with Visking tubing",
+        "body": "Visking tubing is a partially permeable membrane model. A length of tubing can be filled with a solution, tied securely and placed in distilled water or another solution. If the surrounding solution has a higher water potential than the solution inside, water enters and the tubing may gain mass or volume. If the surrounding solution has a lower water potential, water leaves and mass may decrease. Blot the outside consistently before weighing and use repeats."
+      },
+      {
+        "heading": "Investigating osmosis in plant tissue",
+        "body": "Equal-sized cylinders or pieces of potato or other suitable plant tissue can be placed in a range of sucrose or salt solutions of known concentration. Measure initial mass, blot consistently, immerse for a fixed time, remove, blot again and measure final mass. Calculate percentage change in mass. A solution that causes no net change in mass has approximately the same water potential as the tissue under the conditions of the experiment."
+      },
+      {
+        "heading": "Calculate percentage change in mass",
+        "body": "Percentage change in mass = ((final mass − initial mass) ÷ initial mass) × 100. A positive result indicates a mass gain; a negative result indicates a mass loss. Plot percentage change against solution concentration or, preferably where values are available, against solution water potential. The x-intercept where percentage change is zero estimates the isotonic condition and therefore the tissue water potential."
+      },
+      {
+        "heading": "Surface area-to-volume ratio",
+        "body": "Surface area-to-volume ratio (SA:V) compares the area available for exchange with the volume of material requiring exchange. For a cube of side length x, surface area is 6x² and volume is x³, so SA:V = 6/x. As cube size increases, SA:V decreases. Smaller objects therefore have more surface area available per unit volume, which can allow faster exchange relative to their volume, provided other factors are controlled."
+      },
+      {
+        "heading": "Worked SA:V comparison",
+        "body": "A cube with side 1 cm has surface area 6 cm² and volume 1 cm³, giving SA:V = 6:1 or 6 cm⁻¹. A cube with side 2 cm has surface area 24 cm² and volume 8 cm³, giving SA:V = 3:1 or 3 cm⁻¹. Doubling the side length quadruples surface area but increases volume eightfold, so the ratio halves. State units consistently: SA:V has units of inverse length, such as cm⁻¹."
+      },
+      {
+        "heading": "Agar cubes and SA:V investigation",
+        "body": "Prepare agar cubes of different side lengths, immerse them in the same diffusing solution for the same time and temperature, then determine the proportion of each cube that has changed colour. Smaller cubes have a larger SA:V and a shorter maximum diffusion distance to the centre. Use percentage volume penetrated or percentage volume remaining uncoloured rather than only absolute depth when comparing cubes of different sizes. Repeat measurements and calculate means."
+      },
+      {
+        "heading": "Water potential and osmosis",
+        "body": "Water potential (Ψ) is the tendency of water to move from one region to another. Water moves by osmosis from higher water potential to lower water potential across a partially permeable membrane. Pure water has a water potential of zero at standard atmospheric pressure; dissolved solutes make water potential more negative. For this syllabus treatment, explain movement using water potential differences without introducing solute potential or pressure potential calculations."
+      },
+      {
+        "heading": "Plant cells in solutions",
+        "body": "When a plant cell is placed in a solution with a higher water potential than its cell sap, water enters by osmosis. The vacuole expands and the protoplast presses against the cell wall; the cell becomes turgid. The cell wall resists further expansion and helps prevent bursting. In a solution with a lower water potential, water leaves; the vacuole and cytoplasm shrink and the cell may become flaccid. Severe water loss can cause the cell surface membrane and cytoplasm to pull away from the cell wall, called plasmolysis."
+      },
+      {
+        "heading": "Animal cells in solutions",
+        "body": "Animal cells do not have a cellulose cell wall. In a solution with a higher water potential than the cytoplasm, water enters and the cell may swell and burst (lysis). In a solution with a lower water potential, water leaves and the cell shrinks. In an isotonic solution there is no net movement of water, although water molecules continue moving in both directions. The absence of a cell wall explains why animal cells are more vulnerable to large volume changes."
+      },
+      {
+        "heading": "Estimate the water potential of plant tissue",
+        "body": "Prepare a series of solutions with known water potentials or known concentrations at a controlled temperature. Measure percentage mass change of standardised plant tissue pieces after a fixed immersion period. Plot percentage change against solution water potential or concentration. Interpolate the x-value at which percentage change is zero. This is an estimate because tissue pieces vary, equilibrium may not be reached, and blotting, temperature and cutting can introduce error."
+      }
+    ],
+    "questions": [
+      {
+        "question": "A 1.0 cm agar cube and a 2.0 cm agar cube are immersed in the same solution. Explain why the smaller cube is expected to show a greater proportion of its volume penetrated after the same time.",
+        "answer": "The smaller cube has a larger surface area-to-volume ratio and a shorter distance from its surface to its centre. Diffusion therefore reaches a greater fraction of the smaller cube's volume in the same time.",
+        "mark_points": [
+          "Smaller cube has larger SA:V",
+          "Shorter diffusion distance to centre",
+          "Greater proportion of volume reached"
+        ]
+      },
+      {
+        "question": "Calculate the surface area-to-volume ratio of a cube with side length 3 cm.",
+        "answer": "Surface area = 6 × 3² = 54 cm². Volume = 3³ = 27 cm³. SA:V = 54:27 = 2:1, or 2 cm⁻¹.",
+        "mark_points": [
+          "Surface area 54 cm²",
+          "Volume 27 cm³",
+          "Ratio 2:1 or 2 cm⁻¹"
+        ]
+      },
+      {
+        "question": "A potato cylinder has initial mass 4.0 g and final mass 4.4 g. Calculate percentage change in mass.",
+        "answer": "Percentage change = ((4.4 − 4.0) ÷ 4.0) × 100 = +10%. The tissue gained 10% of its initial mass.",
+        "mark_points": [
+          "Correct difference +0.4 g",
+          "Divide by initial mass 4.0 g",
+          "Multiply by 100",
+          "+10% and mass gain"
+        ]
+      },
+      {
+        "question": "Explain how a plant tissue experiment can be used to estimate the tissue's water potential.",
+        "answer": "Place equal-sized tissue pieces in a range of solutions with known water potentials, measure percentage mass change, and plot the results. The solution water potential at which percentage mass change is zero estimates the tissue water potential.",
+        "mark_points": [
+          "Range of known solution water potentials",
+          "Standardised tissue pieces and immersion time",
+          "Measure and calculate percentage mass change",
+          "Zero-change intercept estimates tissue water potential"
+        ]
+      },
+      {
+        "question": "A plant cell is placed in a solution with a lower water potential than its cell sap. Describe the changes that occur.",
+        "answer": "Water leaves the cell by osmosis. The vacuole and cytoplasm shrink; the cell becomes flaccid and may become plasmolysed if the plasma membrane pulls away from the cell wall.",
+        "mark_points": [
+          "Water moves out by osmosis",
+          "Vacuole/cytoplasm shrink",
+          "Cell becomes flaccid",
+          "Plasmolysis may occur"
+        ]
+      },
+      {
+        "question": "Explain why an animal cell may burst in distilled water whereas a plant cell usually does not.",
+        "answer": "Distilled water has a higher water potential than the cell contents, so water enters both cells by osmosis. An animal cell lacks a rigid cell wall and may burst; a plant cell wall resists expansion as the cell becomes turgid.",
+        "mark_points": [
+          "Water enters by osmosis",
+          "Distilled water has higher water potential",
+          "Animal cell lacks cell wall and may lyse",
+          "Plant cell wall resists expansion/turgidity"
+        ]
+      },
+      {
+        "question": "A student plots percentage change in potato mass against sucrose concentration. Explain the meaning of the point where the graph crosses the x-axis.",
+        "answer": "At the x-intercept, percentage mass change is zero, so there is no net movement of water between tissue and solution. Their water potentials are approximately equal, allowing the solution value to estimate the tissue water potential.",
+        "mark_points": [
+          "Zero percentage mass change",
+          "No net osmosis",
+          "Water potentials approximately equal",
+          "Use x-intercept to estimate tissue value"
+        ]
+      },
+      {
+        "question": "State three variables that should be controlled when comparing diffusion into agar cubes of different sizes.",
+        "answer": "Keep the agar composition and indicator concentration, external solution concentration, temperature and immersion time constant. Use the same method to prepare cubes and measure the diffusion boundary.",
+        "mark_points": [
+          "Agar/indicator composition",
+          "External solution concentration",
+          "Temperature",
+          "Immersion time and measurement method"
+        ]
+      },
+      {
+        "question": "Explain why a Visking tubing model can demonstrate osmosis but does not fully represent a living cell membrane.",
+        "answer": "Visking tubing is partially permeable and can demonstrate net water movement down a water potential gradient. However, it does not reproduce the fluid mosaic structure, specific transport proteins, membrane signalling or active transport of a living cell membrane.",
+        "mark_points": [
+          "Partially permeable barrier",
+          "Shows net water movement down water potential gradient",
+          "Lacks full membrane proteins/fluid mosaic features",
+          "Does not model active transport/signalling"
+        ]
+      },
+      {
+        "question": "A cell is in an isotonic solution. Explain why its contents are not static even though there is no net water movement.",
+        "answer": "Water molecules continue to move randomly across the membrane in both directions. In an isotonic solution the opposing rates are equal, so there is no net movement and no overall change in cell volume.",
+        "mark_points": [
+          "Water moves in both directions",
+          "Movement is continuous/random",
+          "Rates are equal",
+          "No net movement/overall volume change"
+        ]
+      }
+    ],
+    "visual_tasks": [],
+    "common_mistakes": [],
+    "retrieval_check": {
+      "questions": [
+        "A 1.0 cm agar cube and a 2.0 cm agar cube are immersed in the same solution. Explain why the smaller cube is expected to show a greater proportion of its volume penetrated after the same time.",
+        "Calculate the surface area-to-volume ratio of a cube with side length 3 cm.",
+        "A potato cylinder has initial mass 4.0 g and final mass 4.4 g. Calculate percentage change in mass.",
+        "Explain how a plant tissue experiment can be used to estimate the tissue's water potential.",
+        "A plant cell is placed in a solution with a lower water potential than its cell sap. Describe the changes that occur."
+      ],
+      "answers": [
+        "The smaller cube has a larger surface area-to-volume ratio and a shorter distance from its surface to its centre. Diffusion therefore reaches a greater fraction of the smaller cube's volume in the same time.",
+        "Surface area = 6 × 3² = 54 cm². Volume = 3³ = 27 cm³. SA:V = 54:27 = 2:1, or 2 cm⁻¹.",
+        "Percentage change = ((4.4 − 4.0) ÷ 4.0) × 100 = +10%. The tissue gained 10% of its initial mass.",
+        "Place equal-sized tissue pieces in a range of solutions with known water potentials, measure percentage mass change, and plot the results. The solution water potential at which percentage mass change is zero estimates the tissue water potential.",
+        "Water leaves the cell by osmosis. The vacuole and cytoplasm shrink; the cell becomes flaccid and may become plasmolysed if the plasma membrane pulls away from the cell wall."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030",
+        "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+        "use": "Controlling Topic 4 outcomes."
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/membranes/osmosis-plant-animal-cells.svg",
+        "caption": "Effects of water potential on plant and animal cells.",
+        "alt": "Comparison of turgid, flaccid and plasmolysed plant cells with swollen, normal and shrunken animal cells in solutions of different water potential."
+      },
+      {
+        "path": "/learning-assets/biology/9700/membranes/surface-area-volume-cubes.svg",
+        "caption": "Cube size and surface area-to-volume ratio.",
+        "alt": "Comparison of small and large cubes showing surface area, volume and the decrease in surface area-to-volume ratio as cube size increases."
+      }
+    ]
+  }
+}
