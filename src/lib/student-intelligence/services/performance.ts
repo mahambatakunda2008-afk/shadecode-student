@@ -202,33 +202,16 @@ export class PerformanceService {
   /**
    * Get challenge performance
    */
-  async getChallengePerformance(userId: string): Promise<ChallengePerformance[]> {
-    try {
-      const supabase = createClient();
-
-      const { data: challenges, error } = await supabase
-        .from("daily_challenges")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(30);
-
-      if (error) {
-        console.error("[PerformanceService] Error getting challenge performance:", error);
-        return [];
-      }
-
-      return (challenges || []).map((challenge) => ({
-        challengeId: challenge.id,
-        completed: challenge.completed || false,
-        score: challenge.score || 0,
-        date: challenge.created_at,
-        streak: challenge.streak || 0,
-      }));
-    } catch (error) {
-      console.error("[PerformanceService] Error getting challenge performance:", error);
-      return [];
-    }
+  async getChallengePerformance(_userId: string): Promise<ChallengePerformance[]> {
+    // daily_challenges is a shared challenge catalogue, not a per-user attempt
+    // table. Its production schema is (id, title, description, xp_reward, date,
+    // type); querying user_id, completed, score, created_at or streak here
+    // produces PostgREST 400s and would fabricate learner performance.
+    //
+    // Return no personal challenge results until a separately reviewed,
+    // user-scoped completion source is implemented. Do not infer completion
+    // or streak from the shared catalogue.
+    return [];
   }
 
   /**
