@@ -1,0 +1,187 @@
+{
+  "asset_key": "biology-9700-neurone-electrical-signalling",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Neurone electrical signalling and cholinergic synapses",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "15",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 15, pp. 40–41.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "15.1.6",
+      "15.1.7",
+      "15.1.8",
+      "15.1.9"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain resting potential and the events of an action potential.",
+      "Explain restoration of resting potential and the refractory period.",
+      "Explain saltatory conduction in myelinated neurones.",
+      "Describe cholinergic synapse structure and function, including calcium ions."
+    ],
+    "sections": [
+      [
+        "Resting potential",
+        "A resting neurone has a potential difference across its membrane, with the inside negative relative to the outside (typically about −70 mV in a mammalian neurone). The sodium-potassium pump uses ATP to move three sodium ions out for every two potassium ions moved in. The membrane is more permeable to potassium ions than sodium ions at rest, so potassium ions diffuse out through leak channels, leaving the inside relatively negative. Large negatively charged ions remain inside."
+      ],
+      [
+        "Threshold and depolarisation",
+        "A stimulus that brings the membrane to threshold opens voltage-gated sodium ion channels. Sodium ions diffuse into the neurone down their electrochemical gradient. The inside becomes less negative and then positive: this is depolarisation. The action potential is all-or-nothing once threshold is reached."
+      ],
+      [
+        "Repolarisation and hyperpolarisation",
+        "Voltage-gated sodium channels become inactivated and voltage-gated potassium channels open. Potassium ions diffuse out, making the inside negative again: repolarisation. Potassium channels close relatively slowly, so the membrane may briefly become more negative than the resting potential. This is hyperpolarisation."
+      ],
+      [
+        "Restoring the resting state and refractory period",
+        "The sodium-potassium pump and ion movements through leak channels restore and maintain the ion distributions associated with resting potential. During the absolute refractory period, sodium channels are inactivated and another action potential cannot be generated. During the relative refractory period, a stronger-than-usual stimulus may be needed because the membrane is hyperpolarised."
+      ],
+      [
+        "Impulse frequency",
+        "The refractory period limits how frequently action potentials can occur because the membrane must recover before another impulse can be generated. A stronger stimulus can produce a higher frequency of action potentials, not a larger action-potential amplitude. The amplitude of each action potential remains approximately constant."
+      ],
+      [
+        "Saltatory conduction",
+        "In a myelinated neurone, the myelin sheath insulates the axon membrane between nodes of Ranvier. Voltage-gated ion channels are concentrated at the nodes. Local currents spread beneath the myelin and depolarise the next node to threshold, so the action potential is regenerated at successive nodes. The impulse appears to jump from node to node, increasing conduction speed and reducing ion exchange across the membrane."
+      ],
+      [
+        "A cholinergic synapse",
+        "A cholinergic synapse has a presynaptic neurone ending containing synaptic vesicles of acetylcholine, a narrow synaptic cleft and a postsynaptic membrane with acetylcholine receptors. Mitochondria supply ATP for synaptic processes. Acetylcholinesterase is present in the cleft and hydrolyses acetylcholine."
+      ],
+      [
+        "Transmission across a cholinergic synapse",
+        "An action potential depolarises the presynaptic terminal and opens voltage-gated calcium channels. Calcium ions enter the terminal and trigger synaptic vesicles to fuse with the presynaptic membrane, releasing acetylcholine by exocytosis. Acetylcholine diffuses across the cleft and binds to receptors, opening ligand-gated ion channels and depolarising the postsynaptic membrane. If threshold is reached, an action potential is generated."
+      ],
+      [
+        "Termination and direction of transmission",
+        "Acetylcholinesterase hydrolyses acetylcholine into choline and ethanoate (acetate). Choline is taken back into the presynaptic neurone and reused to synthesise acetylcholine. Synaptic transmission is normally one-way because vesicles and voltage-gated calcium channels are in the presynaptic terminal, while receptors are on the postsynaptic membrane."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "State why the resting potential is negative inside the neurone.",
+        "answer": "The membrane is more permeable to potassium ions than sodium ions, so potassium ions diffuse out; negatively charged large ions remain inside. The sodium-potassium pump maintains the ion gradients.",
+        "mark_points": [
+          "K+ diffuses out through leak channels",
+          "Large negative ions remain inside",
+          "Na+/K+ pump maintains gradients"
+        ]
+      },
+      {
+        "question": "Describe the action of the sodium-potassium pump.",
+        "answer": "Using ATP, it transports three sodium ions out of the neurone and two potassium ions into the neurone per cycle.",
+        "mark_points": [
+          "ATP used",
+          "3 Na+ out",
+          "2 K+ in"
+        ]
+      },
+      {
+        "question": "Explain depolarisation during an action potential.",
+        "answer": "At threshold, voltage-gated sodium channels open. Sodium ions diffuse into the neurone, making the inside less negative and then positive.",
+        "mark_points": [
+          "Voltage-gated Na+ channels open",
+          "Na+ enters",
+          "Membrane potential becomes positive"
+        ]
+      },
+      {
+        "question": "Explain repolarisation.",
+        "answer": "Sodium channels become inactivated and voltage-gated potassium channels open. Potassium ions diffuse out, making the inside negative again.",
+        "mark_points": [
+          "Na+ channels inactivate",
+          "K+ channels open",
+          "K+ leaves"
+        ]
+      },
+      {
+        "question": "Distinguish absolute and relative refractory periods.",
+        "answer": "During the absolute period another action potential cannot be generated because sodium channels are inactivated. During the relative period a stronger stimulus may generate one because the membrane is recovering from hyperpolarisation.",
+        "mark_points": [
+          "Absolute: no second action potential",
+          "Na+ channels inactivated",
+          "Relative: stronger stimulus required"
+        ]
+      },
+      {
+        "question": "Explain why a stronger stimulus is encoded by a higher impulse frequency rather than a larger action potential.",
+        "answer": "Action potentials are all-or-nothing and have a similar amplitude once threshold is reached. A stronger stimulus can cause threshold to be reached more frequently, within the limit imposed by the refractory period.",
+        "mark_points": [
+          "All-or-nothing",
+          "Amplitude approximately constant",
+          "Frequency increases"
+        ]
+      },
+      {
+        "question": "Explain how myelin increases conduction speed.",
+        "answer": "Myelin insulates the axon between nodes of Ranvier. Depolarisation spreads rapidly beneath the myelin and action potentials are regenerated only at nodes, producing saltatory conduction.",
+        "mark_points": [
+          "Myelin insulates",
+          "Nodes contain voltage-gated channels",
+          "Impulse regenerated node to node"
+        ]
+      },
+      {
+        "question": "Describe the role of calcium ions at a cholinergic synapse.",
+        "answer": "An arriving action potential opens voltage-gated calcium channels. Calcium ions enter the presynaptic terminal and trigger synaptic vesicles to fuse with the membrane, releasing acetylcholine.",
+        "mark_points": [
+          "Ca2+ channels open",
+          "Ca2+ enters presynaptic terminal",
+          "Vesicles fuse/release ACh"
+        ]
+      },
+      {
+        "question": "Explain how acetylcholine produces a response in the postsynaptic neurone.",
+        "answer": "Acetylcholine diffuses across the cleft and binds to receptors, opening ligand-gated ion channels. The postsynaptic membrane depolarises and may reach threshold to generate an action potential.",
+        "mark_points": [
+          "ACh binds receptor",
+          "Ligand-gated channels open",
+          "Depolarisation",
+          "Threshold/action potential"
+        ]
+      },
+      {
+        "question": "Why is transmission across a chemical synapse one-way?",
+        "answer": "Synaptic vesicles and voltage-gated calcium channels are in the presynaptic terminal, while acetylcholine receptors are on the postsynaptic membrane.",
+        "mark_points": [
+          "Vesicles/Ca2+ channels presynaptic",
+          "Receptors postsynaptic"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/action-potential-graph.svg",
+        "role": "Schematic action potential and refractory periods"
+      },
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/saltatory-conduction.svg",
+        "role": "Saltatory conduction at nodes of Ranvier"
+      },
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/cholinergic-synapse.svg",
+        "role": "Cholinergic synapse transmission sequence"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions are original learning checks, not official Cambridge questions or mark schemes.",
+      "All diagrams are explanatory schematics; they are not authentic electron micrographs."
+    ]
+  }
+}
