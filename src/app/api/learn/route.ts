@@ -340,6 +340,12 @@ export async function POST(req: Request) {
           : null
       );
       if (!persistableCandidate) {
+        console.info("[LEARN] persist rejected by server contract", {
+          topic: request.topic,
+          blockCount: normalizedGeneratedBlocks.length,
+          types: Array.from(new Set(normalizedGeneratedBlocks.map((block) => normalizeLessonBlockType(block.type)))),
+          title: typeof generated.title === "string" ? generated.title.slice(0, 80) : null,
+        });
         return NextResponse.json({ error: "Generated lesson failed the server lesson contract.", retryable: true }, { status: 422 });
       }
 
@@ -560,6 +566,7 @@ export async function POST(req: Request) {
         "Return ONLY JSON with a top-level title string and blocks array; each block must contain type, optional title, and content.",
         "Use 3-5 substantive blocks. Content must be at least 40 characters per block.",
         `SECTION-SPECIFIC REQUIREMENTS: ${buildLocalSectionRequirements(generationSectionIndex, generationSectionCount)}`,
+        "BLOCK TYPES: set each block's type to exactly one of: objective, concept, definition, formula, example, checkpoint, exam, mistake, application, summary. Use the exact words: the first section must contain an objective block, and the final section must contain exam, mistake and summary blocks.",
         `TOPIC ANCHORING: the lesson is judged on how often its blocks stay on "${request.topic}". Name "${request.topic}" explicitly in the title or opening sentence of most blocks.`,
       ].join("\n\n");
       let rawSection: string | null = null;
