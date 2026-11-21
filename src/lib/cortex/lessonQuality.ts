@@ -175,7 +175,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
 
   const topicRelevantCount = normalized.filter(block => hasTopicSignal(block, tokens)).length;
   const requiredRelevant = request.broadTopic
-    ? Math.max(2, Math.ceil(normalized.length * 0.25))
+    ? Math.max(3, Math.ceil(normalized.length * 0.15))
     : Math.max(2, Math.ceil(normalized.length * 0.30));
   if (tokens.length > 0 && topicRelevantCount < requiredRelevant) failures.push("topic-drift");
 

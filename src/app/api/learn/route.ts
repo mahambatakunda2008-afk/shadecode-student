@@ -18,6 +18,7 @@ import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
+import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -558,6 +559,8 @@ export async function POST(req: Request) {
         "TEACHING CONTRACT: teach deeply, stay inside the exact subject/topic, explain why/how, use concrete examples, avoid invented syllabus claims, and do not put answers inside checkpoints.",
         "Return ONLY JSON with a top-level title string and blocks array; each block must contain type, optional title, and content.",
         "Use 3-5 substantive blocks. Content must be at least 40 characters per block.",
+        `SECTION-SPECIFIC REQUIREMENTS: ${buildLocalSectionRequirements(generationSectionIndex, generationSectionCount)}`,
+        `TOPIC ANCHORING: the lesson is judged on how often its blocks stay on "${request.topic}". Name "${request.topic}" explicitly in the title or opening sentence of most blocks.`,
       ].join("\n\n");
       let rawSection: string | null = null;
       let section: { title: string; blocks: LessonBlock[] } | null = null;

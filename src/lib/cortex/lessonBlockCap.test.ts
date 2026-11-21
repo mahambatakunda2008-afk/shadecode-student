@@ -67,3 +67,20 @@ describe("required diagram", () => {
     expect(ensureRequiredDiagram(blocks, { topic: "Kinematics", subject: "Physics" })).toBe(blocks);
   });
 });
+
+describe("broad topic drift", () => {
+  const request = { intent: "teach", subject: "Physics", topic: "Electricity", prompt: "Electricity", requestedParts: [], broadTopic: true, depth: "deep" } as never;
+  const mixed = (anchored: number) => Array.from({ length: 22 }, (_, i) => ({
+    type: "concept",
+    title: i < anchored ? `Electricity idea ${i}` : `Current and voltage idea ${i}`,
+    content: i < anchored ? `Electricity moves charge, point ${i}.` : `Charge flow and potential difference, point ${i}.`,
+  }));
+
+  it("accepts a broad lesson whose sub-sections only sometimes repeat the topic word", () => {
+    expect(lessonQualityFailures({ title: "Electricity", blocks: mixed(4) }, request).failures).not.toContain("topic-drift");
+  });
+
+  it("still rejects a broad lesson that almost never mentions the topic", () => {
+    expect(lessonQualityFailures({ title: "Electricity", blocks: mixed(2) }, request).failures).toContain("topic-drift");
+  });
+});
