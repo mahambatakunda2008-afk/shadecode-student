@@ -2,7 +2,7 @@ import type { ShadeNetResource } from "./content";
 import type { ShadeNetResearchRecord } from "./research-memory";
 
 const DB_NAME = "shadecode-shadenet";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE = "resources";
 const RESEARCH_STORE = "research";
 
