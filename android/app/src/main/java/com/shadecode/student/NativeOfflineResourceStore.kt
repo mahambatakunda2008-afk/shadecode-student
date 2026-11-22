@@ -225,6 +225,9 @@ object NativeOfflineResourceStore {
         if (!resource.fileName.matches(Regex("[a-f0-9]{64}\\.(pdf|txt|md)"))) return null
         val candidate = File(accountDirectory(context, accountId), resource.fileName)
         if (!candidate.isFile || candidate.length() != resource.byteCount || candidate.length() <= 0L) return null
+        // Length alone cannot detect same-size corruption. Verify the content
+        // address every time a resource is opened before exposing it to a reader.
+        if (runCatching { hashFile(candidate) }.getOrNull() != resource.sha256) return null
         return candidate
     }
 
