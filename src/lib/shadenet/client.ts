@@ -80,6 +80,10 @@ export class ShadeNetResourceClient {
       await this.transferStore?.clear(request.resourceId, expectedSha256).catch(() => undefined);
       return restored;
     }
+    if (isComplete(state)) {
+      await this.transferStore?.clear(request.resourceId, expectedSha256).catch(() => undefined);
+      state = createTransfer(request);
+    }
 
     for (const source of this.discovery.find(request.resourceId)) {
       try {
