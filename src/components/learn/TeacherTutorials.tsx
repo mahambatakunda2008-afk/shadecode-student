@@ -127,10 +127,11 @@ export default function TeacherTutorials({ subject }: { subject: string }) {
 
   async function openTutorial(id: string) {
     setBusy(true); setError("");
+    let ownerUserId: string | undefined;
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const { data: sessionData } = await createClient().auth.getSession();
-      const ownerUserId = sessionData.session?.user.id;
+      ownerUserId = sessionData.session?.user.id;
       if (!ownerUserId) throw new Error("Sign in on this device to save tutorials for offline study.");
       const response = await fetch(`/api/learn/tutorials/${encodeURIComponent(id)}`, { cache: "no-store" });
       const body = await response.json();
