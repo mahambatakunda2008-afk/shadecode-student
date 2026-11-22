@@ -1,4 +1,4 @@
-import { acceptChunk, createTransfer, isComplete, orderedChunks, verifyResource, verifyTransfer, type TransferState } from "./resource-transfer";
+import { acceptChunk, createTransfer, isComplete, orderedChunks, sha256Hex, verifyResource, verifyTransfer, type TransferState } from "./resource-transfer";
 import { canShare, type ResourcePolicy } from "./resource-policy";
 import type { ResourceChunk, ResourceRequest } from "./protocol";
 import { shadeNetTransferStore, type PersistedTransferChunk } from "./transfer-store";
@@ -61,6 +61,9 @@ export class ShadeNetResourceClient {
     for (const source of this.discovery.find(request.resourceId)) {
       try {
         for await (const chunk of source.request(request)) {
+          if (await sha256Hex(chunk.data) !== chunk.sha256.toLowerCase()) {
+            throw new Error("Peer supplied a resource chunk with an invalid hash");
+          }
           state = acceptChunk(state, chunk);
           await this.transferStore?.save(request.resourceId, expectedSha256, chunk).catch(() => undefined);
         }
