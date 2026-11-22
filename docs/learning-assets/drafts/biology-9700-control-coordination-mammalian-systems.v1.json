@@ -1,0 +1,172 @@
+{
+  "asset_key": "biology-9700-control-coordination-mammalian-systems",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Control and coordination in mammals: endocrine and nervous systems",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "15",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 15, pp. 40–41.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "15.1.1",
+      "15.1.2",
+      "15.1.3",
+      "15.1.4",
+      "15.1.5"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Describe endocrine coordination using ADH, insulin and glucagon.",
+      "Compare nervous and endocrine communication.",
+      "Describe sensory, motor and intermediate neurones and the role of receptor cells.",
+      "Explain how a taste-bud chemoreceptor can initiate an action potential."
+    ],
+    "sections": [
+      [
+        "The endocrine system",
+        "Endocrine glands contain cells that secrete hormones. Hormones are chemical messengers released into the blood and transported around the body. Only cells with the appropriate receptors respond. The response depends on the target cell and may involve changes in enzyme activity, membrane transport or gene expression."
+      ],
+      [
+        "Hormones in this syllabus context",
+        "ADH is released from the posterior pituitary and acts on kidney collecting ducts to increase water reabsorption. Insulin is secreted by pancreatic beta cells when blood glucose rises and promotes glucose uptake by muscle cells and storage processes in liver cells. Glucagon is secreted by pancreatic alpha cells when blood glucose falls and stimulates glycogen breakdown in liver cells. These hormones illustrate endocrine signalling; their homeostatic pathways are developed in Topic 14."
+      ],
+      [
+        "Nervous and endocrine systems compared",
+        "Nervous communication uses action potentials along neurones and neurotransmitters across synapses. It is usually rapid, targeted and short-lived. Endocrine communication uses hormones carried in blood; it is usually slower to begin, can reach many tissues and often has longer-lasting effects. Both coordinate responses and can interact."
+      ],
+      [
+        "The pathway through neurones",
+        "A sensory neurone carries impulses from a receptor towards the central nervous system. A motor neurone carries impulses from the central nervous system to an effector such as a muscle or gland. Intermediate neurones are located within the central nervous system and connect sensory neurones to motor neurones or to other intermediate neurones."
+      ],
+      [
+        "Structure of a sensory neurone",
+        "A typical sensory neurone has a long dendron carrying impulses from a receptor towards the cell body and an axon carrying impulses from the cell body into the central nervous system. The cell body lies off the main conduction pathway in a dorsal root ganglion. Myelin may surround the axon or dendron to insulate it."
+      ],
+      [
+        "Structure of a motor neurone",
+        "A motor neurone has a cell body with a nucleus and many dendrites within the central nervous system. A long axon carries impulses to an effector. The axon may be myelinated and ends in branches that form synapses with muscle fibres or glands."
+      ],
+      [
+        "Sensory receptor cells",
+        "A receptor cell detects a particular stimulus and converts stimulus energy into a change in membrane potential. If the receptor potential reaches threshold, action potentials are initiated in the associated sensory neurone. The receptor is selective because it responds most strongly to a particular type of stimulus."
+      ],
+      [
+        "Taste-bud chemoreception",
+        "Chemicals from dissolved food substances enter a taste pore and interact with receptor proteins on the membrane of a taste receptor cell. This changes ion movement and depolarises the receptor cell. Neurotransmitter release from the receptor cell stimulates the sensory neurone; if threshold is reached, action potentials travel towards the central nervous system."
+      ],
+      [
+        "From stimulus to perception",
+        "A stimulus is detected by a receptor, transduced into an electrical change, and encoded as action potentials in a sensory neurone. The central nervous system receives and processes the impulses. Do not describe the receptor cell itself as necessarily being the sensory neurone: in a taste bud they are distinct cells."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "State how a hormone reaches its target organ.",
+        "answer": "It is secreted into the blood and transported in the circulation to target cells that possess the appropriate receptor.",
+        "mark_points": [
+          "Secreted into blood",
+          "Transported in circulation",
+          "Target cells have specific receptors"
+        ]
+      },
+      {
+        "question": "Give one example of a hormone and its source from the syllabus context.",
+        "answer": "Insulin is secreted by beta cells in the pancreas.",
+        "mark_points": [
+          "Insulin",
+          "Pancreatic beta cells"
+        ]
+      },
+      {
+        "question": "Compare the speed and duration of nervous and endocrine responses.",
+        "answer": "Nervous responses are usually rapid and short-lived; endocrine responses are usually slower to begin and longer-lasting.",
+        "mark_points": [
+          "Nervous rapid",
+          "Nervous short-lived",
+          "Endocrine slower",
+          "Endocrine longer-lasting"
+        ]
+      },
+      {
+        "question": "State the direction of impulse transmission in a sensory neurone.",
+        "answer": "From a sensory receptor towards the central nervous system.",
+        "mark_points": [
+          "Receptor to CNS"
+        ]
+      },
+      {
+        "question": "State the role of an intermediate neurone.",
+        "answer": "It connects sensory neurones to motor neurones or other neurones within the central nervous system.",
+        "mark_points": [
+          "Within CNS",
+          "Connects sensory and motor neurones"
+        ]
+      },
+      {
+        "question": "Explain how a receptor cell converts a stimulus into an impulse in a sensory neurone.",
+        "answer": "The stimulus changes ion movement across the receptor-cell membrane, producing a receptor potential. Neurotransmitter release or direct electrical coupling stimulates the sensory neurone; reaching threshold initiates action potentials.",
+        "mark_points": [
+          "Stimulus changes membrane potential",
+          "Receptor potential",
+          "Sensory neurone stimulated",
+          "Threshold/action potentials"
+        ]
+      },
+      {
+        "question": "Outline the sequence from dissolved food chemical to action potentials in the taste pathway.",
+        "answer": "A dissolved chemical interacts with receptor proteins on a taste receptor cell, changing ion movement and depolarising it. Neurotransmitter release stimulates the sensory neurone; threshold is reached and action potentials are generated.",
+        "mark_points": [
+          "Chemical binds/interacts with receptor",
+          "Receptor cell depolarises",
+          "Neurotransmitter stimulates sensory neurone",
+          "Action potentials"
+        ]
+      },
+      {
+        "question": "Why does a hormone not affect every cell it contacts?",
+        "answer": "Only target cells with the appropriate receptor can detect and respond to that hormone.",
+        "mark_points": [
+          "Specific receptor required"
+        ]
+      },
+      {
+        "question": "A response begins within milliseconds and affects one skeletal muscle. Which coordination system is most likely involved? Explain.",
+        "answer": "The nervous system, because impulses and synaptic transmission produce rapid, localised communication with a specific effector.",
+        "mark_points": [
+          "Nervous system",
+          "Rapid impulse/synaptic communication",
+          "Localised effector"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/sensory-motor-interneurone.svg",
+        "role": "Sensory, intermediate and motor neurone pathway"
+      },
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/taste-bud-chemoreceptor-pathway.svg",
+        "role": "Taste-bud chemoreceptor to sensory neurone pathway"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions are original learning checks, not official Cambridge questions or mark schemes.",
+      "All diagrams are explanatory schematics; they are not authentic electron micrographs."
+    ]
+  }
+}

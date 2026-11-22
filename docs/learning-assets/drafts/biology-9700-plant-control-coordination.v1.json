@@ -1,0 +1,155 @@
+{
+  "asset_key": "biology-9700-plant-control-coordination",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Control and coordination in plants: Venus flytrap, auxin and gibberellin",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "15",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 15, pp. 40–41.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "15.2.1",
+      "15.2.2",
+      "15.2.3"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain the rapid response of the Venus flytrap to stimulation of trigger hairs.",
+      "Explain auxin-driven elongation through proton pumping and cell-wall acidification.",
+      "Describe the role of gibberellin in barley germination."
+    ],
+    "sections": [
+      [
+        "The Venus flytrap response",
+        "The Venus flytrap has modified leaves with two lobes and trigger hairs on their inner surfaces. Stimulation of trigger hairs generates electrical signals. Repeated stimulation within a short interval helps distinguish prey contact from incidental disturbance and initiates rapid closure of the lobes."
+      ],
+      [
+        "How the trap closes",
+        "Electrical signalling is associated with rapid changes in cell turgor and mechanical instability in the leaf lobes. The lobes change curvature and snap shut, trapping the animal. Continued stimulation can cause the trap to seal more tightly. Avoid treating the trap as a muscle: movement results from plant tissue mechanics and changes in cell properties."
+      ],
+      [
+        "Auxin and cell elongation",
+        "Auxin promotes elongation growth in responsive shoot cells. It stimulates proton pumps in the plasma membrane to transport hydrogen ions into the cell wall (apoplast). The lower pH acidifies the cell wall and activates wall-loosening processes, allowing the wall to extend when the cell takes up water and turgor pressure acts on it."
+      ],
+      [
+        "Wall loosening and irreversible extension",
+        "Acidification increases the activity of wall-loosening proteins such as expansins, reducing resistance between cell-wall components. With adequate water uptake, turgor pressure drives cell expansion. New wall material is deposited as the cell grows. Auxin does not simply dissolve the wall or directly provide the force for expansion."
+      ],
+      [
+        "Gibberellin in barley germination",
+        "When a barley grain absorbs water, the embryo produces gibberellin. Gibberellin diffuses to the aleurone layer and stimulates synthesis and secretion of hydrolytic enzymes, especially alpha-amylase. These enzymes digest stored starch in the endosperm into soluble sugars, which are transported to the embryo and used in respiration and growth."
+      ],
+      [
+        "Connecting the plant responses",
+        "The Venus flytrap response is rapid and electrical/mechanical. Auxin and gibberellin are chemical plant growth regulators whose effects involve changes in cell activity. These examples show that plant coordination does not require a nervous system."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Identify the structures stimulated to initiate Venus flytrap closure.",
+        "answer": "Trigger hairs on the inner surfaces of the lobes of the modified leaf.",
+        "mark_points": [
+          "Trigger hairs",
+          "Inner surfaces/lobes"
+        ]
+      },
+      {
+        "question": "Explain why repeated stimulation of trigger hairs is useful.",
+        "answer": "It helps distinguish likely prey contact from incidental stimulation, reducing closure in response to an isolated disturbance.",
+        "mark_points": [
+          "Distinguishes prey from incidental contact",
+          "Reduces unnecessary closure"
+        ]
+      },
+      {
+        "question": "Describe the sequence from trigger-hair stimulation to trap closure.",
+        "answer": "Stimulation generates electrical signals in the leaf. These signals initiate rapid changes in cell properties and lobe curvature, causing the lobes to snap shut and trap the animal.",
+        "mark_points": [
+          "Electrical signal",
+          "Changes in cell properties/turgor",
+          "Lobes change curvature/snap shut"
+        ]
+      },
+      {
+        "question": "Explain how auxin promotes elongation by acidifying cell walls.",
+        "answer": "Auxin stimulates proton pumps in the plasma membrane. Hydrogen ions are transported into the cell wall, lowering its pH and activating wall-loosening processes. The loosened wall can extend under turgor pressure as water enters.",
+        "mark_points": [
+          "Auxin stimulates H+ pumps",
+          "H+ enters cell wall",
+          "pH decreases/wall loosens",
+          "Turgor-driven extension"
+        ]
+      },
+      {
+        "question": "Why is proton pumping important in auxin-induced growth?",
+        "answer": "It acidifies the cell wall, activating wall-loosening proteins and allowing the wall to extend during cell expansion.",
+        "mark_points": [
+          "Acidifies wall",
+          "Activates wall loosening",
+          "Allows extension"
+        ]
+      },
+      {
+        "question": "State the role of gibberellin in barley germination.",
+        "answer": "Gibberellin from the embryo stimulates the aleurone layer to produce and release hydrolytic enzymes such as alpha-amylase, which mobilise stored starch.",
+        "mark_points": [
+          "Embryo produces gibberellin",
+          "Acts on aleurone",
+          "Stimulates alpha-amylase/hydrolytic enzymes"
+        ]
+      },
+      {
+        "question": "Explain how gibberellin makes stored food available to a germinating barley embryo.",
+        "answer": "Gibberellin stimulates alpha-amylase production in the aleurone. Alpha-amylase hydrolyses endosperm starch into soluble sugars, which are transported to the embryo and used in respiration and growth.",
+        "mark_points": [
+          "Alpha-amylase produced",
+          "Starch hydrolysed to sugars",
+          "Sugars transported to embryo",
+          "Respiration/growth"
+        ]
+      },
+      {
+        "question": "Compare the nature of the Venus flytrap response with auxin action.",
+        "answer": "The flytrap response is rapid and involves electrical signalling and mechanical changes in leaf lobes. Auxin is a chemical growth regulator that stimulates proton pumping and cell elongation.",
+        "mark_points": [
+          "Flytrap rapid electrical/mechanical",
+          "Auxin chemical regulator",
+          "Auxin drives elongation"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/venus-flytrap-response.svg",
+        "role": "Trigger hair stimulation and trap closure"
+      },
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/auxin-cell-wall-acidification.svg",
+        "role": "Auxin-stimulated proton pumping and cell elongation"
+      },
+      {
+        "path": "/learning-assets/biology/9700/control-and-coordination/gibberellin-barley-germination.svg",
+        "role": "Gibberellin signalling in barley germination"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions are original learning checks, not official Cambridge questions or mark schemes.",
+      "All diagrams are explanatory schematics; they are not authentic electron micrographs."
+    ]
+  }
+}
