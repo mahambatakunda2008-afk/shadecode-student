@@ -7,6 +7,10 @@ describe("progress-only sync payload", () => {
       .toEqual({ sync_kind: "progress", progress: 65, id: "lesson-1", user_id: "user-1" });
   });
 
+  it("accepts completed progress at 100 percent", () => {
+    expect(buildProgressSyncPayload({ progress: 100 }, "lesson-1", "user-1").progress).toBe(100);
+  });
+
   it("rejects invalid progress values", () => {
     for (const progress of [-1, 101, 1.5, "65", null]) {
       expect(() => buildProgressSyncPayload({ progress }, "lesson-1", "user-1")).toThrow();
