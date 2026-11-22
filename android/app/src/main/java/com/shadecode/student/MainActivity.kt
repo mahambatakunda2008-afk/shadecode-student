@@ -994,6 +994,7 @@ private fun LearnNativeScreen(
     var localTopic by remember { mutableStateOf("") }
     var generating by remember { mutableStateOf(false) }
     var generationMessage by remember { mutableStateOf<String?>(null) }
+    var showResourceLibrary by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     DisposableEffect(cortex) { onDispose { cortex.close() } }
@@ -1016,11 +1017,26 @@ private fun LearnNativeScreen(
             offline = false
         } catch (_: Exception) { offline = true } finally { refreshing = false }
     }
+    if (showResourceLibrary) {
+        NativeResourceLibraryScreen(session, database, subjects) { showResourceLibrary = false }
+        return
+    }
     if (activeLesson != null) {
         NativeLessonReader(context, session, activeLesson!!, database, api) { activeLesson = null }; return
     }
     LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Spacer(Modifier.height(18.dp)); Text("Learn", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Text("Your actual courses and lessons, cached for offline study.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(18.dp)) {
+                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                    Text("Offline resource library", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(5.dp))
+                    Text("Import PDFs and notes once, then reopen and search them without internet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(10.dp))
+                    Button(onClick = { showResourceLibrary = true }, modifier = Modifier.fillMaxWidth()) { Text("Open my resources") }
+                }
+            }
+        }
         if (subjects.isEmpty()) item { Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) { Text("No subjects are configured for this account yet. Complete onboarding first.", Modifier.padding(20.dp)) } }
         else {
             item { Text("Subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
