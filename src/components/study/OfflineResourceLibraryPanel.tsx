@@ -68,6 +68,36 @@ export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Su
     }
   }
 
+  async function importPack(file: File | undefined) {
+    if (!file || busy) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const count = await offlineResourceLibrary.importPack(file);
+      await refresh();
+      setMessage("Imported " + count + " resource" + (count === 1 ? "" : "s") + ". Pack contents are marked unverified until checked.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not import this resource pack.");
+    } finally { setBusy(false); }
+  }
+
+  async function exportPack() {
+    setBusy(true);
+    setMessage("");
+    try {
+      const pack = await offlineResourceLibrary.exportPack();
+      const url = URL.createObjectURL(pack);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "shadecode-resources.scpack";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setMessage("Resource pack exported. Keep a copy somewhere safe or share it with another device.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not export this resource pack.");
+    } finally { setBusy(false); }
+  }
+
   async function openResource(item: OfflineResourceMetadata) {
     try {
       const stored = await offlineResourceLibrary.open(item.id);
@@ -121,12 +151,22 @@ export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Su
             <input value={topic} onChange={(event) => setTopic(event.target.value)} maxLength={160} placeholder="e.g. Waves, Organic chemistry" className="min-h-10 rounded-lg border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)]" />
           </label>
         </div>
-        <label className="mt-3 inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)]">
-          <Upload size={16} aria-hidden="true" />
-          {busy ? "Saving resources…" : "Import PDF / TXT / Markdown"}
-          <input type="file" accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" multiple disabled={busy} className="sr-only" onChange={(event) => { void importFiles(event.target.files); event.currentTarget.value = ""; }} />
-        </label>
-        <p className="mt-2 text-xs text-[var(--muted-foreground)]">Up to 150 MB per file. Imported files are marked unverified until checked by a trusted source.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)]">
+            <Upload size={16} aria-hidden="true" />
+            {busy ? "Working…" : "Import files"}
+            <input type="file" accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" multiple disabled={busy} className="sr-only" onChange={(event) => { void importFiles(event.target.files); event.currentTarget.value = ""; }} />
+          </label>
+          <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] px-4 text-sm font-semibold">
+            <Upload size={16} aria-hidden="true" />
+            Import resource pack
+            <input type="file" accept=".scpack,application/vnd.shadecode.resource-pack" disabled={busy} className="sr-only" onChange={(event) => { void importPack(event.target.files?.[0]); event.currentTarget.value = ""; }} />
+          </label>
+          <button type="button" onClick={() => void exportPack()} disabled={busy || resources.length === 0} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] px-4 text-sm font-semibold disabled:opacity-50">
+            <Download size={16} aria-hidden="true" /> Export all
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-[var(--muted-foreground)]">Up to 150 MB per file. Resource packs preserve curriculum details and checksums. Imported pack entries are marked unverified until checked by a trusted source.</p>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
