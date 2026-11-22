@@ -8,7 +8,7 @@ const DB_NAME = "shadecode-offline";
 const DB_VERSION = 6;
 
 export interface OfflineLesson {
-  id: string; title: string; subject: string; description?: string;
+  id: string; title: string; subject: string; subjectId?: string; topic?: string; description?: string;
   blocks?: Array<Record<string, unknown>>; difficulty?: string;
   downloadedAt: string; lastSyncedAt?: string; size: number;
   progress?: number; completed?: boolean;
