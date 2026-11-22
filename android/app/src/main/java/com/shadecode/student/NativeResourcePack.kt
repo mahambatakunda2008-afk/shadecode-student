@@ -209,7 +209,7 @@ object NativeResourcePack {
                             "The resource pack contains an invalid PDF."
                         }
                     }
-                    prepared += PreparedEntry(temp, title, mime, metadata.optString("subject").ifBlank { defaultSubject },
+                    prepared += PreparedEntry(temp, title, mime, hash, metadata.optString("subject").ifBlank { defaultSubject },
                         metadata.optString("qualification"), metadata.optString("syllabus"), metadata.optString("topic"),
                         metadata.optString("source"), metadata.optString("publisher"))
                     expectedOffset += length
@@ -221,10 +221,12 @@ object NativeResourcePack {
 
             // All entries have been structurally and cryptographically verified before this point.
             var imported = 0
+            val newlyCommittedIds = mutableListOf<String>()
             try {
                 prepared.forEach { entry ->
+                    val existedBefore = database.offlineResources().get(accountId, entry.sha256) != null
                     val uri = FileProvider.getUriForFile(context, context.packageName + ".files", entry.file)
-                    NativeOfflineResourceStore.importFile(
+                    val saved = NativeOfflineResourceStore.importFile(
                         context, database, accountId, uri,
                         NativeOfflineResourceStore.ImportMetadata(
                             title = entry.title,
@@ -237,9 +239,17 @@ object NativeResourcePack {
                             reviewStatus = "unverified",
                         ),
                     )
+                    if (!existedBefore) newlyCommittedIds += saved.resourceId
                     imported += 1
                 }
                 return imported
+            } catch (failure: Exception) {
+                // Best-effort compensating rollback: do not leave earlier pack
+                // entries behind if a later per-file Room/file commit fails.
+                newlyCommittedIds.asReversed().forEach { resourceId ->
+                    runCatching { NativeOfflineResourceStore.delete(database, context, accountId, resourceId) }
+                }
+                throw failure
             } finally {
                 prepared.forEach { it.file.delete() }
             }
@@ -253,6 +263,7 @@ object NativeResourcePack {
         val file: File,
         val title: String,
         val mime: String,
+        val sha256: String,
         val subject: String,
         val qualification: String,
         val syllabus: String,
