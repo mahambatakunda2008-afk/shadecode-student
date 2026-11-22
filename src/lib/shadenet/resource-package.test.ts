@@ -4,6 +4,8 @@ import {
   ResourcePackageError,
   validateResourcePackage,
   validateResourcePackageManifest,
+  serializeResourcePackage,
+  parseResourcePackage,
 } from "./resource-package";
 
 const baseMetadata = {
@@ -100,5 +102,37 @@ describe("versioned Shadecode resource packages", () => {
         provenance: { ...resource.manifest.provenance, originalUrl: "http://example.org" },
       }),
     ).toThrow("must use HTTPS");
+  });
+});
+
+
+describe("portable resource package envelope", () => {
+  it("round-trips metadata and exact original bytes", async () => {
+    const payload = new Uint8Array([0, 1, 2, 127, 128, 255]);
+    const resource = await createResourcePackage(baseMetadata, payload);
+    const encoded = await serializeResourcePackage(resource);
+    const decoded = await parseResourcePackage(encoded);
+
+    expect(decoded.manifest).toEqual(resource.manifest);
+    expect(decoded.payload).toEqual(payload);
+  });
+
+  it("rejects an unknown envelope and truncated metadata", async () => {
+    await expect(parseResourcePackage(new TextEncoder().encode("NOTSHADECODE"))).rejects.toMatchObject({
+      code: "unsupported-format",
+    });
+    await expect(parseResourcePackage(new TextEncoder().encode("SCRESOURCE1"))).rejects.toMatchObject({
+      code: "invalid-payload",
+    });
+  });
+
+  it("rejects portable payload tampering after import", async () => {
+    const resource = await createResourcePackage(baseMetadata, new TextEncoder().encode("original"));
+    const encoded = await serializeResourcePackage(resource);
+    encoded[encoded.length - 1] ^= 0xff;
+
+    await expect(parseResourcePackage(encoded)).rejects.toMatchObject({
+      code: "checksum-mismatch",
+    });
   });
 });
