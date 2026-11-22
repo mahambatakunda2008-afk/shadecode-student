@@ -21,21 +21,23 @@ export default function ExperienceLearn() {
 
     try {
       const supabase = createClient();
+      // Read the persisted session locally. getUser() performs a server request and
+      // can strand Learn behind a network check even when the learner has valid
+      // cached content and a previously established local session.
       const result = await Promise.race([
-        supabase.auth.getUser(),
+        supabase.auth.getSession(),
         new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new Error("AUTH_CHECK_TIMEOUT")), AUTH_TIMEOUT_MS);
+          timer = setTimeout(() => reject(new Error("AUTH_SESSION_READ_TIMEOUT")), AUTH_TIMEOUT_MS);
         }),
       ]);
 
       if (signal.cancelled) return;
       if (result.error) {
-        // A transient auth/network error is not proof that the user is signed out.
-        console.error("[Learn] session verification failed:", result.error);
+        console.error("[Learn] local session read failed:", result.error);
         setState("error");
         return;
       }
-      if (!result.data.user) {
+      if (!result.data.session?.user) {
         router.replace("/auth/login");
         return;
       }
