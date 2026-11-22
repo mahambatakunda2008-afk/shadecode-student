@@ -68,7 +68,7 @@ fun NativeOfflinePdfReader(
             }
             rendered = result.bitmap
             pageCount = result.pageCount
-            onPageChanged(pageIndex + 1)
+            onPageChanged(pageIndex.coerceIn(0, result.pageCount - 1) + 1)
         } catch (failure: Exception) {
             error = failure.message ?: "This PDF page could not be rendered."
         } finally {
@@ -105,12 +105,16 @@ fun NativeOfflinePdfReader(
         if (loading) Text("Rendering page…", color = MaterialTheme.colorScheme.onSurfaceVariant)
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         rendered?.let { bitmap ->
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "PDF page ${pageIndex + 1}",
+            Column(
                 modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
-                contentScale = ContentScale.FillWidth,
-            )
+            ) {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = "PDF page ${pageIndex + 1}",
+                    modifier = Modifier.fillMaxWidth(),
+                    contentScale = ContentScale.FillWidth,
+                )
+            }
         }
     }
 }
