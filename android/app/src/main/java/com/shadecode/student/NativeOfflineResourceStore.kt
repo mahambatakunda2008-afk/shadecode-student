@@ -49,6 +49,19 @@ object NativeOfflineResourceStore {
     private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
         .digest(bytes).joinToString("") { "%02x".format(it) }
 
+    private fun hashFile(file: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buffer = ByteArray(32 * 1024)
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                digest.update(buffer, 0, count)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
     private fun extensionFor(mimeType: String): String = when (mimeType.lowercase()) {
         "application/pdf" -> "pdf"
         "text/plain" -> "txt"
@@ -116,10 +129,6 @@ object NativeOfflineResourceStore {
                             headerSize += copy
                         }
                         digest.update(buffer, 0, count)
-                        if (mimeType != "application/pdf" && searchText.length < MAX_SEARCH_TEXT_CHARS) {
-                            val remaining = MAX_SEARCH_TEXT_CHARS - searchText.length
-                            searchText.append(String(buffer, 0, count, Charsets.UTF_8).take(remaining))
-                        }
                         output.write(buffer, 0, count)
                     }
                     output.fd.sync()
@@ -132,13 +141,18 @@ object NativeOfflineResourceStore {
                 }
             }
 
+            if (mimeType != "application/pdf") {
+                searchText.append(temporary.readText(Charsets.UTF_8).take(MAX_SEARCH_TEXT_CHARS))
+            }
             val hash = digest.digest().joinToString("") { "%02x".format(it) }
             val resourceId = hash
             val fileName = "$hash.$extension"
             finalFile = File(directory, fileName)
 
             val existing = database.offlineResources().get(accountId, resourceId)
-            if (existing != null && finalFile.isFile && finalFile.length() == existing.byteCount) {
+            if (existing != null && finalFile.isFile && finalFile.length() == existing.byteCount &&
+                hashFile(finalFile) == existing.sha256 && existing.sha256 == hash
+            ) {
                 temporary.delete()
                 return existing
             }
