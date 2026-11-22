@@ -56,6 +56,42 @@ data class NativeExamAttemptEntity(
     @androidx.room.ColumnInfo(defaultValue = "0") val submissionPending: Boolean = false,
 )
 
+
+@Entity(tableName = "offline_resources", primaryKeys = ["accountId", "resourceId"], indices = [androidx.room.Index(value = ["accountId", "subject"]), androidx.room.Index(value = ["accountId", "importedAt"])])
+data class NativeOfflineResourceEntity(
+    val accountId: String,
+    val resourceId: String,
+    val title: String,
+    val subject: String,
+    val qualification: String,
+    val syllabus: String,
+    val topic: String,
+    val sourceUrl: String,
+    val publisher: String,
+    val reviewStatus: String,
+    val mimeType: String,
+    val fileName: String,
+    val sha256: String,
+    val byteCount: Long,
+    val searchText: String,
+    val importedAt: Long,
+    val lastOpenedAt: Long = 0L,
+    val lastPage: Int = 1,
+)
+
+@Entity(tableName = "resource_annotations", primaryKeys = ["accountId", "id"], indices = [androidx.room.Index(value = ["accountId", "resourceId"])])
+data class NativeResourceAnnotationEntity(
+    val accountId: String,
+    val id: String,
+    val resourceId: String,
+    val kind: String,
+    val pageNumber: Int?,
+    val anchor: String,
+    val content: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+)
+
 @Entity(tableName = "pending_sync")
 data class NativePendingSyncEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -106,6 +142,43 @@ interface NativeSyncDao {
     suspend fun delete(item: NativePendingSyncEntity)
 }
 
+
+@androidx.room.Dao
+interface NativeOfflineResourceDao {
+    @androidx.room.Query("SELECT * FROM offline_resources WHERE accountId = :accountId ORDER BY importedAt DESC")
+    suspend fun all(accountId: String): List<NativeOfflineResourceEntity>
+
+    @androidx.room.Query("SELECT * FROM offline_resources WHERE accountId = :accountId AND resourceId = :resourceId LIMIT 1")
+    suspend fun get(accountId: String, resourceId: String): NativeOfflineResourceEntity?
+
+    @androidx.room.Query("SELECT * FROM offline_resources WHERE accountId = :accountId AND (title LIKE '%' || :query || '%' COLLATE NOCASE OR subject LIKE '%' || :query || '%' COLLATE NOCASE OR qualification LIKE '%' || :query || '%' COLLATE NOCASE OR syllabus LIKE '%' || :query || '%' COLLATE NOCASE OR topic LIKE '%' || :query || '%' COLLATE NOCASE OR searchText LIKE '%' || :query || '%' COLLATE NOCASE) ORDER BY importedAt DESC LIMIT :limit")
+    suspend fun search(accountId: String, query: String, limit: Int = 50): List<NativeOfflineResourceEntity>
+
+    @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    suspend fun save(resource: NativeOfflineResourceEntity)
+
+    @androidx.room.Query("UPDATE offline_resources SET lastOpenedAt = :openedAt, lastPage = :page WHERE accountId = :accountId AND resourceId = :resourceId")
+    suspend fun markOpened(accountId: String, resourceId: String, page: Int, openedAt: Long)
+
+    @androidx.room.Query("DELETE FROM offline_resources WHERE accountId = :accountId AND resourceId = :resourceId")
+    suspend fun delete(accountId: String, resourceId: String): Int
+}
+
+@androidx.room.Dao
+interface NativeResourceAnnotationDao {
+    @androidx.room.Query("SELECT * FROM resource_annotations WHERE accountId = :accountId AND resourceId = :resourceId ORDER BY updatedAt DESC")
+    suspend fun forResource(accountId: String, resourceId: String): List<NativeResourceAnnotationEntity>
+
+    @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    suspend fun save(annotation: NativeResourceAnnotationEntity)
+
+    @androidx.room.Query("DELETE FROM resource_annotations WHERE accountId = :accountId AND resourceId = :resourceId AND id = :annotationId")
+    suspend fun delete(accountId: String, resourceId: String, annotationId: String): Int
+
+    @androidx.room.Query("DELETE FROM resource_annotations WHERE accountId = :accountId AND resourceId = :resourceId")
+    suspend fun deleteForResource(accountId: String, resourceId: String)
+}
+
 @androidx.room.Dao
 interface NativeExamAttemptDao {
     @androidx.room.Query("SELECT * FROM exam_attempts WHERE accountId = :accountId LIMIT 1")
@@ -117,8 +190,8 @@ interface NativeExamAttemptDao {
 }
 
 @Database(
-    entities = [NativeSubjectEntity::class, NativeLessonEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class, NativeExamAttemptEntity::class],
-    version = 6,
+    entities = [NativeSubjectEntity::class, NativeLessonEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class, NativeExamAttemptEntity::class, NativeOfflineResourceEntity::class, NativeResourceAnnotationEntity::class],
+    version = 7,
     exportSchema = false,
 )
 abstract class NativeDatabase : RoomDatabase() {
@@ -127,6 +200,8 @@ abstract class NativeDatabase : RoomDatabase() {
     abstract fun progress(): NativeProgressDao
     abstract fun sync(): NativeSyncDao
     abstract fun examAttempts(): NativeExamAttemptDao
+    abstract fun offlineResources(): NativeOfflineResourceDao
+    abstract fun resourceAnnotations(): NativeResourceAnnotationDao
 
     companion object {
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -210,6 +285,52 @@ abstract class NativeDatabase : RoomDatabase() {
             }
         }
 
+
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS offline_resources (
+                        accountId TEXT NOT NULL,
+                        resourceId TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        subject TEXT NOT NULL,
+                        qualification TEXT NOT NULL,
+                        syllabus TEXT NOT NULL,
+                        topic TEXT NOT NULL,
+                        sourceUrl TEXT NOT NULL,
+                        publisher TEXT NOT NULL,
+                        reviewStatus TEXT NOT NULL,
+                        mimeType TEXT NOT NULL,
+                        fileName TEXT NOT NULL,
+                        sha256 TEXT NOT NULL,
+                        byteCount INTEGER NOT NULL,
+                        searchText TEXT NOT NULL,
+                        importedAt INTEGER NOT NULL,
+                        lastOpenedAt INTEGER NOT NULL,
+                        lastPage INTEGER NOT NULL,
+                        PRIMARY KEY(accountId, resourceId)
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_offline_resources_accountId_subject ON offline_resources(accountId, subject)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_offline_resources_accountId_importedAt ON offline_resources(accountId, importedAt)")
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS resource_annotations (
+                        accountId TEXT NOT NULL,
+                        id TEXT NOT NULL,
+                        resourceId TEXT NOT NULL,
+                        kind TEXT NOT NULL,
+                        pageNumber INTEGER,
+                        anchor TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(accountId, id)
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_resource_annotations_accountId_resourceId ON resource_annotations(accountId, resourceId)")
+            }
+        }
+
         @Volatile private var instance: NativeDatabase? = null
         @Volatile private var applicationContext: Context? = null
 
@@ -222,7 +343,7 @@ abstract class NativeDatabase : RoomDatabase() {
             )
                 // Version 1 already contains subjects, lesson_progress and pending_sync.
                 // Add the lesson cache without wiping offline progress or queued work.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .build()
                 .also { instance = it }
         }
