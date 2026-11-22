@@ -16,7 +16,7 @@ export interface ResourceChunk {
   sha256: string;
 }
 
-export interface ResourceTransferComplete {
+export interface ResourceTransferComplete {\n  /** SHA-256 of the fully reassembled resource. */
   protocol: typeof SHADENET_PROTOCOL;
   requestId: string;
   resourceId: string;
