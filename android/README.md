@@ -12,6 +12,20 @@ This is a **native Android client**, implemented with Kotlin and Jetpack Compose
 
 Offline does **not** mean every web feature is already implemented in the Android client. The native app currently has a smaller feature surface than the web app. Native feature parity, robust conflict resolution, and an iOS SwiftUI client remain explicit work items. The Android client now has an opt-in first-visit starter-pack flow for papers already available through the authorized catalogue; this is not a claim that complete papers are bundled with the APK or that redistribution rights are granted. Downloaded past papers are saved privately on-device and can be reopened offline; no real board paper is bundled until redistribution permission/licensing is documented.
 
+## Offline resource library (native Android)
+
+The first native resource-library slice is available from **Learn → Offline resource library**.
+
+- Import a learner-selected PDF (up to 100 MB), plain-text file or Markdown file (up to 5 MB) through Android's document picker.
+- Resource payloads are copied into account-isolated app-private storage. Room stores metadata, provenance, checksum, file size, reading position and annotations.
+- A resource is listed only after its complete payload is written, synced, SHA-256 checked and its Room record committed.
+- Saved resources can be searched locally by title, subject, qualification, syllabus, topic and indexed text. Text/Markdown content is indexed; PDF content search and in-app page rendering are not part of this first slice.
+- PDF files open through an installed Android PDF viewer. Text and Markdown files open in the in-app reader.
+- Resource bookmarks, notes and highlights have account-scoped persistence primitives in Room; annotation editing UI is a follow-up.
+- Supported review labels are preserved as metadata. Imported files default to **unverified**; importing a file never makes it official or teacher-approved.
+
+This is a storage and first-reader foundation, not yet the complete resource-pack system. Resumable large downloads, portable export/import, teacher-curated packs, PDF text indexing, in-app PDF page navigation, diagrams/attachments, and real-device airplane-mode validation remain open. Do not claim full native resource parity until those are implemented and tested.
+
 ## Build locally
 
 Prerequisites:
