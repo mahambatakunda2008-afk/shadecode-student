@@ -14,9 +14,9 @@ describe("lesson block cap", () => {
     for (const count of [30, 32, 36]) expect(failuresFor(count, { broadTopic: true, depth: "deep" })).not.toContain("too-many-blocks");
   });
 
-  it("still rejects runaway broad lessons and ordinary lessons beyond four sections", () => {
+  it("still rejects runaway lessons past the 36-block server persist limit", () => {
     expect(failuresFor(37, { broadTopic: true, depth: "deep" })).toContain("too-many-blocks");
-    expect(failuresFor(25, {})).toContain("too-many-blocks");
+    expect(failuresFor(37, {})).toContain("too-many-blocks");
   });
 });
 
@@ -182,5 +182,12 @@ describe("parseSectionJson", () => {
 
   it("still rejects a section with fewer than 3 usable blocks", () => {
     expect(parseSectionJson(JSON.stringify({ title: "x", blocks: [block("concept", long), block("example", "too short")] }))).toBeNull();
+  });
+});
+
+describe("block ceiling matches the server persist limit", () => {
+  it("accepts 29 blocks for a topic that is not flagged broad but rejects past 36", () => {
+    expect(failuresFor(29, {})).not.toContain("too-many-blocks");
+    expect(failuresFor(37, {})).toContain("too-many-blocks");
   });
 });

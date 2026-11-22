@@ -161,8 +161,10 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   }
 
   const broadOrDeep = request.broadTopic || request.depth === "deep";
-  // Sectioned generation keeps at most 6 blocks per section: 6 sections for broad/deep topics (up to 36), 4 otherwise (up to 24).
-  if (normalized.length > (broadOrDeep ? 36 : 24)) failures.push("too-many-blocks");
+  // Sectioned generation plans 4-7 sections of 3-5 blocks (the final one up to 8), including for topics not
+  // flagged broad (production 2026-11-22: a 29-block "Thermal energy" lesson was refused at 24). The hard
+  // ceiling is the server's persist limit of 36.
+  if (normalized.length > 36) failures.push("too-many-blocks");
   if (normalized.length < 4) failures.push("insufficient-structure");
   if (request.depth === "deep" && normalized.length < 10) failures.push("deep-session-too-thin");
   if (request.broadTopic && normalized.length < 16) failures.push("broad-topic-too-thin");
