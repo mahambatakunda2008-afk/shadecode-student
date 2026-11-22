@@ -6,20 +6,13 @@ import { localTasks } from "@/lib/local-first/tasks";
 import { localSubjects } from "@/lib/local-first/subjects";
 import type { LocalOperation } from "@/lib/local-first/operations";
 import type { LocalEntity, LocalConflict } from "@/lib/local-first/types";
+import { buildProgressSyncPayload } from "./progressSyncPayload";
 
 const REMOTE_TABLES: Record<string, string> = { tasks: "tasks", subjects: "subjects", learn_lessons: "learn_lessons" };
 const STORE_TO_ENTITY: Record<string, LocalEntity> = { tasks: "task", subjects: "subject", learn_lessons: "progress" };
 
 function progressRecordId(userId: string, lessonId: string): string { return `progress:${userId}:${lessonId}`; }
 
-function buildProgressMutationPayload(payload: unknown, lessonId: string, userId: string): Record<string, unknown> {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("Lesson progress payload is invalid");
-  const progress = (payload as Record<string, unknown>).progress;
-  if (typeof progress !== "number" || !Number.isInteger(progress) || progress < 0 || progress > 100) {
-    throw new Error("Lesson progress must be an integer from 0 to 100");
-  }
-  return { sync_kind: "progress", progress, id: lessonId, user_id: userId };
-}
 
 export class OfflineSync {
   private syncInProgress = false;
@@ -33,7 +26,7 @@ export class OfflineSync {
   private async bridgeLocalOperations(): Promise<void> { const auth = await this.getCurrentUser(); if (!auth) return; const operations = await localFirstStore.listPendingOperations(auth.user.id), deviceId = await localFirstStore.deviceId(); for (const operation of operations) { if (operation.entity === "education_profile") continue; try { await mutationQueue.enqueue({ ...this.operationToMutation(operation, deviceId), ownerId: auth.user.id }); } catch (error) { console.error("[OfflineSync] Failed to bridge local operation:", operation.id, error); } } }
   private operationToMutation(operation: LocalOperation, deviceId: string): Omit<OfflineMutation, "id" | "createdAt" | "attempts" | "ownerId"> { const store = operation.entity === "task" ? "tasks" : operation.entity === "subject" ? "subjects" : operation.entity === "progress" ? "learn_lessons" : null; if (!store) throw new Error(`Unsupported local sync entity: ${operation.entity}`); if (operation.entity === "progress") {
       if (operation.kind === "delete") throw new Error("Lesson progress cannot delete its parent lesson");
-      return { operation: operation.kind, store, payload: buildProgressMutationPayload(operation.payload, operation.entityId, operation.userId), clientVersion: operation.lamport, baseVersion: operation.baseVersion ?? 0, deviceId };
+      return { operation: operation.kind, store, payload: buildProgressSyncPayload(operation.payload, operation.entityId, operation.userId), clientVersion: operation.lamport, baseVersion: operation.baseVersion ?? 0, deviceId };
     }
     const payload = operation.kind === "delete" ? { id: operation.entityId, user_id: operation.userId } : operation.payload; if (!payload || typeof payload !== "object") throw new Error(`Local ${operation.entity} operation has no payload`); return { operation: operation.kind, store, payload: { ...(payload as Record<string, unknown>), id: operation.entityId, user_id: operation.userId }, clientVersion: operation.lamport, baseVersion: operation.baseVersion ?? 0, deviceId }; }
   private async reconcileConflict(mutation: OfflineMutation, result: Record<string, unknown>, userId: string): Promise<void> { const entity = STORE_TO_ENTITY[mutation.store]; if (!entity) return; const payload = mutation.payload as Record<string, unknown>, entityId = typeof payload.id === "string" ? payload.id : null; if (!entityId) return; const localOps = await localFirstStore.listOperations(userId), loser = localOps.find((op) => op.entity === entity && op.entityId === entityId && !op.syncedAt && op.lamport === mutation.clientVersion); if (!loser) return; let winnerPayload: Record<string, unknown> | null = null; const table = REMOTE_TABLES[mutation.store], auth = await this.getCurrentUser(); if (table && auth) { const { data } = await auth.supabase.from(table).select("*").eq("id", entityId).eq("user_id", userId).maybeSingle(); if (data) winnerPayload = data as Record<string, unknown>; } const serverVersion = typeof result.currentVersion === "number" ? result.currentVersion : Math.max(mutation.baseVersion ?? 0, 0); const winner: LocalOperation = { id: `server:${mutation.store}:${entityId}:${serverVersion}`, recordId: entityId, entityId, entity, userId, deviceId: typeof result.currentDeviceId === "string" ? result.currentDeviceId : "server", kind: winnerPayload ? "update" : "delete", payload: winnerPayload ?? {}, timestamp: new Date().toISOString(), sequence: serverVersion, lamport: serverVersion, baseVersion: Math.max(serverVersion - 1, 0), syncedAt: new Date().toISOString() }; const conflict: LocalConflict = { id: `${loser.id}:conflict:${serverVersion}`, userId, entity, entityId, winner, loser, reason: "causal-order", createdAt: Date.now() }; await localFirstStore.recordConflict(conflict); if (winnerPayload) await localFirstStore.hydrate({ id: entityId, entity, entityId, userId, payload: winnerPayload, updatedAt: Date.now(), deviceId: winner.deviceId, version: loser.lamport, syncVersion: serverVersion }); await localFirstStore.acknowledgeOperation(loser.id); await mutationQueue.remove(mutation.id, userId); }
