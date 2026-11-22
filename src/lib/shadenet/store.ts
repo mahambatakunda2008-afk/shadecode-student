@@ -24,9 +24,23 @@ export class ShadeNetStore {
         const db = request.result;
         if (db.objectStoreNames.contains(STORE)) {
           const existing = request.transaction!.objectStore(STORE);
-          // v1 of the binary cache accidentally shared this name with the
-          // metadata store. Its keyPath identifies cache payloads, not records.
-          if (existing.keyPath !== "contentHash") db.deleteObjectStore(STORE);
+          // A previous release used this name for binary cache entries with a
+          // different keyPath. Preserve those records during the schema repair
+          // instead of deleting user data that may still be useful for recovery.
+          if (existing.keyPath !== "contentHash") {
+            const legacyName = "legacy_resources_v1";
+            if (!db.objectStoreNames.contains(legacyName)) {
+              const legacy = db.createObjectStore(legacyName, { autoIncrement: true });
+              const cursorRequest = existing.openCursor();
+              cursorRequest.onsuccess = () => {
+                const cursor = cursorRequest.result;
+                if (!cursor) return;
+                legacy.put(cursor.value);
+                cursor.continue();
+              };
+            }
+            db.deleteObjectStore(STORE);
+          }
         }
         if (!db.objectStoreNames.contains(STORE)) {
           const resources = db.createObjectStore(STORE, { keyPath: "contentHash" });
