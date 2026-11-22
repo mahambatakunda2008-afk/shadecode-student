@@ -113,7 +113,11 @@ export default function TeacherTutorials({ subject }: { subject: string }) {
       .then(body => { if (active) setItems(Array.isArray(body.tutorials) ? body.tutorials : []); })
       .catch(async e => {
         try {
-          const cached = (await offlineStorage.getAllLessons()).filter(item => item.id.startsWith("teacher-tutorial:") && item.subject === subject);
+          const { createClient } = await import("@/lib/supabase/client");
+          const { data } = await createClient().auth.getSession();
+          const userId = data.session?.user.id;
+          if (!userId) throw e;
+          const cached = (await offlineStorage.getAllLessons(userId)).filter(item => item.id.startsWith("teacher-tutorial:") && item.subject === subject);
           if (active && cached.length) setItems(cached.map(item => ({ id: item.id.replace("teacher-tutorial:", ""), title: item.title, subject: item.subject, topic: null, summary: item.description ?? null, published_at: item.downloadedAt })));
           else if (active) setError(e instanceof Error ? e.message : "Tutorials unavailable.");
         } catch { if (active) setError(e instanceof Error ? e.message : "Tutorials unavailable."); }
@@ -124,6 +128,10 @@ export default function TeacherTutorials({ subject }: { subject: string }) {
   async function openTutorial(id: string) {
     setBusy(true); setError("");
     try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const { data: sessionData } = await createClient().auth.getSession();
+      const ownerUserId = sessionData.session?.user.id;
+      if (!ownerUserId) throw new Error("Sign in on this device to save tutorials for offline study.");
       const response = await fetch(`/api/learn/tutorials/${encodeURIComponent(id)}`, { cache: "no-store" });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "Tutorial could not be opened.");
@@ -139,10 +147,10 @@ export default function TeacherTutorials({ subject }: { subject: string }) {
       const cachedTutorial = { ...tutorial, blocks: cachedBlocks };
       setSelected(cachedTutorial);
       const size = JSON.stringify({ ...tutorial, blocks: tutorial.blocks.map(({ mediaUrl, ...block }) => block) }).length + cachedBlocks.reduce((total, block) => total + (block.mediaBlob?.size ?? 0), 0);
-      void offlineStorage.saveLesson({ id: `teacher-tutorial:${tutorial.id}`, title: tutorial.title, subject: tutorial.subject, description: tutorial.summary ?? "", blocks: cachedBlocks as unknown as Array<Record<string, unknown>>, difficulty: "medium", downloadedAt: new Date().toISOString(), size }).catch(() => undefined);
+      void offlineStorage.saveLesson({ id: `teacher-tutorial:${tutorial.id}`, ownerUserId, title: tutorial.title, subject: tutorial.subject, description: tutorial.summary ?? "", blocks: cachedBlocks as unknown as Array<Record<string, unknown>>, difficulty: "medium", downloadedAt: new Date().toISOString(), size }).catch(() => undefined);
     } catch (e) {
       try {
-        const cached = await offlineStorage.getLesson(`teacher-tutorial:${id}`);
+        const cached = await offlineStorage.getLesson(`teacher-tutorial:${id}`, ownerUserId);
         if (cached) setSelected({ id, title: cached.title, subject: cached.subject, topic: null, summary: cached.description ?? null, published_at: cached.downloadedAt, version: 0, blocks: (cached.blocks ?? []) as unknown as TutorialBlock[] });
         else setError(e instanceof Error ? e.message : "Tutorial could not be opened.");
       } catch { setError(e instanceof Error ? e.message : "Tutorial could not be opened."); }
