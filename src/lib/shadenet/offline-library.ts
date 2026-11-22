@@ -189,6 +189,7 @@ export class OfflineResourceLibrary {
     }
 
     const ranges: Array<{ start: number; end: number }> = [];
+    const seenHashes = new Set<string>();
     for (const entry of manifest.entries) {
       const metadata = entry.metadata;
       const offset = entry.offset;
@@ -201,8 +202,13 @@ export class OfflineResourceLibrary {
           payloadStart + offset! + length! > pack.size) {
         throw new Error("The resource pack contains an invalid resource entry.");
       }
+      const normalizedHash = metadata.sha256.toLowerCase();
+      if (seenHashes.has(normalizedHash)) {
+        throw new Error("The resource pack contains duplicate content entries.");
+      }
+      seenHashes.add(normalizedHash);
       const payload = pack.slice(payloadStart + offset!, payloadStart + offset! + length!, metadata.mimeType);
-      if (await sha256(payload) !== metadata.sha256.toLowerCase()) {
+      if (await sha256(payload) !== normalizedHash) {
         throw new Error(`The resource pack contains corrupted data for "${metadata.title}". No files were imported.`);
       }
       if (metadata.mimeType === "application/pdf") {
