@@ -27,18 +27,6 @@ export class ShadeNetResourceCache {
           const store = db.createObjectStore(STORE, { keyPath: "resourceId" });
           store.createIndex(CACHED_AT_INDEX, "cachedAt", { unique: false });
         }
-        // Either module may open the shared database first on a fresh install.
-        if (!db.objectStoreNames.contains("resources")) {
-          const resources = db.createObjectStore("resources", { keyPath: "contentHash" });
-          resources.createIndex("type", "metadata.type", { unique: false });
-          resources.createIndex("subject", "metadata.subject", { unique: false });
-        }
-        if (!db.objectStoreNames.contains("research")) {
-          const research = db.createObjectStore("research", { keyPath: "id" });
-          research.createIndex("subject", "curriculum.subject", { unique: false });
-          research.createIndex("savedAt", "savedAt", { unique: false });
-          research.createIndex("lastUsedAt", "lastUsedAt", { unique: false });
-        }
       };
     });
   }
