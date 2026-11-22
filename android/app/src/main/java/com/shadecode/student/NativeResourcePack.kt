@@ -171,6 +171,7 @@ object NativeResourcePack {
                 require(entries.length() in 1..MAX_ENTRIES) { "The resource pack entry count is invalid." }
 
                 var expectedOffset = 0L
+                val seenHashes = mutableSetOf<String>()
                 for (index in 0 until entries.length()) {
                     val entry = entries.getJSONObject(index)
                     val metadata = entry.getJSONObject("metadata")
@@ -180,7 +181,8 @@ object NativeResourcePack {
                     val title = metadata.optString("title").trim()
                     val hash = metadata.optString("sha256").lowercase()
                     require(title.isNotBlank() && title.length <= 500 && mime in allowedMime &&
-                        hash.matches(Regex("[a-f0-9]{64}")) && metadata.optLong("byteLength", -1) == length &&
+                        hash.matches(Regex("[a-f0-9]{64}")) && seenHashes.add(hash) &&
+                        metadata.optLong("byteLength", -1) == length &&
                         offset == expectedOffset && length in 1..(if (mime == "application/pdf") 100L * 1024L * 1024L else 5L * 1024L * 1024L) &&
                         payloadStart + offset + length <= pack.length()) {
                         "The resource pack contains an invalid entry."
