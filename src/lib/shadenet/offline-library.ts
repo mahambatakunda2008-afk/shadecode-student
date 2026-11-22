@@ -160,7 +160,7 @@ export class OfflineResourceLibrary {
     const manifest = new TextEncoder().encode(JSON.stringify({ format: "shadecode-resource-pack", version: 1, entries }));
     if (manifest.byteLength > 8 * 1024 * 1024) throw new Error("The resource-pack manifest is too large.");
     const header = new Uint8Array(12);
-    header.set(new TextEncoder().encode("SCRES01\\n"), 0);
+    header.set(new TextEncoder().encode("SCRES01\n"), 0);
     new DataView(header.buffer).setUint32(8, manifest.byteLength, true);
     return new Blob([header, manifest, ...payloads], { type: "application/vnd.shadecode.resource-pack" });
   }
@@ -171,7 +171,7 @@ export class OfflineResourceLibrary {
     if (pack.size < 12 || pack.size > MAX_PACK_BYTES) throw new Error("The resource pack is empty or exceeds the 512 MB import limit.");
     const header = new Uint8Array(await pack.slice(0, 12).arrayBuffer());
     const magic = new TextDecoder().decode(header.subarray(0, 8));
-    if (magic !== "SCRES01\\n") throw new Error("This is not a Shadecode resource pack.");
+    if (magic !== "SCRES01\n") throw new Error("This is not a Shadecode resource pack.");
     const manifestLength = new DataView(header.buffer, header.byteOffset, header.byteLength).getUint32(8, true);
     const payloadStart = 12 + manifestLength;
     if (!manifestLength || manifestLength > MAX_MANIFEST_BYTES || payloadStart > pack.size) {
