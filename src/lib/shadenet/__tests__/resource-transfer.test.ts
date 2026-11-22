@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acceptChunk, createTransfer, isComplete, orderedChunks, verifyResource } from "../resource-transfer";
+import { acceptChunk, createTransfer, isComplete, orderedChunks, sha256Hex, verifyResource } from "../resource-transfer";
 import type { ResourceChunk } from "../protocol";
 
 describe("ShadeNet resource transfer", () => {
@@ -8,19 +8,19 @@ describe("ShadeNet resource transfer", () => {
     const state = createTransfer(request);
     const first = new TextEncoder().encode("hello ").buffer;
     const second = new TextEncoder().encode("world").buffer;
-    const chunk = (index: number, data: ArrayBuffer): ResourceChunk => ({
+    const chunk = async (index: number, data: ArrayBuffer): Promise<ResourceChunk> => ({
       protocol: 1,
       requestId: "r1",
       resourceId: "resource-1",
       index,
       total: 2,
       data,
-      sha256: "unused-in-unit-test",
+      sha256: await sha256Hex(data),
     });
 
-    acceptChunk(state, chunk(1, second));
+    acceptChunk(state, await chunk(1, second));
     expect(isComplete(state)).toBe(false);
-    acceptChunk(state, chunk(0, first));
+    acceptChunk(state, await chunk(0, first));
     expect(isComplete(state)).toBe(true);
     expect(new TextDecoder().decode(new Uint8Array(orderedChunks(state)[0]))).toBe("hello ");
     expect(new TextDecoder().decode(new Uint8Array(orderedChunks(state)[1]))).toBe("world");
