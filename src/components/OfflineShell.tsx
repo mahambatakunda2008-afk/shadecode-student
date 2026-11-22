@@ -26,7 +26,10 @@ export default function OfflineShell() {
     const refresh = async () => {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        // Read the locally persisted identity for the device queue. getUser() verifies
+        // against Supabase and can fail precisely when this status must work offline.
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         if (!user || cancelled) return;
         const next = await mutationQueue.getStatus(user.id);
         const items = next.failed > 0 ? summarizeFailedMutations(await mutationQueue.listFailed(user.id)) : [];
