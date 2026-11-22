@@ -135,6 +135,78 @@ export class OfflineResourceLibrary {
     });
   }
 
+  async exportPack(): Promise<Blob> {
+    await this.init();
+    const records = await new Promise<StoredOfflineResource[]>((resolve, reject) => {
+      const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).getAll();
+      request.onsuccess = () => resolve(request.result as StoredOfflineResource[]);
+      request.onerror = () => reject(request.error);
+    });
+    if (!records.length) throw new Error("There are no resources to export.");
+    const payloads: ArrayBuffer[] = [];
+    const entries: Array<{ metadata: OfflineResourceMetadata; offset: number; length: number }> = [];
+    let offset = 0;
+    for (const record of records) {
+      if (record.blob.size !== record.metadata.byteLength || await sha256(record.blob) !== record.metadata.sha256) {
+        throw new Error(`Integrity check failed for "${record.metadata.title}". Export stopped.`);
+      }
+      const payload = await record.blob.arrayBuffer();
+      entries.push({ metadata: record.metadata, offset, length: payload.byteLength });
+      payloads.push(payload);
+      offset += payload.byteLength;
+    }
+    const manifest = new TextEncoder().encode(JSON.stringify({ format: "shadecode-resource-pack", version: 1, entries }));
+    const header = new Uint8Array(12);
+    header.set(new TextEncoder().encode("SCRES01\n"), 0);
+    new DataView(header.buffer).setUint32(8, manifest.byteLength, true);
+    return new Blob([header, manifest, ...payloads], { type: "application/vnd.shadecode.resource-pack" });
+  }
+
+  async importPack(pack: Blob): Promise<number> {
+    if (pack.size < 12 || pack.size > 512 * 1024 * 1024) throw new Error("The resource pack is empty or exceeds the 512 MB import limit.");
+    const bytes = await pack.arrayBuffer();
+    const view = new DataView(bytes);
+    const magic = new TextDecoder().decode(new Uint8Array(bytes, 0, 8));
+    if (magic !== "SCRES01\n") throw new Error("This is not a Shadecode resource pack.");
+    const manifestLength = view.getUint32(8, true);
+    const payloadStart = 12 + manifestLength;
+    if (!manifestLength || payloadStart > bytes.byteLength) throw new Error("The resource pack manifest is damaged.");
+    let manifest: { format?: string; version?: number; entries?: Array<{ metadata?: Partial<OfflineResourceMetadata>; offset?: number; length?: number }> };
+    try {
+      manifest = JSON.parse(new TextDecoder().decode(new Uint8Array(bytes, 12, manifestLength)));
+    } catch {
+      throw new Error("The resource pack manifest could not be read.");
+    }
+    if (manifest.format !== "shadecode-resource-pack" || manifest.version !== 1 || !Array.isArray(manifest.entries) || manifest.entries.length > 1000) {
+      throw new Error("The resource pack format or version is not supported.");
+    }
+    let imported = 0;
+    for (const entry of manifest.entries) {
+      const metadata = entry.metadata;
+      const offset = entry.offset;
+      const length = entry.length;
+      if (!metadata || typeof metadata.title !== "string" || typeof metadata.mimeType !== "string" ||
+          !Number.isSafeInteger(offset) || !Number.isSafeInteger(length) || offset! < 0 || length! <= 0 ||
+          payloadStart + offset! + length! > bytes.byteLength || length! > MAX_RESOURCE_BYTES) {
+        throw new Error("The resource pack contains an invalid resource entry.");
+      }
+      const blob = new Blob([bytes.slice(payloadStart + offset!, payloadStart + offset! + length!)], { type: metadata.mimeType });
+      await this.importFile(blob, {
+        title: metadata.title,
+        subject: metadata.subject,
+        qualification: metadata.qualification,
+        syllabus: metadata.syllabus,
+        topic: metadata.topic,
+        source: metadata.source,
+        publisher: metadata.publisher,
+        trust: "unverified",
+        mimeType: metadata.mimeType,
+      });
+      imported += 1;
+    }
+    return imported;
+  }
+
   async requestPersistentStorage(): Promise<boolean> {
     if (typeof navigator === "undefined" || !navigator.storage?.persist) return false;
     return navigator.storage.persist();
