@@ -17,7 +17,12 @@ export default function TeacherTutorialPage() {
     if (!id) return;
     let active = true;
     (async () => {
+      let userId: string | undefined;
       try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const { data: sessionData } = await createClient().auth.getSession();
+        userId = sessionData.session?.user.id;
+        if (!userId) throw new Error("Sign in on this device to open saved tutorials.");
         const response = await fetch(`/api/learn/tutorials/${encodeURIComponent(id)}`, { cache: "no-store" });
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(body.error || "This tutorial could not be opened.");
@@ -25,7 +30,7 @@ export default function TeacherTutorialPage() {
       } catch (e) {
         // Tutorials opened before are kept for offline study.
         try {
-          const cached = await offlineStorage.getLesson(`teacher-tutorial:${id}`);
+          const cached = await offlineStorage.getLesson(`teacher-tutorial:${id}`, userId);
           if (cached && active) {
             setTutorial({ id, title: cached.title, subject: cached.subject, topic: null, summary: cached.description ?? null, published_at: cached.downloadedAt, version: 0, blocks: (cached.blocks ?? []) as unknown as TutorialBlock[] });
             return;

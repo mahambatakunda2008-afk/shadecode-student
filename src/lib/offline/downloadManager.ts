@@ -23,6 +23,7 @@ class DownloadManager {
   async downloadLesson(
     lessonId: string,
     lessonData: unknown,
+    userId: string,
     onProgress?: (progress: number) => void
   ): Promise<void> {
     const downloadId = `${lessonId}-lesson`;
@@ -35,10 +36,12 @@ class DownloadManager {
     });
 
     try {
+      if (!userId) throw new Error('An authenticated owner is required to download a lesson');
       const size = JSON.stringify(lessonData).length;
       const data = lessonData as any; // eslint-disable-line @typescript-eslint/no-explicit-any
       const offlineLesson: OfflineLesson = {
         id: lessonId,
+        ownerUserId: userId,
         title: data.title,
         subject: data.subject,
         description: data.description,
@@ -174,6 +177,7 @@ class DownloadManager {
   async downloadAll(
     lessonId: string,
     lessonData: unknown,
+    userId: string,
     notesContent?: string,
     quizData?: unknown,
     onProgress?: (progress: number) => void
@@ -187,7 +191,7 @@ class DownloadManager {
     };
 
     try {
-      await this.downloadLesson(lessonId, lessonData, updateProgress);
+      await this.downloadLesson(lessonId, lessonData, userId, updateProgress);
       currentStep++;
       if (notesContent) {
         await this.downloadNotes(lessonId, notesContent, updateProgress);
@@ -211,8 +215,8 @@ class DownloadManager {
     return this.activeDownloads.get(`${lessonId}-${type}`);
   }
 
-  async isLessonDownloaded(lessonId: string): Promise<boolean> {
-    const lesson = await offlineStorage.getLesson(lessonId);
+  async isLessonDownloaded(lessonId: string, userId: string): Promise<boolean> {
+    const lesson = await offlineStorage.getLesson(lessonId, userId);
     return lesson !== null;
   }
 
@@ -231,12 +235,12 @@ class DownloadManager {
     this.activeDownloads.delete(`${lessonId}-lesson`);
   }
 
-  async getStorageSize(): Promise<number> {
-    return await offlineStorage.getStorageSize();
+  async getStorageSize(userId: string): Promise<number> {
+    return await offlineStorage.getStorageSize(userId);
   }
 
-  async getDownloadedLessons(): Promise<OfflineLesson[]> {
-    return await offlineStorage.getAllLessons();
+  async getDownloadedLessons(userId: string): Promise<OfflineLesson[]> {
+    return await offlineStorage.getAllLessons(userId);
   }
 
   async saveOfflineProgress(
