@@ -49,7 +49,7 @@ describe("versioned Shadecode resource packages", () => {
     const tampered = { ...resource, payload: new TextEncoder().encode("tampered") };
 
     await expect(validateResourcePackage(tampered)).rejects.toMatchObject({
-      code: "size-mismatch",
+      code: "checksum-mismatch",
     });
   });
 
