@@ -146,3 +146,16 @@ describe("isSectionTooThin", () => {
     expect(isSectionTooThin(1, 1)).toBe(false);
   });
 });
+
+describe("wall-of-text ignores non-prose blocks", () => {
+  const request = { intent: "teach", subject: "Physics", topic: "Circular motion", prompt: "Circular motion", requestedParts: [] } as never;
+  const figure = `<svg viewBox="0 0 200 200">${"<circle cx='100' cy='100' r='40'/>".repeat(40)}</svg>`;
+
+  it("does not flag a long single-line diagram", () => {
+    expect(figure.length).toBeGreaterThan(1100);
+    expect(lessonQualityFailures({ title: "Circular motion", blocks: [{ type: "diagram", title: "Diagram", content: figure }] }, request).failures).not.toContain("wall-of-text");
+  });
+  it("still flags a long single-line prose block", () => {
+    expect(lessonQualityFailures({ title: "Circular motion", blocks: [{ type: "concept", title: "Idea", content: "word ".repeat(300) }] }, request).failures).toContain("wall-of-text");
+  });
+});

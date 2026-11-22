@@ -182,7 +182,10 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // Intentionally not a hard failure.
   if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition");
 
+  // Diagrams, formulas and code are not prose: a one-line SVG/ASCII figure is not a "wall of text".
+  const nonProseTypes = new Set(["diagram", "formula", "math", "code"]);
   const wallOfText = normalized.some(block => {
+    if (nonProseTypes.has(block.normalizedType)) return false;
     const content = block.content.trim();
     const lineCount = content.split(/\n+/).map(line => line.trim()).filter(Boolean).length;
     const sentenceCount = (content.match(/[.!?](?:\s|$)/g) ?? []).length;
