@@ -22,6 +22,12 @@ export class ShadeNetStore {
       };
       request.onupgradeneeded = () => {
         const db = request.result;
+        if (db.objectStoreNames.contains(STORE)) {
+          const existing = request.transaction!.objectStore(STORE);
+          // v1 of the binary cache accidentally shared this name with the
+          // metadata store. Its keyPath identifies cache payloads, not records.
+          if (existing.keyPath !== "contentHash") db.deleteObjectStore(STORE);
+        }
         if (!db.objectStoreNames.contains(STORE)) {
           const resources = db.createObjectStore(STORE, { keyPath: "contentHash" });
           resources.createIndex("type", "metadata.type", { unique: false });
@@ -32,10 +38,6 @@ export class ShadeNetStore {
           research.createIndex("subject", "curriculum.subject", { unique: false });
           research.createIndex("savedAt", "savedAt", { unique: false });
           research.createIndex("lastUsedAt", "lastUsedAt", { unique: false });
-        }
-        if (!db.objectStoreNames.contains("resource-cache")) {
-          const cache = db.createObjectStore("resource-cache", { keyPath: "resourceId" });
-          cache.createIndex("cachedAt", "cachedAt", { unique: false });
         }
       };
     });
