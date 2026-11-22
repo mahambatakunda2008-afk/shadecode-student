@@ -179,11 +179,12 @@ object NativeResourcePack {
                     val hash = metadata.optString("sha256").lowercase()
                     require(title.isNotBlank() && title.length <= 500 && mime in allowedMime &&
                         hash.matches(Regex("[a-f0-9]{64}")) && metadata.optLong("byteLength", -1) == length &&
-                        offset == expectedOffset && length in 1..MAX_RESOURCE_BYTES &&
+                        offset == expectedOffset && length in 1..(if (mime == "application/pdf") 100L * 1024L * 1024L else 5L * 1024L * 1024L) &&
                         payloadStart + offset + length <= pack.length()) {
                         "The resource pack contains an invalid entry."
                     }
-                    val temp = File(root, ".resource-${UUID.randomUUID()}.part")
+                    val extension = when (mime) { "application/pdf" -> "pdf"; "text/plain" -> "txt"; else -> "md" }
+                    val temp = File(root, ".resource-${UUID.randomUUID()}.$extension")
                     pack.seek(payloadStart + offset)
                     temp.outputStream().use { output ->
                         val buffer = ByteArray(64 * 1024)
@@ -218,8 +219,8 @@ object NativeResourcePack {
 
             // All entries have been structurally and cryptographically verified before this point.
             var imported = 0
-            prepared.forEach { entry ->
-                try {
+            try {
+                prepared.forEach { entry ->
                     val uri = FileProvider.getUriForFile(context, context.packageName + ".files", entry.file)
                     NativeOfflineResourceStore.importFile(
                         context, database, accountId, uri,
@@ -235,11 +236,11 @@ object NativeResourcePack {
                         ),
                     )
                     imported += 1
-                } finally {
-                    entry.file.delete()
                 }
+                return imported
+            } finally {
+                prepared.forEach { it.file.delete() }
             }
-            return imported
         } finally {
             stagedPack.delete()
         }
