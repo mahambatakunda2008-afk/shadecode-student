@@ -13,7 +13,10 @@ export function createTransfer(request: ResourceRequest): TransferState {
   return { request, received: 0, bytesReceived: 0, total: null, chunks: new Map(), hashes: new Map() };
 }
 
-const MAX_TRANSFER_BYTES = 150 * 1024 * 1024;\nconst MAX_TRANSFER_CHUNKS = 10000;\n\nexport function acceptChunk(state: TransferState, chunk: ResourceChunk): TransferState {
+const MAX_TRANSFER_BYTES = 150 * 1024 * 1024;
+const MAX_TRANSFER_CHUNKS = 10000;
+
+export function acceptChunk(state: TransferState, chunk: ResourceChunk): TransferState {
   if (chunk.protocol !== state.request.protocol) throw new Error("Unsupported ShadeNet protocol version");
   if (chunk.requestId !== state.request.requestId || chunk.resourceId !== state.request.resourceId) {
     throw new Error("Resource chunk does not belong to this transfer");
@@ -25,7 +28,8 @@ const MAX_TRANSFER_BYTES = 150 * 1024 * 1024;\nconst MAX_TRANSFER_CHUNKS = 10000
     throw new Error("Resource chunk payload is empty or invalid");
   }
   if (!/^[a-f0-9]{64}$/i.test(chunk.sha256)) throw new Error("Resource chunk hash is invalid");
-  if (state.total !== null && state.total !== chunk.total) throw new Error("Resource chunk count changed during transfer");\n  if (state.bytesReceived + chunk.data.byteLength > MAX_TRANSFER_BYTES) throw new Error("Resource transfer exceeds the 150 MB limit");
+  if (state.total !== null && state.total !== chunk.total) throw new Error("Resource chunk count changed during transfer");
+  if (state.bytesReceived + chunk.data.byteLength > MAX_TRANSFER_BYTES) throw new Error("Resource transfer exceeds the 150 MB limit");
 
   const previous = state.chunks.get(chunk.index);
   if (previous) {
@@ -38,6 +42,7 @@ const MAX_TRANSFER_BYTES = 150 * 1024 * 1024;\nconst MAX_TRANSFER_CHUNKS = 10000
 
   state.total = chunk.total;
   state.received += 1;
+  state.bytesReceived += chunk.data.byteLength;
   state.chunks.set(chunk.index, chunk.data.slice(0));
   state.hashes.set(chunk.index, chunk.sha256.toLowerCase());
   return state;
