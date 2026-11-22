@@ -35,7 +35,5 @@ export async function getLocalEducationExperience(userId: string) {
 
 export async function clearLocalEducationProfile(userId: string): Promise<void> {
   if (!userId) return;
-  const record = await localFirstDB.getRecord(idFor(userId));
-  if (!record || record.userId !== userId) return;
-  await localFirstDB.clearUser(userId);
+  await localFirstDB.deleteRecordIfOwned(idFor(userId), userId);
 }
