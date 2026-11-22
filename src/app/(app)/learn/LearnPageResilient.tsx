@@ -38,8 +38,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 async function readDeviceLessons(userId?: string): Promise<LearnLesson[]> {
+  if (!userId) return [];
   try {
-    const rows = await withTimeout(offlineStorage.getAllLessons(), LOCAL_TIMEOUT);
+    const rows = await withTimeout(offlineStorage.getAllLessons(userId), LOCAL_TIMEOUT);
     return await Promise.all(rows.map(async row => {
       const progress = userId ? await offlineStorage.getProgress(row.id, userId).catch(() => null) : null;
       return {
@@ -153,7 +154,7 @@ export default function LearnPageResilient() {
       if (local.length) setLessons(local);
       setLoading(false);
       if (!navigator.onLine || !session) return;
-      try { await load(session.access_token); }
+      try { await load(session.access_token, session.user.id); }
       catch (e) {
         if (!cancelled && !local.length) setError(e instanceof Error ? e.message : "Cloud sync unavailable. Lessons saved on this device remain available.");
       }
@@ -197,19 +198,19 @@ export default function LearnPageResilient() {
     }
   }, [generationJob, router]);
 
-  async function load(tok: string) {
+  async function load(tok: string, ownerUserId: string) {
     const r = await fetchWithTimeout("/api/learn", { headers: { Authorization: `Bearer ${tok}` }, cache: "no-store" }, LOAD_TIMEOUT);
     const data = await r.json().catch(() => ({} as ApiResponse));
     if (!r.ok) throw new Error(data.error || `Learn sync failed (${r.status})`);
     setSubjects(data.subjects ?? []);
-    const deviceLessons = await offlineStorage.getAllLessons().catch(() => [] as OfflineLesson[]);
+    const deviceLessons = await offlineStorage.getAllLessons(ownerUserId).catch(() => [] as OfflineLesson[]);
     setLessons(mergeDeviceAndCloudLessons(data.lessons ?? [], deviceLessons));
     setSummary(data.summary ?? null);
     const syncedAt = new Date().toISOString();
     await Promise.all((data.lessons ?? []).map(async (lesson: LearnLesson) => {
-      const cached = await offlineStorage.getLesson(lesson.id).catch(() => null);
+      const cached = await offlineStorage.getLesson(lesson.id, ownerUserId).catch(() => null);
       await offlineStorage.saveLesson({
-        id: lesson.id, title: lesson.title, subject: lesson.subject, subjectId: lesson.subjectId ?? cached?.subjectId, topic: lesson.topic ?? cached?.topic, description: lesson.description,
+        id: lesson.id, ownerUserId, title: lesson.title, subject: lesson.subject, subjectId: lesson.subjectId ?? cached?.subjectId, topic: lesson.topic ?? cached?.topic, description: lesson.description,
         blocks: (lesson.blocks ?? cached?.blocks) as OfflineLesson["blocks"],
         difficulty: lesson.difficulty, progress: lesson.progress, completed: lesson.completed,
         downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length,
