@@ -206,11 +206,15 @@ export default function LearnPageResilient() {
     setLessons(mergeDeviceAndCloudLessons(data.lessons ?? [], deviceLessons));
     setSummary(data.summary ?? null);
     const syncedAt = new Date().toISOString();
-    await Promise.all((data.lessons ?? []).map((lesson: LearnLesson) => offlineStorage.saveLesson({
-      id: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description,
-      difficulty: lesson.difficulty, progress: lesson.progress, completed: lesson.completed,
-      downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length,
-    })));
+    await Promise.all((data.lessons ?? []).map(async (lesson: LearnLesson) => {
+      const cached = await offlineStorage.getLesson(lesson.id).catch(() => null);
+      await offlineStorage.saveLesson({
+        id: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description,
+        blocks: lesson.blocks ?? cached?.blocks,
+        difficulty: lesson.difficulty, progress: lesson.progress, completed: lesson.completed,
+        downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length,
+      });
+    }));
   }
 
   async function generate() {
