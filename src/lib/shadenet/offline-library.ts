@@ -73,8 +73,8 @@ export class OfflineResourceLibrary {
 
   async importFile(file: Blob, details: Omit<OfflineResourceMetadata, "id" | "mimeType" | "byteLength" | "sha256" | "importedAt" | "trust"> & { mimeType?: string; trust?: OfflineResourceTrust }): Promise<OfflineResourceMetadata> {
     if (!file.size) throw new Error("The selected resource is empty.");
-    if (file.size > maxResourceBytes(mimeType)) throw new Error(mimeType === "application/pdf" ? "This PDF exceeds the 100 MB offline limit." : "This text resource exceeds the 5 MB offline limit.");
     const mimeType = details.mimeType || (typeof File !== "undefined" && file instanceof File ? file.type : "") || "application/octet-stream";
+    if (file.size > maxResourceBytes(mimeType)) throw new Error(mimeType === "application/pdf" ? "This PDF exceeds the 100 MB offline limit." : "This text resource exceeds the 5 MB offline limit.");
     if (!["application/pdf", "text/plain", "text/markdown"].includes(mimeType)) {
       throw new Error("Supported resource formats are PDF, plain text and Markdown.");
     }
