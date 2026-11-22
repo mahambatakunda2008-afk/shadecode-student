@@ -28,30 +28,30 @@ export class ShadeNetStore {
           // different keyPath. Preserve those records during the schema repair
           // instead of deleting user data that may still be useful for recovery.
           if (existing.keyPath !== "contentHash") {
-            const legacyName = "legacy_resources_v1";
-            if (!db.objectStoreNames.contains(legacyName)) {
-              const legacy = db.createObjectStore(legacyName, { autoIncrement: true });
-              const cursorRequest = existing.openCursor();
-              cursorRequest.onsuccess = () => {
-                const cursor = cursorRequest.result;
-                if (cursor) {
-                  legacy.put(cursor.value);
-                  cursor.continue();
-                  return;
-                }
-                // Delete only after the cursor has copied every record. Both
-                // operations remain inside the versionchange transaction.
-                db.deleteObjectStore(STORE);
-                const resources = db.createObjectStore(STORE, { keyPath: "contentHash" });
-                resources.createIndex("type", "metadata.type", { unique: false });
-                resources.createIndex("subject", "metadata.subject", { unique: false });
-              };
-            } else {
+            // Never discard an incompatible store merely because a previous
+            // legacy archive already exists. Pick a fresh archive name so every
+            // upgrade preserves the records it is about to replace.
+            let legacyName = "legacy_resources_v1";
+            let suffix = 2;
+            while (db.objectStoreNames.contains(legacyName)) {
+              legacyName = `legacy_resources_v${suffix++}`;
+            }
+            const legacy = db.createObjectStore(legacyName, { autoIncrement: true });
+            const cursorRequest = existing.openCursor();
+            cursorRequest.onsuccess = () => {
+              const cursor = cursorRequest.result;
+              if (cursor) {
+                legacy.put(cursor.value);
+                cursor.continue();
+                return;
+              }
+              // Delete only after the cursor has copied every record. Both
+              // operations remain inside the versionchange transaction.
               db.deleteObjectStore(STORE);
               const resources = db.createObjectStore(STORE, { keyPath: "contentHash" });
               resources.createIndex("type", "metadata.type", { unique: false });
               resources.createIndex("subject", "metadata.subject", { unique: false });
-            }
+            };
           }
         }
         if (!db.objectStoreNames.contains(STORE)) {
