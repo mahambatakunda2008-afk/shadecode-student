@@ -1,0 +1,454 @@
+{
+  "asset_key": "biology-9700-homeostasis-mammals",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Homeostasis in mammals: kidneys, osmoregulation and blood glucose",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "14",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 14, pp. 38–39.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "14.1.1",
+      "14.1.2",
+      "14.1.3",
+      "14.1.4",
+      "14.1.5",
+      "14.1.6",
+      "14.1.7",
+      "14.1.8",
+      "14.1.9",
+      "14.1.10",
+      "14.1.11"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain homeostasis, receptors, effectors and negative feedback.",
+      "Describe kidney structure, nephron function, ultrafiltration and selective reabsorption.",
+      "Explain ADH control of water balance and glucagon/insulin regulation of blood glucose.",
+      "Explain glucagon cell signalling and glucose test strips/biosensors."
+    ],
+    "sections": [
+      [
+        "Homeostasis and its importance",
+        "Homeostasis is the maintenance of a relatively constant internal environment within narrow limits despite internal or external changes. Mammalian cells depend on suitable conditions for enzyme activity and normal metabolism. Variables include blood glucose concentration, blood water potential and core temperature. Homeostasis maintains conditions near optimum; it does not mean every variable is perfectly constant."
+      ],
+      [
+        "The control pathway",
+        "A stimulus is a change in the internal or external environment. A receptor detects it. A coordination system processes information and coordinates a response. An effector, such as a muscle or gland, produces the response. Negative feedback occurs when the response opposes the initial change, reducing the deviation from the set range."
+      ],
+      [
+        "Nervous and endocrine coordination",
+        "The nervous system uses electrical impulses along neurones and neurotransmitters at synapses, usually producing rapid, localised and short-lived responses. The endocrine system releases hormones into the blood; responses are usually slower, longer-lasting and may affect several target tissues. Both coordinate effectors and contribute to homeostasis."
+      ],
+      [
+        "Urea formation in the liver",
+        "Excess amino acids cannot be stored. In the liver, amino groups are removed by deamination. The resulting ammonia is toxic and is converted to urea, which is transported in the blood to the kidneys for excretion. The remaining carbon skeleton can be used in respiration or converted into other molecules."
+      ],
+      [
+        "Gross structure of the kidney",
+        "The kidney is enclosed by a fibrous capsule. The outer cortex surrounds the inner medulla. The renal pelvis collects urine and leads to the ureter. Branches of the renal artery bring blood to the kidney and branches of the renal vein carry blood away. Locate these structures on a longitudinal section diagram."
+      ],
+      [
+        "The nephron and associated structures",
+        "A nephron includes the glomerulus within Bowman’s capsule, the proximal convoluted tubule, loop of Henle, distal convoluted tubule and collecting duct. The glomerulus is a capillary network supplied by an afferent arteriole and drained by an efferent arteriole. The collecting duct receives fluid from nephrons and carries it towards the renal pelvis."
+      ],
+      [
+        "Ultrafiltration at the glomerulus",
+        "Blood enters the glomerulus under relatively high hydrostatic pressure. Water and small dissolved substances are forced through the capillary endothelium, basement membrane and filtration slits between podocyte processes into Bowman’s space. Blood cells and most large plasma proteins are retained in the capillaries. The fluid entering Bowman’s space is glomerular filtrate."
+      ],
+      [
+        "The filtration barrier",
+        "The fenestrated capillary endothelium, basement membrane and filtration slits form a selective barrier. The barrier permits water and small solutes such as glucose, amino acids, ions and urea to pass, while retaining blood cells and most large plasma proteins. The high pressure is supported by the relative diameters of the afferent and efferent arterioles."
+      ],
+      [
+        "Selective reabsorption in the proximal convoluted tubule",
+        "Useful substances are selectively returned from filtrate to the blood. Sodium ions are actively transported from epithelial cells into surrounding tissue fluid by sodium-potassium pumps on the basolateral membrane. This maintains a sodium gradient that supports sodium-glucose and sodium-amino acid co-transport from the filtrate into cells. Glucose and amino acids then enter blood; water follows by osmosis and other ions are reabsorbed."
+      ],
+      [
+        "PCT structure and function",
+        "Proximal convoluted tubule epithelial cells have a brush border of microvilli to increase surface area, many mitochondria to supply ATP for active transport, and membrane transport proteins for selective reabsorption. A rich capillary network maintains concentration gradients and carries reabsorbed substances away."
+      ],
+      [
+        "Bowman’s capsule structure and function",
+        "Podocytes have specialised processes that form filtration slits around glomerular capillaries. Together with the basement membrane and capillary endothelium, these form the filtration barrier. Bowman’s capsule collects the filtrate and directs it into the proximal convoluted tubule."
+      ],
+      [
+        "Osmoreceptors and ADH release",
+        "When blood water potential falls, osmoreceptors in the hypothalamus detect the change. The hypothalamus stimulates release of antidiuretic hormone (ADH) from the posterior pituitary gland. ADH is carried in the blood to the kidneys. When blood water potential rises, less ADH is released."
+      ],
+      [
+        "ADH, aquaporins and collecting ducts",
+        "ADH binds to receptors on cells lining collecting ducts and causes aquaporin water-channel proteins to be inserted into their cell-surface membranes. The collecting ducts become more permeable to water, so more water is reabsorbed into the blood by osmosis. Urine volume decreases and urine becomes more concentrated. With less ADH, fewer aquaporins are present, less water is reabsorbed and a larger volume of dilute urine is produced."
+      ],
+      [
+        "Negative feedback in osmoregulation",
+        "Dehydration lowers blood water potential, increasing ADH release and water reabsorption. The resulting rise in blood water potential reduces the stimulus to the hypothalamus, so ADH release falls. This is negative feedback because the response reverses the initial deviation."
+      ],
+      [
+        "Cell signalling: glucagon receptor",
+        "When blood glucose concentration falls, pancreatic alpha cells release glucagon. Glucagon binds to a specific cell-surface receptor on a target liver cell. Binding causes a conformational change in the receptor, activating an associated G-protein."
+      ],
+      [
+        "cAMP and the enzyme cascade",
+        "The activated G-protein stimulates adenylyl cyclase, which catalyses formation of cyclic AMP (cAMP) from ATP. cAMP acts as a second messenger and activates protein kinase A. Protein kinase A initiates an enzyme cascade by phosphorylating and activating further enzymes. The cascade amplifies the original hormonal signal."
+      ],
+      [
+        "Glucagon response in liver cells",
+        "The enzyme cascade activates the final enzyme in the pathway, catalysing glycogen breakdown. Glucose is produced and released from liver cells into the blood, raising blood glucose concentration. The syllabus pathway focuses on glucagon signalling in liver cells."
+      ],
+      [
+        "Insulin and blood glucose negative feedback",
+        "When blood glucose concentration rises, pancreatic beta cells release insulin. Insulin promotes glucose uptake by muscle cells and promotes conversion of glucose to glycogen in liver and muscle cells. Liver cells reduce glucose release and store more glucose as glycogen. As blood glucose falls towards its normal range, insulin secretion decreases."
+      ],
+      [
+        "Glucagon and blood glucose negative feedback",
+        "When blood glucose concentration falls, pancreatic alpha cells release glucagon. Glucagon acts on liver cells, stimulating glycogen breakdown and glucose release into the blood. The rise in blood glucose reduces the stimulus for glucagon secretion, completing negative feedback. Glucagon's syllabus role here is its action on liver cells."
+      ],
+      [
+        "Glucose test strips: enzyme chemistry",
+        "Glucose oxidase catalyses oxidation of glucose, producing gluconic acid and hydrogen peroxide. In a colour test, peroxidase uses hydrogen peroxide to oxidise a chromogen, producing a colour change. The colour intensity is compared with standards to estimate glucose concentration."
+      ],
+      [
+        "Biosensors for glucose",
+        "A glucose biosensor uses glucose oxidase to catalyse glucose oxidation. The reaction generates a measurable electrical signal, commonly through electron transfer involving the enzyme reaction products. The signal is calibrated against glucose concentration. A biosensor gives a quantitative reading rather than relying only on visual colour matching."
+      ],
+      [
+        "Blood and urine glucose tests",
+        "Test strips can be used with blood or urine samples. A calibrated colour scale or biosensor signal estimates glucose concentration. Urine glucose can indicate that blood glucose has exceeded the kidney's reabsorptive capacity, but urine testing is not a direct substitute for measuring current blood glucose and must be interpreted appropriately."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Define homeostasis.",
+        "answer": "The maintenance of a relatively constant internal environment within narrow limits despite changes in internal or external conditions.",
+        "mark_points": [
+          "Relatively constant internal environment",
+          "Within narrow limits",
+          "Despite changes"
+        ]
+      },
+      {
+        "question": "Explain why homeostasis is important to mammals.",
+        "answer": "It keeps conditions near the optimum for enzyme activity and normal cell metabolism.",
+        "mark_points": [
+          "Near optimum conditions",
+          "Enzyme activity/metabolism maintained"
+        ]
+      },
+      {
+        "question": "Put the components of a homeostatic pathway in order.",
+        "answer": "Stimulus → receptor → coordination system → effector → response.",
+        "mark_points": [
+          "Stimulus",
+          "Receptor",
+          "Coordination system",
+          "Effector/response"
+        ]
+      },
+      {
+        "question": "What is negative feedback?",
+        "answer": "A response that opposes the initial change and reduces the deviation from the normal range.",
+        "mark_points": [
+          "Opposes initial change",
+          "Reduces deviation"
+        ]
+      },
+      {
+        "question": "Distinguish nervous and endocrine coordination.",
+        "answer": "Nervous coordination uses impulses and neurotransmitters and is usually rapid and short-lived. Endocrine coordination uses hormones carried in blood and is usually slower and longer-lasting.",
+        "mark_points": [
+          "Impulses/neurotransmitters vs hormones/blood",
+          "Rapid/short vs slower/longer"
+        ]
+      },
+      {
+        "question": "State where urea is produced and how it is formed.",
+        "answer": "Urea is produced in the liver from ammonia formed during deamination of excess amino acids.",
+        "mark_points": [
+          "Liver",
+          "Deamination of excess amino acids",
+          "Ammonia converted to urea"
+        ]
+      },
+      {
+        "question": "Name the outer covering and central urine-collecting region of the kidney.",
+        "answer": "Fibrous capsule; renal pelvis.",
+        "mark_points": [
+          "Fibrous capsule",
+          "Renal pelvis"
+        ]
+      },
+      {
+        "question": "Distinguish the renal cortex from the renal medulla.",
+        "answer": "The cortex is the outer region beneath the fibrous capsule; the medulla is the inner region surrounding the renal pelvis.",
+        "mark_points": [
+          "Cortex outer",
+          "Medulla inner"
+        ]
+      },
+      {
+        "question": "List the nephron structures in the order filtrate passes through them after entering Bowman’s capsule.",
+        "answer": "Proximal convoluted tubule → loop of Henle → distal convoluted tubule → collecting duct.",
+        "mark_points": [
+          "PCT",
+          "Loop of Henle",
+          "DCT",
+          "Collecting duct"
+        ]
+      },
+      {
+        "question": "Define ultrafiltration.",
+        "answer": "The pressure-driven filtration of water and small dissolved substances from glomerular blood into Bowman’s space.",
+        "mark_points": [
+          "Pressure-driven",
+          "Water and small solutes",
+          "Into Bowman’s space"
+        ]
+      },
+      {
+        "question": "Why are blood cells and most plasma proteins absent from glomerular filtrate?",
+        "answer": "They are too large to pass through the filtration barrier formed by capillary endothelium, basement membrane and podocyte filtration slits.",
+        "mark_points": [
+          "Too large",
+          "Filtration barrier"
+        ]
+      },
+      {
+        "question": "Explain why hydrostatic pressure is high in the glomerulus.",
+        "answer": "The afferent arteriole has a wider lumen than the efferent arteriole, creating resistance to blood leaving and maintaining high glomerular hydrostatic pressure.",
+        "mark_points": [
+          "Afferent wider than efferent",
+          "Resistance to outflow",
+          "High pressure"
+        ]
+      },
+      {
+        "question": "Give three substances that enter glomerular filtrate.",
+        "answer": "Any three: water, glucose, amino acids, mineral ions or urea.",
+        "mark_points": [
+          "Any three correct small solutes"
+        ]
+      },
+      {
+        "question": "Explain how the proximal convoluted tubule reabsorbs glucose.",
+        "answer": "Sodium ions are actively pumped from PCT cells into tissue fluid, maintaining a sodium gradient. Sodium and glucose enter from the filtrate by co-transport; glucose then moves into the blood.",
+        "mark_points": [
+          "Na+ gradient established by active transport",
+          "Na+/glucose co-transport",
+          "Glucose enters blood"
+        ]
+      },
+      {
+        "question": "How does water follow reabsorbed solutes from the PCT?",
+        "answer": "Solute reabsorption lowers water potential in surrounding tissue fluid and blood, so water moves out of the filtrate by osmosis.",
+        "mark_points": [
+          "Solute reabsorption",
+          "Water potential gradient",
+          "Osmosis"
+        ]
+      },
+      {
+        "question": "Relate two PCT adaptations to selective reabsorption.",
+        "answer": "Microvilli increase surface area; numerous mitochondria supply ATP for active transport. Transport proteins enable selective movement of solutes.",
+        "mark_points": [
+          "Any two correct structure-function links"
+        ]
+      },
+      {
+        "question": "Describe the role of podocytes in ultrafiltration.",
+        "answer": "Podocyte processes form filtration slits around glomerular capillaries, contributing to the barrier that retains cells and large proteins while allowing small solutes through.",
+        "mark_points": [
+          "Processes around capillaries",
+          "Filtration slits",
+          "Selective barrier"
+        ]
+      },
+      {
+        "question": "What detects a fall in blood water potential?",
+        "answer": "Osmoreceptors in the hypothalamus.",
+        "mark_points": [
+          "Osmoreceptors",
+          "Hypothalamus"
+        ]
+      },
+      {
+        "question": "Where is ADH released into the blood?",
+        "answer": "From the posterior pituitary gland.",
+        "mark_points": [
+          "Posterior pituitary"
+        ]
+      },
+      {
+        "question": "Explain how ADH changes the permeability of the collecting duct.",
+        "answer": "ADH binds to receptors on collecting-duct cells and causes aquaporin water channels to be inserted into their membranes, increasing water permeability.",
+        "mark_points": [
+          "ADH binds receptor",
+          "Aquaporins inserted",
+          "Permeability increases"
+        ]
+      },
+      {
+        "question": "Predict the urine produced when ADH secretion increases.",
+        "answer": "A smaller volume of more concentrated urine, because more water is reabsorbed from collecting ducts.",
+        "mark_points": [
+          "Lower volume",
+          "More concentrated",
+          "More water reabsorbed"
+        ]
+      },
+      {
+        "question": "Explain the negative-feedback response to dehydration.",
+        "answer": "Low blood water potential is detected by hypothalamic osmoreceptors, increasing ADH release. Collecting ducts insert more aquaporins, increasing water reabsorption. Blood water potential rises, reducing ADH secretion.",
+        "mark_points": [
+          "Detected by hypothalamus",
+          "ADH increases",
+          "Aquaporins/water reabsorption increase",
+          "Stimulus reduced"
+        ]
+      },
+      {
+        "question": "Outline the glucagon cell-signalling pathway from receptor binding to cAMP formation.",
+        "answer": "Glucagon binds a cell-surface receptor, causing a conformational change. A G-protein is activated and stimulates adenylyl cyclase, which forms cAMP from ATP.",
+        "mark_points": [
+          "Receptor binding/conformational change",
+          "G-protein activation",
+          "Adenylyl cyclase stimulated",
+          "cAMP formed"
+        ]
+      },
+      {
+        "question": "What is the role of cAMP in glucagon signalling?",
+        "answer": "cAMP is a second messenger that activates protein kinase A, initiating an enzyme cascade.",
+        "mark_points": [
+          "Second messenger",
+          "Activates protein kinase A",
+          "Initiates cascade"
+        ]
+      },
+      {
+        "question": "Explain signal amplification in the glucagon pathway.",
+        "answer": "Each activated kinase can phosphorylate and activate many molecules of the next enzyme, so a small hormone signal produces a larger cellular response.",
+        "mark_points": [
+          "Phosphorylation activates enzymes",
+          "Each activates many downstream molecules",
+          "Amplification"
+        ]
+      },
+      {
+        "question": "What is the final cellular response in the glucagon pathway described in the syllabus?",
+        "answer": "Activation of the final enzyme that catalyses glycogen breakdown in liver cells.",
+        "mark_points": [
+          "Final enzyme activated",
+          "Glycogen breakdown",
+          "Liver cells"
+        ]
+      },
+      {
+        "question": "Compare the effects of insulin and glucagon on blood glucose concentration.",
+        "answer": "Insulin lowers blood glucose by promoting glucose uptake into muscle cells and glycogen formation in liver cells. Glucagon raises blood glucose by stimulating glycogen breakdown in liver cells.",
+        "mark_points": [
+          "Insulin lowers blood glucose",
+          "Muscle uptake/liver glycogen formation",
+          "Glucagon raises blood glucose",
+          "Liver glycogen breakdown"
+        ]
+      },
+      {
+        "question": "Why is glucagon's action on liver cells important in blood glucose regulation?",
+        "answer": "Liver cells break down glycogen and release glucose into the blood, increasing blood glucose concentration.",
+        "mark_points": [
+          "Glycogen breakdown in liver",
+          "Glucose released to blood"
+        ]
+      },
+      {
+        "question": "State the roles of glucose oxidase and peroxidase in a colour test strip.",
+        "answer": "Glucose oxidase produces hydrogen peroxide during glucose oxidation; peroxidase uses hydrogen peroxide to oxidise a chromogen, producing colour.",
+        "mark_points": [
+          "Glucose oxidase produces H2O2",
+          "Peroxidase oxidises chromogen",
+          "Colour change"
+        ]
+      },
+      {
+        "question": "How does a colour test strip estimate glucose concentration?",
+        "answer": "The intensity of the colour produced is compared with calibrated colour standards; greater colour intensity corresponds to a higher glucose concentration within the test's range.",
+        "mark_points": [
+          "Colour intensity measured",
+          "Compared with standards",
+          "Relates to concentration"
+        ]
+      },
+      {
+        "question": "How does a glucose biosensor differ from a simple colour strip?",
+        "answer": "A biosensor measures an electrical signal generated by the glucose oxidase reaction and uses calibration to estimate concentration, rather than relying only on visual colour comparison.",
+        "mark_points": [
+          "Electrical signal",
+          "Enzyme-based reaction",
+          "Calibrated concentration"
+        ]
+      },
+      {
+        "question": "Give one limitation of urine glucose testing as an estimate of blood glucose.",
+        "answer": "Glucose appears in urine when blood glucose exceeds the kidney's reabsorptive capacity, so urine glucose does not directly indicate the current blood glucose concentration.",
+        "mark_points": [
+          "Renal threshold/reabsorptive capacity",
+          "Not a direct current blood measurement"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/kidney-anatomy.svg",
+        "role": "kidney anatomy"
+      },
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/nephron-map.svg",
+        "role": "nephron map"
+      },
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/glomerular-filtration.svg",
+        "role": "glomerular filtration"
+      },
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/proximal-tubule-reabsorption.svg",
+        "role": "proximal tubule reabsorption"
+      },
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/adh-osmoregulation.svg",
+        "role": "adh osmoregulation"
+      },
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/glucagon-camp-signalling.svg",
+        "role": "glucagon camp signalling"
+      },
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/blood-glucose-feedback.svg",
+        "role": "blood glucose feedback"
+      },
+      {
+        "path": "/learning-assets/biology/9700/homeostasis/glucose-test-strip.svg",
+        "role": "glucose test strip"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions are original learning checks, not official Cambridge questions or mark schemes.",
+      "Diagrams are explanatory schematics, not authentic photomicrographs or electron micrographs."
+    ]
+  }
+}
