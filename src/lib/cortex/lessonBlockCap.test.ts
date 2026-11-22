@@ -191,3 +191,23 @@ describe("block ceiling matches the server persist limit", () => {
     expect(failuresFor(37, {})).toContain("too-many-blocks");
   });
 });
+
+import { missingSectionTypes, requiredSectionTypes } from "./lessonQuality";
+
+describe("required block types per section", () => {
+  it("places the deep-lesson stages across a seven-section lesson", () => {
+    const all = Array.from({ length: 7 }, (_, i) => requiredSectionTypes(i, 7)).flat();
+    for (const type of ["objective", "map", "structure", "mechanism", "synthesis", "curiosity", "practice", "mistake", "summary"]) expect(all).toContain(type);
+    expect(requiredSectionTypes(0, 7)).toEqual(["objective", "map"]);
+    expect(requiredSectionTypes(6, 7)).toEqual(["curiosity", "practice", "mistake", "summary"]);
+  });
+  it("requires nothing for a single-section lesson and still covers short plans", () => {
+    expect(requiredSectionTypes(0, 1)).toEqual([]);
+    const four = Array.from({ length: 4 }, (_, i) => requiredSectionTypes(i, 4)).flat();
+    for (const type of ["map", "structure", "mechanism", "synthesis", "curiosity"]) expect(four).toContain(type);
+  });
+  it("reports only the missing types, honouring aliases", () => {
+    expect(missingSectionTypes(["concept", "objective"], 0, 7)).toEqual(["map"]);
+    expect(missingSectionTypes(["recap", "curiosity", "practice", "mistake"], 6, 7)).toEqual([]);
+  });
+});

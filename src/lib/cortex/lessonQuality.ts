@@ -80,6 +80,27 @@ export function ensureRequiredDiagram<T extends { type?: unknown; content?: unkn
   return [...withoutBadDiagrams.slice(0, at), { type: "diagram", title: "Diagram", content: required }, ...withoutBadDiagrams.slice(at)];
 }
 
+/**
+ * Block types each section of a multi-section lesson must contain, so a deep lesson always carries the
+ * big-picture / structure / mechanism / synthesis / go-deeper stages the Learn page labels by type.
+ * The model ignored a soft placement hint (production 2026-11-22), so this is checked per section.
+ */
+export function requiredSectionTypes(index: number, count: number): string[] {
+  if (count < 2) return [];
+  const required: string[] = [];
+  if (index === 0) required.push("objective", "map");
+  if (index === 1) required.push("structure");
+  if (count > 2 && index === Math.min(2, count - 2)) required.push("mechanism");
+  if (count > 2 && index === count - 2) required.push("synthesis");
+  if (index === count - 1) required.push("curiosity", "practice", "mistake", "summary");
+  return required;
+}
+
+export function missingSectionTypes(blockTypes: string[], index: number, count: number): string[] {
+  const present = new Set(blockTypes.map((type) => normalizeLessonBlockType(type)));
+  return requiredSectionTypes(index, count).filter((type) => !present.has(type));
+}
+
 /** The section prompt asks for 3-5 blocks; fewer than 3 in a multi-section lesson is a thin section. */
 export const MIN_SECTION_BLOCKS = 3;
 export function isSectionTooThin(blockCount: number, sectionCount: number): boolean {
