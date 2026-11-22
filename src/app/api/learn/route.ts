@@ -566,7 +566,7 @@ export async function POST(req: Request) {
         "Return ONLY JSON with a top-level title string and blocks array; each block must contain type, optional title, and content.",
         "Use 3-5 substantive blocks. Content must be at least 40 characters per block.",
         `SECTION-SPECIFIC REQUIREMENTS: ${buildLocalSectionRequirements(generationSectionIndex, generationSectionCount)}`,
-        "BLOCK TYPES: set each block's type to exactly one of: objective, concept, definition, formula, example, checkpoint, exam, mistake, application, synthesis, curiosity, summary. Use the exact words: the first section must contain an objective block; the second-to-last section must contain a synthesis block; the final section must contain a curiosity block (further questions to explore) plus exam, mistake and summary blocks.",
+        "BLOCK TYPES: set each block's type to exactly one of: objective, map, prior, concept, definition, structure, mechanism, formula, example, comparison, checkpoint, misconception, application, exam, mistake, synthesis, curiosity, summary, practice, next. Use the exact words. Section placement: the first section opens with objective and map (the big picture); core sections use concept, structure, mechanism, formula, example and checkpoint; the second-to-last section includes a synthesis block; the final section includes curiosity (further questions to explore), practice, exam, mistake and summary blocks.",
         `TOPIC ANCHORING: the lesson is judged on how often its blocks stay on "${request.topic}". Name "${request.topic}" explicitly in the title or opening sentence of most blocks.`,
       ].join("\n\n");
       let rawSection: string | null = null;
