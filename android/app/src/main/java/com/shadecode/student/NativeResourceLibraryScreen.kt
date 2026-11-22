@@ -125,7 +125,7 @@ fun NativeResourceLibraryScreen(
             Text("Files saved here stay on this device and can be reopened without internet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(20.dp)) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Add an offline resource", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Resource title") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
@@ -169,13 +169,13 @@ fun NativeResourceLibraryScreen(
         }
         if (resources.isEmpty()) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(18.dp)) {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
                     Text("Your offline library is empty. Import a PDF or text resource while you have the file available.", Modifier.padding(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
         items(resources, key = { it.accountId + ":" + it.resourceId }) { resource ->
-            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(18.dp)) {
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(resource.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(listOf(resource.subject, resource.qualification, resource.syllabus, resource.topic).filter { it.isNotBlank() }.joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
