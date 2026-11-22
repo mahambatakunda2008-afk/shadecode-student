@@ -34,12 +34,24 @@ export class ShadeNetStore {
               const cursorRequest = existing.openCursor();
               cursorRequest.onsuccess = () => {
                 const cursor = cursorRequest.result;
-                if (!cursor) return;
-                legacy.put(cursor.value);
-                cursor.continue();
+                if (cursor) {
+                  legacy.put(cursor.value);
+                  cursor.continue();
+                  return;
+                }
+                // Delete only after the cursor has copied every record. Both
+                // operations remain inside the versionchange transaction.
+                db.deleteObjectStore(STORE);
+                const resources = db.createObjectStore(STORE, { keyPath: "contentHash" });
+                resources.createIndex("type", "metadata.type", { unique: false });
+                resources.createIndex("subject", "metadata.subject", { unique: false });
               };
+            } else {
+              db.deleteObjectStore(STORE);
+              const resources = db.createObjectStore(STORE, { keyPath: "contentHash" });
+              resources.createIndex("type", "metadata.type", { unique: false });
+              resources.createIndex("subject", "metadata.subject", { unique: false });
             }
-            db.deleteObjectStore(STORE);
           }
         }
         if (!db.objectStoreNames.contains(STORE)) {
