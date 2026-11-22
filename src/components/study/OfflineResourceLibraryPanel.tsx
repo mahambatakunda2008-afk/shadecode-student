@@ -34,11 +34,13 @@ export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Su
   useEffect(() => {
     let active = true;
     void refresh().catch(() => { if (active) setMessage("Offline storage is unavailable in this browser."); });
-    return () => {
-      active = false;
-      if (opened?.url) URL.revokeObjectURL(opened.url);
-    };
-  }, [refresh, opened?.url]);
+    return () => { active = false; };
+  }, [refresh]);
+
+  useEffect(() => {
+    const url = opened?.url;
+    return () => { if (url) URL.revokeObjectURL(url); };
+  }, [opened?.url]);
 
   async function importFiles(files: FileList | null) {
     if (!files?.length || busy) return;
