@@ -12,3 +12,5 @@ export * from "./retrieval";
 export * from "./source-adapters";
 
 export * from "./offline-library";
+
+export * from "./transfer-store";
