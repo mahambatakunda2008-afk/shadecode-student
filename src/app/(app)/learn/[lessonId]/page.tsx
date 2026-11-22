@@ -373,15 +373,15 @@ export default function LessonDetailPage() {
   }
 
   async function handleDownload() {
-    if (!lesson || downloading) return;
+    if (!lesson || !currentUser || downloading) return;
     setDownloading(true); setDownloadProgress(0);
-    try { await downloadManager.downloadAll(lesson.id, lesson, currentUser!, undefined, undefined, p => setDownloadProgress(p)); setShowToast(true); setTimeout(() => setShowToast(false), 2500); }
+    try { await downloadManager.downloadAll(lesson.id, lesson, currentUser, undefined, undefined, p => setDownloadProgress(p)); setShowToast(true); setTimeout(() => setShowToast(false), 2500); }
     catch (e) { console.error("Download failed:", e); }
     finally { setDownloading(false); setDownloadProgress(0); }
   }
 
   if (loading) return <div className="lesson-loading"><div className="spinner" /></div>;
-  if (error || !lesson) return <div className="lesson-error"><p>{error ?? "Lesson not found."}</p><div><Link href="/learn">← Back to Learn</Link>{error && accessToken && <button onClick={() => void loadLesson(accessToken)}>Retry</button>}</div></div>;
+  if (error || !lesson) return <div className="lesson-error"><p>{error ?? "Lesson not found."}</p><div><Link href="/learn">← Back to Learn</Link>{error && accessToken && <button onClick={() => void loadLesson(accessToken, currentUser)}>Retry</button>}</div></div>;
 
   const t = theme(lesson.subject); const Icon = t.icon; const d = DIFF[lesson.difficulty] ?? DIFF.medium;
   const blocks = Array.isArray(lesson.blocks) ? lesson.blocks : [];
