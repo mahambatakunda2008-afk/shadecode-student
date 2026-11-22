@@ -194,22 +194,32 @@ export class OfflineResourceLibrary {
       const offset = entry.offset;
       const length = entry.length;
       if (!metadata || typeof metadata.title !== "string" || !metadata.title.trim() || metadata.title.length > 500 ||
-          typeof metadata.mimeType !== "string" || !["application/pdf", "text/plain", "text/markdown"].includes(metadata.mimeType) || !Number.isSafeInteger(offset) || !Number.isSafeInteger(length) ||
+          typeof metadata.mimeType !== "string" || !["application/pdf", "text/plain", "text/markdown"].includes(metadata.mimeType) ||
+          typeof metadata.sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(metadata.sha256) ||
+          metadata.byteLength !== length || !Number.isSafeInteger(offset) || !Number.isSafeInteger(length) ||
           offset! < 0 || length! <= 0 || length! > MAX_RESOURCE_BYTES ||
           payloadStart + offset! + length! > pack.size) {
         throw new Error("The resource pack contains an invalid resource entry.");
       }
+      const payload = pack.slice(payloadStart + offset!, payloadStart + offset! + length!, metadata.mimeType);
+      if (await sha256(payload) !== metadata.sha256.toLowerCase()) {
+        throw new Error(`The resource pack contains corrupted data for "${metadata.title}". No files were imported.`);
+      }
       if (metadata.mimeType === "application/pdf") {
-        const signature = new TextDecoder().decode(await pack.slice(payloadStart + offset!, payloadStart + offset! + 5).arrayBuffer());
+        const signature = new TextDecoder().decode(await payload.slice(0, 5).arrayBuffer());
         if (signature !== "%PDF-") throw new Error("The resource pack contains a file with an invalid PDF signature.");
       }
       ranges.push({ start: offset!, end: offset! + length! });
     }
     ranges.sort((left, right) => left.start - right.start);
-    for (let index = 1; index < ranges.length; index += 1) {
-      if (ranges[index].start < ranges[index - 1].end) {
-        throw new Error("The resource pack contains overlapping file data.");
+    for (let index = 0; index < ranges.length; index += 1) {
+      if ((index === 0 && ranges[index].start !== 0) ||
+          (index > 0 && ranges[index].start !== ranges[index - 1].end)) {
+        throw new Error("The resource pack contains overlapping, missing or unreferenced file data.");
       }
+    }
+    if (ranges[ranges.length - 1].end !== pack.size - payloadStart) {
+      throw new Error("The resource pack contains trailing or unreferenced data.");
     }
 
     let imported = 0;
