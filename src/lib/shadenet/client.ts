@@ -1,4 +1,4 @@
-import { acceptChunk, createTransfer, isComplete, orderedChunks, verifyResource, type TransferState } from "./resource-transfer";
+import { acceptChunk, createTransfer, isComplete, orderedChunks, verifyResource, verifyTransfer, type TransferState } from "./resource-transfer";
 import { canShare, type ResourcePolicy } from "./resource-policy";
 import type { ResourceChunk, ResourceRequest } from "./protocol";
 
@@ -29,7 +29,7 @@ export class ShadeNetResourceClient {
         for await (const chunk of source.request(request)) {
           state = acceptChunk(state, chunk);
         }
-        if (!isComplete(state)) continue;
+        if (!isComplete(state) || !(await verifyTransfer(state, expectedSha256))) continue;
         const parts = orderedChunks(state);
         const totalBytes = parts.reduce((sum, part) => sum + part.byteLength, 0);
         const data = new Uint8Array(totalBytes);
