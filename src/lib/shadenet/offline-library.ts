@@ -66,10 +66,10 @@ export class OfflineResourceLibrary {
     });
   }
 
-  async importFile(file: Blob, details: Omit<OfflineResourceMetadata, "id" | "mimeType" | "byteLength" | "sha256" | "importedAt"> & { mimeType?: string }): Promise<OfflineResourceMetadata> {
+  async importFile(file: Blob, details: Omit<OfflineResourceMetadata, "id" | "mimeType" | "byteLength" | "sha256" | "importedAt" | "trust"> & { mimeType?: string; trust?: OfflineResourceTrust }): Promise<OfflineResourceMetadata> {
     if (!file.size) throw new Error("The selected resource is empty.");
     if (file.size > MAX_RESOURCE_BYTES) throw new Error("This resource exceeds the 150 MB per-file offline limit.");
-    const mimeType = details.mimeType || (file instanceof File ? file.type : "") || "application/octet-stream";
+    const mimeType = details.mimeType || (typeof File !== "undefined" && file instanceof File ? file.type : "") || "application/octet-stream";
     if (!["application/pdf", "text/plain", "text/markdown"].includes(mimeType)) {
       throw new Error("Supported resource formats are PDF, plain text and Markdown.");
     }
@@ -136,12 +136,12 @@ export class OfflineResourceLibrary {
   }
 
   async requestPersistentStorage(): Promise<boolean> {
-    if (!navigator.storage?.persist) return false;
+    if (typeof navigator === "undefined" || !navigator.storage?.persist) return false;
     return navigator.storage.persist();
   }
 
   async storageEstimate(): Promise<{ usage?: number; quota?: number }> {
-    if (!navigator.storage?.estimate) return {};
+    if (typeof navigator === "undefined" || !navigator.storage?.estimate) return {};
     const estimate = await navigator.storage.estimate();
     return { usage: estimate.usage, quota: estimate.quota };
   }
