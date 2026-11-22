@@ -8,7 +8,7 @@ const DB_NAME = "shadecode-offline";
 const DB_VERSION = 6;
 
 export interface OfflineLesson {
-  id: string; ownerUserId: string; title: string; subject: string; subjectId?: string; topic?: string; description?: string;
+  id: string; ownerUserId?: string; title: string; subject: string; subjectId?: string; topic?: string; description?: string;
   blocks?: Array<Record<string, unknown>>; difficulty?: string;
   downloadedAt: string; lastSyncedAt?: string; size: number;
   progress?: number; completed?: boolean;
@@ -59,13 +59,13 @@ class OfflineStorage {
     await this.init();
     return this.put("lessons", lesson);
   }
-  async getLesson(id: string, userId: string): Promise<OfflineLesson | null> {
+  async getLesson(id: string, userId?: string): Promise<OfflineLesson | null> {
     if (!userId) return null;
     await this.init();
     const lesson = await this.get<OfflineLesson>("lessons", id);
     return isOfflineLessonOwnedBy(lesson, userId) ? lesson : null;
   }
-  async getAllLessons(userId: string): Promise<OfflineLesson[]> {
+  async getAllLessons(userId?: string): Promise<OfflineLesson[]> {
     if (!userId) return [];
     await this.init();
     const lessons = await this.getAll<OfflineLesson>("lessons");
