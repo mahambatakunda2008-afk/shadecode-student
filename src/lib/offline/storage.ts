@@ -8,7 +8,7 @@ const DB_NAME = "shadecode-offline";
 const DB_VERSION = 6;
 
 export interface OfflineLesson {
-  id: string; title: string; subject: string; subjectId?: string; topic?: string; description?: string;
+  id: string; ownerUserId: string; title: string; subject: string; subjectId?: string; topic?: string; description?: string;
   blocks?: Array<Record<string, unknown>>; difficulty?: string;
   downloadedAt: string; lastSyncedAt?: string; size: number;
   progress?: number; completed?: boolean;
@@ -50,9 +50,23 @@ class OfflineStorage {
     });
     return this.initPromise;
   }
-  async saveLesson(lesson: OfflineLesson): Promise<void> { await this.init(); return this.put("lessons", lesson); }
-  async getLesson(id: string): Promise<OfflineLesson | null> { await this.init(); return this.get("lessons", id); }
-  async getAllLessons(): Promise<OfflineLesson[]> { await this.init(); return this.getAll("lessons"); }
+  async saveLesson(lesson: OfflineLesson): Promise<void> {
+    if (!lesson.ownerUserId) throw new Error("Offline lessons require an authenticated owner");
+    await this.init();
+    return this.put("lessons", lesson);
+  }
+  async getLesson(id: string, userId: string): Promise<OfflineLesson | null> {
+    if (!userId) return null;
+    await this.init();
+    const lesson = await this.get<OfflineLesson>("lessons", id);
+    return lesson?.ownerUserId === userId ? lesson : null;
+  }
+  async getAllLessons(userId: string): Promise<OfflineLesson[]> {
+    if (!userId) return [];
+    await this.init();
+    const lessons = await this.getAll<OfflineLesson>("lessons");
+    return lessons.filter(lesson => lesson.ownerUserId === userId);
+  }
   async deleteLesson(id: string): Promise<void> { await this.init(); return this.delete("lessons", id); }
   async saveNotes(notes: OfflineNotes): Promise<void> { await this.init(); return this.put("notes", notes); }
   async getNotes(lessonId: string): Promise<OfflineNotes | null> { await this.init(); return this.get("notes", lessonId); }
@@ -101,7 +115,7 @@ class OfflineStorage {
   async getUnsyncedSubjects(): Promise<OfflineSubject[]> { await this.init(); return this.unsynced("subjects"); }
   async markSubjectSynced(subjectId: string, userId: string): Promise<void> { const subject = await this.getSubjectForUser(subjectId, userId); if (subject) { subject.synced = true; subject.lastSyncedAt = new Date().toISOString(); await this.saveSubject(subject); } }
   async deleteSubject(subjectId: string, userId: string): Promise<void> { const subject = await this.getSubjectForUser(subjectId, userId); if (!subject) return; await this.init(); return this.delete("subjects", subjectId); }
-  async getStorageSize(): Promise<number> { const lessons = await this.getAllLessons(); return lessons.reduce((sum, lesson) => sum + lesson.size, 0); }
+  async getStorageSize(userId: string): Promise<number> { const lessons = await this.getAllLessons(userId); return lessons.reduce((sum, lesson) => sum + lesson.size, 0); }
   private async unsynced(store: string): Promise<any[]> { return new Promise((resolve, reject) => { const request = this.db!.transaction([store], "readonly").objectStore(store).getAll(); request.onerror = () => reject(request.error); request.onsuccess = () => resolve((request.result || []).filter((row: { synced?: boolean }) => row.synced === false)); }); }
   private async put(storeName: string, value: unknown): Promise<void> { return new Promise((resolve, reject) => { const request = this.db!.transaction([storeName], "readwrite").objectStore(storeName).put(value); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(); }); }
   private async get<T>(storeName: string, key: IDBValidKey): Promise<T | null> { return new Promise((resolve, reject) => { const request = this.db!.transaction([storeName], "readonly").objectStore(storeName).get(key); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(request.result || null); }); }
