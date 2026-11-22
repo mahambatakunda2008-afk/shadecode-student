@@ -147,6 +147,15 @@ fun NativeResourceLibraryScreen(
         NativeOfflinePdfReader(
             file = activePdfFile!!,
             title = activeTitle,
+            initialPage = activeResource?.lastPage ?: 1,
+            onPageChanged = { page ->
+                val resource = activeResource ?: return@NativeOfflinePdfReader
+                scope.launch {
+                    withContext(Dispatchers.IO) {
+                        NativeOfflineResourceStore.markOpened(database, session.userId, resource.resourceId, page)
+                    }
+                }
+            },
             onBack = { activePdfFile = null; activeResource = null; annotations = emptyList() },
         )
         return
