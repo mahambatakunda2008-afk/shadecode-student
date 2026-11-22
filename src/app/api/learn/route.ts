@@ -598,9 +598,7 @@ ${rawSection?.slice(0, 14000) || "No usable candidate was returned."}
 
 Repair only the defective section. Preserve correct material where possible. Do not shorten the teaching merely to satisfy the schema. Return ONLY valid JSON.`;
         const attemptStartedAt = Date.now();
-        // Reasoning models (gpt-oss, Gemini thinking) spend part of this budget thinking; 2200 truncated
-        // section JSON mid-sentence. The final section carries 5-8 blocks.
-        rawSection = await executeCortexText(sectionRequestPrompt, generationSectionIndex === generationSectionCount - 1 ? 4800 : 3800, {
+        rawSection = await executeCortexText(sectionRequestPrompt, 2200, {
           operation: attempt === 0 ? "lesson.generate_section" : "lesson.repair_section",
           userId: user.id, feature: "lesson_assistant", subfeature: attempt === 0 ? "generate_lesson_section" : "repair_lesson_section",
           // Give each provider enough time to finish a structured lesson section. Six seconds was

@@ -213,7 +213,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
     const lineCount = content.split(/\n+/).map(line => line.trim()).filter(Boolean).length;
     const sentenceCount = (content.match(/[.!?](?:\s|$)/g) ?? []).length;
     const avgSentenceLength = sentenceCount ? content.length / sentenceCount : content.length;
-    return (content.length > 700 && lineCount < 3) || (content.length > 1100 && lineCount < 4) || (avgSentenceLength > 260 && lineCount < 3);
+    return (content.length > 700 && lineCount < 3) || (content.length > 1100 && lineCount < 4) || avgSentenceLength > 260;
   });
   if (wallOfText) failures.push("wall-of-text");
 
