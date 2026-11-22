@@ -211,3 +211,12 @@ describe("required block types per section", () => {
     expect(missingSectionTypes(["recap", "curiosity", "practice", "mistake"], 6, 7)).toEqual([]);
   });
 });
+
+describe("wall-of-text false positives", () => {
+  const request = { intent: "teach", subject: "Physics", topic: "Waves", prompt: "Waves", requestedParts: [] } as never;
+  it("does not flag a long bulleted list that has no sentence punctuation", () => {
+    const list = Array.from({ length: 8 }, (_, i) => `- Wave property number ${i} with its symbol and unit`).join("\n");
+    expect(list.length).toBeGreaterThan(260);
+    expect(lessonQualityFailures({ title: "Waves", blocks: [{ type: "concept", title: "Properties", content: list }] }, request).failures).not.toContain("wall-of-text");
+  });
+});
