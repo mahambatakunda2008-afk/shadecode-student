@@ -96,22 +96,41 @@ class LocalFirstDB {
 
   async putRecordAndOperation(record: LocalRecord, operation: LocalOperation): Promise<void> { await this.init(); await new Promise<void>((resolve, reject) => { const transaction = this.db!.transaction([STORES.records, STORES.operations], "readwrite"); transaction.objectStore(STORES.records).put(record); transaction.objectStore(STORES.operations).put(operation); transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error); transaction.onabort = () => reject(transaction.error ?? new Error("Local mutation aborted")); }); }
   async getRecord<T = unknown>(id: string): Promise<LocalRecord<T> | null> { return this.transaction<LocalRecord<T> | null>(STORES.records, "readonly", (store, resolve, reject) => { const request = store.get(id); request.onsuccess = () => resolve(request.result ?? null); request.onerror = () => reject(request.error); }); }
-  async deleteRecordIfOwned(id: string, userId: string): Promise<boolean> {
-    if (!id || !userId) return false;
+  async deleteRecordAndOperationsIfOwned(
+    id: string,
+    userId: string,
+    entity: LocalRecord["entity"],
+    entityId: string,
+  ): Promise<boolean> {
+    if (!id || !userId || !entity || !entityId) return false;
     await this.init();
     return new Promise<boolean>((resolve, reject) => {
-      const transaction = this.db!.transaction(STORES.records, "readwrite");
-      const store = transaction.objectStore(STORES.records);
-      const request = store.get(id);
+      const transaction = this.db!.transaction([STORES.records, STORES.operations], "readwrite");
+      const records = transaction.objectStore(STORES.records);
+      const operations = transaction.objectStore(STORES.operations);
+      const recordRequest = records.get(id);
+      const operationsRequest = operations.index("userId").getAll(userId);
+      let recordReady = false;
+      let operationsReady = false;
       let deleted = false;
-      request.onsuccess = () => {
-        const record = request.result as LocalRecord | undefined;
-        if (record?.userId === userId) {
-          store.delete(id);
+      const finish = () => {
+        if (!recordReady || !operationsReady) return;
+        const record = recordRequest.result as LocalRecord | undefined;
+        if (record && record.userId !== userId) return;
+        if (record?.entity === entity) {
+          records.delete(id);
           deleted = true;
         }
+        for (const operation of operationsRequest.result as LocalOperation[]) {
+          if (operation.entity === entity && operation.entityId === entityId) {
+            operations.delete(operation.id);
+          }
+        }
       };
-      request.onerror = () => reject(request.error);
+      recordRequest.onsuccess = () => { recordReady = true; finish(); };
+      operationsRequest.onsuccess = () => { operationsReady = true; finish(); };
+      recordRequest.onerror = () => reject(recordRequest.error);
+      operationsRequest.onerror = () => reject(operationsRequest.error);
       transaction.oncomplete = () => resolve(deleted);
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () => reject(transaction.error ?? new Error("Local record deletion aborted"));
