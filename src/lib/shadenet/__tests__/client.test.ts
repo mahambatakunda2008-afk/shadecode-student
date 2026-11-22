@@ -66,5 +66,34 @@ describe("ShadeNet resource client", () => {
     expect(new TextDecoder().decode(result!)).toBe("offline student");
     expect(cleared).toBe(true);
   });
+  it("finalizes a fully staged transfer offline without contacting a peer", async () => {
+    const data = new TextEncoder().encode("already downloaded").buffer;
+    const expected = await digest(data);
+    const request: ResourceRequest = { protocol: 1, requestId: "new-session", resourceId: "resource-complete" };
+    let discoveryCalled = false;
+    let cleared = false;
+    const persistence = {
+      list: async () => [{
+        index: 0, total: 1, data, sha256: expected, savedAt: Date.now(),
+      }],
+      save: async () => undefined,
+      clear: async () => { cleared = true; },
+    };
+    const cache = new Map<string, ArrayBuffer>();
+    const cacheAdapter: ResourceCache = {
+      get: async (id) => cache.get(id) ?? null,
+      put: async (id, value) => { cache.set(id, value); },
+    };
+    const discovery: ResourceDiscovery = {
+      find: () => { discoveryCalled = true; return []; },
+    };
+
+    const client = new ShadeNetResourceClient(cacheAdapter, discovery, persistence);
+    const result = await client.get(request, expected);
+    expect(new TextDecoder().decode(result!)).toBe("already downloaded");
+    expect(discoveryCalled).toBe(false);
+    expect(cleared).toBe(true);
+  });
+
 
 });
