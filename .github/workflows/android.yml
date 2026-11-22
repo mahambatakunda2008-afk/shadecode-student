@@ -35,7 +35,7 @@ env:
 jobs:
   build:
     name: Build Android app
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       # Treat signing as configured only when every required credential exists.
@@ -95,6 +95,23 @@ jobs:
 
       - name: Build installable debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
+
+      - name: Install and launch APK on Android emulator
+        # Emulator boot is a separate acceptance signal; it must not block APK/AAB production.
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -no-metrics
+          disable-animations: true
+          working-directory: android
+          script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell monkey -p com.shadecode.student.debug 1
+            adb shell pm path com.shadecode.student.debug
 
       - name: Prepare debug APK
         working-directory: .
