@@ -31,7 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-private data class RenderedPdfPage(val bitmap: Bitmap, val pageCount: Int)
+private data class RenderedPdfPage(val bitmap: Bitmap, val pageCount: Int, val pageIndex: Int)
 
 @Composable
 fun NativeOfflinePdfReader(
@@ -67,14 +67,15 @@ fun NativeOfflinePdfReader(
                             val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
                             bitmap.eraseColor(android.graphics.Color.WHITE)
                             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                            RenderedPdfPage(bitmap, renderer.pageCount)
+                            RenderedPdfPage(bitmap, renderer.pageCount, safeIndex)
                         }
                     }
                 }
             }
             rendered = result.bitmap
             pageCount = result.pageCount
-            onPageChanged(pageIndex.coerceIn(0, result.pageCount - 1) + 1)
+            if (pageIndex != result.pageIndex) pageIndex = result.pageIndex
+            onPageChanged(result.pageIndex + 1)
         } catch (failure: Exception) {
             error = failure.message ?: "This PDF page could not be rendered."
         } finally {
