@@ -80,8 +80,14 @@ class NativeSyncWorker(
         api: NativeApi,
         store: NativeStore,
     ) {
+        // The queue is keyed by account ID, but validate the embedded owner too.
+        // Never let a malformed or stale queue row run under another learner's session.
+        check(item.accountId == session.userId) {
+            "Pending operation belongs to a different learner account."
+        }
         val payload = JSONObject(item.payload)
         when (item.operation) {
+            "lesson_create" -> api.saveGeneratedLesson(session, payload)
             "task_create" -> {
                 val localId = payload.getString("localId")
                 val remote = api.createTask(

@@ -142,6 +142,34 @@ describe("POST /api/sync", () => {
       const res = await post({ ...validBody(), payload: { ...validBody().payload, user_id: USER.id } });
       expect(res.status).toBe(200);
     });
+
+    it("forwards the complete generated lesson payload, including topic, to the sync RPC", async () => {
+      const payload = {
+        id: "4a0d6d4d-9d8f-4b3f-8b21-4f6d6a1b9d02",
+        subject_id: "c8f5e8e2-5e9d-4a3f-a4e5-6a8b9c0d1e2f",
+        topic: "Deformation of solids",
+        title: "Deformation of solids",
+        description: "A complete lesson",
+        difficulty: "medium",
+        progress: 0,
+        blocks: [{ type: "concept", content: "A sufficiently detailed explanation of the concept." }],
+      };
+      const res = await post({
+        operation: "create",
+        store: "learn_lessons",
+        payload,
+        clientVersion: 1,
+        baseVersion: 0,
+        deviceId: "device-a",
+      });
+      expect(res.status).toBe(200);
+      expect(rpc).toHaveBeenCalledWith("apply_sync_mutation", expect.objectContaining({
+        p_store: "learn_lessons",
+        p_operation: "create",
+        p_record_id: payload.id,
+        p_payload: { ...payload, user_id: USER.id },
+      }));
+    });
   });
 
   describe("result semantics (drives when the client queue may drop a mutation)", () => {

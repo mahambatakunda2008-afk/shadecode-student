@@ -1,5 +1,7 @@
 import { createGenerationJob, getActiveGenerationJobs, getGenerationJob, getGenerationJobs, markInterruptedJobsForRetry, restoreGenerationJob, retryGenerationJob, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
 import { offlineStorage } from "@/lib/offline/storage";
+import { isCloudSyncLessonId } from "@/lib/offline/mutationQueue";
+import { offlineSync } from "@/lib/offline/sync";
 import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
 import { getLocalCurriculumGrounding, readLocalCurriculumGrounding, readLocalCurriculumGroundingData } from "@/lib/cortex/localCurriculumGrounding";
 import { readOfflineCurriculumPack, buildOfflineCurriculumScope } from "@/lib/cortex/offlineCurriculumPack";
@@ -605,20 +607,28 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
     localOnly: true,
   };
   const now = new Date().toISOString();
+  const ownerId = await offlineSync.getAuthenticatedUserId().catch(() => null);
+  const cloudSyncEligible = Boolean(ownerId && isCloudSyncLessonId(localOnly.id));
   await offlineStorage.saveLesson({
     id: localOnly.id,
     title: localOnly.title,
     subject: job.request.subject,
-    description: `Cloud save failed. This generated lesson is stored on this device only. Persistence error: ${persistenceError.slice(0, 240)}`,
+    topic: request.topic,
+    description: cloudSyncEligible
+      ? `Cloud save failed. This generated lesson is stored on this device and queued for cloud sync. Persistence error: ${persistenceError.slice(0, 240)}`
+      : `Cloud save failed. This generated lesson is stored on this device only. Persistence error: ${persistenceError.slice(0, 240)}`,
     blocks: localOnly.blocks,
     difficulty: job.request.difficulty,
     progress: 0,
     completed: false,
     downloadedAt: now,
+    userId: ownerId ?? undefined,
+    pendingSync: cloudSyncEligible,
     // This lesson has not been confirmed in cloud storage. Do not label it synced.
     lastSyncedAt: undefined,
     size: JSON.stringify(localOnly).length,
   });
+  if (cloudSyncEligible) void offlineSync.syncAll();
   updateGenerationJob(job.id, {
     status: "complete",
     progress: 100,
