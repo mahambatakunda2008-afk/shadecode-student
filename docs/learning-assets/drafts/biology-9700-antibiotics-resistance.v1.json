@@ -1,0 +1,213 @@
+{
+  "asset_key": "biology-9700-antibiotics-resistance",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Antibiotics, penicillin and antibiotic resistance",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "10",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus, Version 1, September 2025, 2028–2030, Topic 10, p. 31. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "10.2.1",
+      "10.2.2"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation, assessment review and accessibility review before import or publication.",
+      "Questions are original learning checks, not Cambridge past-paper questions or official mark schemes.",
+      "Disease prevention content is educational and must not be treated as individual medical advice. Avoid implying that any single intervention guarantees protection.",
+      "The malaria diagram is a transmission overview only. Detailed Plasmodium life-cycle stages are outside the stated syllabus requirement."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Outline how penicillin acts on bacterial cell walls.",
+      "Explain why antibiotics do not affect viruses.",
+      "Discuss biological and societal consequences of antibiotic resistance.",
+      "Explain how responsible antibiotic use and infection prevention can reduce the impact of resistance."
+    ],
+    "sections": [
+      {
+        "heading": "What antibiotics do",
+        "body": "Antibiotics are substances used to treat bacterial infections by acting on bacterial structures or processes. Different antibiotics have different targets. Penicillin is an example of a beta-lactam antibiotic. It interferes with the formation of peptidoglycan, the material that gives bacterial cell walls strength. The syllabus asks for an outline of this action, so focus on the target and the consequence for the bacterial cell wall."
+      },
+      {
+        "heading": "Penicillin weakens the bacterial cell wall",
+        "body": "As susceptible bacteria grow and divide, they must build and remodel peptidoglycan in their cell walls. Penicillin inhibits enzymes involved in cross-linking peptidoglycan strands. New wall material is not properly cross-linked, so the wall becomes weak. In actively growing bacteria, osmotic pressure can cause the weakened cell to burst (lysis). Penicillin is therefore most effective against susceptible bacteria that are actively making new cell wall material."
+      },
+      {
+        "heading": "Why antibiotics do not affect viruses",
+        "body": "Viruses are not cells. They have no peptidoglycan cell wall and do not carry out independent bacterial cell processes. Viruses replicate inside host cells using host-cell machinery. Penicillin's target is therefore absent from viruses. Antibiotics that target bacterial structures or processes do not treat viral infections such as influenza or the common cold. Do not say that viruses are simply bacteria that are smaller."
+      },
+      {
+        "heading": "Variation in bacterial populations",
+        "body": "A bacterial population may contain genetic variation. A rare bacterium may already carry a mutation or acquire a resistance gene that makes it less susceptible to a particular antibiotic. When an antibiotic is used, susceptible bacteria are more likely to be killed or prevented from reproducing, while resistant bacteria are more likely to survive. The survivors reproduce and pass resistance alleles to offspring; some resistance genes can also spread between bacteria on mobile genetic elements. Antibiotics select for resistance; they do not deliberately teach bacteria to become resistant."
+      },
+      {
+        "heading": "How resistance spreads and becomes common",
+        "body": "If resistant bacteria survive treatment, they can multiply and spread between people, animals or environments. Resistance genes may also move between bacterial cells, including by plasmid transfer. Repeated or inappropriate antibiotic exposure creates selection pressure that favours resistant variants. Resistance can become common in hospitals, communities, farms and environmental reservoirs. The key evolutionary sequence is variation, selection, differential survival and reproduction, and an increase in the frequency of resistance."
+      },
+      {
+        "heading": "Consequences of antibiotic resistance",
+        "body": "Resistance can make infections harder to treat, increase the risk of treatment failure and complications, prolong illness and hospital stays, and increase healthcare costs. Clinicians may need to use alternative antibiotics that are less readily available, more expensive or associated with greater adverse effects. Resistant infections can spread and threaten the safety of procedures that depend on effective infection treatment, including surgery, cancer treatment and care of premature infants. Resistance is a population and public-health problem, not merely an inconvenience for one patient."
+      },
+      {
+        "heading": "Reducing the impact of resistance",
+        "body": "Use antibiotics only when prescribed by an appropriately qualified health professional and only when they are indicated for a bacterial infection. Follow the prescribed dose and duration; do not share, save or use leftover antibiotics or obtain them without appropriate assessment. Avoid unnecessary prescribing for viral infections. Healthcare systems can support diagnostic testing, antimicrobial stewardship, infection prevention, hand hygiene, vaccination where relevant, surveillance and responsible antibiotic use in agriculture. Public education and reliable access to qualified care help reduce misuse. The precise treatment plan must be determined by a clinician; learners should not self-prescribe."
+      },
+      {
+        "heading": "A complete exam explanation",
+        "body": "For penicillin, state that it inhibits peptidoglycan cell-wall synthesis or cross-linking; the wall becomes weak; susceptible growing bacteria may lyse. For viruses, state that they lack bacterial cell walls and the target is absent. For resistance, explain that resistant variants survive antibiotic selection and reproduce, increasing the frequency of resistance. Then discuss consequences and give practical measures that reduce unnecessary selection and transmission. Keep cause, selection mechanism and consequence in a logical chain."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Outline how penicillin acts on susceptible bacteria.",
+        "answer": "Penicillin inhibits enzymes involved in peptidoglycan cross-linking during bacterial cell-wall synthesis. The wall becomes weak and actively growing bacteria may lyse.",
+        "mark_points": [
+          "Inhibits peptidoglycan synthesis/cross-linking",
+          "Cell wall becomes weak",
+          "Growing susceptible bacteria may lyse"
+        ]
+      },
+      {
+        "question": "Explain why penicillin does not affect viruses.",
+        "answer": "Viruses do not have bacterial cells or peptidoglycan cell walls, so they lack the target of penicillin.",
+        "mark_points": [
+          "Viruses are not bacterial cells",
+          "No peptidoglycan cell wall",
+          "Penicillin target absent"
+        ]
+      },
+      {
+        "question": "Explain how antibiotic use can select for resistant bacteria.",
+        "answer": "Variation means some bacteria are resistant. Antibiotic exposure kills or inhibits susceptible bacteria; resistant bacteria survive, reproduce and pass on resistance, increasing its frequency.",
+        "mark_points": [
+          "Variation / resistant variants present",
+          "Antibiotic is a selection pressure",
+          "Susceptible bacteria die or are inhibited",
+          "Resistant bacteria survive and reproduce",
+          "Resistance frequency increases"
+        ]
+      },
+      {
+        "question": "Why is it incorrect to say that bacteria become resistant because they need to?",
+        "answer": "Resistance arises through genetic variation or acquisition of resistance genes; antibiotics select variants that already have resistance rather than causing purposeful adaptation.",
+        "mark_points": [
+          "Variation or acquired resistance genes",
+          "Antibiotic selects rather than directs adaptation"
+        ]
+      },
+      {
+        "question": "State two consequences of antibiotic resistance for patients or healthcare systems.",
+        "answer": "Examples include treatment failure, longer illness, increased complications, longer hospital stays, higher costs and the need for alternative medicines.",
+        "mark_points": [
+          "Any two valid consequences"
+        ]
+      },
+      {
+        "question": "Explain why antibiotics should not be used to treat a common cold.",
+        "answer": "A common cold is caused by viruses, which lack bacterial targets such as peptidoglycan cell walls; antibiotics do not treat the viral cause.",
+        "mark_points": [
+          "Common cold is viral",
+          "Viruses lack bacterial target",
+          "Antibiotics ineffective against the virus"
+        ]
+      },
+      {
+        "question": "Describe two ways to reduce the spread or selection of antibiotic resistance.",
+        "answer": "Avoid unnecessary antibiotic prescribing and use; follow qualified prescriptions correctly; strengthen infection prevention, hygiene, surveillance and antimicrobial stewardship.",
+        "mark_points": [
+          "Two valid measures",
+          "Each linked to reduced selection or transmission"
+        ]
+      },
+      {
+        "question": "Explain how resistance genes can spread beyond the descendants of one bacterium.",
+        "answer": "Resistance genes may be transferred between bacterial cells, for example on plasmids, so unrelated bacteria can acquire resistance.",
+        "mark_points": [
+          "Gene transfer between bacteria",
+          "Plasmid/mobile genetic element example",
+          "Recipient gains resistance"
+        ]
+      },
+      {
+        "question": "Discuss why antibiotic resistance is a public-health concern.",
+        "answer": "Resistant bacteria can spread between hosts and make infections harder to treat, increasing complications, treatment failure, healthcare costs and pressure on alternative antibiotics.",
+        "mark_points": [
+          "Spread between hosts",
+          "Reduced treatment effectiveness",
+          "At least one wider health/economic consequence"
+        ]
+      },
+      {
+        "question": "A patient has a viral infection and requests penicillin. Explain why this is not an appropriate treatment.",
+        "answer": "Penicillin targets bacterial peptidoglycan cell-wall synthesis. Viruses have no such wall, so penicillin cannot act on the viral pathogen; unnecessary use also contributes to selection for antibiotic resistance in bacteria.",
+        "mark_points": [
+          "Penicillin target is bacterial peptidoglycan",
+          "Viruses lack this target",
+          "No antiviral effect",
+          "Unnecessary use contributes to resistance selection"
+        ]
+      },
+      {
+        "question": "Distinguish antibiotic resistance in an individual bacterium from antibiotic resistance becoming common in a population.",
+        "answer": "An individual bacterium has a trait that allows it to survive a particular antibiotic. Resistance becomes common in a population when resistant bacteria survive, reproduce and pass on resistance, increasing its frequency.",
+        "mark_points": [
+          "Individual trait / phenotype or genotype",
+          "Differential survival and reproduction",
+          "Increase in population frequency"
+        ]
+      },
+      {
+        "question": "Explain why infection prevention is part of controlling antibiotic resistance.",
+        "answer": "Preventing infections reduces the number of antibiotic treatments needed and limits transmission of resistant bacteria between people.",
+        "mark_points": [
+          "Fewer infections reduce antibiotic use",
+          "Reduced spread of resistant bacteria"
+        ]
+      },
+      {
+        "question": "Give one reason antibiotic stewardship is needed in hospitals.",
+        "answer": "Stewardship supports appropriate antibiotic choice and use, reducing unnecessary selection pressure and preserving the effectiveness of available treatments.",
+        "mark_points": [
+          "Appropriate selection/use",
+          "Reduces unnecessary selection pressure / preserves effectiveness"
+        ]
+      },
+      {
+        "question": "Construct a linked explanation from antibiotic exposure to increased resistance in a bacterial population.",
+        "answer": "Some bacteria are resistant due to variation. Antibiotic exposure removes susceptible bacteria. Resistant bacteria survive, reproduce and pass resistance to offspring; the proportion of resistant bacteria rises.",
+        "mark_points": [
+          "Pre-existing variation",
+          "Antibiotic selection pressure",
+          "Susceptible bacteria removed",
+          "Resistant bacteria reproduce",
+          "Resistance proportion increases"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/infectious-diseases/penicillin-cell-wall-action.svg",
+        "role": "Penicillin target and consequences for peptidoglycan cell-wall formation."
+      },
+      {
+        "path": "/learning-assets/biology/9700/infectious-diseases/antibiotic-selection.svg",
+        "role": "Natural selection sequence for antibiotic resistance."
+      }
+    ]
+  }
+}
