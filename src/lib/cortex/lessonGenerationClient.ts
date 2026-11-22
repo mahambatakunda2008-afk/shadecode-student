@@ -214,6 +214,10 @@ function validateResult(result: LessonGenerationResult, request: ReturnType<type
   return { ...result, blocks: normalized };
 }
 async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, generated?: LessonGenerationResult) {
+  const { createClient } = await import("@/lib/supabase/client");
+  const { data: sessionData } = await createClient().auth.getSession();
+  const ownerUserId = sessionData.session?.user.id;
+  if (!ownerUserId) throw new Error("Sign in on this device before saving a private offline lesson.");
   const context = await localContext(job);
   const request = resolvedRequest(job);
   const local = generated ?? generateLocalLesson(job.request.subject, job.request.prompt, context);
@@ -223,7 +227,7 @@ async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, genera
   // mistake a local save for durable server persistence or complete the cloud job.
   const result: LessonGenerationResult = { id: validated.id, title: validated.title, blocks: validated.blocks, offlineFallback: !generated?.localModel, localModel: !!generated?.localModel, localOnly: true };
   const now = new Date().toISOString();
-  await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: generated?.offlineFallback ? `Curated curriculum recovery lesson on ${job.request.prompt}. This lesson uses authored material while AI generation is unavailable. Stored on this device only.` : generated?.localModel ? `Locally generated Cortex lesson for ${job.request.prompt}. Stored on this device only.` : `Offline curriculum lesson for ${job.request.prompt}. Stored on this device only.`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: undefined, size: JSON.stringify(result).length });
+  await offlineStorage.saveLesson({ id: result.id, ownerUserId, title: result.title, subject: job.request.subject, description: generated?.offlineFallback ? `Curated curriculum recovery lesson on ${job.request.prompt}. This lesson uses authored material while AI generation is unavailable. Stored on this device only.` : generated?.localModel ? `Locally generated Cortex lesson for ${job.request.prompt}. Stored on this device only.` : `Offline curriculum lesson for ${job.request.prompt}. Stored on this device only.`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: undefined, size: JSON.stringify(result).length });
   updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
   if (getActiveId() === job.id) saveActiveId(null); openCompletedLesson(result);
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
