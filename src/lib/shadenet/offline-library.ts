@@ -222,24 +222,39 @@ export class OfflineResourceLibrary {
       throw new Error("The resource pack contains trailing or unreferenced data.");
     }
 
-    let imported = 0;
-    for (const entry of manifest.entries) {
-      const metadata = entry.metadata!;
-      const blob = pack.slice(payloadStart + entry.offset!, payloadStart + entry.offset! + entry.length!, metadata.mimeType);
-      await this.importFile(blob, {
-        title: metadata.title!,
-        subject: typeof metadata.subject === "string" ? metadata.subject : undefined,
-        qualification: typeof metadata.qualification === "string" ? metadata.qualification : undefined,
-        syllabus: typeof metadata.syllabus === "string" ? metadata.syllabus : undefined,
-        topic: typeof metadata.topic === "string" ? metadata.topic : undefined,
-        source: typeof metadata.source === "string" ? metadata.source : undefined,
-        publisher: typeof metadata.publisher === "string" ? metadata.publisher : undefined,
+    // Commit the complete verified pack in one IndexedDB transaction. A quota
+    // or storage failure aborts every entry instead of leaving a partial import.
+    const importedRecords: StoredOfflineResource[] = manifest.entries.map((entry) => {
+      const source = entry.metadata!;
+      const digest = source.sha256!.toLowerCase();
+      const metadata: OfflineResourceMetadata = {
+        id: digest,
+        title: source.title!.trim(),
+        mimeType: source.mimeType!,
+        byteLength: entry.length!,
+        sha256: digest,
+        subject: typeof source.subject === "string" ? source.subject : undefined,
+        qualification: typeof source.qualification === "string" ? source.qualification : undefined,
+        syllabus: typeof source.syllabus === "string" ? source.syllabus : undefined,
+        topic: typeof source.topic === "string" ? source.topic : undefined,
+        source: typeof source.source === "string" ? source.source : undefined,
+        publisher: typeof source.publisher === "string" ? source.publisher : undefined,
         trust: "unverified",
-        mimeType: metadata.mimeType!,
-      });
-      imported += 1;
-    }
-    return imported;
+        importedAt: new Date().toISOString(),
+      };
+      const blob = pack.slice(payloadStart + entry.offset!, payloadStart + entry.offset! + entry.length!, source.mimeType);
+      return { metadata, blob };
+    });
+    await this.init();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = this.db!.transaction(STORE, "readwrite");
+      const store = transaction.objectStore(STORE);
+      importedRecords.forEach((record) => store.put(record));
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error ?? new Error("Could not import the complete resource pack."));
+      transaction.onabort = () => reject(transaction.error ?? new Error("Resource-pack import was cancelled; no entries were committed."));
+    });
+    return importedRecords.length;
   }
 
   async requestPersistentStorage(): Promise<boolean> {
