@@ -236,3 +236,64 @@ export async function validateResourcePackage(
     payload: new Uint8Array(candidate.payload),
   };
 }
+
+
+const PACKAGE_MAGIC = new TextEncoder().encode("SCRESOURCE1");
+const MAX_MANIFEST_BYTES = 1024 * 1024;
+
+/** Encode a verified package as a portable binary envelope without base64 expansion. */
+export async function serializeResourcePackage(value: unknown): Promise<Uint8Array> {
+  const resource = await validateResourcePackage(value);
+  const manifestBytes = new TextEncoder().encode(JSON.stringify(resource.manifest));
+  if (manifestBytes.byteLength > MAX_MANIFEST_BYTES) {
+    throw new ResourcePackageError("invalid-manifest", "Resource package metadata exceeds the supported limit.");
+  }
+
+  const headerLength = PACKAGE_MAGIC.byteLength + 4;
+  const output = new Uint8Array(headerLength + manifestBytes.byteLength + resource.payload.byteLength);
+  output.set(PACKAGE_MAGIC, 0);
+  new DataView(output.buffer).setUint32(PACKAGE_MAGIC.byteLength, manifestBytes.byteLength, false);
+  output.set(manifestBytes, headerLength);
+  output.set(resource.payload, headerLength + manifestBytes.byteLength);
+  return output;
+}
+
+/** Decode and fully verify a portable package before returning it to a caller. */
+export async function parseResourcePackage(input: Uint8Array): Promise<ResourcePackageV1> {
+  if (!(input instanceof Uint8Array) || input.byteLength < PACKAGE_MAGIC.byteLength + 4) {
+    throw new ResourcePackageError("invalid-payload", "Portable resource package is truncated.");
+  }
+  if (input.byteLength > MAX_RESOURCE_PACKAGE_BYTES + MAX_MANIFEST_BYTES + PACKAGE_MAGIC.byteLength + 4) {
+    throw new ResourcePackageError("payload-too-large", "Portable resource package exceeds the supported limit.");
+  }
+
+  for (let index = 0; index < PACKAGE_MAGIC.byteLength; index += 1) {
+    if (input[index] !== PACKAGE_MAGIC[index]) {
+      throw new ResourcePackageError("unsupported-format", "File is not a Shadecode resource package.");
+    }
+  }
+
+  const manifestLength = new DataView(
+    input.buffer,
+    input.byteOffset + PACKAGE_MAGIC.byteLength,
+    4,
+  ).getUint32(0, false);
+  const headerLength = PACKAGE_MAGIC.byteLength + 4;
+  if (manifestLength === 0 || manifestLength > MAX_MANIFEST_BYTES ||
+      headerLength + manifestLength > input.byteLength) {
+    throw new ResourcePackageError("invalid-manifest", "Portable resource package has an invalid metadata section.");
+  }
+
+  let manifest: unknown;
+  try {
+    const manifestText = new TextDecoder("utf-8", { fatal: true }).decode(
+      input.subarray(headerLength, headerLength + manifestLength),
+    );
+    manifest = JSON.parse(manifestText);
+  } catch {
+    throw new ResourcePackageError("invalid-manifest", "Portable resource package metadata is not valid UTF-8 JSON.");
+  }
+
+  const payload = input.slice(headerLength + manifestLength);
+  return validateResourcePackage({ manifest, payload });
+}
