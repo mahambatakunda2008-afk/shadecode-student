@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
-import { offlineStorage } from "@/lib/offline/storage";
+import { offlineStorage, type OfflineLesson } from "@/lib/offline/storage";
+import { mergeDeviceAndCloudLessons } from "./mergeDeviceAndCloudLessons";
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 import { lessonViewedEvent } from "@/lib/intelligence/emitLearningEvent";
 import { getGenerationJob, subscribeGenerationJobs, type GenerationJob } from "@/lib/cortex/generationJob";
@@ -201,14 +202,19 @@ export default function LearnPageResilient() {
     const data = await r.json().catch(() => ({} as ApiResponse));
     if (!r.ok) throw new Error(data.error || `Learn sync failed (${r.status})`);
     setSubjects(data.subjects ?? []);
-    setLessons(data.lessons ?? []);
+    const deviceLessons = await offlineStorage.getAllLessons().catch(() => [] as OfflineLesson[]);
+    setLessons(mergeDeviceAndCloudLessons(data.lessons ?? [], deviceLessons));
     setSummary(data.summary ?? null);
     const syncedAt = new Date().toISOString();
-    await Promise.all((data.lessons ?? []).map((lesson: LearnLesson) => offlineStorage.saveLesson({
-      id: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description,
-      difficulty: lesson.difficulty, progress: lesson.progress, completed: lesson.completed,
-      downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length,
-    })));
+    await Promise.all((data.lessons ?? []).map(async (lesson: LearnLesson) => {
+      const cached = await offlineStorage.getLesson(lesson.id).catch(() => null);
+      await offlineStorage.saveLesson({
+        id: lesson.id, title: lesson.title, subject: lesson.subject, subjectId: lesson.subjectId ?? cached?.subjectId, topic: lesson.topic ?? cached?.topic, description: lesson.description,
+        blocks: (lesson.blocks ?? cached?.blocks) as OfflineLesson["blocks"],
+        difficulty: lesson.difficulty, progress: lesson.progress, completed: lesson.completed,
+        downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length,
+      });
+    }));
   }
 
   async function generate() {
