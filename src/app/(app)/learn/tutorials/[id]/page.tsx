@@ -17,10 +17,11 @@ export default function TeacherTutorialPage() {
     if (!id) return;
     let active = true;
     (async () => {
+      let userId: string | undefined;
       try {
         const { createClient } = await import("@/lib/supabase/client");
         const { data: sessionData } = await createClient().auth.getSession();
-        const userId = sessionData.session?.user.id;
+        userId = sessionData.session?.user.id;
         if (!userId) throw new Error("Sign in on this device to open saved tutorials.");
         const response = await fetch(`/api/learn/tutorials/${encodeURIComponent(id)}`, { cache: "no-store" });
         const body = await response.json().catch(() => ({}));
