@@ -73,3 +73,12 @@ See [the subject-personalization and Android release register](../docs/roadmaps/
 Important release rule: a commit or a successful build is not proof of a production release. Match the build artifact's workflow `head_sha` to the exact source commit. Confirm signing before calling an APK production-ready. Real-device smoke testing and Google Play publication must be reported separately and only after they occur.
 
 The mobile release checklist covers startup, authentication/profile, navigation, offline Snap & Extract, saved-extract search, persistence, supported Android versions/ABIs, and the status of signing credentials. Subject selection and profile personalization must be aligned with the web client; a web-only change does not automatically ship in the native app.
+
+
+### Offline resource packs and browser library
+
+The web/PWA Study Library now exposes a personal offline resource area. Students can import PDF, TXT and Markdown files, open the stored copy without a network request, remove local files, and export/import a portable `.scpack` bundle. The bundle stores a versioned manifest and raw file payloads; every imported file is re-hashed with SHA-256. Imported pack provenance is deliberately downgraded to `unverified` because a pack is not a cryptographic publisher signature.
+
+Browser storage is best-effort unless the browser grants persistent storage. Students should keep exported packs as backups. Browser storage can still be cleared by the operating system or the user, and this implementation does not yet synchronize the browser and Android libraries.
+
+The current web reader uses the browser PDF viewer for PDFs and a plain text reader for TXT/Markdown. PDF text indexing, in-app page-level annotations, cross-device transfer, teacher-signed packs and real airplane-mode acceptance tests remain outstanding.
