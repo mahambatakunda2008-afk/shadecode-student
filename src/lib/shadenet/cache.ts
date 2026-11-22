@@ -1,6 +1,6 @@
-const DB_NAME = "shadecode-shadenet";
-const DB_VERSION = 3;
-const STORE = "resource-cache";
+const DB_NAME = "shadecode-shadenet-cache";
+const DB_VERSION = 1;
+const STORE = "resources";
 const CACHED_AT_INDEX = "cachedAt";
 
 interface CachedResource {
