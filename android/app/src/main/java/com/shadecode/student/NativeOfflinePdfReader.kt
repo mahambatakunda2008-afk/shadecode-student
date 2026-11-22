@@ -36,9 +36,11 @@ private data class RenderedPdfPage(val bitmap: Bitmap, val pageCount: Int)
 fun NativeOfflinePdfReader(
     file: File,
     title: String,
+    initialPage: Int = 1,
+    onPageChanged: (Int) -> Unit = {},
     onBack: () -> Unit,
 ) {
-    var pageIndex by remember(file.absolutePath) { mutableStateOf(0) }
+    var pageIndex by remember(file.absolutePath) { mutableStateOf((initialPage - 1).coerceAtLeast(0)) }
     var pageCount by remember(file.absolutePath) { mutableStateOf(0) }
     var rendered by remember(file.absolutePath) { mutableStateOf<Bitmap?>(null) }
     var error by remember(file.absolutePath) { mutableStateOf<String?>(null) }
@@ -66,6 +68,7 @@ fun NativeOfflinePdfReader(
             }
             rendered = result.bitmap
             pageCount = result.pageCount
+            onPageChanged(pageIndex + 1)
         } catch (failure: Exception) {
             error = failure.message ?: "This PDF page could not be rendered."
         } finally {
