@@ -244,22 +244,25 @@ export default function LessonDetailPage() {
       : base;
   };
 
-  const loadLesson = async (token: string, userId = currentUser) => {
+  const loadLesson = async (token: string, userId: string) => {
     setLoading(true); setError(null);
     try {
       const r = await fetch(`/api/learn?lessonId=${lessonId}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (!r.ok) { let msg = "Couldn't load this lesson."; try { const b = await r.json(); msg = b?.error || msg; } catch {} throw new Error(msg); }
+      if (!r.ok) { let msg = "Lesson unavailable."; try { const b = await r.json(); msg = b?.error || msg; } catch {} const failure = new Error(msg) as Error & { status?: number }; failure.status = r.status; throw failure; }
       const d = await r.json();
       if (!d.lesson) throw new Error("Lesson content not found.");
       const lessonWithLocalProgress = await applyPendingLocalProgress(d.lesson, userId);
       setLesson(lessonWithLocalProgress); setAccessToken(token);
-      void offlineStorage.saveLesson({ ...lessonWithLocalProgress, downloadedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(), size: JSON.stringify(lessonWithLocalProgress).length }).catch(() => undefined);
+      void offlineStorage.saveLesson({ ...lessonWithLocalProgress, ownerUserId: userId, downloadedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(), size: JSON.stringify(lessonWithLocalProgress).length }).catch(() => undefined);
     } catch (err) {
+      const status = (err as Error & { status?: number })?.status;
+      if (userId && (status === undefined || status >= 500)) {
       try {
-        const cached = await offlineStorage.getLesson(lessonId);
+        const cached = await offlineStorage.getLesson(lessonId, userId);
         if (cached) { const cachedLesson: Lesson = { ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt }; setLesson(userId ? await applyPendingLocalProgress(cachedLesson, userId) : cachedLesson); return; }
       } catch {}
-      setError(err instanceof Error ? err.message : "Couldn't load this lesson.");
+      }
+      setError(err instanceof Error ? err.message : "Lesson unavailable.");
     } finally { setLoading(false); }
   };
 
@@ -270,11 +273,8 @@ export default function LessonDetailPage() {
         const { data } = await sb.auth.getSession();
         if (data?.session) { setCurrentUser(data.session.user.id); await loadLesson(data.session.access_token, data.session.user.id); return; }
       } catch {}
-      try {
-        const cached = await offlineStorage.getLesson(lessonId);
-        if (cached) { setLesson({ ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt }); setLoading(false); return; }
-      } catch {}
-      if (navigator.onLine) router.push("/login"); else { setError("You are offline and this lesson has not been cached on this device yet."); setLoading(false); }
+      if (navigator.onLine) router.push("/login");
+      else { setError("Sign in to access saved lessons. This device has no verified offline session for this account."); setLoading(false); }
     })();
   }, [lessonId]);
 
@@ -340,6 +340,7 @@ export default function LessonDetailPage() {
       void trackEvent("lesson_completed", { lessonId: lesson.id, source: "lesson" });
       await offlineStorage.saveLesson({
         ...completedLesson,
+        ownerUserId: currentUser,
         downloadedAt: new Date().toISOString(),
         lastSyncedAt: lesson.updated_at ?? completedAt,
         size: JSON.stringify(completedLesson).length,
@@ -374,7 +375,7 @@ export default function LessonDetailPage() {
   async function handleDownload() {
     if (!lesson || downloading) return;
     setDownloading(true); setDownloadProgress(0);
-    try { await downloadManager.downloadAll(lesson.id, lesson, undefined, undefined, p => setDownloadProgress(p)); setShowToast(true); setTimeout(() => setShowToast(false), 2500); }
+    try { await downloadManager.downloadAll(lesson.id, lesson, currentUser!, undefined, undefined, p => setDownloadProgress(p)); setShowToast(true); setTimeout(() => setShowToast(false), 2500); }
     catch (e) { console.error("Download failed:", e); }
     finally { setDownloading(false); setDownloadProgress(0); }
   }
