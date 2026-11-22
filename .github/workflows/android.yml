@@ -96,6 +96,15 @@ jobs:
       - name: Build installable debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
 
+      - name: Verify ARMv7 native runtime is packaged
+        working-directory: .
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          unzip -Z1 "$APK" | grep -Fx "lib/armeabi-v7a/libshadecode_cortex_native.so"
+          unzip -Z1 "$APK" | grep -Fx "lib/arm64-v8a/libshadecode_cortex_native.so"
+          unzip -Z1 "$APK" | grep -Fx "lib/x86_64/libshadecode_cortex_native.so"
+
       - name: Install and launch APK on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
