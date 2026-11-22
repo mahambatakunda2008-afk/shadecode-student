@@ -336,7 +336,7 @@ export default function LearnPageResilient() {
         {(error || offline) && <div role="alert" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4">
           <AlertCircle size={20} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
           <div className="min-w-0 flex-1"><p className="text-sm font-semibold">{offline ? "You’re working offline" : "Learn needs attention"}</p><p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)] dark:text-[var(--muted-foreground)]">{error || "Saved lessons remain available on this device. New cloud generation will resume when you reconnect."}</p></div>
-          {token && !offline && <button type="button" onClick={() => void load(token).catch(e => setError(e instanceof Error ? e.message : "Cloud sync failed."))} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm font-semibold dark:border-[var(--card-border)] dark:bg-[var(--surface-2)]"><RefreshCw size={16} /> Sync</button>}
+          {token && !offline && <button type="button" onClick={() => userId ? void load(token, userId).catch(e => setError(e instanceof Error ? e.message : "Cloud sync failed.")) : undefined} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm font-semibold dark:border-[var(--card-border)] dark:bg-[var(--surface-2)]"><RefreshCw size={16} /> Sync</button>}
         </div>}
 
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.85fr)]">
