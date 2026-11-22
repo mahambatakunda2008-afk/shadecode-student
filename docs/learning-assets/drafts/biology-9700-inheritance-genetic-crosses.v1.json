@@ -1,0 +1,232 @@
+{
+  "asset_key": "biology-9700-inheritance-genetic-crosses",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Inheritance: genetic terminology and genetic crosses",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "16",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 16, pp. 42–44.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "16.2.1",
+      "16.2.2",
+      "16.2.3",
+      "16.2.4"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Use the syllabus genetic terminology accurately.",
+      "Construct and interpret monohybrid and dihybrid genetic diagrams.",
+      "Predict outcomes involving dominance, codominance, multiple alleles and sex linkage.",
+      "Interpret autosomal linkage and epistasis crosses without memorising epistasis ratios.",
+      "Use test crosses to determine unknown genotypes."
+    ],
+    "sections": [
+      [
+        "The genetic vocabulary",
+        "A gene is a length of DNA that influences a characteristic, often by coding for a polypeptide or functional RNA. A locus is the position of a gene on a chromosome. An allele is an alternative form of a gene. Genotype is the allele combination; phenotype is the observable characteristic resulting from genotype and environment."
+      ],
+      [
+        "Dominance and genotype terms",
+        "A dominant allele affects the phenotype in a heterozygote; a recessive allele is expressed in the phenotype only when no dominant allele masks it. Homozygous individuals have two identical alleles at a locus; heterozygous individuals have two different alleles. F1 is the first filial generation and F2 is the offspring generation from the F1."
+      ],
+      [
+        "Monohybrid crosses",
+        "A monohybrid cross follows one gene. For Aa × Aa, the gametes are A and a from each parent. The offspring genotypes are AA, Aa, Aa and aa, giving a 1:2:1 genotype ratio. With complete dominance, the phenotype ratio is 3 dominant : 1 recessive."
+      ],
+      [
+        "Codominance",
+        "In codominance, both alleles are expressed in the heterozygote. Neither allele masks the other. For example, if Iᴬ and Iᴮ alleles both produce their corresponding red-cell antigens, genotype IᴬIᴮ gives blood group AB. The heterozygote phenotype is distinct from both homozygotes."
+      ],
+      [
+        "Multiple alleles",
+        "A gene may have more than two alleles in a population, although a diploid individual carries only two alleles at that locus. The ABO blood group gene has Iᴬ, Iᴮ and i alleles. Iᴬ and Iᴮ are codominant to each other, and both are dominant to i."
+      ],
+      [
+        "Dihybrid crosses",
+        "A dihybrid cross follows two genes. If genes assort independently, an AaBb individual can form AB, Ab, aB and ab gametes in equal proportions. AaBb × AaBb gives the familiar 9:3:3:1 phenotype ratio only when both genes show complete dominance and assort independently."
+      ],
+      [
+        "Sex linkage",
+        "A sex-linked gene is located on a sex chromosome. For an X-linked recessive allele, males (XY) express the allele if it is present on their single X chromosome. Females (XX) usually need two copies to express the recessive phenotype; heterozygous females are carriers. Fathers pass their X chromosome to daughters and their Y chromosome to sons."
+      ],
+      [
+        "Autosomal linkage",
+        "Linked genes are on the same chromosome and tend to be inherited together. A heterozygote with linked alleles may produce more parental-type gametes than recombinant gametes. Crossing over between loci can produce recombinant gametes. The closer two loci are, the less likely a crossover occurs between them."
+      ],
+      [
+        "Epistasis",
+        "Epistasis occurs when an allele of one gene affects or masks the expression of another gene at a different locus. The phenotype depends on interaction between gene products. Work out the genotype-to-phenotype relationship from the information in the question; the syllabus does not require memorising expected ratios for different types of epistasis."
+      ],
+      [
+        "Test crosses",
+        "A test cross is a cross between an individual with a dominant phenotype but unknown genotype and a homozygous recessive individual. If the unknown is homozygous dominant, all offspring show the dominant phenotype. If heterozygous, a 1:1 dominant:recessive ratio is expected for a monohybrid cross."
+      ],
+      [
+        "Constructing a genetic diagram",
+        "State parental phenotypes and genotypes, list gametes, show the cross, then give offspring genotypes and phenotypes with a ratio or probability. Define allele symbols clearly. For sex linkage, write alleles as superscripts on X chromosomes and show the sex chromosomes in each offspring."
+      ],
+      [
+        "Probability and independent events",
+        "For independent events, multiply probabilities to find the probability that both occur. Add probabilities for mutually exclusive routes to the same outcome. A predicted ratio is an expectation for many offspring; a small family may deviate by chance."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Define gene, locus and allele.",
+        "answer": "A gene is a DNA sequence influencing a characteristic; a locus is its position on a chromosome; an allele is an alternative form of a gene.",
+        "mark_points": [
+          "Gene definition",
+          "Locus position",
+          "Alternative allele"
+        ]
+      },
+      {
+        "question": "Distinguish genotype from phenotype.",
+        "answer": "Genotype is the allele combination an organism has; phenotype is its observable characteristics resulting from genotype and environmental effects.",
+        "mark_points": [
+          "Allele combination",
+          "Observable characteristics",
+          "Environment can affect phenotype"
+        ]
+      },
+      {
+        "question": "For Aa × Aa, state the genotype ratio and phenotype ratio assuming complete dominance.",
+        "answer": "Genotype ratio 1 AA : 2 Aa : 1 aa; phenotype ratio 3 dominant : 1 recessive.",
+        "mark_points": [
+          "1:2:1 genotype",
+          "3:1 phenotype"
+        ]
+      },
+      {
+        "question": "Explain codominance using ABO blood groups.",
+        "answer": "Iᴬ and Iᴮ are both expressed in an IᴬIᴮ heterozygote, producing both A and B antigens and blood group AB.",
+        "mark_points": [
+          "Both alleles expressed",
+          "AB phenotype"
+        ]
+      },
+      {
+        "question": "Why are there three ABO alleles in the population but only two in one diploid individual?",
+        "answer": "The population has three alternative alleles, but a diploid individual has only two homologous chromosomes and therefore carries at most two alleles at the locus.",
+        "mark_points": [
+          "Three in population",
+          "Two copies per diploid individual"
+        ]
+      },
+      {
+        "question": "Give the gametes produced by AaBb if the genes assort independently.",
+        "answer": "AB, Ab, aB and ab, in equal proportions if there is no linkage and no segregation distortion.",
+        "mark_points": [
+          "Four combinations",
+          "Equal proportions"
+        ]
+      },
+      {
+        "question": "Under what conditions is a 9:3:3:1 dihybrid phenotype ratio expected?",
+        "answer": "When two genes assort independently, both show complete dominance, and the heterozygous F1 individuals produce the four gamete types in equal proportions.",
+        "mark_points": [
+          "Independent assortment",
+          "Complete dominance at both loci",
+          "Equal gamete proportions"
+        ]
+      },
+      {
+        "question": "A woman is a carrier of an X-linked recessive allele and the man is unaffected. What proportion of their sons are expected to be affected?",
+        "answer": "One half of their sons are expected to inherit the affected X chromosome from their mother and express the recessive allele.",
+        "mark_points": [
+          "1/2 sons",
+          "Sons inherit X from mother"
+        ]
+      },
+      {
+        "question": "Why can an affected father not pass an X-linked allele directly to his son?",
+        "answer": "A father passes his Y chromosome, not his X chromosome, to a son.",
+        "mark_points": [
+          "Father passes Y to son"
+        ]
+      },
+      {
+        "question": "What is autosomal linkage?",
+        "answer": "Two or more genes located on the same autosome tend to be inherited together, although crossing over can produce recombinant combinations.",
+        "mark_points": [
+          "Same autosome",
+          "Inherited together",
+          "Crossing over may recombine"
+        ]
+      },
+      {
+        "question": "A test cross produces 1:1 dominant and recessive offspring. What is the likely genotype of the tested parent?",
+        "answer": "Heterozygous, because crossing it with a homozygous recessive individual gives half heterozygous dominant-phenotype offspring and half homozygous recessive offspring.",
+        "mark_points": [
+          "Heterozygous",
+          "1:1 outcome"
+        ]
+      },
+      {
+        "question": "Define epistasis.",
+        "answer": "An allele of one gene affects or masks the expression of another gene at a different locus.",
+        "mark_points": [
+          "One gene affects another locus"
+        ]
+      },
+      {
+        "question": "A heterozygous tall plant is test crossed with a dwarf plant. Give the expected offspring ratio.",
+        "answer": "Tt × tt produces 1 Tt tall : 1 tt dwarf, so 1:1.",
+        "mark_points": [
+          "Tt × tt",
+          "1 tall : 1 dwarf"
+        ]
+      },
+      {
+        "question": "A couple have a 1/2 probability of a child being male and a 1/4 probability of inheriting a specified autosomal genotype. Assuming independence, calculate the probability of a male child with that genotype.",
+        "answer": "1/2 × 1/4 = 1/8.",
+        "mark_points": [
+          "Multiply independent probabilities",
+          "1/8"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/inheritance/monohybrid-punnett.svg",
+        "role": "Monohybrid Punnett square"
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/dihybrid-gametes.svg",
+        "role": "Dihybrid gamete formation and cross"
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/sex-linkage.svg",
+        "role": "X-linked recessive inheritance"
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/autosomal-linkage.svg",
+        "role": "Parental and recombinant offspring in linkage"
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/epistasis.svg",
+        "role": "Two-gene interaction in epistasis"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions and datasets are original learning checks, not official Cambridge questions or mark schemes.",
+      "Meiosis and genetic diagrams are explanatory schematics; stage-identification practice must also use authentic photomicrographs."
+    ]
+  }
+}
