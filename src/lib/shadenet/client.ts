@@ -23,6 +23,19 @@ export interface TransferPersistence {
   clear(resourceId: string, expectedSha256: string): Promise<void>;
 }
 
+async function assembleVerifiedTransfer(state: TransferState, expectedSha256: string): Promise<ArrayBuffer | null> {
+  if (!isComplete(state) || !(await verifyTransfer(state, expectedSha256))) return null;
+  const parts = orderedChunks(state);
+  const totalBytes = parts.reduce((sum, part) => sum + part.byteLength, 0);
+  const data = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const part of parts) {
+    data.set(new Uint8Array(part), offset);
+    offset += part.byteLength;
+  }
+  return data.buffer;
+}
+
 export class ShadeNetResourceClient {
   constructor(
     private readonly cache: ResourceCache,
@@ -61,6 +74,13 @@ export class ShadeNetResourceClient {
       }
     }
 
+    const restored = await assembleVerifiedTransfer(state, expectedSha256);
+    if (restored) {
+      await this.cache.put(request.resourceId, restored);
+      await this.transferStore?.clear(request.resourceId, expectedSha256).catch(() => undefined);
+      return restored;
+    }
+
     for (const source of this.discovery.find(request.resourceId)) {
       try {
         for await (const chunk of source.request(request)) {
@@ -70,19 +90,11 @@ export class ShadeNetResourceClient {
           state = acceptChunk(state, chunk);
           await this.transferStore?.save(request.resourceId, expectedSha256, chunk).catch(() => undefined);
         }
-        if (!isComplete(state) || !(await verifyTransfer(state, expectedSha256))) continue;
-        const parts = orderedChunks(state);
-        const totalBytes = parts.reduce((sum, part) => sum + part.byteLength, 0);
-        const data = new Uint8Array(totalBytes);
-        let offset = 0;
-        for (const part of parts) {
-          data.set(new Uint8Array(part), offset);
-          offset += part.byteLength;
-        }
-        if (!(await verifyResource(data.buffer, expectedSha256))) continue;
-        await this.cache.put(request.resourceId, data.buffer);
+        const data = await assembleVerifiedTransfer(state, expectedSha256);
+        if (!data || !(await verifyResource(data, expectedSha256))) continue;
+        await this.cache.put(request.resourceId, data);
         await this.transferStore?.clear(request.resourceId, expectedSha256).catch(() => undefined);
-        return data.buffer;
+        return data;
       } catch {
         // A peer is untrusted transport. Try the next advertised source.
       }
