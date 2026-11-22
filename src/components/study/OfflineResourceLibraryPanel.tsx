@@ -166,7 +166,7 @@ export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Su
             <Download size={16} aria-hidden="true" /> Export all
           </button>
         </div>
-        <p className="mt-2 text-xs text-[var(--muted-foreground)]">Up to 150 MB per file. Resource packs preserve curriculum details and checksums. Imported pack entries are marked unverified until checked by a trusted source.</p>
+        <p className="mt-2 text-xs text-[var(--muted-foreground)]">PDFs up to 100 MB and text files up to 5 MB. Resource packs preserve curriculum details and checksums. Imported pack entries are marked unverified until checked by a trusted source.</p>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
