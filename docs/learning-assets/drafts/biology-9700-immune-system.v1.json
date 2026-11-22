@@ -1,0 +1,232 @@
+{
+  "asset_key": "biology-9700-immune-system",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "The immune system: phagocytes, lymphocytes and immune memory",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "11",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus, Version 1, September 2025, 2028–2030, Topic 11, p. 32. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "11.1.1",
+      "11.1.2",
+      "11.1.3",
+      "11.1.4"
+    ]
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation, assessment review and accessibility review before import or publication.",
+      "Questions are original learning checks, not Cambridge past-paper questions or official mark schemes.",
+      "Immune responses are simplified for syllabus teaching; diagrams are explanatory models and do not represent every molecular interaction or cell subtype."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Describe how neutrophils and macrophages destroy pathogens by phagocytosis.",
+      "Explain what antigens are and distinguish self antigens from non-self antigens.",
+      "Describe the sequence of a primary immune response, including macrophages, B-lymphocytes, plasma cells, T-helper cells and T-killer cells.",
+      "Explain how memory cells produce a faster and larger secondary response and long-term immunity."
+    ],
+    "sections": [
+      {
+        "heading": "The two broad lines of defence",
+        "body": "The immune system protects the body from pathogens and other foreign material. Phagocytes provide an immediate, non-specific defence: they can engulf a range of pathogens without needing a pathogen-specific antibody response first. Lymphocytes provide specific responses because their surface receptors recognise particular antigens. The innate phagocytic response and the adaptive lymphocyte response work together rather than acting as completely separate systems."
+      },
+      {
+        "heading": "Neutrophils and macrophages",
+        "body": "Neutrophils are phagocytic white blood cells that can leave capillaries and move towards sites of infection. They engulf pathogens and destroy them using enzymes and toxic substances in vesicles. Macrophages are larger phagocytes found in tissues; they can develop from monocytes that leave the blood. Macrophages engulf pathogens and cellular debris, digest them in vesicles, and can display fragments of pathogen antigen on their surface. This antigen presentation helps activate specific lymphocyte responses."
+      },
+      {
+        "heading": "The sequence of phagocytosis",
+        "body": "A phagocyte recognises and attaches to a pathogen, often helped by molecules that bind to the pathogen surface. The cell membrane surrounds the pathogen and encloses it in a vesicle called a phagosome. A lysosome fuses with the phagosome, releasing hydrolytic enzymes. The pathogen is digested and soluble products are absorbed or removed. In macrophages, fragments of pathogen antigen can be displayed at the cell surface, linking phagocytosis to activation of lymphocytes. Phagocytosis is not the same as antibody production."
+      },
+      {
+        "heading": "Antigens: self and non-self",
+        "body": "An antigen is a molecule, or a part of a molecule, that is recognised by a specific antibody or lymphocyte receptor and can stimulate an immune response. Antigens are often proteins or glycoproteins on cell surfaces or pathogens. Self antigens are molecules recognised as belonging to the body's own cells and tissues. Non-self antigens are recognised as foreign, for example antigens on pathogens or transplanted cells. Immune tolerance normally prevents strong responses against the body's own antigens; failure of tolerance can contribute to autoimmune disease."
+      },
+      {
+        "heading": "Lymphocytes and specificity",
+        "body": "B-lymphocytes and T-lymphocytes are white blood cells involved in specific immunity. Each lymphocyte has receptors with a particular antigen-binding shape. An antigen that fits and binds to a receptor can activate the lymphocyte, with signals from other immune cells often required. Activation leads to clonal expansion: the selected lymphocyte divides by mitosis to produce many cells with the same antigen specificity. B-lymphocytes can form plasma cells and memory B cells. T-lymphocytes include T-helper cells and T-killer cells in the syllabus scope."
+      },
+      {
+        "heading": "Primary immune response: recognition and activation",
+        "body": "During a first infection, macrophages engulf pathogens and display pathogen antigen fragments at their surface. A T-helper cell with a complementary receptor recognises the presented antigen and becomes activated. Activated T-helper cells release cytokines that stimulate appropriate B-lymphocytes and T-killer cells. A B-lymphocyte with a complementary receptor binds the antigen and, with helper signals, becomes activated. The selected B cell undergoes clonal expansion. This sequence takes time, which explains the delay before a substantial antibody concentration develops in a primary response."
+      },
+      {
+        "heading": "B-lymphocytes become plasma cells",
+        "body": "Activated B-lymphocytes divide to form a clone of cells. Many differentiate into plasma cells, which have abundant rough endoplasmic reticulum and secrete large quantities of a specific antibody. The antibody binds to the antigen that activated the B-cell clone. Antibodies can neutralise toxins or viruses, cause pathogens or particles to clump together, and mark pathogens for destruction by phagocytes. Some activated B-lymphocytes become memory cells rather than plasma cells."
+      },
+      {
+        "heading": "T-helper and T-killer cells",
+        "body": "T-helper cells coordinate the specific immune response. After recognising antigen presented by a macrophage, they release cytokines that stimulate B-lymphocytes and other immune cells, including T-killer cells. T-killer cells recognise infected body cells displaying foreign antigen fragments and destroy those cells, helping limit intracellular pathogen replication. T-helper cells coordinate; T-killer cells directly kill infected host cells. Do not confuse either T-cell type with antibody-secreting plasma cells."
+      },
+      {
+        "heading": "Memory cells and long-term immunity",
+        "body": "Some activated B- and T-lymphocytes become long-lived memory cells. They remain in the body after the pathogen has been removed. If the same antigen enters again, memory cells recognise it rapidly and divide to produce effector cells. Memory B cells can rapidly produce plasma cells and a much larger amount of specific antibody. Memory T cells can also generate a faster cellular response. This immunological memory is the basis of long-term protection after some infections and after vaccination."
+      },
+      {
+        "heading": "Primary compared with secondary response",
+        "body": "The primary response follows first exposure to an antigen. There is a lag while specific lymphocytes are selected, activated and clonally expanded; antibody concentration rises more slowly and usually reaches a lower peak. The secondary response follows later exposure to the same antigen. Memory cells respond rapidly, so antibody concentration rises sooner, reaches a higher level and remains elevated for longer. The response is antigen-specific: memory for one antigen does not automatically provide immunity to an unrelated antigen."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Describe how a neutrophil destroys a bacterium by phagocytosis.",
+        "answer": "The neutrophil attaches to and engulfs the bacterium into a phagosome. A lysosome fuses with the phagosome and releases enzymes that digest the bacterium.",
+        "mark_points": [
+          "Recognition/attachment",
+          "Engulfment into phagosome",
+          "Lysosome fuses with phagosome",
+          "Enzymes digest pathogen"
+        ]
+      },
+      {
+        "question": "State one difference between the roles of neutrophils and macrophages.",
+        "answer": "Both are phagocytes, but macrophages can present pathogen antigen fragments to activate lymphocytes; neutrophils are primarily rapid phagocytes at infection sites.",
+        "mark_points": [
+          "Both phagocytose",
+          "Macrophages present antigen / activate specific response"
+        ]
+      },
+      {
+        "question": "Define an antigen.",
+        "answer": "An antigen is a molecule or molecular region recognised by a specific antibody or lymphocyte receptor and capable of stimulating an immune response.",
+        "mark_points": [
+          "Recognised by specific antibody/receptor",
+          "Can stimulate immune response"
+        ]
+      },
+      {
+        "question": "Distinguish self antigens from non-self antigens.",
+        "answer": "Self antigens are recognised as belonging to the body's own cells and tissues. Non-self antigens are recognised as foreign, such as those on pathogens.",
+        "mark_points": [
+          "Self: body’s own cells/tissues",
+          "Non-self: foreign material/pathogen"
+        ]
+      },
+      {
+        "question": "Explain how macrophages link phagocytosis to the specific immune response.",
+        "answer": "A macrophage engulfs and digests a pathogen, then displays pathogen antigen fragments on its surface. A complementary T-helper cell recognises the presented antigen and becomes activated.",
+        "mark_points": [
+          "Engulfs/digests pathogen",
+          "Displays antigen fragments",
+          "T-helper cell recognises antigen",
+          "Activation of T-helper cell"
+        ]
+      },
+      {
+        "question": "Outline the role of T-helper cells in the primary immune response.",
+        "answer": "T-helper cells recognise antigen presented by macrophages and release cytokines that stimulate appropriate B-lymphocytes and T-killer cells.",
+        "mark_points": [
+          "Recognise presented antigen",
+          "Activated by antigen presentation",
+          "Release cytokines",
+          "Stimulate B cells and T-killer cells"
+        ]
+      },
+      {
+        "question": "Describe how an activated B-lymphocyte produces antibodies.",
+        "answer": "The selected B-lymphocyte undergoes clonal expansion. Some daughter cells differentiate into plasma cells, which secrete large amounts of the specific antibody.",
+        "mark_points": [
+          "Clonal expansion by mitosis",
+          "Differentiation into plasma cells",
+          "Plasma cells secrete specific antibody"
+        ]
+      },
+      {
+        "question": "State the role of T-killer cells.",
+        "answer": "T-killer cells recognise infected body cells displaying foreign antigen and destroy those cells.",
+        "mark_points": [
+          "Recognise infected cells displaying antigen",
+          "Kill/destroy infected cells"
+        ]
+      },
+      {
+        "question": "Explain why the primary immune response has a delay before antibody concentration rises.",
+        "answer": "Specific lymphocytes must recognise antigen, become activated and undergo clonal expansion before enough plasma cells are present to secrete a substantial amount of antibody.",
+        "mark_points": [
+          "Specific lymphocyte recognition/activation",
+          "Clonal expansion",
+          "Differentiation to plasma cells / antibody secretion takes time"
+        ]
+      },
+      {
+        "question": "Explain why the secondary response to the same antigen is faster.",
+        "answer": "Memory cells formed during the primary response remain in the body. On re-exposure they recognise the antigen and rapidly divide and differentiate into effector cells.",
+        "mark_points": [
+          "Memory cells persist",
+          "Recognise same antigen on re-exposure",
+          "Rapid clonal expansion/differentiation"
+        ]
+      },
+      {
+        "question": "Compare the antibody concentrations in primary and secondary immune responses.",
+        "answer": "The secondary response has a shorter lag, a higher peak antibody concentration and usually a longer-lasting elevated concentration than the primary response.",
+        "mark_points": [
+          "Shorter lag",
+          "Higher peak",
+          "Longer-lasting response"
+        ]
+      },
+      {
+        "question": "Explain why memory cells do not necessarily protect against a different pathogen.",
+        "answer": "Memory cells are antigen-specific. Their receptors recognise the antigen encountered previously, so an unrelated pathogen with different antigens may not activate them.",
+        "mark_points": [
+          "Memory is antigen-specific",
+          "Different pathogen has different antigen",
+          "Existing memory cells may not recognise it"
+        ]
+      },
+      {
+        "question": "Distinguish plasma cells from memory B cells.",
+        "answer": "Plasma cells secrete antibodies during the current response. Memory B cells are long-lived and respond rapidly if the same antigen enters again.",
+        "mark_points": [
+          "Plasma cells secrete antibody",
+          "Memory B cells persist",
+          "Memory B cells respond on re-exposure"
+        ]
+      },
+      {
+        "question": "Explain how phagocytosis is non-specific but lymphocyte action is specific.",
+        "answer": "Phagocytes can engulf many types of pathogen without matching a unique antigen receptor. Lymphocytes respond only when their specific receptors recognise a complementary antigen.",
+        "mark_points": [
+          "Phagocytes act against many pathogen types",
+          "No unique antigen specificity required for engulfment",
+          "Lymphocyte receptor recognises specific antigen"
+        ]
+      },
+      {
+        "question": "A person has a second infection by the same pathogen. Explain the likely advantage of their previous exposure.",
+        "answer": "The first infection produced memory B and T cells. These recognise the pathogen's antigens rapidly, leading to faster clonal expansion, antibody production and cellular responses, often removing the pathogen before severe symptoms develop.",
+        "mark_points": [
+          "Memory cells formed after first exposure",
+          "Recognise same antigen",
+          "Faster/larger response",
+          "More rapid pathogen control"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/immunity/phagocytosis-sequence.svg",
+        "role": "Stages of pathogen engulfment, phagosome formation, lysosome fusion and digestion."
+      },
+      {
+        "path": "/learning-assets/biology/9700/immunity/primary-secondary-response.svg",
+        "role": "Comparison of antibody concentration over time in primary and secondary responses."
+      }
+    ]
+  }
+}
