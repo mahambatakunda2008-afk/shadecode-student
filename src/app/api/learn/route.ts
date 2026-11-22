@@ -351,6 +351,12 @@ export async function POST(req: Request) {
 
       const quality = lessonQualityFailures(persistableCandidate, request).failures;
       if (quality.length > 0 && !verifiedCurriculumFallback) {
+        console.info("[LEARN] persist rejected by quality checks", {
+          topic: request.topic,
+          failures: quality,
+          blockCount: persistableCandidate.blocks.length,
+          broadTopic: Boolean((request as { broadTopic?: boolean }).broadTopic),
+        });
         return NextResponse.json({
           error: "Generated lesson failed the learning-quality checks.",
           failures: quality,
