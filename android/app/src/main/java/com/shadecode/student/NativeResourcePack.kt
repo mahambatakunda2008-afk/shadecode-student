@@ -72,7 +72,7 @@ object NativeResourcePack {
             require(file.isFile && file.length() == row.byteCount && digest(file) == row.sha256) {
                 "Integrity check failed for ${row.title}. Export stopped."
             }
-            require(file.length() in 1..MAX_RESOURCE_BYTES && offset + file.length() <= MAX_PACK_BYTES) {
+            require(file.length() in 1..MAX_RESOURCE_BYTES && offset + file.length() <= MAX_PACK_BYTES - MAX_MANIFEST_BYTES - 12) {
                 "The resource collection exceeds the 512 MB pack limit."
             }
             val metadata = JSONObject()
