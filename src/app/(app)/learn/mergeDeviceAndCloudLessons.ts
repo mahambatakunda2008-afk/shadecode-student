@@ -7,7 +7,7 @@ export function mergeDeviceAndCloudLessons(cloudLessons: LearnLesson[], deviceLe
   for (const lesson of deviceLessons) {
     if (!lesson?.id) continue;
     merged.set(lesson.id, {
-      id: lesson.id, title: lesson.title, subject: lesson.subject, subjectId: "", topic: lesson.title,
+      id: lesson.id, title: lesson.title, subject: lesson.subject, subjectId: lesson.subjectId ?? "", topic: lesson.topic ?? lesson.title,
       description: lesson.description ?? "",
       difficulty: lesson.difficulty === "hard" || lesson.difficulty === "medium" ? lesson.difficulty : "easy",
       progress: lesson.progress ?? 0, completed: lesson.completed ?? false,
