@@ -19,12 +19,13 @@ The first native resource-library slice is available from **Learn → Offline re
 - Import a learner-selected PDF (up to 100 MB), plain-text file or Markdown file (up to 5 MB) through Android's document picker.
 - Resource payloads are copied into account-isolated app-private storage. Room stores metadata, provenance, checksum, file size, reading position and annotations.
 - A resource is listed only after its complete payload is written, synced, SHA-256 checked and its Room record committed.
-- Saved resources can be searched locally by title, subject, qualification, syllabus, topic and indexed text. Text/Markdown content is indexed; PDF content search and in-app page rendering are not part of this first slice.
-- PDF files open through an installed Android PDF viewer. Text and Markdown files open in the in-app reader.
-- Resource bookmarks, notes and highlights have account-scoped persistence primitives in Room; annotation editing UI is a follow-up.
+- Saved resources can be searched locally by title, subject, qualification, syllabus, topic and indexed text. Text/Markdown content is indexed; PDF text extraction and full-text search remain outstanding.
+- PDF files render inside the native app with previous/next page navigation. The last opened page is saved locally and restored when the resource is reopened. TXT/Markdown files open in the in-app reader.
+- Notes can be created and stored locally for text/Markdown resources. Room also has account-scoped bookmark, note and highlight records; PDF page-level annotation UI remains outstanding.
+- The Android client imports and exports the browser-compatible version-1 `.scpack` format. Packs are checked for manifest structure, file bounds, MIME, PDF signature and SHA-256 before import; imported provenance is reset to **unverified**.
 - Supported review labels are preserved as metadata. Imported files default to **unverified**; importing a file never makes it official or teacher-approved.
 
-This is a storage and first-reader foundation, not yet the complete resource-pack system. Resumable large downloads, portable export/import, teacher-curated packs, PDF text indexing, in-app PDF page navigation, diagrams/attachments, and real-device airplane-mode validation remain open. Do not claim full native resource parity until those are implemented and tested.
+This remains a foundation, not complete native resource parity. PDF text extraction/search, PDF annotations, atomic all-or-nothing multi-file pack commits, teacher-curated signed packs, diagrams/attachments, cross-device sync, and real-device airplane-mode validation remain open. Do not claim full native resource parity until those are implemented and tested.
 
 ## Build locally
 
@@ -77,7 +78,7 @@ The mobile release checklist covers startup, authentication/profile, navigation,
 
 ### Offline resource packs and browser library
 
-The web/PWA Study Library now exposes a personal offline resource area. Students can import PDF, TXT and Markdown files, open the stored copy without a network request, remove local files, and export/import a portable `.scpack` bundle. The bundle stores a versioned manifest and raw file payloads; every imported file is re-hashed with SHA-256. Imported pack provenance is deliberately downgraded to `unverified` because a pack is not a cryptographic publisher signature.
+The web/PWA Study Library now exposes a personal offline resource area. Students can import PDF, TXT and Markdown files, open the stored copy without a network request, remove local files, and export/import a portable `.scpack` bundle. Android uses the same version-1 container format, allowing packs to move between web and native clients. The bundle stores a versioned manifest and raw file payloads; every imported file is re-hashed with SHA-256. Imported pack provenance is deliberately downgraded to `unverified` because a pack is not a cryptographic publisher signature.
 
 Browser storage is best-effort unless the browser grants persistent storage. Students should keep exported packs as backups. Browser storage can still be cleared by the operating system or the user, and this implementation does not yet synchronize the browser and Android libraries.
 
