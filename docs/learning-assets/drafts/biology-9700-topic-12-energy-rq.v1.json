@@ -1,0 +1,212 @@
+{
+  "asset_key": "biology-9700-topic-12-energy-rq",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Energy and respiratory quotient",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "12",
+    "status": "draft",
+    "source_reference": "Cambridge 9700 syllabus 2028-2030, Topic 12.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "12.1.1",
+      "12.1.2",
+      "12.1.3",
+      "12.1.4",
+      "12.1.5",
+      "12.1.6",
+      "12.1.7"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain energy requirements and ATP transfer.",
+      "Compare respiratory substrates and calculate RQ.",
+      "Design respirometer investigations."
+    ],
+    "sections": [
+      {
+        "heading": "Cellular energy",
+        "body": "Energy is needed for active transport against gradients, movement including muscle contraction, and anabolic reactions such as DNA replication and protein synthesis."
+      },
+      {
+        "heading": "ATP",
+        "body": "ATP is a nucleotide containing adenine, ribose and three phosphate groups. Hydrolysis of the terminal phosphate transfers energy. ATP is small, soluble, mobile and rapidly regenerated. Substrate-linked phosphorylation transfers phosphate directly from a substrate to ADP; chemiosmosis uses proton flow through ATP synthase in mitochondrial and chloroplast membranes."
+      },
+      {
+        "heading": "Respiratory substrates",
+        "body": "Approximate energy values: carbohydrate 17 kJ g-1, protein 17 kJ g-1, lipid 39 kJ g-1. Lipids are more reduced and contain more C-H bonds per gram, so oxidation releases more energy."
+      },
+      {
+        "heading": "RQ",
+        "body": "RQ = CO2 produced / O2 consumed. Glucose oxidation gives 6/6 = 1.00. Palmitic acid oxidation gives 32/45 = 0.71. Typical lipid RQ is about 0.7; protein varies."
+      },
+      {
+        "heading": "Respirometer practical",
+        "body": "A sealed respirometer containing separated soda lime or KOH absorbs CO2. The fall in gas volume or pressure indicates O2 uptake. A non-respiring bead control corrects for temperature and pressure. This alone does not determine RQ: CO2 production must also be measured over the same interval using a paired/differential or validated separate method. Control mass, temperature, time and apparatus volume; repeat and calculate a mean."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Define RQ.",
+        "answer": "The ratio of CO2 produced to O2 consumed during respiration.",
+        "mark_points": [
+          "CO2 produced",
+          "O2 consumed",
+          "ratio"
+        ]
+      },
+      {
+        "question": "Calculate RQ for glucose: C6H12O6 + 6O2 -> 6CO2 + 6H2O.",
+        "answer": "6/6 = 1.00.",
+        "mark_points": [
+          "CO2 coefficient 6",
+          "O2 coefficient 6",
+          "1.00"
+        ]
+      },
+      {
+        "question": "A sample consumes 4.0 cm3 O2 and produces 2.8 cm3 CO2. Calculate RQ.",
+        "answer": "2.8/4.0 = 0.70.",
+        "mark_points": [
+          "correct ratio",
+          "correct calculation",
+          "0.70"
+        ]
+      },
+      {
+        "question": "Why does a CO2-absorbing respirometer not measure RQ by itself?",
+        "answer": "It measures O2 uptake while CO2 is absorbed. RQ also requires CO2 production.",
+        "mark_points": [
+          "O2 uptake measured",
+          "CO2 absorbed",
+          "separate CO2 measurement"
+        ]
+      },
+      {
+        "question": "Explain why ATP is suitable for immediate energy transfer rather than long-term energy storage.",
+        "answer": "ATP is soluble and mobile, releases energy in manageable amounts by hydrolysis and can be rapidly regenerated. Carbohydrates and lipids are better suited to longer-term energy storage.",
+        "mark_points": [
+          "Soluble/mobile",
+          "Manageable energy release",
+          "Rapid regeneration",
+          "Not a long-term store"
+        ]
+      },
+      {
+        "question": "State the approximate energy values per gram of carbohydrate, protein and lipid.",
+        "answer": "Carbohydrate about 17 kJ g−1, protein about 17 kJ g−1 and lipid about 39 kJ g−1.",
+        "mark_points": [
+          "Carbohydrate ~17",
+          "Protein ~17",
+          "Lipid ~39 kJ g−1"
+        ]
+      },
+      {
+        "question": "Explain why protein is not usually the preferred respiratory substrate.",
+        "answer": "Proteins have essential structural and functional roles, and amino groups must be removed before their carbon skeletons can be used in respiration.",
+        "mark_points": [
+          "Essential biological roles",
+          "Deamination/removal of amino groups"
+        ]
+      },
+      {
+        "question": "A respiratory equation produces 18 molecules of CO2 and uses 24 molecules of O2. Calculate RQ.",
+        "answer": "RQ = 18 ÷ 24 = 0.75.",
+        "mark_points": [
+          "CO2 divided by O2",
+          "18/24",
+          "0.75"
+        ]
+      },
+      {
+        "question": "Give one reason why an RQ value may not identify a single respiratory substrate with certainty.",
+        "answer": "An organism may respire a mixture of substrates, giving an intermediate RQ.",
+        "mark_points": [
+          "Mixture of substrates",
+          "Intermediate RQ"
+        ]
+      },
+      {
+        "question": "Describe one way to measure carbon dioxide production separately from oxygen uptake in an RQ investigation.",
+        "answer": "Use a paired or differential respirometer arrangement, or a validated separate CO2 measurement, so CO2 output and O2 uptake are measured over the same interval.",
+        "mark_points": [
+          "Separate CO2 measurement",
+          "Paired/differential arrangement acceptable",
+          "Same time interval"
+        ]
+      },
+      {
+        "question": "Why should the mass and developmental stage of germinating seeds be standardised?",
+        "answer": "Respiration rate varies with organism mass and developmental/activity state; standardising these makes comparisons fair.",
+        "mark_points": [
+          "Mass affects total respiration",
+          "Developmental/activity state affects rate",
+          "Fair comparison"
+        ]
+      },
+      {
+        "question": "Identify two sources of error in a simple respirometer investigation.",
+        "answer": "Possible errors include gas leaks, temperature changes, pressure changes, organism movement and inconsistent reading of capillary position.",
+        "mark_points": [
+          "Any two valid sources"
+        ]
+      },
+      {
+        "question": "Why must the respirometer be airtight?",
+        "answer": "Gas entering or leaving through leaks changes the measured gas volume independently of respiration, making oxygen uptake inaccurate.",
+        "mark_points": [
+          "Gas leak changes volume",
+          "Not due to respiration",
+          "Invalid uptake measurement"
+        ]
+      },
+      {
+        "question": "Explain why a lipid respiratory substrate commonly has a lower RQ than carbohydrate.",
+        "answer": "Lipid oxidation consumes proportionally more oxygen relative to carbon dioxide produced, giving a lower CO2/O2 ratio.",
+        "mark_points": [
+          "More O2 used relative to CO2",
+          "Lower ratio"
+        ]
+      },
+      {
+        "question": "State one limitation of using capillary movement as an estimate of respiration rate.",
+        "answer": "Movement can be affected by temperature or atmospheric pressure changes, leaks or movement of the organism, so controls and equilibration are needed.",
+        "mark_points": [
+          "Any valid confounding factor",
+          "Need for control/equilibration"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/atp-energy-transfer.svg",
+        "role": "ATP structure and energy coupling"
+      },
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/rq-respirometer.svg",
+        "role": "Respirometer setup and gas measurement"
+      },
+      {
+        "path": "/learning-assets/biology/9700/energy-respiration/rq-gas-balance.svg",
+        "role": "RQ comparison for respiratory substrates"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requiring independent subject-editor, practical, assessment and accessibility review and objective UUID reconciliation.",
+      "Questions are original learning checks, not official Cambridge questions or mark schemes."
+    ]
+  }
+}
