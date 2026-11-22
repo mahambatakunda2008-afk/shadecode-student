@@ -54,6 +54,7 @@ export class ShadeNetTransferStore {
 
   async list(resourceId: string, expectedSha256: string): Promise<PersistedTransferChunk[]> {
     await this.init();
+    await this.pruneOlderThan(7 * 24 * 60 * 60 * 1000);
     const key = transferKey(resourceId, expectedSha256);
     return new Promise((resolve, reject) => {
       const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).index("transferKey").getAll(key);
