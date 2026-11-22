@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acceptChunk, createTransfer, isComplete, orderedChunks, sha256Hex, verifyResource } from "../resource-transfer";
+import { acceptChunk, createTransfer, isComplete, orderedChunks, sha256Hex, verifyResource, verifyTransfer } from "../resource-transfer";
 import type { ResourceChunk } from "../protocol";
 
 describe("ShadeNet resource transfer", () => {
