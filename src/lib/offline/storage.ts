@@ -19,6 +19,10 @@ export interface OfflineProgress { lessonId: string; userId: string; completed: 
 export interface OfflineTask { id: string; userId: string; subject_id: string; title: string; completed: boolean; lastUpdated: string; lastSyncedAt?: string; synced: boolean; }
 export interface OfflineSubject { id: string; userId: string; name: string; lastUpdated: string; lastSyncedAt?: string; synced: boolean; }
 
+export function isOfflineLessonOwnedBy(lesson: Pick<OfflineLesson, "ownerUserId"> | null | undefined, userId: string | null | undefined): boolean {
+  return Boolean(userId && lesson?.ownerUserId && lesson.ownerUserId === userId);
+}
+
 const PROGRESS_STORE = "progressByUser";
 const progressKey = (userId: string, lessonId: string) => `${userId}:${lessonId}`;
 
@@ -59,13 +63,13 @@ class OfflineStorage {
     if (!userId) return null;
     await this.init();
     const lesson = await this.get<OfflineLesson>("lessons", id);
-    return lesson?.ownerUserId === userId ? lesson : null;
+    return isOfflineLessonOwnedBy(lesson, userId) ? lesson : null;
   }
   async getAllLessons(userId: string): Promise<OfflineLesson[]> {
     if (!userId) return [];
     await this.init();
     const lessons = await this.getAll<OfflineLesson>("lessons");
-    return lessons.filter(lesson => lesson.ownerUserId === userId);
+    return lessons.filter(lesson => isOfflineLessonOwnedBy(lesson, userId));
   }
   async deleteLesson(id: string): Promise<void> { await this.init(); return this.delete("lessons", id); }
   async saveNotes(notes: OfflineNotes): Promise<void> { await this.init(); return this.put("notes", notes); }
