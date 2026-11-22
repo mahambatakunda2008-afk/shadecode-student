@@ -33,6 +33,10 @@ export class ShadeNetStore {
           research.createIndex("savedAt", "savedAt", { unique: false });
           research.createIndex("lastUsedAt", "lastUsedAt", { unique: false });
         }
+        if (!db.objectStoreNames.contains("resource-cache")) {
+          const cache = db.createObjectStore("resource-cache", { keyPath: "resourceId" });
+          cache.createIndex("cachedAt", "cachedAt", { unique: false });
+        }
       };
     });
   }
