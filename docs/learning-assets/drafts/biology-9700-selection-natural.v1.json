@@ -1,0 +1,253 @@
+{
+  "asset_key": "biology-9700-selection-natural",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Selection and evolution: natural selection, drift and Hardy–Weinberg",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "17",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028-2030, Topic 17, p. 44–45.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "17.2.1",
+      "17.2.2",
+      "17.2.3",
+      "17.2.4",
+      "17.2.5"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain natural selection through variation, competition, differential reproduction and allele-frequency change.",
+      "Compare stabilising, directional and disruptive selection.",
+      "Explain genetic drift, founder effect and bottleneck effect.",
+      "Explain antibiotic resistance as natural selection.",
+      "Use Hardy–Weinberg equations and state the conditions required."
+    ],
+    "sections": [
+      [
+        "Natural selection begins with variation",
+        "Individuals in a population vary, and some of this variation is heritable. Populations can produce more offspring than available resources can support. Individuals compete for resources such as food, space, light or mates. Environmental conditions act as selection pressures."
+      ],
+      [
+        "Differential survival and reproduction",
+        "Individuals with phenotypes better suited to the prevailing environment are more likely to survive and reproduce. They pass their alleles to offspring. Over generations, alleles associated with higher reproductive success may increase in frequency. Populations evolve; individual organisms do not evolve during their lifetime."
+      ],
+      [
+        "Directional selection",
+        "Directional selection favours individuals at one extreme of a phenotypic range. The population mean shifts towards that extreme over generations. An example is the increase in antibiotic-resistant bacteria when an antibiotic is used."
+      ],
+      [
+        "Stabilising selection",
+        "Stabilising selection favours intermediate phenotypes and selects against both extremes. The mean may remain similar while variation around the mean decreases. An example is human birth mass, where very low and very high masses are associated with increased risks."
+      ],
+      [
+        "Disruptive selection",
+        "Disruptive selection favours individuals at both extremes and selects against intermediate phenotypes. The distribution may become bimodal. If other factors permit, this can contribute to divergence within a population."
+      ],
+      [
+        "Selection and allele frequencies",
+        "Selection changes allele frequencies because individuals with certain heritable alleles leave more surviving offspring than others. The direction and magnitude of change depend on the environment and the effects of alleles on reproductive success."
+      ],
+      [
+        "Genetic drift",
+        "Genetic drift is a random change in allele frequencies, especially important in small populations. Alleles may be lost or become fixed by chance, regardless of whether they are advantageous. Drift reduces genetic variation within a population."
+      ],
+      [
+        "Founder effect",
+        "The founder effect occurs when a small number of individuals establish a new population. Their allele frequencies may differ by chance from those in the original population, so the new population has a different genetic composition and often reduced genetic variation."
+      ],
+      [
+        "Bottleneck effect",
+        "A bottleneck occurs when a population is drastically reduced by an event such as disease, fire or habitat loss. The surviving individuals are a small, potentially unrepresentative sample of the original population. Allele frequencies can change by chance and genetic variation may be lost."
+      ],
+      [
+        "Antibiotic resistance",
+        "A bacterial population may contain random mutations that confer resistance before antibiotic exposure. Antibiotic treatment kills susceptible bacteria, while resistant bacteria are more likely to survive and reproduce. Resistance alleles become more common in the population. Antibiotics do not cause bacteria to develop the specific mutation because they need it."
+      ],
+      [
+        "Hardy–Weinberg principle",
+        "For a gene with two alleles A and a, let p be the frequency of A and q the frequency of a. The allele frequencies sum to p + q = 1. Under Hardy–Weinberg conditions, genotype frequencies are p² (AA), 2pq (Aa) and q² (aa), so p² + 2pq + q² = 1."
+      ],
+      [
+        "Calculating frequencies",
+        "If the recessive phenotype is fully penetrant and only aa individuals show it, its frequency is q². Take the square root to find q, calculate p = 1 − q, then calculate p², 2pq and q². Convert frequencies to expected numbers by multiplying by population size."
+      ],
+      [
+        "Conditions for Hardy–Weinberg equilibrium",
+        "The model assumes a very large population, random mating, no mutation, no migration (gene flow), and no natural selection at the locus. If these conditions are not met, allele frequencies may change between generations. The equations are provided in the examination."
+      ],
+      [
+        "Limits of the model",
+        "Hardy–Weinberg calculations are a model for comparing observed populations with expected frequencies under specified assumptions. Check whether the recessive phenotype is reliably identified and whether the population is sufficiently large. Do not assume the model proves that evolution is absent."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Outline the sequence of events in natural selection.",
+        "answer": "Heritable variation exists; organisms compete for limited resources; individuals with advantageous phenotypes survive and reproduce more; they pass alleles to offspring; allele frequencies change over generations.",
+        "mark_points": [
+          "Heritable variation",
+          "Competition",
+          "Differential survival/reproduction",
+          "Alleles passed on",
+          "Frequency changes"
+        ]
+      },
+      {
+        "question": "Explain why natural selection acts on phenotypes but changes allele frequencies.",
+        "answer": "The environment affects survival and reproduction through expressed phenotypes. Individuals with certain genotypes leave more offspring, so the alleles contributing to those phenotypes become more frequent.",
+        "mark_points": [
+          "Selection through phenotype",
+          "Differential reproductive success",
+          "Allele frequencies change"
+        ]
+      },
+      {
+        "question": "Distinguish directional from stabilising selection.",
+        "answer": "Directional selection favours one extreme and shifts the population mean; stabilising selection favours intermediate phenotypes and selects against both extremes.",
+        "mark_points": [
+          "Directional one extreme/mean shifts",
+          "Stabilising intermediate/fewer extremes"
+        ]
+      },
+      {
+        "question": "Describe the effect of disruptive selection on a phenotypic distribution.",
+        "answer": "Both extreme phenotypes are favoured and intermediates are selected against, potentially producing a bimodal distribution.",
+        "mark_points": [
+          "Both extremes favoured",
+          "Intermediate selected against",
+          "Bimodal distribution"
+        ]
+      },
+      {
+        "question": "Define genetic drift.",
+        "answer": "A random change in allele frequencies between generations due to chance sampling of individuals, especially in small populations.",
+        "mark_points": [
+          "Random allele-frequency change",
+          "Chance",
+          "Small populations strongly affected"
+        ]
+      },
+      {
+        "question": "Explain the founder effect.",
+        "answer": "A small number of individuals establish a new population. By chance, their alleles may not represent the original population, so allele frequencies differ and variation may be reduced.",
+        "mark_points": [
+          "Small founding group",
+          "Unrepresentative allele sample",
+          "Changed frequencies/reduced variation"
+        ]
+      },
+      {
+        "question": "Explain the bottleneck effect.",
+        "answer": "A population is drastically reduced, leaving a small random sample of the original gene pool. Allele frequencies change by chance and some alleles may be lost.",
+        "mark_points": [
+          "Population drastically reduced",
+          "Small survivor sample",
+          "Alleles lost/frequencies shift"
+        ]
+      },
+      {
+        "question": "Explain how antibiotic resistance spreads by natural selection.",
+        "answer": "Some bacteria already have a resistance mutation. Antibiotic kills susceptible bacteria; resistant bacteria survive and reproduce, passing on the resistance allele so its frequency increases.",
+        "mark_points": [
+          "Resistance variation pre-exists",
+          "Susceptible bacteria killed",
+          "Resistant survive/reproduce",
+          "Allele frequency rises"
+        ]
+      },
+      {
+        "question": "A recessive phenotype has frequency 0.09 in a Hardy–Weinberg population. Calculate q, p and the heterozygote frequency.",
+        "answer": "q² = 0.09, so q = 0.3. p = 1 − 0.3 = 0.7. Heterozygote frequency 2pq = 2 × 0.7 × 0.3 = 0.42.",
+        "mark_points": [
+          "q = 0.3",
+          "p = 0.7",
+          "2pq = 0.42"
+        ]
+      },
+      {
+        "question": "In a population of 2000, q² = 0.01. Calculate the expected number of heterozygotes.",
+        "answer": "q = 0.1 and p = 0.9. 2pq = 2 × 0.9 × 0.1 = 0.18. Expected heterozygotes = 0.18 × 2000 = 360.",
+        "mark_points": [
+          "q = 0.1, p = 0.9",
+          "2pq = 0.18",
+          "360 individuals"
+        ]
+      },
+      {
+        "question": "State four conditions required for Hardy–Weinberg equilibrium.",
+        "answer": "A very large population, random mating, no mutation, no migration and no natural selection at the locus. Any four.",
+        "mark_points": [
+          "Large population",
+          "Random mating",
+          "No mutation",
+          "No migration",
+          "No selection"
+        ]
+      },
+      {
+        "question": "Why is Hardy–Weinberg equilibrium unlikely to be maintained in a small isolated population?",
+        "answer": "Genetic drift has a strong effect in small populations and can change allele frequencies by chance; isolation does not prevent drift.",
+        "mark_points": [
+          "Small population",
+          "Drift strong",
+          "Allele frequencies change"
+        ]
+      },
+      {
+        "question": "A bacterial culture is exposed to an antibiotic. Explain why this is not an example of bacteria adapting intentionally.",
+        "answer": "Resistance arises from random genetic variation. Antibiotic exposure selects resistant bacteria; individual bacteria do not develop resistance because they need it.",
+        "mark_points": [
+          "Random variation/mutation",
+          "Selection of resistant bacteria",
+          "No intentional adaptation"
+        ]
+      },
+      {
+        "question": "A founder population has a higher frequency of a rare allele than the source population. Suggest an explanation.",
+        "answer": "By chance, the few individuals that founded the new population included a disproportionate number carrying that allele, so its frequency was elevated.",
+        "mark_points": [
+          "Small sample",
+          "Chance over-representation",
+          "Founder effect"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/selection-and-evolution/selection-curves.svg",
+        "role": "Directional, stabilising and disruptive selection"
+      },
+      {
+        "path": "/learning-assets/biology/9700/selection-and-evolution/founder-bottleneck.svg",
+        "role": "Founder and bottleneck effects on genetic variation"
+      },
+      {
+        "path": "/learning-assets/biology/9700/selection-and-evolution/antibiotic-resistance.svg",
+        "role": "Antibiotic resistance as natural selection"
+      },
+      {
+        "path": "/learning-assets/biology/9700/selection-and-evolution/hardy-weinberg.svg",
+        "role": "Hardy–Weinberg allele and genotype frequencies"
+      }
+    ]
+  },
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft requires independent Biology subject-editor review and objective UUID reconciliation.",
+      "Questions and numerical datasets are original learning checks, not official Cambridge questions or mark schemes.",
+      "Graphs are explanatory schematics; practical measurement and data handling must also be practised."
+    ]
+  }
+}
