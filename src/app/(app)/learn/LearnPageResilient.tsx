@@ -209,7 +209,7 @@ export default function LearnPageResilient() {
     await Promise.all((data.lessons ?? []).map(async (lesson: LearnLesson) => {
       const cached = await offlineStorage.getLesson(lesson.id).catch(() => null);
       await offlineStorage.saveLesson({
-        id: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description,
+        id: lesson.id, title: lesson.title, subject: lesson.subject, subjectId: lesson.subjectId, topic: lesson.topic, description: lesson.description,
         blocks: (lesson.blocks ?? cached?.blocks) as OfflineLesson["blocks"],
         difficulty: lesson.difficulty, progress: lesson.progress, completed: lesson.completed,
         downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length,
