@@ -56,7 +56,7 @@ describe("callAI provider fallback chain", () => {
     const { callAI } = await import("./ai");
     const result = await callAI("teach me quadratics", 500, { skipCurriculumGrounding: true, curriculumContext: "" });
     expect(result).toBe("a lesson from openrouter");
-    // Both Groq models are tried (gpt-oss-120b, then qwen3.6-27b) before falling through.
+    // Both Groq models are tried (gpt-oss-120b, then gpt-oss-20b) before falling through.
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
       "https://api.groq.com/openai/v1/chat/completions",
       "https://api.groq.com/openai/v1/chat/completions",

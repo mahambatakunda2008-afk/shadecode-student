@@ -30,19 +30,24 @@ export function cleanJsonText(text: string): string {
 export interface SectionBlockLike { type: string; content: string }
 
 /** Parses one generated lesson section; tolerates LaTeX backslashes that make the raw text invalid JSON. */
+/** Short checkpoint questions are legitimate; the final section legitimately carries up to 8 blocks. */
+export const MIN_SECTION_BLOCK_CHARS = 24;
+export const MAX_SECTION_BLOCKS = 10;
+
 export function parseSectionJson<T extends SectionBlockLike>(raw: string): { title: string; blocks: T[] } | null {
   const candidates = [extractJSONObject(raw), extractJSONObject(cleanJsonText(raw))].filter((v): v is string => Boolean(v));
   for (const json of candidates) {
     try {
       const value = JSON.parse(json) as { title?: unknown; blocks?: unknown };
-      if (typeof value.title !== "string" || !Array.isArray(value.blocks)) continue;
+      if (!Array.isArray(value.blocks)) continue;
+      const title = typeof value.title === "string" ? value.title : "";
       const blocks = value.blocks.filter((b): b is T =>
         !!b && typeof b === "object" &&
         typeof (b as T).type === "string" &&
         typeof (b as T).content === "string" &&
-        (b as T).content.trim().length >= 40,
-      ).slice(0, 6);
-      if (blocks.length >= 3) return { title: value.title.trim().slice(0, 255), blocks };
+        (b as T).content.trim().length >= MIN_SECTION_BLOCK_CHARS,
+      ).slice(0, MAX_SECTION_BLOCKS);
+      if (blocks.length >= 3) return { title: title.trim().slice(0, 255), blocks };
     } catch {
       // try the next candidate
     }

@@ -159,3 +159,28 @@ describe("wall-of-text ignores non-prose blocks", () => {
     expect(lessonQualityFailures({ title: "Circular motion", blocks: [{ type: "concept", title: "Idea", content: "word ".repeat(300) }] }, request).failures).toContain("wall-of-text");
   });
 });
+
+import { parseSectionJson } from "./lessonJson";
+
+describe("parseSectionJson", () => {
+  const block = (type: string, content: string) => ({ type, title: type, content });
+  const long = "A sufficiently long block of explanatory content about the topic at hand.";
+
+  it("keeps all eight blocks of a final section so the closing summary survives", () => {
+    const blocks = ["concept", "example", "checkpoint", "curiosity", "practice", "exam", "mistake", "summary"].map((t) => block(t, long));
+    const parsed = parseSectionJson(JSON.stringify({ title: "Final", blocks }));
+    expect(parsed?.blocks.map((b: { type: string }) => b.type).at(-1)).toBe("summary");
+    expect(parsed?.blocks).toHaveLength(8);
+  });
+
+  it("keeps a short checkpoint question and tolerates a missing title", () => {
+    const blocks = [block("concept", long), block("example", long), block("checkpoint", "What is the SI unit of force?")];
+    const parsed = parseSectionJson(JSON.stringify({ blocks }));
+    expect(parsed?.blocks).toHaveLength(3);
+    expect(parsed?.title).toBe("");
+  });
+
+  it("still rejects a section with fewer than 3 usable blocks", () => {
+    expect(parseSectionJson(JSON.stringify({ title: "x", blocks: [block("concept", long), block("example", "too short")] }))).toBeNull();
+  });
+});

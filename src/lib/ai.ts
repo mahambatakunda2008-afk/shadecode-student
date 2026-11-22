@@ -83,7 +83,7 @@ function fetchWithTimeout(url: string, options: RequestInit, timeout: number): P
  * in order; set GROQ_MODEL to put a specific model first when Groq retires another one.
  */
 export function groqModelChain(override = process.env.GROQ_MODEL): string[] {
-  const defaults = ["openai/gpt-oss-120b", "qwen/qwen3.6-27b"];
+  const defaults = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"];
   const first = override?.trim();
   return first ? [first, ...defaults.filter((model) => model !== first)] : defaults;
 }
