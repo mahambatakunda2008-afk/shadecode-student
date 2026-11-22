@@ -81,7 +81,7 @@ export default function OfflineShell() {
     : status.failed > 0
       ? `${status.failed} change${status.failed === 1 ? "" : "s"} need${status.failed === 1 ? "s" : ""} attention`
       : status.localOnly > 0
-        ? `${status.localOnly} change${status.localOnly === 1 ? "" : "s"} saved locally, awaiting sync support`
+        ? `${status.localOnly} change${status.localOnly === 1 ? "" : "s"} saved locally outside the main sync queue`
         : `Syncing ${status.pending} saved change${status.pending === 1 ? "" : "s"}`;
 
   const canExpand = isOnline && failedItems.length > 0;
