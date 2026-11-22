@@ -194,10 +194,14 @@ export class OfflineResourceLibrary {
       const offset = entry.offset;
       const length = entry.length;
       if (!metadata || typeof metadata.title !== "string" || !metadata.title.trim() || metadata.title.length > 500 ||
-          typeof metadata.mimeType !== "string" || !Number.isSafeInteger(offset) || !Number.isSafeInteger(length) ||
+          typeof metadata.mimeType !== "string" || !["application/pdf", "text/plain", "text/markdown"].includes(metadata.mimeType) || !Number.isSafeInteger(offset) || !Number.isSafeInteger(length) ||
           offset! < 0 || length! <= 0 || length! > MAX_RESOURCE_BYTES ||
           payloadStart + offset! + length! > pack.size) {
         throw new Error("The resource pack contains an invalid resource entry.");
+      }
+      if (metadata.mimeType === "application/pdf") {
+        const signature = new TextDecoder().decode(await pack.slice(payloadStart + offset!, payloadStart + offset! + 5).arrayBuffer());
+        if (signature !== "%PDF-") throw new Error("The resource pack contains a file with an invalid PDF signature.");
       }
       ranges.push({ start: offset!, end: offset! + length! });
     }
