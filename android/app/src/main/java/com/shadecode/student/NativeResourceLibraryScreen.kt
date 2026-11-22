@@ -58,6 +58,9 @@ fun NativeResourceLibraryScreen(
     var message by remember { mutableStateOf<String?>(null) }
     var activeText by remember { mutableStateOf<String?>(null) }
     var activeTitle by remember { mutableStateOf("") }
+    var activeResource by remember { mutableStateOf<NativeOfflineResourceEntity?>(null) }
+    var annotations by remember { mutableStateOf<List<NativeResourceAnnotationEntity>>(emptyList()) }
+    var annotationDraft by remember { mutableStateOf("") }
 
     suspend fun refresh(search: String = query) {
         resources = withContext(Dispatchers.IO) {
@@ -69,6 +72,12 @@ fun NativeResourceLibraryScreen(
     LaunchedEffect(query) {
         kotlinx.coroutines.delay(180)
         refresh(query)
+    }
+    LaunchedEffect(activeResource?.resourceId) {
+        val resource = activeResource ?: return@LaunchedEffect
+        annotations = withContext(Dispatchers.IO) {
+            NativeOfflineResourceStore.annotations(database, session.userId, resource.resourceId)
+        }
     }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -106,10 +115,57 @@ fun NativeResourceLibraryScreen(
 
     if (activeText != null) {
         Column(Modifier.fillMaxSize().padding(20.dp)) {
-            TextButton(onClick = { activeText = null }) { Text("← Back to resources") }
+            TextButton(onClick = { activeText = null; activeResource = null; annotations = emptyList() }) { Text("← Back to resources") }
             Text(activeTitle, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(12.dp))
-            LazyColumn { item { Text(activeText.orEmpty(), style = MaterialTheme.typography.bodyLarge) } }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                item { Text(activeText.orEmpty(), style = MaterialTheme.typography.bodyLarge) }
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    Text("My notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    OutlinedTextField(
+                        value = annotationDraft,
+                        onValueChange = { annotationDraft = it.take(20_000) },
+                        label = { Text("Write a note about this resource") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                    )
+                    Button(
+                        onClick = {
+                            val resource = activeResource ?: return@Button
+                            val note = annotationDraft.trim()
+                            if (note.isNotBlank()) scope.launch {
+                                try {
+                                    val saved = withContext(Dispatchers.IO) {
+                                        NativeOfflineResourceStore.saveAnnotation(
+                                            database, session.userId, resource.resourceId,
+                                            kind = "note", content = note,
+                                        )
+                                    }
+                                    annotations = (annotations + saved).sortedByDescending { it.updatedAt }
+                                    annotationDraft = ""
+                                    message = "Note saved on this device."
+                                } catch (error: Exception) {
+                                    message = error.message ?: "Could not save note."
+                                }
+                            }
+                        },
+                        enabled = annotationDraft.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Save note offline") }
+                }
+                if (annotations.isEmpty()) item {
+                    Text("No notes yet. Your notes are stored locally with this resource.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+                items(annotations, key = { it.id }) { annotation ->
+                    Card(shape = RoundedCornerShape(14.dp)) {
+                        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                            Text(annotation.kind.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                            Text(annotation.content, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
         }
         return
     }
@@ -192,6 +248,8 @@ fun NativeResourceLibraryScreen(
                                         context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
                                     } else {
                                         activeTitle = resource.title
+                                        activeResource = resource
+                                        annotationDraft = ""
                                         activeText = withContext(Dispatchers.IO) { file.readText(Charsets.UTF_8).take(250_000) }
                                     }
                                 } catch (error: Exception) {
