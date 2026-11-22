@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { mergeDeviceAndCloudLessons } from "./mergeDeviceAndCloudLessons";
+import type { OfflineLesson } from "@/lib/offline/storage";
 
-const deviceLesson = (overrides = {}) => ({
+const deviceLesson = (overrides: Partial<OfflineLesson> = {}): OfflineLesson => ({
   id: "lesson-device", title: "Local lesson", subject: "Physics", description: "Saved locally",
   difficulty: "medium", progress: 35, completed: false, blocks: [{ type: "concept", content: "Cached content" }],
   downloadedAt: "2026-11-22T10:00:00.000Z", lastSyncedAt: "2026-11-22T10:00:00.000Z", size: 120,
