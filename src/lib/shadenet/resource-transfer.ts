@@ -3,28 +3,29 @@ import type { ResourceChunk, ResourceRequest, ResourceTransferComplete } from ".
 export interface TransferState {
   request: ResourceRequest;
   received: number;
+  bytesReceived: number;
   total: number | null;
   chunks: Map<number, ArrayBuffer>;
   hashes: Map<number, string>;
 }
 
 export function createTransfer(request: ResourceRequest): TransferState {
-  return { request, received: 0, total: null, chunks: new Map(), hashes: new Map() };
+  return { request, received: 0, bytesReceived: 0, total: null, chunks: new Map(), hashes: new Map() };
 }
 
-export function acceptChunk(state: TransferState, chunk: ResourceChunk): TransferState {
+const MAX_TRANSFER_BYTES = 150 * 1024 * 1024;\nconst MAX_TRANSFER_CHUNKS = 10000;\n\nexport function acceptChunk(state: TransferState, chunk: ResourceChunk): TransferState {
   if (chunk.protocol !== state.request.protocol) throw new Error("Unsupported ShadeNet protocol version");
   if (chunk.requestId !== state.request.requestId || chunk.resourceId !== state.request.resourceId) {
     throw new Error("Resource chunk does not belong to this transfer");
   }
-  if (!Number.isSafeInteger(chunk.index) || chunk.index < 0 || !Number.isSafeInteger(chunk.total) || chunk.total <= 0 || chunk.index >= chunk.total) {
+  if (!Number.isSafeInteger(chunk.index) || chunk.index < 0 || !Number.isSafeInteger(chunk.total) || chunk.total <= 0 || chunk.total > MAX_TRANSFER_CHUNKS || chunk.index >= chunk.total) {
     throw new Error("Invalid resource chunk coordinates");
   }
   if (!(chunk.data instanceof ArrayBuffer) || chunk.data.byteLength === 0) {
     throw new Error("Resource chunk payload is empty or invalid");
   }
   if (!/^[a-f0-9]{64}$/i.test(chunk.sha256)) throw new Error("Resource chunk hash is invalid");
-  if (state.total !== null && state.total !== chunk.total) throw new Error("Resource chunk count changed during transfer");
+  if (state.total !== null && state.total !== chunk.total) throw new Error("Resource chunk count changed during transfer");\n  if (state.bytesReceived + chunk.data.byteLength > MAX_TRANSFER_BYTES) throw new Error("Resource transfer exceeds the 150 MB limit");
 
   const previous = state.chunks.get(chunk.index);
   if (previous) {
