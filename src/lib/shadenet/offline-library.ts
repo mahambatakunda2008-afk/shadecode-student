@@ -29,7 +29,12 @@ interface StoredOfflineResource {
 const DB_NAME = "shadecode-offline-library";
 const DB_VERSION = 1;
 const STORE = "files";
-const MAX_RESOURCE_BYTES = 150 * 1024 * 1024;
+const MAX_PDF_BYTES = 100 * 1024 * 1024;
+const MAX_TEXT_BYTES = 5 * 1024 * 1024;
+
+function maxResourceBytes(mimeType: string): number {
+  return mimeType === "application/pdf" ? MAX_PDF_BYTES : MAX_TEXT_BYTES;
+}
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -68,7 +73,7 @@ export class OfflineResourceLibrary {
 
   async importFile(file: Blob, details: Omit<OfflineResourceMetadata, "id" | "mimeType" | "byteLength" | "sha256" | "importedAt" | "trust"> & { mimeType?: string; trust?: OfflineResourceTrust }): Promise<OfflineResourceMetadata> {
     if (!file.size) throw new Error("The selected resource is empty.");
-    if (file.size > MAX_RESOURCE_BYTES) throw new Error("This resource exceeds the 150 MB per-file offline limit.");
+    if (file.size > maxResourceBytes(mimeType)) throw new Error(mimeType === "application/pdf" ? "This PDF exceeds the 100 MB offline limit." : "This text resource exceeds the 5 MB offline limit.");
     const mimeType = details.mimeType || (typeof File !== "undefined" && file instanceof File ? file.type : "") || "application/octet-stream";
     if (!["application/pdf", "text/plain", "text/markdown"].includes(mimeType)) {
       throw new Error("Supported resource formats are PDF, plain text and Markdown.");
@@ -150,7 +155,7 @@ export class OfflineResourceLibrary {
       if (record.blob.size !== record.metadata.byteLength || await sha256(record.blob) !== record.metadata.sha256) {
         throw new Error(`Integrity check failed for "${record.metadata.title}". Export stopped.`);
       }
-      if (record.blob.size > MAX_RESOURCE_BYTES || offset + record.blob.size > 512 * 1024 * 1024) {
+      if (record.blob.size > maxResourceBytes(record.metadata.mimeType) || offset + record.blob.size > 512 * 1024 * 1024) {
         throw new Error("The resource collection exceeds the 512 MB resource-pack limit.");
       }
       entries.push({ metadata: record.metadata, offset, length: record.blob.size });
@@ -198,7 +203,7 @@ export class OfflineResourceLibrary {
           typeof metadata.mimeType !== "string" || !["application/pdf", "text/plain", "text/markdown"].includes(metadata.mimeType) ||
           typeof metadata.sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(metadata.sha256) ||
           metadata.byteLength !== length || !Number.isSafeInteger(offset) || !Number.isSafeInteger(length) ||
-          offset! < 0 || length! <= 0 || length! > MAX_RESOURCE_BYTES ||
+          offset! < 0 || length! <= 0 || length! > maxResourceBytes(metadata.mimeType) ||
           payloadStart + offset! + length! > pack.size) {
         throw new Error("The resource pack contains an invalid resource entry.");
       }
