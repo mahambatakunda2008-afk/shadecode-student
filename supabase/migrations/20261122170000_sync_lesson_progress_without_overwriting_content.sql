@@ -65,32 +65,7 @@ begin
     insert into public.subjects(id,user_id,name) values(p_record_id::uuid,v_user,coalesce(p_payload->>'name',''))
     on conflict(id) do update set name=excluded.name where public.subjects.user_id=v_user;
   elsif p_store='learn_lessons' and p_payload->>'sync_kind'='progress' then
-    if coalesce(p_payload->>'progress','') !~ '^(0|[1-9][0-9]?|100) then
-      raise exception 'Invalid lesson progress';
-    end if;
-    v_progress := (p_payload->>'progress')::integer;
-    if v_progress < 0 or v_progress > 100 then raise exception 'Invalid lesson progress'; end if;
-    update public.learn_lessons
-    set progress=v_progress, updated_at=now()
-    where id::text=p_record_id and user_id=v_user;
-    if not found then raise exception 'Lesson not found for progress sync'; end if;
-  else
-    insert into public.learn_lessons(id,user_id,subject_id,title,description,difficulty,progress,blocks)
-    values(p_record_id::uuid,v_user,(p_payload->>'subject_id')::uuid,coalesce(p_payload->>'title',''),coalesce(p_payload->>'description',''),coalesce(p_payload->>'difficulty','medium'),coalesce((p_payload->>'progress')::integer,0),p_payload->'blocks')
-    on conflict(id) do update set subject_id=excluded.subject_id,title=excluded.title,description=excluded.description,difficulty=excluded.difficulty,progress=excluded.progress,blocks=excluded.blocks
-    where public.learn_lessons.user_id=v_user;
-  end if;
-
-  update public.sync_revisions set version=v_new,device_id=p_device_id,client_version=p_client_version,updated_at=now()
-  where user_id=v_user and store=p_store and record_id=p_record_id;
-
-  return jsonb_build_object('ok',true,'status','accepted','version',v_new,'store',p_store,'recordId',p_record_id);
-end;
-$function$;
-
-revoke all on function public.apply_sync_mutation(text,text,text,jsonb,bigint,bigint,text) from public;
-grant execute on function public.apply_sync_mutation(text,text,text,jsonb,bigint,bigint,text) to authenticated;
- then
+    if coalesce(p_payload->>'progress','') !~ '^(0|[1-9][0-9]?|100)$' then
       raise exception 'Invalid lesson progress';
     end if;
     v_progress := (p_payload->>'progress')::integer;
