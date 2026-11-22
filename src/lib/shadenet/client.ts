@@ -42,6 +42,9 @@ export class ShadeNetResourceClient {
       try {
         const saved = await this.transferStore.list(request.resourceId, expectedSha256);
         for (const chunk of saved) {
+          if (await sha256Hex(chunk.data) !== chunk.sha256.toLowerCase()) {
+            throw new Error("Persisted transfer chunk failed integrity verification");
+          }
           state = acceptChunk(state, {
             protocol: request.protocol,
             requestId: request.requestId,
