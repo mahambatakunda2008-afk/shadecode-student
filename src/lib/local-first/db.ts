@@ -96,6 +96,28 @@ class LocalFirstDB {
 
   async putRecordAndOperation(record: LocalRecord, operation: LocalOperation): Promise<void> { await this.init(); await new Promise<void>((resolve, reject) => { const transaction = this.db!.transaction([STORES.records, STORES.operations], "readwrite"); transaction.objectStore(STORES.records).put(record); transaction.objectStore(STORES.operations).put(operation); transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error); transaction.onabort = () => reject(transaction.error ?? new Error("Local mutation aborted")); }); }
   async getRecord<T = unknown>(id: string): Promise<LocalRecord<T> | null> { return this.transaction<LocalRecord<T> | null>(STORES.records, "readonly", (store, resolve, reject) => { const request = store.get(id); request.onsuccess = () => resolve(request.result ?? null); request.onerror = () => reject(request.error); }); }
+  async deleteRecordIfOwned(id: string, userId: string): Promise<boolean> {
+    if (!id || !userId) return false;
+    await this.init();
+    return new Promise<boolean>((resolve, reject) => {
+      const transaction = this.db!.transaction(STORES.records, "readwrite");
+      const store = transaction.objectStore(STORES.records);
+      const request = store.get(id);
+      let deleted = false;
+      request.onsuccess = () => {
+        const record = request.result as LocalRecord | undefined;
+        if (record?.userId === userId) {
+          store.delete(id);
+          deleted = true;
+        }
+      };
+      request.onerror = () => reject(request.error);
+      transaction.oncomplete = () => resolve(deleted);
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error ?? new Error("Local record deletion aborted"));
+    });
+  }
+
   async getRecords(userId: string): Promise<LocalRecord[]> { return this.transaction<LocalRecord[]>(STORES.records, "readonly", (store, resolve, reject) => { const request = store.index("userId").getAll(userId); request.onsuccess = () => resolve(request.result ?? []); request.onerror = () => reject(request.error); }); }
   async putOperation(operation: LocalOperation): Promise<void> { await this.transaction<void>(STORES.operations, "readwrite", (store, resolve, reject) => { const request = store.put(operation); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
   async getOperations(userId: string): Promise<LocalOperation[]> { return this.transaction<LocalOperation[]>(STORES.operations, "readonly", (store, resolve, reject) => { const request = store.index("userId").getAll(userId); request.onsuccess = () => resolve((request.result ?? []).filter((operation) => operation?.kind)); request.onerror = () => reject(request.error); }); }
