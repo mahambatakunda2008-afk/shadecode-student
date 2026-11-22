@@ -113,6 +113,37 @@ fun NativeResourceLibraryScreen(
         }
     }
 
+    val packExporter = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.shadecode.resource-pack"),
+    ) { uri ->
+        if (uri != null) scope.launch {
+            busy = true
+            try {
+                val count = withContext(Dispatchers.IO) {
+                    NativeResourcePack.export(context, database, session.userId, uri)
+                }
+                message = "Exported $count verified resource(s) to a Shadecode pack."
+            } catch (error: Exception) {
+                message = error.message ?: "Could not export the resource pack."
+            } finally { busy = false }
+        }
+    }
+    val packImporter = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) scope.launch {
+            busy = true
+            try {
+                val count = withContext(Dispatchers.IO) {
+                    NativeResourcePack.import(context, database, session.userId, uri, selectedSubject)
+                }
+                refresh("")
+                query = ""
+                message = "Imported $count resource(s). Their trust status is unverified."
+            } catch (error: Exception) {
+                message = error.message ?: "Could not import the resource pack."
+            } finally { busy = false }
+        }
+    }
+
     if (activeText != null) {
         Column(Modifier.fillMaxSize().padding(20.dp)) {
             TextButton(onClick = { activeText = null; activeResource = null; annotations = emptyList() }) { Text("← Back to resources") }
@@ -208,6 +239,19 @@ fun NativeResourceLibraryScreen(
                         enabled = !busy && selectedSubject.isNotBlank(),
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text(if (busy) "Saving resource…" else "Choose PDF or text file") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(
+                            onClick = { packImporter.launch(arrayOf("application/vnd.shadecode.resource-pack", "application/octet-stream")) },
+                            enabled = !busy,
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Import .scpack") }
+                        OutlinedButton(
+                            onClick = { packExporter.launch("Shadecode-Resources.scpack") },
+                            enabled = !busy && resources.isNotEmpty(),
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Export .scpack") }
+                    }
+                    Text("Resource packs transfer your saved files between web and Android. Imported trust labels reset to unverified.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Supported now: PDF (up to 100 MB), TXT and Markdown (up to 5 MB). Other formats will be added after compatibility testing.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     message?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
                 }
