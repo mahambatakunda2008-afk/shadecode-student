@@ -564,7 +564,9 @@ export async function POST(req: Request) {
         `PREVIOUS MATERIAL (avoid unnecessary repetition): ${JSON.stringify(priorBlocks)}`,
         "TEACHING CONTRACT: teach deeply, stay inside the exact subject/topic, explain why/how, use concrete examples, avoid invented syllabus claims, and do not put answers inside checkpoints.",
         "Return ONLY JSON with a top-level title string and blocks array; each block must contain type, optional title, and content.",
-        "Use 3-5 substantive blocks. Content must be at least 40 characters per block.",
+        generationSectionIndex === generationSectionCount - 1 && generationSectionCount > 1
+          ? "This is the FINAL section: use 5-8 substantive blocks and END with a summary block (type \"summary\"). Content must be at least 40 characters per block."
+          : "Use 3-5 substantive blocks. Content must be at least 40 characters per block.",
         `SECTION-SPECIFIC REQUIREMENTS: ${buildLocalSectionRequirements(generationSectionIndex, generationSectionCount)}`,
         "BLOCK TYPES: set each block's type to exactly one of: objective, map, prior, concept, definition, structure, mechanism, formula, example, comparison, checkpoint, misconception, application, exam, mistake, synthesis, curiosity, summary, practice, next. Use the exact words. Section placement: the first section opens with objective and map (the big picture); core sections use concept, structure, mechanism, formula, example and checkpoint; the second-to-last section includes a synthesis block; the final section includes curiosity (further questions to explore), practice, exam, mistake and summary blocks.",
         `TOPIC ANCHORING: the lesson is judged on how often its blocks stay on "${request.topic}". Name "${request.topic}" explicitly in the title or opening sentence of most blocks.`,
@@ -681,7 +683,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
         // the curated fallback after three attempts (production 2026-11-18).
         const perSectionIgnored = generationSectionCount > 1 ? ["topic-drift", "concept", "example", "checkpoint", "missing-relevant-diagram"] : [];
         sectionFailures = sectionQuality.failures.filter((failure) =>
-          !perSectionIgnored.includes(failure) && !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "summary", "teach-example", "exam"].includes(failure)
+          !perSectionIgnored.includes(failure) && !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "teach-example", "exam"].includes(failure) && !(failure === "summary" && generationSectionCount > 1 && generationSectionIndex < generationSectionCount - 1)
         );
 
         if (isSectionTooThin(section.blocks.length, generationSectionCount)) sectionFailures = [...sectionFailures, "section-too-thin"];
