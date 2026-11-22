@@ -57,6 +57,7 @@ fun NativeResourceLibraryScreen(
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var activeText by remember { mutableStateOf<String?>(null) }
+    var activePdfFile by remember { mutableStateOf<File?>(null) }
     var activeTitle by remember { mutableStateOf("") }
     var activeResource by remember { mutableStateOf<NativeOfflineResourceEntity?>(null) }
     var annotations by remember { mutableStateOf<List<NativeResourceAnnotationEntity>>(emptyList()) }
@@ -142,6 +143,15 @@ fun NativeResourceLibraryScreen(
                 message = error.message ?: "Could not import the resource pack."
             } finally { busy = false }
         }
+    }
+
+    if (activePdfFile != null) {
+        NativeOfflinePdfReader(
+            file = activePdfFile!!,
+            title = activeTitle,
+            onBack = { activePdfFile = null; activeResource = null; annotations = emptyList() },
+        )
+        return
     }
 
     if (activeText != null) {
@@ -288,8 +298,9 @@ fun NativeResourceLibraryScreen(
                                         ?: error("The saved file is missing or has changed. Import it again.")
                                     withContext(Dispatchers.IO) { NativeOfflineResourceStore.markOpened(database, session.userId, resource.resourceId, resource.lastPage) }
                                     if (resource.mimeType == "application/pdf") {
-                                        val uri = FileProvider.getUriForFile(context, context.packageName + ".files", file)
-                                        context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+                                        activeTitle = resource.title
+                                        activeResource = resource
+                                        activePdfFile = file
                                     } else {
                                         activeTitle = resource.title
                                         activeResource = resource
