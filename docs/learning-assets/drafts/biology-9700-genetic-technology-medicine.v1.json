@@ -1,0 +1,172 @@
+{
+  "asset_key": "biology-9700-genetic-technology-medicine",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Genetic technology applied to medicine",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "19",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030, Topic 19, pp. 47–49.",
+    "objective_mapping_status": "unmapped_to_database_objective_uuids",
+    "syllabus_outcome_codes": [
+      "19.2.1",
+      "19.2.2",
+      "19.2.3",
+      "19.2.4"
+    ]
+  },
+  "review_status": "draft",
+  "content": {
+    "learning_objectives": [
+      "Explain benefits of recombinant insulin, factor VIII and adenosine deaminase.",
+      "Outline genetic screening using BRCA1/BRCA2, Huntington’s disease and cystic fibrosis.",
+      "Outline gene therapy for SCID and inherited eye diseases.",
+      "Discuss social and ethical considerations of screening and gene therapy."
+    ],
+    "sections": [
+      [
+        "Recombinant human proteins",
+        "Genetic engineering can produce human proteins in microorganisms or cultured cells. Recombinant production can provide a reliable supply, reduce dependence on human donors and allow controlled purification. The product must be correctly folded, modified where necessary, purified and tested for safety and activity."
+      ],
+      [
+        "Recombinant insulin",
+        "Human insulin can be produced using genetically engineered microorganisms or cell cultures. It provides a consistent supply for people with diabetes and avoids reliance on extraction from animal pancreases. Purity and manufacturing controls reduce contamination and batch variability."
+      ],
+      [
+        "Recombinant factor VIII",
+        "Factor VIII is a blood-clotting protein used to treat haemophilia A. Recombinant factor VIII reduces reliance on pooled donated blood products and lowers the risk of transmission of blood-borne pathogens, although it is costly and requires careful production and quality control."
+      ],
+      [
+        "Adenosine deaminase and SCID",
+        "Adenosine deaminase (ADA) deficiency can cause severe combined immunodeficiency (SCID). Recombinant ADA can be used as enzyme replacement in some patients. Gene therapy aims to introduce a functional ADA gene into suitable cells so they can produce the enzyme."
+      ],
+      [
+        "Genetic screening",
+        "Genetic screening tests individuals or populations for particular alleles or variants associated with inherited conditions or increased disease risk. Screening can support earlier monitoring, informed reproductive choices and targeted prevention, but results may indicate probability rather than certainty."
+      ],
+      [
+        "BRCA1 and BRCA2",
+        "Certain inherited variants of BRCA1 and BRCA2 increase susceptibility to breast and ovarian cancers. A positive result indicates increased risk, not certainty that cancer will develop. Screening information can guide surveillance and risk-reduction decisions."
+      ],
+      [
+        "Huntington’s disease and cystic fibrosis",
+        "Huntington’s disease is associated with a dominant allele involving an expanded CAG repeat in the HTT gene; predictive testing can reveal whether an individual carries the disease-associated expansion. Cystic fibrosis is usually caused by pathogenic variants in both copies of the CFTR gene; carrier testing and reproductive screening can inform family planning."
+      ],
+      [
+        "Gene therapy",
+        "Gene therapy aims to treat disease by introducing genetic material into target cells to restore or alter gene function. Delivery may use viral vectors or other systems. The target cells, delivery efficiency, duration of expression and immune responses influence effectiveness and risk."
+      ],
+      [
+        "SCID and inherited eye disease examples",
+        "For some forms of SCID, functional copies of the affected gene can be introduced into a patient's cells, with the aim of restoring immune-cell function. In inherited retinal diseases, gene therapy can deliver a functional gene to retinal cells when enough target cells remain. Outcomes depend on the specific mutation and disease stage."
+      ],
+      [
+        "Social and ethical considerations",
+        "Genetic screening raises issues of informed consent, privacy, data security, discrimination, psychological effects and unequal access. Predictive results may affect relatives as well as the person tested. Gene therapy raises questions about safety, long-term monitoring, access, cost and the distinction between treating disease and enhancement."
+      ]
+    ],
+    "questions": [
+      {
+        "question": "Give two advantages of recombinant human insulin.",
+        "answer": "It can provide a reliable supply of human insulin and avoids dependence on extraction from animal pancreases; purity and reduced contamination risk are also valid.",
+        "mark_points": [
+          "Reliable supply",
+          "Avoids animal extraction"
+        ]
+      },
+      {
+        "question": "Explain one advantage of recombinant factor VIII over factor VIII from pooled donor blood.",
+        "answer": "It reduces reliance on pooled human blood products and lowers the risk of transmitting blood-borne pathogens.",
+        "mark_points": [
+          "Less reliance on pooled donor blood",
+          "Reduced pathogen transmission risk"
+        ]
+      },
+      {
+        "question": "What is the role of ADA in relation to SCID?",
+        "answer": "ADA is an enzyme; inherited ADA deficiency can cause SCID by disrupting immune-cell function.",
+        "mark_points": [
+          "ADA enzyme",
+          "Deficiency can cause SCID"
+        ]
+      },
+      {
+        "question": "Explain why a positive BRCA1 screening result does not mean that a person will definitely develop cancer.",
+        "answer": "The variant increases susceptibility or probability, but cancer development also depends on other genetic, environmental and biological factors.",
+        "mark_points": [
+          "Increased risk not certainty",
+          "Other factors influence outcome"
+        ]
+      },
+      {
+        "question": "Distinguish carrier screening for cystic fibrosis from predictive testing for Huntington’s disease.",
+        "answer": "Cystic fibrosis carrier screening identifies individuals with one pathogenic CFTR allele who may pass it to offspring; Huntington’s predictive testing can identify a disease-associated HTT expansion in an individual.",
+        "mark_points": [
+          "Carrier status / recessive CFTR",
+          "Predictive HTT expansion"
+        ]
+      },
+      {
+        "question": "Outline a basic gene-therapy approach for ADA-deficient SCID.",
+        "answer": "Introduce a functional ADA gene into suitable patient cells using a delivery system, then return or maintain the modified cells so ADA can be produced.",
+        "mark_points": [
+          "Functional ADA gene",
+          "Delivery into target cells",
+          "ADA expression"
+        ]
+      },
+      {
+        "question": "Give two factors that affect the success of gene therapy.",
+        "answer": "Target-cell access, delivery efficiency, duration of gene expression, immune response and the specific mutation are valid factors.",
+        "mark_points": [
+          "Two valid factors"
+        ]
+      },
+      {
+        "question": "Explain why informed consent is important before genetic screening.",
+        "answer": "Individuals need to understand what is tested, possible results, limitations, privacy implications and possible effects on relatives before choosing whether to be tested.",
+        "mark_points": [
+          "Understand test and limitations",
+          "Voluntary informed decision"
+        ]
+      },
+      {
+        "question": "Give two ethical concerns associated with genetic screening.",
+        "answer": "Privacy breaches, genetic discrimination, psychological distress, family implications and unequal access are valid concerns.",
+        "mark_points": [
+          "Two valid concerns"
+        ]
+      },
+      {
+        "question": "Explain one ethical concern about gene therapy.",
+        "answer": "Unintended effects or uncertain long-term outcomes may cause harm, so safety, monitoring and informed consent are essential.",
+        "mark_points": [
+          "Risk of unintended effects",
+          "Long-term uncertainty / consent"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/recombinant-protein-production.svg",
+        "alt": "recombinant protein production",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/genetic-screening-pathways.svg",
+        "alt": "genetic screening pathways",
+        "type": "svg"
+      },
+      {
+        "path": "/learning-assets/biology/9700/genetic-technology/gene-therapy-delivery.svg",
+        "alt": "gene therapy delivery",
+        "type": "svg"
+      }
+    ]
+  }
+}
