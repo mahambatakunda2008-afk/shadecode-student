@@ -199,16 +199,19 @@ describe("required block types per section", () => {
     const all = Array.from({ length: 7 }, (_, i) => requiredSectionTypes(i, 7)).flat();
     for (const type of ["objective", "map", "structure", "mechanism", "synthesis", "curiosity", "practice", "mistake", "summary"]) expect(all).toContain(type);
     expect(requiredSectionTypes(0, 7)).toEqual(["objective", "map"]);
-    expect(requiredSectionTypes(6, 7)).toEqual(["curiosity", "practice", "mistake", "summary"]);
+    expect(requiredSectionTypes(6, 7)).toEqual(["curiosity", "practice", "mistake", "summary", "application", "checkpoint"]);
+    expect(requiredSectionTypes(1, 7)).toEqual(["example", "checkpoint", "structure"]);
   });
   it("requires nothing for a single-section lesson and still covers short plans", () => {
     expect(requiredSectionTypes(0, 1)).toEqual([]);
     const four = Array.from({ length: 4 }, (_, i) => requiredSectionTypes(i, 4)).flat();
     for (const type of ["map", "structure", "mechanism", "synthesis", "curiosity"]) expect(four).toContain(type);
+    expect(four.filter((t) => t === "checkpoint").length).toBeGreaterThanOrEqual(3);
+    expect(four.filter((t) => t === "example" || t === "application").length).toBeGreaterThanOrEqual(3);
   });
   it("reports only the missing types, honouring aliases", () => {
     expect(missingSectionTypes(["concept", "objective"], 0, 7)).toEqual(["map"]);
-    expect(missingSectionTypes(["recap", "curiosity", "practice", "mistake"], 6, 7)).toEqual([]);
+    expect(missingSectionTypes(["recap", "curiosity", "practice", "mistake", "application", "checkpoint"], 6, 7)).toEqual([]);
   });
 });
 

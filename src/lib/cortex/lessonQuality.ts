@@ -89,10 +89,13 @@ export function requiredSectionTypes(index: number, count: number): string[] {
   if (count < 2) return [];
   const required: string[] = [];
   if (index === 0) required.push("objective", "map");
+  // Core sections each carry a worked example and a check, so the whole lesson reaches the deep-lesson
+  // minimums (3 examples/applications, 3 checkpoints) however many sections the plan has.
+  if (index >= 1 && index <= count - 2) required.push("example", "checkpoint");
   if (index === 1) required.push("structure");
   if (count > 2 && index === Math.min(2, count - 2)) required.push("mechanism");
   if (count > 2 && index === count - 2) required.push("synthesis");
-  if (index === count - 1) required.push("curiosity", "practice", "mistake", "summary");
+  if (index === count - 1) required.push("curiosity", "practice", "mistake", "summary", "application", "checkpoint");
   return required;
 }
 
