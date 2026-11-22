@@ -131,6 +131,9 @@ object NativeResourcePack {
         require(defaultSubject.isNotBlank()) { "Choose a subject before importing this pack." }
         val root = accountDirectory(context, accountId)
         val stagedPack = File(root, ".pack-${UUID.randomUUID()}.part")
+        // Keep the staging registry outside the parse block so malformed packs
+        // cannot strand already-extracted payloads in app-private storage.
+        val prepared = mutableListOf<PreparedEntry>()
         try {
             val input = context.contentResolver.openInputStream(source)
                 ?: error("Android could not open this resource pack.")
@@ -149,7 +152,6 @@ object NativeResourcePack {
             }
             require(stagedPack.length() >= 12) { "The resource pack is incomplete." }
 
-            val prepared = mutableListOf<PreparedEntry>()
             RandomAccessFile(stagedPack, "r").use { pack ->
                 val magic = ByteArray(8)
                 pack.readFully(magic)
@@ -242,6 +244,7 @@ object NativeResourcePack {
                 prepared.forEach { it.file.delete() }
             }
         } finally {
+            prepared.forEach { it.file.delete() }
             stagedPack.delete()
         }
     }
