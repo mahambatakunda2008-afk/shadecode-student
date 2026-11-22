@@ -1183,7 +1183,7 @@ async function runJob(
 }
 export function queueLessonGeneration(input: LessonGenerationInput) { return createGenerationJob("lesson", input); }
 const RESUMABLE_DURABLE_STATUSES = new Set(["queued", "warming", "generating", "partial", "interrupted"]);
-const RESUMABLE_DURABLE_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+const RESUMABLE_DURABLE_MAX_AGE_MS = 30 * 60 * 1000;
 
 /**
  * Only a recent, unfinished lesson job may be resumed from the server on page load. Without this,
