@@ -105,19 +105,6 @@ jobs:
           unzip -Z1 "$APK" | grep -Fx "lib/arm64-v8a/libshadecode_cortex_native.so"
           unzip -Z1 "$APK" | grep -Fx "lib/x86_64/libshadecode_cortex_native.so"
 
-      - name: Install and launch APK on Android emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_6
-          working-directory: android
-          script: |
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell monkey -p com.shadecode.student.debug 1
-            adb shell pm path com.shadecode.student.debug
-
       - name: Prepare debug APK
         working-directory: .
         run: |
@@ -131,6 +118,24 @@ jobs:
           path: dist/android/ShadecodeStudent-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Install and launch APK on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          # GitHub's Linux hosted runners may lack KVM. Explicitly enable QEMU TCG.
+          ANDROID_I_WANT_MY_TCG: "yes"
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          working-directory: android
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell monkey -p com.shadecode.student.debug 1
+            adb shell pm path com.shadecode.student.debug
 
       - name: Build signed release APK and Play Store bundle
         if: env.HAS_ANDROID_SIGNING == 'true'
