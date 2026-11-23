@@ -47,23 +47,38 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (remembered) { const cached = readCachedProfile(remembered); if (cached) setProfile(prioritizeComputerScience(cached)); }
     setLoading(false);
 
-    if (!navigator.onLine) return () => { mounted = false; };
+    // Supabase persists the session on this device. Restore that local session even
+    // when offline so the learner can reach account-scoped local data. This is not
+    // server authorization: every remote operation still requires server verification.
     const initAuth = async () => {
       try {
         const { data: { session } } = await withTimeout(supabase.auth.getSession(), AUTH_BOOT_TIMEOUT_MS);
         if (!mounted) return;
         const currentUser = session?.user ?? null;
         setUser(currentUser);
-        if (currentUser) { rememberActiveUser(currentUser.id); const cached = readCachedProfile(currentUser.id); if (cached) setProfile(prioritizeComputerScience(cached)); void fetchProfile(currentUser.id); }
-      } catch { /* local session/profile stays usable */ }
+        if (currentUser) {
+          rememberActiveUser(currentUser.id);
+          const cached = readCachedProfile(currentUser.id);
+          if (cached) setProfile(prioritizeComputerScience(cached));
+          if (navigator.onLine) void fetchProfile(currentUser.id);
+        }
+      } catch { /* local session/profile stays usable; retry when connectivity returns */ }
     };
-    void initAuth();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       if (event === "SIGNED_OUT" || !session) { clearRememberedUser(); offlineSync.stopAutoSync(); setUser(null); setProfile(null); return; }
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") { rememberActiveUser(session.user.id); setUser(session.user); void fetchProfile(session.user.id); }
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        rememberActiveUser(session.user.id);
+        setUser(session.user);
+        const cached = readCachedProfile(session.user.id);
+        if (cached) setProfile(prioritizeComputerScience(cached));
+        if (navigator.onLine) void fetchProfile(session.user.id);
+      }
     });
-    return () => { mounted = false; offlineSync.stopAutoSync(); subscription.unsubscribe(); };
+    const handleOnline = () => { void initAuth(); };
+    window.addEventListener("online", handleOnline);
+    void initAuth();
+    return () => { mounted = false; window.removeEventListener("online", handleOnline); offlineSync.stopAutoSync(); subscription.unsubscribe(); };
   }, [supabase, fetchProfile]);
 
   useEffect(() => { if (!user) return; const timer = window.setTimeout(() => { void offlineSync.startAutoSync(); void offlineSync.syncAll(); }, 1500); return () => { window.clearTimeout(timer); offlineSync.stopAutoSync(); }; }, [user]);
