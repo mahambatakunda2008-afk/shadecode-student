@@ -38,7 +38,7 @@ export default async function LibraryPage() {
     <>
       <LibraryHub subjects={subjects} />
       <div className="mx-auto w-full max-w-2xl px-4 pb-8">
-        <OfflineResourceLibraryPanel subjects={subjects} />
+        <OfflineResourceLibraryPanel subjects={subjects} accountId={user.id} />
       </div>
     </>
   );
