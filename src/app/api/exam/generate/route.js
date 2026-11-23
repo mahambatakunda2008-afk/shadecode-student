@@ -53,7 +53,7 @@ export async function POST(req) {
     }
 
     const cleanTopic = typeof topic === "string"
-      ? topic.replace(/\\s*\\((?:O-Level|A-Level|University|O-Level standard|A-Level standard|university entrance standard)[^)]*\\)\\s*$/i, "").trim()
+      ? topic.replace(/\s*\((?:O-Level|A-Level|University|O-Level standard|A-Level standard|university entrance standard)[^)]*\)\s*$/i, "").trim()
       : "";
 
     // A blank topic reaches us as the subject name itself ("Biology (A-Level)" -> "Biology"). That means
