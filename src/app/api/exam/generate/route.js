@@ -97,19 +97,25 @@ export async function POST(req) {
       }, { status: 503 });
     }
 
-    // Generated papers are intentionally not written to `exams`: that table is the learner's exam
-    // schedule (subject + exam_date). The old insert here could never succeed against it.
+    // Exam Sim's canonical question contract uses numeric, paper-local IDs. Cortex
+    // generates opaque string IDs, so normalize IDs at this API boundary before
+    // both signing and returning the paper. This keeps the proof bound to the exact
+    // questions the browser receives.
+    const responseQuestions = exam.questions.map((question, index) => ({
+      ...question,
+      id: index + 1,
+    }));
 
     const paperProof = signExamPaper({
       userId,
       subjectId: canonicalSubject.id,
       difficulty,
       source,
-      questions: exam.questions,
+      questions: responseQuestions,
     });
 
     return NextResponse.json({
-      questions: exam.questions,
+      questions: responseQuestions,
       metadata: {
         subject: canonicalSubject.name,
         subjectId: canonicalSubject.id,
