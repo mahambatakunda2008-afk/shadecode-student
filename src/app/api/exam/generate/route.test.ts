@@ -165,11 +165,19 @@ describe("POST /api/exam/generate (no-AI-first)", () => {
     expect(json.code).toBe("INSUFFICIENT_QUESTION_COVERAGE");
   });
 
-  it("returns the live AI paper for an uncovered topic when AI works", async () => {
-    generateExam.mockResolvedValue({ title: "Geo", questions: [{ id: 1, type: "short_answer", question: "Define erosion.", marks: 2, topic: "Rivers", difficulty: "medium" }], totalMarks: 2, durationMinutes: 5 });
+  it("normalizes Cortex string question IDs to the numeric Exam Sim contract", async () => {
+    generateExam.mockResolvedValue({
+      title: "Geo",
+      questions: [{ id: "q_1_generated", type: "short_answer", question: "Define river erosion and explain one process involved.", marks: 2, topic: "Rivers", difficulty: "medium", modelAnswer: "Hydraulic action is the force of water against the river bed and banks." }],
+      totalMarks: 2,
+      durationMinutes: 5,
+    });
     const { status, json } = await call({ subject: "Geography", topic: "Rivers", difficulty: "medium", questionCount: 1 });
     expect(status).toBe(200);
     expect(json.metadata.source).toBe("cortex");
+    expect(json.questions[0].id).toBe(1);
+    expect(typeof json.questions[0].id).toBe("number");
+    expect(json.questions[0].modelAnswer).toContain("Hydraulic action");
   });
 
   it("refuses to return an underfilled AI paper as complete", async () => {
