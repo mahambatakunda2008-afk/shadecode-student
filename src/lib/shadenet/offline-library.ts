@@ -47,6 +47,33 @@ function maxResourceBytes(mimeType: string): number {
   return mimeType === "application/pdf" ? MAX_PDF_BYTES : MAX_TEXT_BYTES;
 }
 
+const PORTABLE_METADATA_FIELDS = [
+  "subject",
+  "qualification",
+  "syllabus",
+  "topic",
+  "source",
+  "publisher",
+] as const;
+
+/** Reject malformed optional manifest metadata before it enters the local library. */
+export function validateOfflineResourcePackMetadata(
+  metadata: Partial<OfflineResourceMetadata>,
+): void {
+  if (typeof metadata.title !== "string" || !metadata.title.trim() ||
+      metadata.title.length > 500 || /[\u0000-\u001f\u007f]/.test(metadata.title)) {
+    throw new Error("The resource pack contains an invalid resource title.");
+  }
+  for (const field of PORTABLE_METADATA_FIELDS) {
+    const value = metadata[field];
+    if (value === undefined) continue;
+    if (typeof value !== "string" || value.length > 500 ||
+        /[\u0000-\u001f\u007f]/.test(value)) {
+      throw new Error("The resource pack contains invalid " + field + " metadata.");
+    }
+  }
+}
+
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
@@ -224,7 +251,7 @@ export class OfflineResourceLibrary {
       const metadata = entry.metadata;
       const offset = entry.offset;
       const length = entry.length;
-      if (!metadata || typeof metadata.title !== "string" || !metadata.title.trim() || metadata.title.length > 500 ||
+      if (!metadata ||
           typeof metadata.mimeType !== "string" || !["application/pdf", "text/plain", "text/markdown"].includes(metadata.mimeType) ||
           typeof metadata.sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(metadata.sha256) ||
           metadata.byteLength !== length || !Number.isSafeInteger(offset) || !Number.isSafeInteger(length) ||
@@ -232,6 +259,7 @@ export class OfflineResourceLibrary {
           payloadStart + offset! + length! > pack.size) {
         throw new Error("The resource pack contains an invalid resource entry.");
       }
+      validateOfflineResourcePackMetadata(metadata);
       const normalizedHash = metadata.sha256.toLowerCase();
       if (seenHashes.has(normalizedHash)) {
         throw new Error("The resource pack contains duplicate content entries.");
