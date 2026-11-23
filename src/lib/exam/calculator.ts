@@ -15,7 +15,7 @@ const FUNCTIONS: Record<string, (...args: number[]) => number> = {
 };
 
 function tokenize(source: string): Token[] {
-  const clean = source.replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-").replace(/π/g, "pi").replace(/√/g, "sqrt");
+  const clean = source.trim().replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-").replace(/π/g, "pi").replace(/√/g, "sqrt");
   const raw: Token[] = [];
   const re = /\s*(?:(\d+(?:\.\d*)?(?:e[+-]?\d+)?|\.\d+(?:e[+-]?\d+)?)|([a-zA-Z_][a-zA-Z_0-9]*)|(\*\*|[+\-*/^%!])|(\()|(\))|(,))/gy;
   let pos = 0;
@@ -74,7 +74,7 @@ export function evaluateExpression(source: string, scope: CalculatorScope = {}, 
         } else args = [expression(30)];
         const fn = FUNCTIONS[token.value];
         if (["sin", "cos", "tan", "sec", "cosec", "cot"].includes(token.value)) args[0] *= trigScope;
-        left = fn(...args);
+        const output = fn(...args);\n        left = angle === "DEG" && ["asin", "acos", "atan"].includes(token.value) ? output * 180 / Math.PI : output;
       } else {
         const value = constants[token.value];
         if (value === undefined) throw new Error(`Unknown variable: ${token.value}`);
