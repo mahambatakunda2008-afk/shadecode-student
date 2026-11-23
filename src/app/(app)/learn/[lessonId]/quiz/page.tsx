@@ -198,6 +198,19 @@ export default function QuizPage() {
       const checkpoint = await getQuizAttemptCheckpoint(session.user.id, lessonId).catch(() => null);
       if (checkpoint) {
         quizAttemptIdRef.current = checkpoint.attemptId;
+        // A previously issued quiz is already fully represented by its local checkpoint.
+        // Restore it before attempting server verification so an offline restart does
+        // not turn a recoverable attempt into an error screen.
+        if (!navigator.onLine) {
+          setQuestions(checkpoint.questions);
+          setAnswers(checkpoint.answers);
+          setCurrent(checkpoint.current);
+          setSelected(checkpoint.selected);
+          setConfirmed(checkpoint.confirmed);
+          setSubmissionError("You're offline. Your saved quiz has been restored on this device. Answer progress remains local until verification can resume online.");
+          setPhase("quiz");
+          return;
+        }
         try {
           const recoveryResponse = await fetch(`/api/learn/quiz/attempt/${encodeURIComponent(checkpoint.attemptId)}`, {
             headers: { Authorization: `Bearer ${session.access_token}` },
