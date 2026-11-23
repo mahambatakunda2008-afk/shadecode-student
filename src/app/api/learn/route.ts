@@ -13,7 +13,7 @@ import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
-import { breakUpLongParagraphs, isSectionTooThin, missingSectionTypes, requiredSectionTypes, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure } from "@/lib/cortex/lessonQuality";
+import { breakUpLongParagraphs, isSectionTooThin, missingSectionTypes, needsFormulaBlock, requiredSectionTypes, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
@@ -559,6 +559,7 @@ export async function POST(req: Request) {
             "Consolidate with exam/practice thinking, synthesis, checkpoint prompts, and a useful next step.",
           ];
       const sectionJob = sectionJobs[generationSectionIndex] ?? sectionJobs[sectionJobs.length - 1];
+      const sectionTypeOptions = { formula: needsFormulaBlock(effectiveSubject, request.topic, String((request as { prompt?: string }).prompt ?? request.topic)) };
       const sectionPrompt = [
         `Generate section ${generationSectionIndex + 1} of ${generationSectionCount} for a coherent lesson.`,
         buildResolvedLessonPrompt(request),
@@ -575,8 +576,8 @@ export async function POST(req: Request) {
           : "Use 3-5 substantive blocks. Content must be at least 40 characters per block.",
         `SECTION-SPECIFIC REQUIREMENTS: ${buildLocalSectionRequirements(generationSectionIndex, generationSectionCount)}`,
         "BLOCK TYPES: set each block's type to exactly one of: objective, map, prior, concept, definition, structure, mechanism, formula, example, comparison, checkpoint, misconception, application, exam, mistake, synthesis, curiosity, summary, practice, next. Use the exact words. Section placement: the first section opens with objective and map (the big picture); core sections use concept, structure, mechanism, formula, example and checkpoint; the second-to-last section includes a synthesis block; the final section includes curiosity (further questions to explore), practice, exam, mistake and summary blocks.",
-        requiredSectionTypes(generationSectionIndex, generationSectionCount).length > 0
-          ? `REQUIRED BLOCK TYPES FOR THIS SECTION (each must appear as a block with exactly this type): ${requiredSectionTypes(generationSectionIndex, generationSectionCount).join(", ")}.`
+        requiredSectionTypes(generationSectionIndex, generationSectionCount, sectionTypeOptions).length > 0
+          ? `REQUIRED BLOCK TYPES FOR THIS SECTION (each must appear as a block with exactly this type): ${requiredSectionTypes(generationSectionIndex, generationSectionCount, sectionTypeOptions).join(", ")}.`
           : "",
         `TOPIC ANCHORING: the lesson is judged on how often its blocks stay on "${request.topic}". Name "${request.topic}" explicitly in the title or opening sentence of most blocks.`,
       ].join("\n\n");
@@ -698,7 +699,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
         );
 
         if (isSectionTooThin(section.blocks.length, generationSectionCount)) sectionFailures = [...sectionFailures, "section-too-thin"];
-        for (const missing of missingSectionTypes(section.blocks.map((block) => String(block.type)), generationSectionIndex, generationSectionCount)) sectionFailures = [...sectionFailures, `missing-type-${missing}`];
+        for (const missing of missingSectionTypes(section.blocks.map((block) => String(block.type)), generationSectionIndex, generationSectionCount, sectionTypeOptions)) sectionFailures = [...sectionFailures, `missing-type-${missing}`];
 
         if (sectionFailures.length > 0) {
           console.info("[LEARN] section rejected", { generationJobId: durableJobId, sectionIndex: generationSectionIndex, attempt, failures: sectionFailures });
