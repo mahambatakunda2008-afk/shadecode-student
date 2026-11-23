@@ -152,9 +152,11 @@ function renderStructured(content: string, type: string): ReactNode {
 
 function LessonUnit({ block, number, id }: { block: LessonBlock; number: number; id: string }) {
   const heading = block.title?.trim() || LABELS[block.type] || "Lesson section";
+  // Titled blocks still show their learning stage ("The big picture", "How it works"...) so the lesson's structure is visible.
+  const stage = block.title?.trim() && LABELS[block.type] && LABELS[block.type].toLowerCase() !== heading.toLowerCase() ? LABELS[block.type] : null;
   return (
     <section className="lesson-unit" id={id} tabIndex={-1} aria-labelledby={`${id}-title`}>
-      <div className="unit-kicker"><span>{String(number).padStart(2, "0")}</span><span id={`${id}-title`}>{heading}</span></div>
+      <div className="unit-kicker"><span>{String(number).padStart(2, "0")}</span>{stage ? <span className="unit-stage">{stage}</span> : null}<span id={`${id}-title`}>{heading}</span></div>
       <div className="unit-body">{block.type === "diagram" ? <LessonDiagram kind={block.content} title={block.title} /> : renderStructured(block.content, block.type)}</div>
     </section>
   );
@@ -419,7 +421,7 @@ export default function LessonDetailPage() {
         .lesson-reading-meta{display:flex;align-items:center;gap:8px;margin:-12px 0 20px;color:var(--muted-foreground);font-size:11px}
         .lesson-reading-dot{width:3px;height:3px;border-radius:50%;background:var(--muted-foreground)}
         .lesson-unit{padding:0 0 30px;margin:0 0 30px;border-bottom:1px solid var(--card-border)}
-        .unit-kicker{display:flex;align-items:center;gap:11px;color:var(--muted-foreground);font-size:12px;font-weight:800;letter-spacing:.035em;text-transform:uppercase;margin-bottom:13px}.unit-kicker span:first-child{color:var(--lesson-accent);font-variant-numeric:tabular-nums}.unit-kicker span:last-child{color:var(--foreground)}
+        .unit-stage{color:var(--primary);opacity:.9}.unit-kicker{display:flex;flex-wrap:wrap;align-items:center;gap:11px;color:var(--muted-foreground);font-size:12px;font-weight:800;letter-spacing:.035em;text-transform:uppercase;margin-bottom:13px}.unit-kicker span:first-child{color:var(--lesson-accent);font-variant-numeric:tabular-nums}.unit-kicker span:last-child{color:var(--foreground)}
         .unit-body{font-size:15px;line-height:1.65;max-width:740px}
         .lesson-points{display:flex;flex-direction:column;gap:9px;margin:0;padding-left:20px;color:var(--muted-foreground)}.lesson-points li{padding-left:4px}.plain-points{padding-left:0;gap:11px}.plain-points>div{position:relative;padding-left:16px}.plain-points>div:before{content:"";position:absolute;left:0;top:.68em;width:5px;height:5px;border-radius:50%;background:var(--lesson-accent)}
         .lesson-steps{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none;counter-reset:step}.lesson-steps li{counter-increment:step;position:relative;padding:11px 14px 11px 46px;background:var(--surface-2);border:1px solid var(--card-border);border-radius:12px;color:var(--muted-foreground)}.lesson-steps li:before{content:counter(step);position:absolute;left:13px;top:11px;width:23px;height:23px;border-radius:7px;background:var(--lesson-soft);color:var(--lesson-accent);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
