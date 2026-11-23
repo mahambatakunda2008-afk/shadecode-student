@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { definiteIntegral, derivative, descriptiveStatistics, evaluateExpression, solveByBisection } from "./calculator";
+import { differentiatePolynomial, integratePolynomial, simplifyPolynomial } from "./symbolic";
 
 describe("offline scientific calculator", () => {
   it("evaluates scientific functions, constants and implicit multiplication", () => {
