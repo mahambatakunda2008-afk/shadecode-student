@@ -58,7 +58,7 @@ export function evaluateExpression(source: string, scope: CalculatorScope = {}, 
     if (!token) throw new Error("Enter an expression");
     let left: number;
     if (token.type === "number") left = Number(token.value);
-    else if (token.type === "operator" && (token.value === "+" || token.value === "-")) left = (token.value === "-" ? -1 : 1) * expression(35);
+    else if (token.type === "operator" && (token.value === "+" || token.value === "-")) left = (token.value === "-" ? -1 : 1) * expression(30);
     else if (token.type === "left") {
       left = expression(0);
       if (take()?.type !== "right") throw new Error("Missing closing bracket");
@@ -71,7 +71,7 @@ export function evaluateExpression(source: string, scope: CalculatorScope = {}, 
             do { args.push(expression(0)); if (peek()?.type !== "comma") break; take(); } while (true);
           }
           if (take()?.type !== "right") throw new Error("Missing closing bracket in function");
-        } else args = [expression(35)];
+        } else args = [expression(30)];
         const fn = FUNCTIONS[token.value];
         if (["sin", "cos", "tan", "sec", "cosec", "cot"].includes(token.value)) args[0] *= trigScope;
         left = fn(...args);
