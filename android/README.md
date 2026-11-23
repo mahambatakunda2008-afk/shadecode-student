@@ -27,6 +27,10 @@ The first native resource-library slice is available from **Learn → Offline re
 
 This remains a foundation, not complete native resource parity. PDF text extraction/search, PDF annotations, atomic all-or-nothing multi-file pack commits, teacher-curated signed packs, diagrams/attachments, cross-device sync, and real-device airplane-mode validation remain open. Do not claim full native resource parity until those are implemented and tested.
 
+
+
+Browser/PWA library privacy: resource records are scoped to the authenticated learner in IndexedDB v2. Records created by the older unscoped v1 library remain in the legacy store and are deliberately not assigned to whichever account signs in next. Re-import those files while signed into the intended account.
+
 ## Build locally
 
 Prerequisites:
