@@ -80,7 +80,9 @@ export class IndexedDbResourcePackageStorage implements ResourcePackageStorage {
       transaction.objectStore(CATALOG_STORE).put(resource.manifest);
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(new ResourcePackageStorageError(
-        "Could not save the offline resource package.",
+        transaction.error?.name === "QuotaExceededError"
+          ? "Device storage is full. Free space before downloading more resources."
+          : "Could not save the offline resource package.",
         { cause: transaction.error },
       ));
       transaction.onabort = () => reject(new ResourcePackageStorageError(
@@ -126,7 +128,9 @@ export class IndexedDbResourcePackageStorage implements ResourcePackageStorage {
       transaction.objectStore(CATALOG_STORE).delete(resourceId);
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(new ResourcePackageStorageError(
-        "Could not remove the offline resource package.",
+        transaction.error?.name === "QuotaExceededError"
+          ? "Device storage is full. Free space before downloading more resources."
+          : "Could not remove the offline resource package.",
         { cause: transaction.error },
       ));
       transaction.onabort = () => reject(new ResourcePackageStorageError(
