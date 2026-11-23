@@ -171,7 +171,7 @@ export class OfflineResourceLibrary {
     });
     if (!records.length) throw new Error("There are no resources to export.");
     const payloads: Blob[] = [];
-    const entries: Array<{ metadata: OfflineResourceMetadata; offset: number; length: number }> = [];
+    const entries: Array<{ metadata: Omit<OfflineResourceMetadata, "ownerId">; offset: number; length: number }> = [];
     let offset = 0;
     for (const record of records) {
       if (record.blob.size !== record.metadata.byteLength || await sha256(record.blob) !== record.metadata.sha256) {
@@ -180,7 +180,9 @@ export class OfflineResourceLibrary {
       if (record.blob.size > maxResourceBytes(record.metadata.mimeType) || offset + record.blob.size > 512 * 1024 * 1024) {
         throw new Error("The resource collection exceeds the 512 MB resource-pack limit.");
       }
-      entries.push({ metadata: record.metadata, offset, length: record.blob.size });
+      const { ownerId: privateOwnerId, ...portableMetadata } = record.metadata;
+      void privateOwnerId;
+      entries.push({ metadata: portableMetadata, offset, length: record.blob.size });
       payloads.push(record.blob);
       offset += record.blob.size;
     }
