@@ -74,7 +74,8 @@ export function evaluateExpression(source: string, scope: CalculatorScope = {}, 
         } else args = [expression(30)];
         const fn = FUNCTIONS[token.value];
         if (["sin", "cos", "tan", "sec", "cosec", "cot"].includes(token.value)) args[0] *= trigScope;
-        const output = fn(...args);\n        left = angle === "DEG" && ["asin", "acos", "atan"].includes(token.value) ? output * 180 / Math.PI : output;
+        const output = fn(...args);
+        left = angle === "DEG" && ["asin", "acos", "atan"].includes(token.value) ? output * 180 / Math.PI : output;
       } else {
         const value = constants[token.value];
         if (value === undefined) throw new Error(`Unknown variable: ${token.value}`);
