@@ -6,6 +6,7 @@ export type OfflineResourceTrust = "official" | "teacher-verified" | "community"
 
 export interface OfflineResourceMetadata {
   id: string;
+  ownerId: string;
   title: string;
   mimeType: string;
   byteLength: number;
@@ -27,8 +28,11 @@ interface StoredOfflineResource {
 }
 
 const DB_NAME = "shadecode-offline-library";
-const DB_VERSION = 1;
-const STORE = "files";
+const DB_VERSION = 2;
+// Version 1 used a global content-hash key and had no account owner. Keep that
+// legacy store untouched and inaccessible; never silently assign old files to
+// whichever account happens to sign in after the upgrade.
+const STORE = "files_by_account";
 const MAX_PDF_BYTES = 100 * 1024 * 1024;
 const MAX_TEXT_BYTES = 5 * 1024 * 1024;
 
@@ -58,7 +62,8 @@ export class OfflineResourceLibrary {
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(STORE)) {
-          const files = db.createObjectStore(STORE, { keyPath: "metadata.id" });
+          const files = db.createObjectStore(STORE, { keyPath: ["metadata.ownerId", "metadata.id"] });
+          files.createIndex("ownerId", "metadata.ownerId", { unique: false });
           files.createIndex("subject", "metadata.subject", { unique: false });
           files.createIndex("importedAt", "metadata.importedAt", { unique: false });
         }
@@ -71,7 +76,8 @@ export class OfflineResourceLibrary {
     });
   }
 
-  async importFile(file: Blob, details: Omit<OfflineResourceMetadata, "id" | "mimeType" | "byteLength" | "sha256" | "importedAt" | "trust"> & { mimeType?: string; trust?: OfflineResourceTrust }): Promise<OfflineResourceMetadata> {
+  async importFile(accountId: string, file: Blob, details: Omit<OfflineResourceMetadata, "id" | "ownerId" | "mimeType" | "byteLength" | "sha256" | "importedAt" | "trust"> & { mimeType?: string; trust?: OfflineResourceTrust }): Promise<OfflineResourceMetadata> {
+    if (!accountId.trim()) throw new Error("Sign in before saving a private resource.");
     if (!file.size) throw new Error("The selected resource is empty.");
     const mimeType = details.mimeType || (typeof File !== "undefined" && file instanceof File ? file.type : "") || "application/octet-stream";
     if (file.size > maxResourceBytes(mimeType)) throw new Error(mimeType === "application/pdf" ? "This PDF exceeds the 100 MB offline limit." : "This text resource exceeds the 5 MB offline limit.");
@@ -86,6 +92,7 @@ export class OfflineResourceLibrary {
     const metadata: OfflineResourceMetadata = {
       ...details,
       id: digest,
+      ownerId: accountId,
       mimeType,
       byteLength: file.size,
       sha256: digest,
@@ -103,10 +110,11 @@ export class OfflineResourceLibrary {
     return metadata;
   }
 
-  async list(subject?: string): Promise<OfflineResourceMetadata[]> {
+  async list(accountId: string, subject?: string): Promise<OfflineResourceMetadata[]> {
+    if (!accountId.trim()) throw new Error("Sign in before opening a private resource library.");
     await this.init();
     const records = await new Promise<StoredOfflineResource[]>((resolve, reject) => {
-      const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).getAll();
+      const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).index("ownerId").getAll(accountId);
       request.onsuccess = () => resolve(request.result as StoredOfflineResource[]);
       request.onerror = () => reject(request.error);
     });
@@ -115,35 +123,39 @@ export class OfflineResourceLibrary {
       .sort((a, b) => b.importedAt.localeCompare(a.importedAt));
   }
 
-  async open(id: string): Promise<{ metadata: OfflineResourceMetadata; blob: Blob } | null> {
+  async open(accountId: string, id: string): Promise<{ metadata: OfflineResourceMetadata; blob: Blob } | null> {
+    if (!accountId.trim()) throw new Error("Sign in before opening a private resource.");
     await this.init();
     const record = await new Promise<StoredOfflineResource | undefined>((resolve, reject) => {
-      const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).get(id);
+      const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).get([accountId, id]);
       request.onsuccess = () => resolve(request.result as StoredOfflineResource | undefined);
       request.onerror = () => reject(request.error);
     });
     if (!record) return null;
+    if (record.metadata.ownerId !== accountId) throw new Error("This resource belongs to a different account.");
     if (record.blob.size !== record.metadata.byteLength || await sha256(record.blob) !== record.metadata.sha256) {
       throw new Error("Offline resource integrity check failed. Re-import this file from a trusted copy.");
     }
     return { metadata: record.metadata, blob: record.blob };
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(accountId: string, id: string): Promise<void> {
+    if (!accountId.trim()) throw new Error("Sign in before removing a private resource.");
     await this.init();
     await new Promise<void>((resolve, reject) => {
       const transaction = this.db!.transaction(STORE, "readwrite");
-      transaction.objectStore(STORE).delete(id);
+      transaction.objectStore(STORE).delete([accountId, id]);
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () => reject(transaction.error ?? new Error("Resource deletion was cancelled."));
     });
   }
 
-  async exportPack(): Promise<Blob> {
+  async exportPack(accountId: string): Promise<Blob> {
+    if (!accountId.trim()) throw new Error("Sign in before exporting private resources.");
     await this.init();
     const records = await new Promise<StoredOfflineResource[]>((resolve, reject) => {
-      const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).getAll();
+      const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).index("ownerId").getAll(accountId);
       request.onsuccess = () => resolve(request.result as StoredOfflineResource[]);
       request.onerror = () => reject(request.error);
     });
@@ -170,7 +182,8 @@ export class OfflineResourceLibrary {
     return new Blob([header, manifest, ...payloads], { type: "application/vnd.shadecode.resource-pack" });
   }
 
-  async importPack(pack: Blob): Promise<number> {
+  async importPack(accountId: string, pack: Blob): Promise<number> {
+    if (!accountId.trim()) throw new Error("Sign in before importing private resources.");
     const MAX_PACK_BYTES = 512 * 1024 * 1024;
     const MAX_MANIFEST_BYTES = 8 * 1024 * 1024;
     if (pack.size < 12 || pack.size > MAX_PACK_BYTES) throw new Error("The resource pack is empty or exceeds the 512 MB import limit.");
@@ -240,6 +253,7 @@ export class OfflineResourceLibrary {
       const digest = source.sha256!.toLowerCase();
       const metadata: OfflineResourceMetadata = {
         id: digest,
+        ownerId: accountId,
         title: source.title!.trim(),
         mimeType: source.mimeType!,
         byteLength: entry.length!,
