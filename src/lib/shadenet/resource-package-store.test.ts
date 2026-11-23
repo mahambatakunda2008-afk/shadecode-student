@@ -40,10 +40,11 @@ class MemoryResourceStorage implements ResourcePackageStorage {
   }
   corrupt(id: string): void {
     const resource = this.packages.get(id);
-    if (resource) this.packages.set(id, {
-      ...resource,
-      payload: new TextEncoder().encode("tampered bytes"),
-    });
+    if (resource) {
+      const payload = new Uint8Array(resource.payload);
+      if (payload.byteLength > 0) payload[0] ^= 0xff;
+      this.packages.set(id, { ...resource, payload });
+    }
   }
 }
 
