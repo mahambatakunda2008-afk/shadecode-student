@@ -31,6 +31,8 @@ const DEFAULT_PER_PROVIDER_MAX_MS = 6500;
 const TELEMETRY_BUDGET_MS = 500;
 /** Fraction of the remaining chain Gemini may use before other configured text providers get a turn. */
 const GEMINI_PHASE_SHARE = 0.55;
+/** If Gemini has not answered after this long, Groq starts in parallel instead of waiting for Gemini to give up. */
+const GROQ_HEDGE_AFTER_MS = 5000;
 const ALLOW_PAID_AI = process.env.ALLOW_PAID_AI === "true";
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL?.replace(/\/$/, "") || "";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:7b";
@@ -403,8 +405,6 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     return null;
   }
 
-  const geminiText = await runGeminiPhase();
-  if (geminiText) return geminiText;
 
   // Groq: a genuinely free (no card required), independent-vendor provider with typically sub-2s
   // inference, added 2026-09-23 after Gemini, OpenRouter and Cloudflare were all found failing
@@ -412,7 +412,8 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   // once; placed first among the text fallbacks since it's the fastest and, being free-tier stable
   // (unlike OpenRouter's free router, which recently returned empty responses), the most likely to
   // succeed. No-op until GROQ_API_KEY is set (free sign-up at console.groq.com, no card required).
-  if (!media.length && process.env.GROQ_API_KEY && canTry()) {
+  async function runGroqPhase(): Promise<string | null> {
+    if (media.length || !process.env.GROQ_API_KEY || !canTry()) return null;
     for (const groqModel of groqModelChain()) {
       if (!canTry()) break;
       const text = await tryProvider("groq", groqModel, async timeout => {
@@ -436,6 +437,41 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       });
       if (text) return text;
     }
+    return null;
+  }
+  let groqPhase: Promise<string | null> | null = null;
+  const startGroqPhase = () => (groqPhase ??= runGroqPhase());
+
+  // Hedge: a slow (not failed) Gemini would otherwise burn most of the chain before Groq gets a turn.
+  // Past GROQ_HEDGE_AFTER_MS, race Groq against it and take the first usable answer.
+  const geminiRun = runGeminiPhase();
+  let hedgeHandle: ReturnType<typeof setTimeout> | undefined;
+  const hedgeTimer = new Promise<"hedge">((resolve) => { hedgeHandle = setTimeout(() => resolve("hedge"), GROQ_HEDGE_AFTER_MS); });
+  const first = await Promise.race([geminiRun.then((text) => ({ text })), hedgeTimer]);
+  if (hedgeHandle) clearTimeout(hedgeHandle);
+  if (first !== "hedge" && first.text) return first.text;
+  if (first === "hedge" && process.env.GROQ_API_KEY && !media.length) {
+    const winner = await new Promise<string | null>((resolve) => {
+      let pending = 2;
+      const settle = (text: string | null) => {
+        if (text) return resolve(text);
+        if (--pending === 0) resolve(null);
+      };
+      geminiRun.then(settle, () => settle(null));
+      startGroqPhase().then(settle, () => settle(null));
+    });
+    if (winner) return winner;
+  } else if (first === "hedge") {
+    const geminiLate = await geminiRun;
+    if (geminiLate) return geminiLate;
+  }
+
+  // Groq: sequential path when Gemini failed fast (or the hedge already tried it, in which case this reuses that result).
+  // Groq is a genuinely free (no card required), independent-vendor provider with typically sub-2s inference,
+  // added 2026-09-23 after Gemini, OpenRouter and Cloudflare were all found failing simultaneously in production.
+  {
+    const groqText = await startGroqPhase();
+    if (groqText) return groqText;
   }
 
   // OpenRouter's free tier is currently the only provider with a proven production success

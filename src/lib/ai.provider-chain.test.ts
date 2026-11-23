@@ -45,6 +45,42 @@ describe("callAI provider fallback chain", () => {
     expect(JSON.parse((init as RequestInit).body as string).model).toBe("openai/gpt-oss-120b");
   });
 
+  it("hedges to Groq in parallel when Gemini is slow instead of waiting for it to give up", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.stubEnv("GEMINI_API_KEY", "gemini-key");
+      vi.stubEnv("GROQ_API_KEY", "groq-key");
+      fetchMock.mockImplementation((url: string) =>
+        String(url).includes("generativelanguage.googleapis.com")
+          ? new Promise(() => undefined) // Gemini hangs (overloaded)
+          : Promise.resolve(jsonResponse({ choices: [{ message: { content: "answer from groq while gemini hung" } }] })),
+      );
+      const { callAI } = await import("./ai");
+      const pending = callAI("teach me waves", 500, { skipCurriculumGrounding: true, curriculumContext: "" });
+      await vi.advanceTimersByTimeAsync(5200);
+      await expect(pending).resolves.toBe("answer from groq while gemini hung");
+      const urls = fetchMock.mock.calls.map(([url]) => String(url));
+      expect(urls.some((url) => url.includes("generativelanguage.googleapis.com"))).toBe(true);
+      expect(urls).toContain("https://api.groq.com/openai/v1/chat/completions");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not start Groq early when Gemini answers quickly", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "gemini-key");
+    vi.stubEnv("GROQ_API_KEY", "groq-key");
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve(String(url).includes("generativelanguage.googleapis.com")
+        ? jsonResponse({ candidates: [{ content: { parts: [{ text: "a complete answer from gemini for this prompt" }] } }] })
+        : jsonResponse({ choices: [{ message: { content: "groq answer" } }] })),
+    );
+    const { callAI } = await import("./ai");
+    const result = await callAI("teach me waves", 500, { skipCurriculumGrounding: true, curriculumContext: "" });
+    expect(result).toBe("a complete answer from gemini for this prompt");
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("api.groq.com"))).toBe(false);
+  });
+
   it("tries Groq before OpenRouter, falling through to OpenRouter on failure", async () => {
     vi.stubEnv("GROQ_API_KEY", "groq-key");
     vi.stubEnv("OPENROUTER_API_KEY", "or-key");
