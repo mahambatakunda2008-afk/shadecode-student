@@ -1,9 +1,9 @@
 import { withSentryConfig } from "@sentry/nextjs";
 
 /**
- * Keep application boot deterministic. The PWA service worker is intentionally
- * disabled until its lifecycle is rebuilt and tested. Next.js must own all
- * HTML, RSC, navigation and API requests without a worker in between.
+ * Keep application boot deterministic. Offline support uses the hand-maintained
+ * worker in public/sw.js, registered by ServiceWorkerRegistration. We deliberately
+ * avoid a PWA wrapper here so Next.js routing and API behaviour remain explicit.
  */
 const nextConfig = {
   turbopack: { root: process.cwd() },
