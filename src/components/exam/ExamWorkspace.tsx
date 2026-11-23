@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Calculator, Check, Chec
 import { createClient } from "@/lib/supabase/client";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import { fetchWithTimeout, FetchTimeoutError } from "@/lib/async/fetchWithTimeout";
+import { withTimeout } from "@/lib/async/withTimeout";
 import { useCortexVerify } from "@/hooks/useCortexVerify";
 import StudyCanvas from "@/components/studyspace/StudyCanvas";
 import { createStudySession, deleteStudySession, getStudySession, saveStudySession } from "@/lib/studyspace/session";
@@ -174,7 +175,13 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         return;
       }
 
-      const { data: { session } } = await createClient().auth.getSession();
+      // Session refresh/storage can stall independently of the API request. Bound it too,
+      // otherwise the generation spinner can remain active before fetchWithTimeout starts.
+      const { data: { session } } = await withTimeout(
+        createClient().auth.getSession(),
+        8000,
+        "Checking your sign-in session took too long. Refresh the page and try again."
+      );
       const res = await fetchWithTimeout("/api/exam/generate", {
         method: "POST",
         headers: {
