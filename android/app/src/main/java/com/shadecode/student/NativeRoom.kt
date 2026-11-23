@@ -2,6 +2,7 @@ package com.shadecode.student
 
 import android.content.Context
 import androidx.room.Database
+import androidx.room.Index
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Room
@@ -56,6 +57,26 @@ data class NativeExamAttemptEntity(
     @androidx.room.ColumnInfo(defaultValue = "0") val submissionPending: Boolean = false,
 )
 
+@Entity(
+    tableName = "shadecode_resource_packages",
+    primaryKeys = ["ownerId", "resourceId"],
+    indices = [Index(value = ["ownerId", "title"])],
+)
+data class NativeResourcePackageEntity(
+    val ownerId: String,
+    val resourceId: String,
+    val title: String,
+    val mimeType: String,
+    val filename: String,
+    val manifestJson: String,
+    val payload: ByteArray,
+    val byteLength: Long,
+    val sha256: String,
+    val importedAt: Long,
+    val lastReadAt: Long?,
+    val lastReadPage: Int,
+)
+
 @Entity(tableName = "pending_sync")
 data class NativePendingSyncEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -65,6 +86,46 @@ data class NativePendingSyncEntity(
     val accountId: String? = null,
     @androidx.room.ColumnInfo(defaultValue = "''") val operationId: String = UUID.randomUUID().toString(),
 )
+
+@androidx.room.Dao
+interface NativeResourcePackageDao {
+    @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    suspend fun put(resource: NativeResourcePackageEntity)
+
+    @androidx.room.Query("SELECT * FROM shadecode_resource_packages WHERE ownerId = :ownerId AND resourceId = :resourceId LIMIT 1")
+    suspend fun get(ownerId: String, resourceId: String): NativeResourcePackageEntity?
+
+    @androidx.room.Query("""
+        SELECT ownerId, resourceId, title, mimeType, filename, byteLength, sha256,
+               importedAt, lastReadAt, lastReadPage
+        FROM shadecode_resource_packages
+        WHERE ownerId = :ownerId
+        ORDER BY title COLLATE NOCASE
+    """)
+    suspend fun listMetadata(ownerId: String): List<NativeResourcePackageMetadata>
+
+    @androidx.room.Query("""
+        SELECT ownerId, resourceId, title, mimeType, filename, byteLength, sha256,
+               importedAt, lastReadAt, lastReadPage
+        FROM shadecode_resource_packages
+        WHERE ownerId = :ownerId AND resourceId = :resourceId
+        LIMIT 1
+    """)
+    suspend fun metadata(ownerId: String, resourceId: String): NativeResourcePackageMetadata?
+
+    @androidx.room.Query("""
+        UPDATE shadecode_resource_packages
+        SET lastReadAt = :readAt, lastReadPage = :page
+        WHERE ownerId = :ownerId AND resourceId = :resourceId
+    """)
+    suspend fun markRead(ownerId: String, resourceId: String, readAt: Long, page: Int)
+
+    @androidx.room.Query("DELETE FROM shadecode_resource_packages WHERE ownerId = :ownerId AND resourceId = :resourceId")
+    suspend fun delete(ownerId: String, resourceId: String)
+
+    @androidx.room.Query("DELETE FROM shadecode_resource_packages WHERE ownerId = :ownerId")
+    suspend fun deleteForAccount(ownerId: String)
+}
 
 @androidx.room.Dao
 interface NativeSubjectDao {
@@ -117,12 +178,13 @@ interface NativeExamAttemptDao {
 }
 
 @Database(
-    entities = [NativeSubjectEntity::class, NativeLessonEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class, NativeExamAttemptEntity::class],
-    version = 6,
+    entities = [NativeSubjectEntity::class, NativeLessonEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class, NativeExamAttemptEntity::class, NativeResourcePackageEntity::class],
+    version = 7,
     exportSchema = false,
 )
 abstract class NativeDatabase : RoomDatabase() {
     abstract fun subjects(): NativeSubjectDao
+    abstract fun resourcePackages(): NativeResourcePackageDao
     abstract fun lessons(): NativeLessonDao
     abstract fun progress(): NativeProgressDao
     abstract fun sync(): NativeSyncDao
@@ -210,6 +272,29 @@ abstract class NativeDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS shadecode_resource_packages (
+                        ownerId TEXT NOT NULL,
+                        resourceId TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        mimeType TEXT NOT NULL,
+                        filename TEXT NOT NULL,
+                        manifestJson TEXT NOT NULL,
+                        payload BLOB NOT NULL,
+                        byteLength INTEGER NOT NULL,
+                        sha256 TEXT NOT NULL,
+                        importedAt INTEGER NOT NULL,
+                        lastReadAt INTEGER,
+                        lastReadPage INTEGER NOT NULL,
+                        PRIMARY KEY(ownerId, resourceId)
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_shadecode_resource_packages_ownerId_title ON shadecode_resource_packages(ownerId, title)")
+            }
+        }
+
         @Volatile private var instance: NativeDatabase? = null
         @Volatile private var applicationContext: Context? = null
 
@@ -222,7 +307,7 @@ abstract class NativeDatabase : RoomDatabase() {
             )
                 // Version 1 already contains subjects, lesson_progress and pending_sync.
                 // Add the lesson cache without wiping offline progress or queued work.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .build()
                 .also { instance = it }
         }
