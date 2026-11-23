@@ -92,62 +92,28 @@ export default function ExamSimulationClient() {
   const [subjectReady, setSubjectReady] = useState(Boolean(challengeId) && !requestedSubject);
 
   useEffect(() => {
-    let cancelled = false;
-    const resolveSubject = async () => {
-      if (!requestedSubject) {
-        // Challenge papers carry their own subject; everyone else starts on their own first subject.
-        if (challengeId) {
-          setSubject("");
-          setSubjectReady(true);
-          return;
-        }
-        try {
-          const lookup = (async () => {
-            const supabase = createClient();
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return "";
-            const { data: profile } = await supabase.from("profiles").select("subjects").eq("id", user.id).maybeSingle();
-            return defaultExamSubject(profile?.subjects);
-          })();
-          const fallback = new Promise<string>((resolve) => setTimeout(() => resolve(""), 4000));
-          const first = await Promise.race([lookup, fallback]);
-          if (!cancelled) setSubject(first);
-        } catch {
-          if (!cancelled) setSubject("");
-        } finally {
-          if (!cancelled) setSubjectReady(true);
-        }
-        return;
-      }
-      if (isGeneralSubject(requestedSubject)) {
+    // Subject eligibility is already present in the locally cached learner profile.
+    // Do not call auth.getUser() or query profiles here: both require a live network
+    // round-trip and strand an otherwise usable offline exam workspace.
+    if (!requestedSubject) {
+      if (challengeId) {
         setSubject("");
         setSubjectReady(true);
         return;
       }
-      try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          if (!cancelled) setSubject("");
-          return;
-        }
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("subjects")
-          .eq("id", user.id)
-          .maybeSingle();
-        if (cancelled) return;
-        const match = matchAllowedSubject(requestedSubject, profile?.subjects);
-        setSubject(match ?? "");
-      } catch {
-        if (!cancelled) setSubject("");
-      } finally {
-        if (!cancelled) setSubjectReady(true);
-      }
-    };
-    void resolveSubject();
-    return () => { cancelled = true; };
-  }, [requestedSubject, challengeId]);
+      setSubject(defaultExamSubject(profile?.subjects));
+      setSubjectReady(true);
+      return;
+    }
+    if (isGeneralSubject(requestedSubject)) {
+      setSubject("");
+      setSubjectReady(true);
+      return;
+    }
+    const match = matchAllowedSubject(requestedSubject, profile?.subjects);
+    setSubject(match ?? "");
+    setSubjectReady(true);
+  }, [requestedSubject, challengeId, profile?.subjects]);
 
   useEffect(() => {
     if (!subjectReady) return;
