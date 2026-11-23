@@ -36,6 +36,13 @@ const STORE = "files_by_account";
 const MAX_PDF_BYTES = 100 * 1024 * 1024;
 const MAX_TEXT_BYTES = 5 * 1024 * 1024;
 
+export function isOfflineResourceOwnedBy(
+  metadata: Pick<OfflineResourceMetadata, "ownerId">,
+  accountId: string,
+): boolean {
+  return accountId.trim().length > 0 && metadata.ownerId === accountId;
+}
+
 function maxResourceBytes(mimeType: string): number {
   return mimeType === "application/pdf" ? MAX_PDF_BYTES : MAX_TEXT_BYTES;
 }
@@ -119,6 +126,7 @@ export class OfflineResourceLibrary {
       request.onerror = () => reject(request.error);
     });
     return records.map((record) => record.metadata)
+      .filter((metadata) => isOfflineResourceOwnedBy(metadata, accountId))
       .filter((metadata) => !subject || metadata.subject?.toLowerCase() === subject.toLowerCase())
       .sort((a, b) => b.importedAt.localeCompare(a.importedAt));
   }
@@ -156,7 +164,9 @@ export class OfflineResourceLibrary {
     await this.init();
     const records = await new Promise<StoredOfflineResource[]>((resolve, reject) => {
       const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).index("ownerId").getAll(accountId);
-      request.onsuccess = () => resolve(request.result as StoredOfflineResource[]);
+      request.onsuccess = () => resolve((request.result as StoredOfflineResource[]).filter(
+        (record) => isOfflineResourceOwnedBy(record.metadata, accountId),
+      ));
       request.onerror = () => reject(request.error);
     });
     if (!records.length) throw new Error("There are no resources to export.");
