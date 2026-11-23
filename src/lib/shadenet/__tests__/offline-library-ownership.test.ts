@@ -16,6 +16,7 @@ describe("offline resource account ownership", () => {
     expect(isOfflineResourceOwnedBy({ ownerId: "" }, "")).toBe(false);
     expect(isOfflineResourceOwnedBy({ ownerId: "learner-a" }, " ")).toBe(false);
   });
+
   it("accepts bounded portable metadata", () => {
     expect(() => validateOfflineResourcePackMetadata({
       title: "AS Physics: Waves",
@@ -37,10 +38,10 @@ describe("offline resource account ownership", () => {
     })).toThrow("invalid publisher metadata");
     expect(() => validateOfflineResourcePackMetadata({
       title: "AS Physics",
-      topic: "Waves\\u0000",
+      topic: "Waves\u0000",
     })).toThrow("invalid topic metadata");
     expect(() => validateOfflineResourcePackMetadata({
-      title: "Bad\\nTitle",
+      title: "Bad\nTitle",
     })).toThrow("invalid resource title");
   });
 });
