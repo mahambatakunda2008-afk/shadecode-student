@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { normalizeSubjectKey } from "@/lib/academic/subjectContract";
+import { SUBJECT_CATALOG } from "./catalog";
 
 export type LearnerSubject = {
   id: string;
@@ -13,20 +15,41 @@ type ProfileSubjects = {
 
 const GENERAL = "general";
 
-function normalize(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
+/**
+ * Convert stable profile IDs, display names and catalogue aliases to one
+ * learner-facing canonical name. Profile values have historically used both
+ * slugs (for example "computer-science") and display names ("Computer Science").
+ */
+export function canonicalizeSubjectName(value: string): string {
+  const key = normalizeSubjectKey(value);
+  if (!key || key === GENERAL) return "";
+  const entry = SUBJECT_CATALOG.find((subject) =>
+    [subject.id, subject.name, ...(subject.aliases ?? [])]
+      .some((label) => normalizeSubjectKey(label) === key),
+  );
+  return entry?.name ?? value.trim().replace(/\s+/g, " ");
 }
 
-function unique(values: string[]) {
-  return [...new Set(values.map(normalize).filter(Boolean))];
+function uniqueCanonical(values: string[]) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    const name = canonicalizeSubjectName(value);
+    const key = normalizeSubjectKey(name);
+    if (!key || key === GENERAL || seen.has(key)) continue;
+    seen.add(key);
+    result.push(name);
+  }
+  return result;
 }
 
 /**
  * Canonical subject resolver for learner-facing modules.
  *
  * profiles.subjects is the source of truth. public.subjects is the per-user
- * catalog synchronized from that profile. This function deliberately does
- * not invent a General subject when a learner has no subjects.
+ * catalog synchronized from that profile. Both sides are normalized through
+ * the shared subject catalogue so stable IDs, aliases and display names match.
+ * This function deliberately does not invent a General subject.
  */
 export async function resolveLearnerSubjects(
   supabase: SupabaseClient,
@@ -41,7 +64,7 @@ export async function resolveLearnerSubjects(
   if (profileError) throw profileError;
 
   const row = (profile ?? { subjects: null, onboarding_completed: false }) as ProfileSubjects;
-  const canonical = unique(Array.isArray(row.subjects) ? row.subjects : []);
+  const canonical = uniqueCanonical(Array.isArray(row.subjects) ? row.subjects : []);
   const onboardingComplete = Boolean(row.onboarding_completed) || canonical.length > 0;
 
   const { data: catalog, error: catalogError } = await supabase
@@ -55,23 +78,19 @@ export async function resolveLearnerSubjects(
   const catalogRows = (catalog ?? []) as Array<{ id: string; name: string | null }>;
   const catalogByName = new Map(
     catalogRows
-      .filter((s) => s.name && normalize(s.name) !== GENERAL)
-      .map((s) => [normalize(s.name as string), s]),
+      .filter((subject) => subject.name && normalizeSubjectKey(subject.name) !== GENERAL)
+      .map((subject) => [normalizeSubjectKey(canonicalizeSubjectName(subject.name as string)), subject]),
   );
 
-  // Only expose catalog rows that correspond to canonical onboarding subjects
-  // for onboarded users. This prevents stale/legacy subjects leaking into UI.
   if (canonical.length > 0) {
     const subjects = canonical
-      .map((name) => catalogByName.get(name))
-      .filter((s): s is { id: string; name: string } => Boolean(s))
-      .map((s) => ({ id: s.id, name: s.name }));
+      .map((name) => catalogByName.get(normalizeSubjectKey(name)))
+      .filter((subject): subject is { id: string; name: string } => Boolean(subject))
+      .map((subject) => ({ id: subject.id, name: subject.name }));
 
     return { subjects, onboardingComplete };
   }
 
-  // Pre-onboarding users get an empty subject list. Never silently substitute
-  // General because that masks broken onboarding state and pollutes modules.
   return { subjects: [], onboardingComplete };
 }
 
@@ -79,8 +98,9 @@ export function assertRequestedLearnerSubject(
   subjects: LearnerSubject[],
   requestedSubject?: string | null,
 ) {
-  const requested = normalize(requestedSubject ?? "");
-  if (!requested || requested === "all") return null;
-  if (requested === GENERAL) return null;
-  return subjects.find((s) => normalize(s.name) === requested) ?? null;
+  const requested = normalizeSubjectKey(canonicalizeSubjectName(requestedSubject ?? ""));
+  if (!requested || requested === "all" || requested === GENERAL) return null;
+  return subjects.find((subject) =>
+    normalizeSubjectKey(canonicalizeSubjectName(subject.name)) === requested,
+  ) ?? null;
 }
