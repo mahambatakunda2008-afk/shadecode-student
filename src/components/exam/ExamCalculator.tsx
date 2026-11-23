@@ -57,15 +57,14 @@ export default function ExamCalculator({ onClose }: { onClose: () => void }) {
   }, [functionText, graphMin, graphMax, angle]);
 
   const calculusResult = (() => {
-    try {
-      const x = Number(xValue), a = Number(lower), b = Number(upper);
-      if (tab === "calculus" && functionText.trim()) return {
-        slope: formatResult(derivative(functionText, x, angle)),
-        area: formatResult(definiteIntegral(functionText, a, b, angle)),
-        root: formatResult(solveByBisection(functionText, a, b, angle)),
-      };
-    } catch { return null; }
-    return null;
+    if (tab !== "calculus" || !functionText.trim()) return null;
+    const attempt = (run: () => number) => { try { return formatResult(run()); } catch { return "Unavailable for this input"; } };
+    const x = Number(xValue), a = Number(lower), b = Number(upper);
+    return {
+      slope: attempt(() => derivative(functionText, x, angle)),
+      area: attempt(() => definiteIntegral(functionText, a, b, angle)),
+      root: attempt(() => solveByBisection(functionText, a, b, angle)),
+    };
   })();
   const stats = (() => {
     try { return descriptiveStatistics(statsInput.split(/[,;\s]+/).filter(Boolean).map(Number)); } catch { return null; }
