@@ -27,7 +27,7 @@ describe("offline scientific calculator", () => {
     const stats = descriptiveStatistics([4, 7, 7, 9, 13]);
     expect(stats.mean).toBe(8);
     expect(stats.median).toBe(7);
-    expect(stats.standardDeviation).toBeCloseTo(Math.sqrt(9.2), 10);
+    expect(stats.standardDeviation).toBeCloseTo(Math.sqrt(8.8), 10);
   });
 
   it("rejects executable or unknown input", () => {
