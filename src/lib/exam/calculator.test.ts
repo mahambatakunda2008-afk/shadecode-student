@@ -35,4 +35,15 @@ describe("offline scientific calculator", () => {
     expect(() => evaluateExpression("window.alert(1)")).toThrow();
     expect(() => evaluateExpression("unknown + 1")).toThrow();
   });
+
+  it("simplifies, differentiates and integrates polynomial expressions symbolically", () => {
+    expect(simplifyPolynomial("2(x + 3)^2 - x^2")).toBe("x^2 + 12x + 18");
+    expect(differentiatePolynomial("3x^3 - 4x^2 + 7x - 9")).toBe("9x^2 - 8x + 7");
+    expect(integratePolynomial("6x^2 + 4x")).toBe("2x^3 + 2x^2 + C");
+  });
+
+  it("rejects unsupported non-polynomial operations", () => {
+    expect(() => simplifyPolynomial("sin(x)")).toThrow();
+    expect(() => simplifyPolynomial("x / (x + 1)")).toThrow();
+  });
 });
