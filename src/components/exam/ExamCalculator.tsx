@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, Calculator, ChartNoAxesCombined, Clock3, FunctionSquare, Sigma, X } from "lucide-react";
+import { Activity, Calculator, ChartNoAxesCombined, Clock3, Sigma, X } from "lucide-react";
 import { definiteIntegral, derivative, descriptiveStatistics, evaluateExpression, formatResult, solveByBisection } from "@/lib/exam/calculator";
 
 type Tab = "scientific" | "calculus" | "graph" | "statistics";
