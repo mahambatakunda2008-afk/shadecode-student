@@ -33,6 +33,10 @@ export default function OfflineResourceLibraryPanel({ subjects, accountId }: { s
 
   useEffect(() => {
     let active = true;
+    // Clear any previously opened Blob URL when the authenticated account changes.
+    setOpened(null);
+    setResources([]);
+    setMessage("");
     void refresh().catch(() => { if (active) setMessage("Offline storage is unavailable in this browser."); });
     return () => { active = false; };
   }, [refresh]);
