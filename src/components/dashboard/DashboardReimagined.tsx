@@ -36,6 +36,15 @@ export default function DashboardReimagined() {
   const [core, setCore] = useState<{ progress: StudentProgress; performance: StudentPerformance; activity: StudentActivity } | null>(null); const [coreLoading, setCoreLoading] = useState(true); const [coreError, setCoreError] = useState<string | null>(null); const [coreCachedAt, setCoreCachedAt] = useState<number | null>(null);
   const [intel, setIntel] = useState<StudentIntelligenceData | null>(null); const [intelLoading, setIntelLoading] = useState(true); const [intelError, setIntelError] = useState<string | null>(null); const [intelCachedAt, setIntelCachedAt] = useState<number | null>(null);
   const loadCore = async (id: string) => {
+    // Never let an offline Supabase failure masquerade as a successful empty response.
+    // Keep the last known-good device snapshot authoritative until a real refresh is possible.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      const cached = loadDashboardCache<{ progress: StudentProgress; performance: StudentPerformance; activity: StudentActivity }>(id, "core");
+      if (cached) { setCore(cached.data); setCoreCachedAt(cached.cachedAt); setCoreError(null); }
+      else setCoreError("You’re offline. Connect once to load your first dashboard snapshot.");
+      setCoreLoading(false);
+      return;
+    }
     setCoreLoading(true); setCoreError(null);
     try {
       const [progress, performance, activity] = await withTimeout(Promise.all([progressService.getProgress(id), performanceService.getPerformance(id), activityService.getActivity(id)]), CORE_TIMEOUT, "Dashboard data timed out");
@@ -55,6 +64,14 @@ export default function DashboardReimagined() {
     } finally { setCoreLoading(false); }
   };
   const loadIntel = async (id: string) => {
+    // Cortex is an enhancement. Offline mode must preserve the last saved insight snapshot.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      const cached = loadDashboardCache<StudentIntelligenceData>(id, "intel");
+      if (cached) { setIntel(cached.data); setIntelCachedAt(cached.cachedAt); setIntelError(null); }
+      else setIntelError("Cortex recommendations will be available after your first online sync.");
+      setIntelLoading(false);
+      return;
+    }
     setIntelLoading(true); setIntelError(null);
     try {
       const result = await withTimeout(intelligenceEngine.getIntelligence(id), INTEL_TIMEOUT, "Cortex timed out");
