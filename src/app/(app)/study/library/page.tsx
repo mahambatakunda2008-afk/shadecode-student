@@ -1,4 +1,5 @@
 import LibraryHub from "@/components/study/LibraryHub";
+import OfflineResourceLibraryPanel from "@/components/study/OfflineResourceLibraryPanel";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 
@@ -33,5 +34,12 @@ export default async function LibraryPage() {
     );
   }
 
-  return <LibraryHub subjects={subjects} />;
+  return (
+    <>
+      <LibraryHub subjects={subjects} />
+      <div className="mx-auto w-full max-w-2xl px-4 pb-8">
+        <OfflineResourceLibraryPanel key={user.id} subjects={subjects} accountId={user.id} />
+      </div>
+    </>
+  );
 }

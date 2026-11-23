@@ -13,10 +13,12 @@ export interface ResourceChunk {
   index: number;
   total: number;
   data: ArrayBuffer;
+  /** SHA-256 of this chunk's data, not the complete resource. */
   sha256: string;
 }
 
 export interface ResourceTransferComplete {
+  /** SHA-256 of the fully reassembled resource. */
   protocol: typeof SHADENET_PROTOCOL;
   requestId: string;
   resourceId: string;
