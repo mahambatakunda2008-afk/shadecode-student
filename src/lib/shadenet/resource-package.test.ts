@@ -118,7 +118,7 @@ describe("portable resource package envelope", () => {
   });
 
   it("rejects an unknown envelope and truncated metadata", async () => {
-    await expect(parseResourcePackage(new TextEncoder().encode("NOTSHADECODE"))).rejects.toMatchObject({
+    await expect(parseResourcePackage(new TextEncoder().encode("NOTSHADECODE-INVALID"))).rejects.toMatchObject({
       code: "unsupported-format",
     });
     await expect(parseResourcePackage(new TextEncoder().encode("SCRESOURCE1"))).rejects.toMatchObject({
