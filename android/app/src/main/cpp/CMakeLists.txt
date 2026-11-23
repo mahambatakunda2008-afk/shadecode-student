@@ -30,10 +30,15 @@ set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 
 if(ANDROID_ABI STREQUAL "arm64-v8a")
     set(GGML_CPU_KLEIDIAI ON CACHE BOOL "" FORCE)
+elseif(ANDROID_ABI STREQUAL "armeabi-v7a")
+    # Cortex-A7 devices (including itel A56) are 32-bit ARMv7 with NEON.
+    # Keep the baseline at ARMv7-A; do not enable ARMv8-only kernels.
+    set(GGML_CPU_KLEIDIAI OFF CACHE BOOL "" FORCE)
+    set(GGML_CPU_ARM_ARCH "armv7-a" CACHE STRING "" FORCE)
 elseif(ANDROID_ABI STREQUAL "x86_64")
     set(GGML_CPU_KLEIDIAI OFF CACHE BOOL "" FORCE)
 else()
-    message(FATAL_ERROR "Shadecode Cortex native runtime currently supports arm64-v8a and x86_64 only")
+    message(FATAL_ERROR "Unsupported Shadecode Cortex Android ABI: ${ANDROID_ABI}")
 endif()
 
 FetchContent_MakeAvailable(llama_cpp)

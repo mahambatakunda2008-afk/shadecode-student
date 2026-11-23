@@ -35,7 +35,8 @@ android {
         buildConfigField("String", "SUPABASE_URL", "\"${supabaseUrl.replace("\"", "\\\"")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${supabaseAnonKey.replace("\"", "\\\"")}\"")
         buildConfigField("String", "APP_BASE_URL", "\"${appBaseUrl.trimEnd('/')}\"")
-        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+        // Include 32-bit ARM for older but still supported Android devices such as itel A56.
+        ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64") }
         externalNativeBuild {
             cmake {
                 cppFlags += listOf("-std=c++17")
