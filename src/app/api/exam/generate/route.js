@@ -97,6 +97,14 @@ export async function POST(req) {
       }, { status: 503 });
     }
 
+    // Cortex questions use string IDs, while the Exam Sim workspace and its answer/evidence
+    // contracts use numeric IDs. Normalize at this API boundary before signing the paper so
+    // validation, answer persistence, and provenance all operate on the same question IDs.
+    exam = {
+      ...exam,
+      questions: exam.questions.map((question, index) => ({ ...question, id: index + 1 })),
+    };
+
     // Generated papers are intentionally not written to `exams`: that table is the learner's exam
     // schedule (subject + exam_date). The old insert here could never succeed against it.
 
