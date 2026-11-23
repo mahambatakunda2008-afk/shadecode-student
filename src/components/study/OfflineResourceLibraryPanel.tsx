@@ -12,7 +12,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Subject[] }) {
+export default function OfflineResourceLibraryPanel({ subjects, accountId }: { subjects: Subject[]; accountId: string }) {
   const [resources, setResources] = useState<OfflineResourceMetadata[]>([]);
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState(subjects[0]?.name ?? "");
@@ -24,12 +24,12 @@ export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Su
 
   const refresh = useCallback(async () => {
     const [items, estimate] = await Promise.all([
-      offlineResourceLibrary.list(),
+      offlineResourceLibrary.list(accountId),
       offlineResourceLibrary.storageEstimate(),
     ]);
     setResources(items);
     setStorage(estimate);
-  }, []);
+  }, [accountId]);
 
   useEffect(() => {
     let active = true;
@@ -48,7 +48,7 @@ export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Su
     setMessage("");
     try {
       for (const file of Array.from(files)) {
-        await offlineResourceLibrary.importFile(file, {
+        await offlineResourceLibrary.importFile(accountId, file, {
           title: title.trim() || file.name,
           subject: subject || undefined,
           topic: topic.trim() || undefined,
@@ -73,7 +73,7 @@ export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Su
     setBusy(true);
     setMessage("");
     try {
-      const count = await offlineResourceLibrary.importPack(file);
+      const count = await offlineResourceLibrary.importPack(accountId, file);
       await refresh();
       setMessage("Imported " + count + " resource" + (count === 1 ? "" : "s") + ". Pack contents are marked unverified until checked.");
     } catch (error) {
@@ -85,7 +85,7 @@ export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Su
     setBusy(true);
     setMessage("");
     try {
-      const pack = await offlineResourceLibrary.exportPack();
+      const pack = await offlineResourceLibrary.exportPack(accountId);
       const url = URL.createObjectURL(pack);
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -100,7 +100,7 @@ export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Su
 
   async function openResource(item: OfflineResourceMetadata) {
     try {
-      const stored = await offlineResourceLibrary.open(item.id);
+      const stored = await offlineResourceLibrary.open(accountId, item.id);
       if (!stored) throw new Error("This resource is no longer stored on this device.");
       if (opened?.url) URL.revokeObjectURL(opened.url);
       const url = URL.createObjectURL(stored.blob);
@@ -112,7 +112,7 @@ export default function OfflineResourceLibraryPanel({ subjects }: { subjects: Su
 
   async function removeResource(item: OfflineResourceMetadata) {
     if (!window.confirm(`Remove "${item.title}" from this device?`)) return;
-    await offlineResourceLibrary.remove(item.id);
+    await offlineResourceLibrary.remove(accountId, item.id);
     if (opened?.metadata.id === item.id) {
       URL.revokeObjectURL(opened.url);
       setOpened(null);
