@@ -64,12 +64,13 @@ export async function POST(request: Request) {
     attemptId,
     exerciseId,
     objectiveId: exercise.objectiveId,
-    authoritative: true,
+    authoritative: false,
+    assessmentAuthority: "not-established",
     status: "accepted",
     execution: "pending-sandbox",
     caseCount: cases.length,
     protectedCaseCount: cases.filter(test => test.hidden).length,
     score: null,
-    message: "Attempt accepted. Protected execution requires the isolated assessment runner.",
+    message: "Attempt received, but no score or verified learning evidence has been produced. Protected execution requires the isolated assessment runner.",
   }, { status: 202 });
 }
