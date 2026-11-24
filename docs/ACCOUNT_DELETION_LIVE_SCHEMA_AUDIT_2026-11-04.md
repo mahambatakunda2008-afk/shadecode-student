@@ -1,0 +1,142 @@
+# Live account-deletion schema audit
+
+**Audit date:** 4 November 2026  
+**Project:** `shadecode-student` (Supabase ref `zczdtffwzkctkxwmvalb`)  
+**Method:** read-only live database introspection through Supabase Management tooling. No user rows were read or modified.  
+**Status:** schema inventory only; not a deletion implementation or legal certification.
+
+## Executive finding
+
+The live database has substantially more account-linked data than the initial source-only inventory showed. A safe deletion workflow cannot rely on deleting `auth.users` or `profiles` and assuming every record cascades. Many user-owned tables have a `user_id` column but no foreign key to `auth.users` or `profiles`. Some use text identifiers. The database also has three private Storage buckets whose object ownership/path conventions still need inspection.
+
+**Do not ship an account deletion endpoint until this inventory is reconciled with the repository migrations, Storage object ownership, and local-device caches.**
+
+## Live account-linked columns
+
+The following tables/columns were found in `public` by scanning for `user_id`, `owner_id`, `profile_id`, `created_by`, `reviewed_by`, `author_id`, `student_id`, `account_id`, and names containing `user`.
+
+| Table | Account-linked column(s) | Notes |
+|---|---|---|
+| academic_contexts | user_id (uuid) | Learner context |
+| achievements | user_id (uuid) | FK to profiles.id, ON DELETE CASCADE |
+| ai_anomalies | user_id (uuid) | AI operations/diagnostics |
+| ai_usage_aggregates | unique_users (integer) | Aggregate, not a user key |
+| ai_usage_logs | user_id (uuid) | AI usage records |
+| challenge_attempts | user_id (uuid), user_name (text) | Both account-linked and potentially identifying |
+| cortex_events | user_id (uuid) | Cortex event history |
+| cortex_generation_jobs | user_id (uuid) | Generation job state |
+| cortex_insights | user_id (uuid) | FK to profiles.id, ON DELETE CASCADE |
+| cortex_memory | user_id (uuid) | Learner memory |
+| daily_focus | user_id (uuid) | Focus records |
+| exam_logs | user_id (text) | Legacy text identifier; do not assume UUID cast |
+| exam_result_questions | user_id (uuid) | Result detail |
+| exam_results | user_id (uuid) | Result history |
+| exams | user_id (uuid) | FK to profiles.id, ON DELETE CASCADE |
+| experiment_assignments | user_id (uuid) | Experiment assignment |
+| export_logs | user_id (uuid) | Export audit |
+| feedback | user_id (uuid) | Support/feedback content |
+| focus_sessions | user_id (uuid) | Focus history |
+| generated_course_drafts | user_id (uuid) | User-generated course content |
+| generated_lessons | user_id (uuid) | FK to auth.users and subjects; inspect cascade behavior |
+| insights | user_id (uuid) | Legacy insights |
+| insights_archive | user_id (uuid) | Archived insights |
+| learn_lessons | user_id (uuid) | User-created/assigned lesson rows |
+| learner_brain_events | user_id (uuid) | Learner memory events |
+| learner_curriculum_objective_progress | user_id (uuid) | Objective progress |
+| learning_events | user_id (uuid) | Learning event history |
+| learning_paths | user_id (uuid) | Learning path |
+| learning_signals | user_id (uuid) | Learner signals |
+| lesson_votes | user_id (uuid) | User votes |
+| paper_learning_attempts | user_id (uuid) | Paper learning attempts |
+| paper_learning_sessions | user_id (uuid) | Paper learning sessions |
+| paper_learning_transfer_questions | user_id (uuid) | Transfer questions |
+| platform_channel_identities | user_id (uuid), external_user_id (text) | WhatsApp/platform identity; delete both linkage and identifiers |
+| platform_channel_link_codes | user_id (uuid) | Temporary link codes |
+| platform_channel_message_receipts | user_id (uuid), external_user_id (text) | Message metadata and external identity |
+| platform_group_members | user_id (uuid) | Membership in shared groups |
+| platform_institution_members | user_id (uuid) | Institution membership |
+| platform_user_relationships | subject_user_id, related_user_id, created_by (uuid) | Three user references; consider both sides and creator |
+| primary_activity_progress | user_id (uuid) | Primary activity progress |
+| profiles | id (uuid), username (text) | Primary learner profile; id references auth.users |
+| project_evidence | user_id (uuid) | Evidence content may include uploaded files |
+| project_milestones | user_id (uuid) | Milestone data |
+| projects | user_id (uuid) | Project ownership |
+| published_learning_assets | reviewed_by (uuid) | Reviewer identity, not ordinary learner-owned data; preserve shared assets and anonymize reviewer attribution only if policy requires |
+| revision_queue | user_id (uuid) | Revision queue |
+| revisions | user_id (uuid) | Revision history |
+| study_plans | user_id (uuid) | Study plans |
+| study_topics | user_id (uuid) | FK to profiles.id, ON DELETE CASCADE |
+| subjects | user_id (uuid) | FK to profiles.id, ON DELETE CASCADE |
+| survey_responses | user_id (uuid) | Survey answers |
+| sync_revisions | user_id (uuid) | Sync protocol state |
+| tasks | user_id (uuid) | FK to profiles.id, ON DELETE CASCADE |
+| timetable | user_id (uuid) | FK to profiles.id, ON DELETE CASCADE |
+| topic_mastery | user_id (uuid) | Mastery state |
+| traction_events | user_id (uuid) | Product analytics/event history |
+| user_achievements | user_id (uuid) | User achievement state |
+| user_careers | user_id (uuid) | Career interests |
+| user_cortex | user_id (uuid) | Legacy/summary Cortex profile |
+| user_past_paper_state | user_id (uuid) | Paper state |
+| user_profiles | user_id (uuid) | Secondary profile table |
+| user_question_attempts | user_id (uuid) | Question attempt history |
+| user_roles | user_id (uuid) | Authorization data; must remove account's role assignments |
+| user_saved_questions | user_id (uuid) | Saved question state |
+
+This is a column-name inventory, not proof that every listed table currently contains rows for every user. It also does not discover identifiers hidden inside JSON documents, text payloads, or object paths.
+
+## Foreign-key behavior observed
+
+The live FK metadata confirms only a subset of the account relationships. Confirmed profile cascades include `achievements`, `cortex_insights`, `exams`, `study_topics`, `subjects`, `tasks`, and `timetable`. There are other non-account FKs that cascade child records, including paper-learning attempts/transfer questions under sessions, result questions under exam results, project evidence/milestones under projects, and lesson prerequisites under lessons.
+
+Many account-linked tables in the inventory above do **not** show a direct FK to `auth.users` or `profiles`. The deletion workflow must explicitly delete those rows by the correct typed owner key, in dependency order, and verify zero remaining matches before deleting the Auth identity. Never use broad text matching or cast text identifiers blindly.
+
+## Storage buckets
+
+Live Storage introspection found these private buckets:
+
+- `past-papers`
+- `community-uploads-pending`
+- `shadecode-backups`
+
+This query established bucket names and privacy flags only. It did not inspect object paths, owner metadata, backup contents, or whether an individual account's data is embedded in shared backup archives. Before deletion can be considered complete:
+1. Inspect Storage policies and object path conventions for all three buckets.
+2. Determine whether `project_evidence`, community uploads, or generated user content stores object paths.
+3. Delete user-owned objects before deleting the Auth user, because Supabase Auth deletion can fail while the user still owns Storage objects.
+4. Do not delete shared curriculum, public learning assets, or global exam papers merely because a user's row references them.
+5. Establish whether backups contain user data and define provider backup expiry / selective erasure behavior.
+
+## Additional findings
+
+- `exam_logs.user_id` is text, unlike most user references. Inspect the application write path and historical format before deleting.
+- `challenge_attempts.user_name` may preserve a username after account deletion. Decide whether to remove, replace with a neutral label, or retain only genuinely anonymous competition results. A display name/username is not anonymous merely because the UUID is removed.
+- `platform_user_relationships` can represent another user's relationship to the account. Remove relationships where the target account appears in any of its three columns, without deleting the other person's account.
+- `platform_group_members` and `platform_institution_members` must be removed, but shared group/institution records should remain if other members still use them.
+- `user_roles` is security-sensitive and must be removed for the deleted identity.
+- `published_learning_assets.reviewed_by` is a reviewer attribution on shared content, not a user-owned asset. Avoid cascading deletion of shared curriculum assets.
+- The Storage buckets are private, but private does not mean account-scoped or automatically erased.
+- The live database has RLS enabled on the tables returned by the table inventory, but RLS policy coverage/semantics must be reviewed separately. RLS does not perform deletion automatically.
+
+## Required deletion design
+
+1. Require an authenticated session for the account being deleted, verify the server-side user with Supabase Auth, require recent re-authentication/explicit confirmation, and rate-limit requests. Never accept a target user ID supplied by the client as authority.
+2. Create an idempotent deletion job/tombstone with minimal operational metadata. Do not store passwords, tokens, or unnecessary copies of the request.
+3. Block new writes/syncs for the account while deletion is running; revoke sessions where supported and account for still-valid JWT expiry.
+4. Delete explicit account-owned rows from every table above, including text-keyed and multi-user relationship tables, then delete dependent rows and account-owned Storage objects in safe dependency order.
+5. Handle processor deletion requests where required and document provider retention/backup expiry.
+6. Delete the Supabase Auth user only after dependent rows and Storage ownership are cleared. Verify the Auth user and all account-linked rows are gone.
+7. Clear local Android DataStore and Room databases, queued sync mutations, web IndexedDB/service-worker caches, and account-scoped downloaded material on the relevant device. A server cannot guarantee remote-device cache erasure, so document the local cleanup behavior and trigger it on the next authenticated client response where possible.
+8. Keep a minimal, non-identifying completion record sufficient to demonstrate fulfillment, with a defined retention period.
+9. Test cross-account isolation, partial failures, retries, concurrent requests, FK blockers, storage deletion failures, and post-deletion token/session behavior.
+
+## Open questions before implementation
+
+- Which of the three Storage buckets contain account-owned objects, and what are the exact object path/owner conventions?
+- Are there account identifiers embedded in JSON payloads, metadata, event properties, logs, exports, or backups?
+- Which account-linked tables are intentionally retained in anonymized aggregate form, and how is anonymization validated?
+- Does the deployed app use a server-only Supabase service key for Admin Auth deletion, and where is it configured? Never expose it to the browser or Android app.
+- Which existing RPCs/triggers or retention jobs mutate user data concurrently with deletion?
+- What is the expected local-device cleanup contract for devices that remain offline after server deletion?
+
+## Verification boundary
+
+The audit used read-only metadata queries against the active Shadecode Student Supabase project. No account records were selected, changed, or deleted. The schema may evolve; rerun this inventory immediately before implementing and testing the deletion workflow.
