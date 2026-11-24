@@ -300,7 +300,7 @@ describe("saving routes for offline (warm-up)", () => {
 
   it("ignores unsafe or irrelevant routes", async () => {
     network.set("/dashboard", () => page(""));
-    await fire("message", { data: { type: "WARM_ROUTES", routes: ["//evil.com/x", "https://evil.com", "../etc", "/api/exam/generate", "/auth/login", "/_next/static/x.js", "/", 42, "/dashboard"] } });
+    await fire("message", { data: { type: "WARM_ROUTES", routes: ["//evil.com/x", "https://evil.com", "../etc", "/api/exam/generate", "/auth/login", "/_next/static/x.js", "/admin", "/admin/analytics", "/teacher", "/", 42, "/dashboard"] } });
     expect(fetchCalls.filter((c) => c !== "/dashboard")).toEqual([]);
     expect(clientMessages[0]).toEqual(expect.objectContaining({ pages: 1 }));
   });
