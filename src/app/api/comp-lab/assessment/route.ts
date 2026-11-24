@@ -23,7 +23,21 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const learner = await resolveLearnerSubjects(supabase, user.id);
-  if (!hasComputerScienceCurriculum(learner.subjects)) {
+
+  // Match the Comp Lab page's eligibility rule. The canonical profile is the
+  // source of truth; the per-user subject catalogue can lag behind profile
+  // updates and must not block an enrolled Computer Science learner.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("subjects")
+    .eq("id", user.id)
+    .maybeSingle();
+  const profileSubjects = Array.isArray(profile?.subjects) ? profile.subjects : [];
+  const hasComputingSubject =
+    hasComputerScienceCurriculum(learner.subjects) ||
+    hasComputerScienceCurriculum(profileSubjects);
+
+  if (!hasComputingSubject) {
     return NextResponse.json(
       { error: "Comp Lab assessments are only available to learners enrolled in Computer Science or an equivalent computing subject.", code: "SUBJECT_NOT_ALLOWED" },
       { status: 403 },
