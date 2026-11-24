@@ -5,7 +5,7 @@
 import { localFirstStore } from "@/lib/local-first/store";
 
 const DB_NAME = "shadecode-offline";
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 
 export interface OfflineLesson {
   id: string; ownerUserId?: string; title: string; subject: string; subjectId?: string; topic?: string; description?: string;
@@ -28,6 +28,7 @@ export function isOfflineContentOwnedBy(content: { userId?: string } | null | un
 }
 
 export const offlineContentKey = (userId: string, lessonId: string) => `${userId}:${lessonId}`;
+export const offlineLessonKey = (userId: string, lessonId: string) => `${userId}:${lessonId}`;
 
 const PROGRESS_STORE = "progressByUser";
 const progressKey = (userId: string, lessonId: string) => `${userId}:${lessonId}`;
@@ -54,6 +55,25 @@ class OfflineStorage {
         // New records live in user-scoped stores so shared devices cannot cross-read accounts.
         if (!db.objectStoreNames.contains("notes")) { const store = db.createObjectStore("notes", { keyPath: "lessonId" }); store.createIndex("downloadedAt", "downloadedAt", { unique: false }); }
         if (!db.objectStoreNames.contains("quizzes")) { const store = db.createObjectStore("quizzes", { keyPath: "lessonId" }); store.createIndex("downloadedAt", "downloadedAt", { unique: false }); }
+        if (!db.objectStoreNames.contains("lessonsByUser")) {
+          const store = db.createObjectStore("lessonsByUser", { keyPath: "key" });
+          store.createIndex("userId", "ownerUserId", { unique: false });
+          store.createIndex("lessonId", "id", { unique: false });
+          // Preserve only legacy records with a verifiable owner. Ownerless entries
+          // remain in the legacy store and are never exposed to an authenticated user.
+          if (db.objectStoreNames.contains("lessons") && transaction) {
+            const legacy = transaction.objectStore("lessons");
+            legacy.openCursor().onsuccess = (cursorEvent) => {
+              const cursor = (cursorEvent.target as IDBRequest<IDBCursorWithValue | null>).result;
+              if (!cursor) return;
+              const value = cursor.value as OfflineLesson;
+              if (value?.ownerUserId && value?.id) {
+                store.put({ ...value, key: offlineLessonKey(value.ownerUserId, value.id) });
+              }
+              cursor.continue();
+            };
+          }
+        }
         if (!db.objectStoreNames.contains("notesByUser")) { const store = db.createObjectStore("notesByUser", { keyPath: "key" }); store.createIndex("userId", "userId", { unique: false }); store.createIndex("lessonId", "lessonId", { unique: false }); }
         if (!db.objectStoreNames.contains("quizzesByUser")) { const store = db.createObjectStore("quizzesByUser", { keyPath: "key" }); store.createIndex("userId", "userId", { unique: false }); store.createIndex("lessonId", "lessonId", { unique: false }); }
         if (!db.objectStoreNames.contains("progress")) { const store = db.createObjectStore("progress", { keyPath: "lessonId" }); store.createIndex("userId", "userId", { unique: false }); store.createIndex("synced", "synced", { unique: false }); }
@@ -67,21 +87,20 @@ class OfflineStorage {
   async saveLesson(lesson: OfflineLesson): Promise<void> {
     if (!lesson.ownerUserId) throw new Error("Offline lessons require an authenticated owner");
     await this.init();
-    return this.put("lessons", lesson);
+    return this.put("lessonsByUser", { ...lesson, key: offlineLessonKey(lesson.ownerUserId, lesson.id) });
   }
   async getLesson(id: string, userId?: string): Promise<OfflineLesson | null> {
     if (!userId) return null;
     await this.init();
-    const lesson = await this.get<OfflineLesson>("lessons", id);
+    const lesson = await this.get<OfflineLesson & { key: string }>("lessonsByUser", offlineLessonKey(userId, id));
     return isOfflineLessonOwnedBy(lesson, userId) ? lesson : null;
   }
   async getAllLessons(userId?: string): Promise<OfflineLesson[]> {
     if (!userId) return [];
     await this.init();
-    const lessons = await this.getAll<OfflineLesson>("lessons");
-    return lessons.filter(lesson => isOfflineLessonOwnedBy(lesson, userId));
+    return new Promise((resolve, reject) => { const request = this.db!.transaction(["lessonsByUser"], "readonly").objectStore("lessonsByUser").index("userId").getAll(userId); request.onerror = () => reject(request.error); request.onsuccess = () => resolve((request.result || []).filter((lesson: OfflineLesson) => isOfflineLessonOwnedBy(lesson, userId))); });
   }
-  async deleteLesson(id: string): Promise<void> { await this.init(); return this.delete("lessons", id); }
+  async deleteLesson(id: string, userId: string): Promise<void> { if (!userId) throw new Error("Deleting an offline lesson requires its authenticated owner"); await this.init(); return this.delete("lessonsByUser", offlineLessonKey(userId, id)); }
   async saveNotes(notes: OfflineNotes): Promise<void> {
     if (!notes.userId) throw new Error("Offline notes require an authenticated user");
     await this.init();
