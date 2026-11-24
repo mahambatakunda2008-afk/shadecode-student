@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 import { getExperienceNavGroups } from "@/lib/navigation";
@@ -17,9 +17,11 @@ type WarmDone = { type?: string; version?: string; pages?: number; skipped?: num
 export default function OfflineWarmup() {
   const { profile } = useUser();
   const userId = profile?.id;
-  const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
-  const navGroups = getExperienceNavGroups(experience, profile?.curriculum_subjects, profile?.subjects);
-  const routes = getOfflineWarmRoutes(navGroups);
+  const routes = useMemo(() => {
+    const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
+    const navGroups = getExperienceNavGroups(experience, profile?.curriculum_subjects, profile?.subjects);
+    return getOfflineWarmRoutes(navGroups);
+  }, [profile?.study_level, profile?.curriculum_subjects, profile?.subjects]);
 
   useEffect(() => {
     if (!userId || process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
