@@ -27,6 +27,18 @@ function prioritizeComputerScience(profile: UserProfile): UserProfile {
 }
 async function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> { let timer: ReturnType<typeof setTimeout> | undefined; try { return await Promise.race([promise, new Promise<T>((_, reject) => { timer = setTimeout(() => reject(new Error("Timed out")), ms); })]); } finally { if (timer) clearTimeout(timer); } }
 
+/** Private HTML and RSC caches are URL-keyed, so clear them whenever the active account changes. */
+function clearPrivateRouteCaches(): void {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  const message = { type: "CLEAR_APP_CACHE" };
+  const controller = navigator.serviceWorker.controller;
+  controller?.postMessage(message);
+  void navigator.serviceWorker.getRegistration().then((registration) => {
+    const active = registration?.active;
+    if (active && active !== controller) active.postMessage(message);
+  }).catch(() => { /* No active worker: nothing to clear. */ });
+}
+
 export function UserProvider({ children }: { children: ReactNode }) {
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
   const [user, setUser] = useState<User | null>(null);
@@ -53,15 +65,26 @@ export function UserProvider({ children }: { children: ReactNode }) {
         const { data: { session } } = await withTimeout(supabase.auth.getSession(), AUTH_BOOT_TIMEOUT_MS);
         if (!mounted) return;
         const currentUser = session?.user ?? null;
+        const previousUserId = getRememberedUserId();
+        if (!currentUser) { clearPrivateRouteCaches(); clearRememberedUser(); }
+        else if (previousUserId && previousUserId !== currentUser.id) clearPrivateRouteCaches();
         setUser(currentUser);
-        if (currentUser) { rememberActiveUser(currentUser.id); const cached = readCachedProfile(currentUser.id); if (cached) setProfile(prioritizeComputerScience(cached)); void fetchProfile(currentUser.id); }
+        const cached = currentUser ? readCachedProfile(currentUser.id) : null;
+        setProfile(cached ? prioritizeComputerScience(cached) : null);
+        if (currentUser) { rememberActiveUser(currentUser.id); void fetchProfile(currentUser.id); }
       } catch { /* local session/profile stays usable */ }
     };
     void initAuth();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      if (event === "SIGNED_OUT" || !session) { clearRememberedUser(); offlineSync.stopAutoSync(); setUser(null); setProfile(null); return; }
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") { rememberActiveUser(session.user.id); setUser(session.user); void fetchProfile(session.user.id); }
+      if (event === "SIGNED_OUT" || !session) { clearPrivateRouteCaches(); clearRememberedUser(); offlineSync.stopAutoSync(); setUser(null); setProfile(null); return; }
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        const previousUserId = getRememberedUserId();
+        if (previousUserId && previousUserId !== session.user.id) { clearPrivateRouteCaches(); setProfile(null); }
+        rememberActiveUser(session.user.id);
+        setUser(session.user);
+        void fetchProfile(session.user.id);
+      }
     });
     return () => { mounted = false; offlineSync.stopAutoSync(); subscription.unsubscribe(); };
   }, [supabase, fetchProfile]);
