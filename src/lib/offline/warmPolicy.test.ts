@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CORE_OFFLINE_ROUTES, WARM_INTERVAL_MS, coreRouteHrefs, shouldWarmRoutes, warmStorageKey, warmSucceeded } from "./warmPolicy";
+import { CORE_OFFLINE_ROUTES, WARM_INTERVAL_MS, coreRouteHrefs, getOfflineWarmRoutes, shouldWarmRoutes, warmStorageKey, warmSucceeded } from "./warmPolicy";
 import { classifyRouteError } from "./classifyError";
 
 const base = { hasServiceWorker: true, online: true, saveData: false, effectiveType: "4g", lastWarmAt: null, now: 1_000_000_000 };
@@ -36,7 +36,27 @@ describe("core routes and storage key", () => {
   });
   it("is saved per learner and per worker version", () => {
     expect(warmStorageKey("a")).not.toBe(warmStorageKey("b"));
-    expect(warmStorageKey("a")).toContain("v7");
+    expect(warmStorageKey("a")).toContain("v8");
+  });
+});
+
+describe("learner-specific warm routes", () => {
+  it("includes all visible destinations, plus dashboard and settings", () => {
+    const routes = getOfflineWarmRoutes([
+      { items: [{ href: "/learn" }, { href: "/comp-lab" }, { href: "/practical-practice" }] },
+      { items: [{ href: "/analytics" }, { href: "/studyspace" }] },
+    ]);
+    expect(routes).toEqual(["/dashboard", "/settings", "/learn", "/comp-lab", "/practical-practice", "/analytics", "/studyspace"]);
+  });
+  it("deduplicates routes and excludes admin, teacher, API and malformed destinations", () => {
+    const routes = getOfflineWarmRoutes([
+      { items: [
+        { href: "/learn" }, { href: "/learn" }, { href: "/admin" },
+        { href: "/admin/analytics" }, { href: "/teacher" }, { href: "/api/private" },
+        { href: "//evil.example" }, { href: "/bad/../route" },
+      ] },
+    ]);
+    expect(routes).toEqual(["/dashboard", "/settings", "/learn"]);
   });
 });
 
