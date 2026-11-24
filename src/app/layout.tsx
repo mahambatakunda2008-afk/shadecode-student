@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Michroma } from "next/font/google";
-
-const michroma = Michroma({ weight: "400", subsets: ["latin"], variable: "--font-brand" });
 import "./globals.css";
 import "./brand-polish.css";
 import { Analytics } from "@vercel/analytics/react";
@@ -17,8 +15,6 @@ import TractionBootstrap from "@/components/traction/TractionBootstrap";
 import StudentWebMCP from "@/components/webmcp/StudentWebMCP";
 import { IosStandaloneSafeArea } from "@/components/layout/IosStandaloneSafeArea";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
 const michroma = Michroma({ weight: "400", subsets: ["latin"], variable: "--font-brand" });
 
 export const metadata: Metadata = {
