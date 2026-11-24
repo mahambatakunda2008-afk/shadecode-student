@@ -132,7 +132,7 @@ describe("install and activate", () => {
   });
 
   it("removes old shadecode caches but keeps current ones and unrelated ones", async () => {
-    for (const name of ["shadecode-shell-v6", "shadecode-static-v7", "shadecode-pages-v7", "other-app"]) await cachesMock.api.open(name);
+    for (const name of ["shadecode-shell-v6", "shadecode-static-v8", "shadecode-pages-v8", "other-app"]) await cachesMock.api.open(name);
     await fire("activate");
     expect([...cachesMock.stores.keys()].sort()).toEqual(["other-app", "shadecode-pages-v7", "shadecode-static-v7"]);
   });
