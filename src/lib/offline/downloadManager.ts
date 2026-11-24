@@ -80,6 +80,7 @@ class DownloadManager {
   async downloadNotes(
     lessonId: string,
     notesContent: string,
+    userId: string,
     onProgress?: (progress: number) => void
   ): Promise<void> {
     const downloadId = `${lessonId}-notes`;
@@ -92,8 +93,10 @@ class DownloadManager {
     });
 
     try {
+      if (!userId) throw new Error("An authenticated owner is required to download notes");
       const offlineNotes: OfflineNotes = {
         lessonId,
+        userId,
         content: notesContent,
         downloadedAt: new Date().toISOString(),
       };
@@ -128,6 +131,7 @@ class DownloadManager {
   async downloadQuiz(
     lessonId: string,
     quizData: unknown,
+    userId: string,
     onProgress?: (progress: number) => void
   ): Promise<void> {
     const downloadId = `${lessonId}-quiz`;
@@ -140,9 +144,11 @@ class DownloadManager {
     });
 
     try {
+      if (!userId) throw new Error("An authenticated owner is required to download a quiz");
       const data = quizData as any; // eslint-disable-line @typescript-eslint/no-explicit-any
       const offlineQuiz: OfflineQuiz = {
         lessonId,
+        userId,
         questions: data.questions || [],
         downloadedAt: new Date().toISOString(),
       };
@@ -194,13 +200,13 @@ class DownloadManager {
       await this.downloadLesson(lessonId, lessonData, userId, updateProgress);
       currentStep++;
       if (notesContent) {
-        await this.downloadNotes(lessonId, notesContent, updateProgress);
+        await this.downloadNotes(lessonId, notesContent, userId, updateProgress);
         currentStep++;
       } else {
         currentStep++;
       }
       if (quizData) {
-        await this.downloadQuiz(lessonId, quizData, updateProgress);
+        await this.downloadQuiz(lessonId, quizData, userId, updateProgress);
         currentStep++;
       } else {
         currentStep++;
@@ -220,13 +226,13 @@ class DownloadManager {
     return lesson !== null;
   }
 
-  async areNotesDownloaded(lessonId: string): Promise<boolean> {
-    const notes = await offlineStorage.getNotes(lessonId);
+  async areNotesDownloaded(lessonId: string, userId: string): Promise<boolean> {
+    const notes = await offlineStorage.getNotes(lessonId, userId);
     return notes !== null;
   }
 
-  async isQuizDownloaded(lessonId: string): Promise<boolean> {
-    const quiz = await offlineStorage.getQuiz(lessonId);
+  async isQuizDownloaded(lessonId: string, userId: string): Promise<boolean> {
+    const quiz = await offlineStorage.getQuiz(lessonId, userId);
     return quiz !== null;
   }
 

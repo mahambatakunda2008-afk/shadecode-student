@@ -5,7 +5,7 @@
 import { localFirstStore } from "@/lib/local-first/store";
 
 const DB_NAME = "shadecode-offline";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 export interface OfflineLesson {
   id: string; ownerUserId?: string; title: string; subject: string; subjectId?: string; topic?: string; description?: string;
@@ -13,8 +13,8 @@ export interface OfflineLesson {
   downloadedAt: string; lastSyncedAt?: string; size: number;
   progress?: number; completed?: boolean;
 }
-export interface OfflineNotes { lessonId: string; content: string; downloadedAt: string; lastSyncedAt?: string; }
-export interface OfflineQuiz { lessonId: string; questions: Array<{ id: string; question: string; options: string[]; correctAnswer: string }>; downloadedAt: string; lastSyncedAt?: string; }
+export interface OfflineNotes { lessonId: string; userId: string; content: string; downloadedAt: string; lastSyncedAt?: string; }
+export interface OfflineQuiz { lessonId: string; userId: string; questions: Array<{ id: string; question: string; options: string[]; correctAnswer: string }>; downloadedAt: string; lastSyncedAt?: string; }
 export interface OfflineProgress { lessonId: string; userId: string; completed: boolean; progress: number; quizScore?: number; lastUpdated: string; lastSyncedAt?: string; synced: boolean; }
 export interface OfflineTask { id: string; userId: string; subject_id: string; title: string; completed: boolean; lastUpdated: string; lastSyncedAt?: string; synced: boolean; }
 export interface OfflineSubject { id: string; userId: string; name: string; lastUpdated: string; lastSyncedAt?: string; synced: boolean; }
@@ -22,6 +22,12 @@ export interface OfflineSubject { id: string; userId: string; name: string; last
 export function isOfflineLessonOwnedBy(lesson: Pick<OfflineLesson, "ownerUserId"> | null | undefined, userId: string | null | undefined): boolean {
   return Boolean(userId && lesson?.ownerUserId && lesson.ownerUserId === userId);
 }
+
+export function isOfflineContentOwnedBy(content: { userId?: string } | null | undefined, userId: string | null | undefined): boolean {
+  return Boolean(userId && content?.userId && content.userId === userId);
+}
+
+export const offlineContentKey = (userId: string, lessonId: string) => `${userId}:${lessonId}`;
 
 const PROGRESS_STORE = "progressByUser";
 const progressKey = (userId: string, lessonId: string) => `${userId}:${lessonId}`;
@@ -44,8 +50,12 @@ class OfflineStorage {
         const db = (event.target as IDBOpenDBRequest).result;
         const transaction = request.transaction;
         if (!db.objectStoreNames.contains("lessons")) { const store = db.createObjectStore("lessons", { keyPath: "id" }); store.createIndex("subject", "subject", { unique: false }); store.createIndex("downloadedAt", "downloadedAt", { unique: false }); }
+        // Legacy ownerless stores are retained for non-destructive upgrades but are never read.
+        // New records live in user-scoped stores so shared devices cannot cross-read accounts.
         if (!db.objectStoreNames.contains("notes")) { const store = db.createObjectStore("notes", { keyPath: "lessonId" }); store.createIndex("downloadedAt", "downloadedAt", { unique: false }); }
         if (!db.objectStoreNames.contains("quizzes")) { const store = db.createObjectStore("quizzes", { keyPath: "lessonId" }); store.createIndex("downloadedAt", "downloadedAt", { unique: false }); }
+        if (!db.objectStoreNames.contains("notesByUser")) { const store = db.createObjectStore("notesByUser", { keyPath: "key" }); store.createIndex("userId", "userId", { unique: false }); store.createIndex("lessonId", "lessonId", { unique: false }); }
+        if (!db.objectStoreNames.contains("quizzesByUser")) { const store = db.createObjectStore("quizzesByUser", { keyPath: "key" }); store.createIndex("userId", "userId", { unique: false }); store.createIndex("lessonId", "lessonId", { unique: false }); }
         if (!db.objectStoreNames.contains("progress")) { const store = db.createObjectStore("progress", { keyPath: "lessonId" }); store.createIndex("userId", "userId", { unique: false }); store.createIndex("synced", "synced", { unique: false }); }
         if (!db.objectStoreNames.contains(PROGRESS_STORE)) { const store = db.createObjectStore(PROGRESS_STORE, { keyPath: "key" }); store.createIndex("userId", "userId", { unique: false }); store.createIndex("lessonId", "lessonId", { unique: false }); store.createIndex("synced", "synced", { unique: false }); if (db.objectStoreNames.contains("progress") && transaction) { const legacy = transaction.objectStore("progress"); legacy.openCursor().onsuccess = (cursorEvent) => { const cursor = (cursorEvent.target as IDBRequest<IDBCursorWithValue | null>).result; if (!cursor) return; const value = cursor.value as OfflineProgress; if (value?.userId && value?.lessonId) store.put({ ...value, key: progressKey(value.userId, value.lessonId) }); cursor.continue(); }; } }
         if (!db.objectStoreNames.contains("tasks")) { const store = db.createObjectStore("tasks", { keyPath: "id" }); store.createIndex("userId", "userId", { unique: false }); store.createIndex("synced", "synced", { unique: false }); } else if (transaction) { const store = transaction.objectStore("tasks"); if (!store.indexNames.contains("userId")) store.createIndex("userId", "userId", { unique: false }); }
@@ -72,10 +82,28 @@ class OfflineStorage {
     return lessons.filter(lesson => isOfflineLessonOwnedBy(lesson, userId));
   }
   async deleteLesson(id: string): Promise<void> { await this.init(); return this.delete("lessons", id); }
-  async saveNotes(notes: OfflineNotes): Promise<void> { await this.init(); return this.put("notes", notes); }
-  async getNotes(lessonId: string): Promise<OfflineNotes | null> { await this.init(); return this.get("notes", lessonId); }
-  async saveQuiz(quiz: OfflineQuiz): Promise<void> { await this.init(); return this.put("quizzes", quiz); }
-  async getQuiz(lessonId: string): Promise<OfflineQuiz | null> { await this.init(); return this.get("quizzes", lessonId); }
+  async saveNotes(notes: OfflineNotes): Promise<void> {
+    if (!notes.userId) throw new Error("Offline notes require an authenticated user");
+    await this.init();
+    return this.put("notesByUser", { ...notes, key: offlineContentKey(notes.userId, notes.lessonId) });
+  }
+  async getNotes(lessonId: string, userId?: string): Promise<OfflineNotes | null> {
+    if (!userId) return null;
+    await this.init();
+    const notes = await this.get<OfflineNotes & { key: string }>("notesByUser", offlineContentKey(userId, lessonId));
+    return isOfflineContentOwnedBy(notes, userId) ? notes : null;
+  }
+  async saveQuiz(quiz: OfflineQuiz): Promise<void> {
+    if (!quiz.userId) throw new Error("Offline quizzes require an authenticated user");
+    await this.init();
+    return this.put("quizzesByUser", { ...quiz, key: offlineContentKey(quiz.userId, quiz.lessonId) });
+  }
+  async getQuiz(lessonId: string, userId?: string): Promise<OfflineQuiz | null> {
+    if (!userId) return null;
+    await this.init();
+    const quiz = await this.get<OfflineQuiz & { key: string }>("quizzesByUser", offlineContentKey(userId, lessonId));
+    return isOfflineContentOwnedBy(quiz, userId) ? quiz : null;
+  }
 
   /** Compatibility facade: progress now lives in the canonical local-first store. */
   async saveProgress(progress: OfflineProgress): Promise<void> {
