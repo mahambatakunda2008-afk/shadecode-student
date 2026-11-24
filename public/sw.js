@@ -126,7 +126,8 @@ function extractAssetUrls(html) {
 
 function safeRoute(route) {
   if (typeof route !== "string" || !route.startsWith("/") || route.startsWith("//") || route.includes("..")) return null;
-  if (route.startsWith("/api/") || route.startsWith("/_next/") || isPublicEntry(route.split("?")[0])) return null;
+  const pathname = route.split("?")[0];
+  if (pathname.startsWith("/api/") || pathname.startsWith("/_next/") || pathname.startsWith("/admin") || pathname.startsWith("/teacher") || isPublicEntry(pathname)) return null;
   return route.split("#")[0];
 }
 
