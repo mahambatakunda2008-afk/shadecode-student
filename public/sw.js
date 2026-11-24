@@ -78,6 +78,9 @@ async function handleNavigation(event, request, url) {
   }
 
   const cached = await matchPage(url.pathname);
+  // navigator.onLine is a fast offline hint. Do not spend the 6 s weak-network
+  // timeout when the browser already knows this device has no connection.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return cached || offlineFallback();
   try {
     const response = await fetchWithTimeout(request, Boolean(cached));
     if (isCacheableDocument(response)) event.waitUntil(savePage(url.pathname, response.clone()).catch(() => undefined));
@@ -91,6 +94,8 @@ async function handleNavigation(event, request, url) {
 async function handleRsc(event, request) {
   const cache = await caches.open(RSC_CACHE);
   const cached = await cache.match(request);
+  // Reuse the exact saved navigation payload immediately when the device is offline.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return cached || Response.error();
   try {
     const response = await fetchWithTimeout(request, Boolean(cached));
     if (response && response.ok && !response.redirected) {
