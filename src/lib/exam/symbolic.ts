@@ -1,7 +1,8 @@
 export type Polynomial = Map<number, number>;
 
 const EPSILON = 1e-12;
-const MAX_DEGREE = 13;\nconst MAX_POWER = 12;
+const MAX_DEGREE = 13;
+const MAX_POWER = 12;
 
 function clean(poly: Polynomial): Polynomial {
   const result = new Map<number, number>();
@@ -36,7 +37,7 @@ function scale(poly: Polynomial, value: number): Polynomial {
 
 function power(poly: Polynomial, exponent: number): Polynomial {
   if (!Number.isInteger(exponent) || exponent < 0 || exponent > MAX_POWER) {
-    throw new Error(`Polynomial powers must be whole numbers from 0 to ${MAX_DEGREE}`);
+    throw new Error(`Polynomial powers must be whole numbers from 0 to ${MAX_POWER}`);
   }
   let result: Polynomial = new Map([[0, 1]]);
   for (let i = 0; i < exponent; i++) result = multiply(result, poly);
