@@ -87,6 +87,7 @@ function boot() {
   };
   sandbox = {
     self,
+    navigator: { get onLine() { return !offline; } },
     caches: cachesMock.api,
     URL, Response, Request, Headers, Promise, Set, Map, Date, JSON, Array, Number, Object, Error,
     setTimeout: (fn: () => void, ms: number) => setTimeout(fn, ms),
@@ -147,7 +148,9 @@ describe("page navigation", () => {
     network.set("/dashboard", () => html("<h1>Dashboard for Tendai</h1>"));
     expect(await text((await get("/dashboard")).response)).toContain("Dashboard for Tendai");
     offline = true;
+    fetchCalls.length = 0;
     expect(await text((await get("/dashboard")).response)).toContain("Dashboard for Tendai");
+    expect(fetchCalls).toEqual([]);
     expect(await text((await get("/dashboard?tab=2")).response)).toContain("Dashboard for Tendai");
     expect(await text((await get("/dashboard/")).response)).toContain("Dashboard for Tendai");
   });
@@ -260,7 +263,9 @@ describe("in-app navigation (RSC)", () => {
     network.set("/learn", () => new Response("flight-data", { headers: { "content-type": "text/x-component" } }));
     await get("/learn?_rsc=abc", "cors", { RSC: "1" });
     offline = true;
+    fetchCalls.length = 0;
     expect(await text((await get("/learn?_rsc=abc", "cors", { RSC: "1" })).response)).toBe("flight-data");
+    expect(fetchCalls).toEqual([]);
     expect((await get("/learn?_rsc=zzz", "cors", { RSC: "1" })).response?.type).toBe("error");
   });
 });
