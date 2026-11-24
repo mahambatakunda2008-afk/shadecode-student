@@ -1,13 +1,12 @@
-/* Shadecode Student service worker v7. Design notes: docs/OFFLINE_ARCHITECTURE.md
+/* Shadecode Student service worker v8. Design notes: docs/OFFLINE_ARCHITECTURE.md
  *
  * - Documents are cached by PATH (not full URL), network-first with a timeout, so a weak connection
  *   falls back to the saved copy instead of hanging.
  * - A page is only cached when it is a real HTML 200 that was NOT redirected (never a login page saved as /dashboard).
- * - WARM_ROUTES lets the app save its core screens and their JavaScript while online. The worker fetches them
- *   itself, so no page code runs and nothing is tracked or generated.
- * - Authenticated pages and RSC payloads are removed on sign-out. API calls are never intercepted.
+ * - WARM_ROUTES lets the app save the learner's permitted destinations and their JavaScript while online.
+ * - Authenticated pages and RSC payloads are removed on sign-out and account changes. API calls are never intercepted.
  */
-const VERSION = "v7";
+const VERSION = "v8";
 const STATIC_CACHE = `shadecode-static-${VERSION}`;
 const PAGE_CACHE = `shadecode-pages-${VERSION}`;
 const RSC_CACHE = `shadecode-rsc-${VERSION}`;
@@ -26,7 +25,6 @@ const pageKey = (pathname) => self.location.origin + normalizePath(pathname);
 const isImmutableAsset = (pathname) => pathname.startsWith("/_next/static/");
 const isStaticAsset = (pathname) => isImmutableAsset(pathname) || pathname.startsWith("/_next/image") || STATIC_RE.test(pathname);
 
-/** A response worth saving as a page: a real HTML 200 that was not redirected elsewhere. */
 function isCacheableDocument(response) {
   if (!response || !response.ok || response.redirected || response.type === "opaque") return false;
   return /text\/html/i.test(response.headers.get("content-type") || "");
@@ -68,7 +66,6 @@ async function handleNavigation(event, request, url) {
     try {
       return await fetch(request);
     } catch {
-      // Offline at "/" means an installed app opening: show the dashboard if this device has one saved.
       if (url.pathname === "/") {
         const home = await matchPage("/dashboard");
         if (home) return home;
@@ -78,8 +75,6 @@ async function handleNavigation(event, request, url) {
   }
 
   const cached = await matchPage(url.pathname);
-  // navigator.onLine is a fast offline hint. Do not spend the 6 s weak-network
-  // timeout when the browser already knows this device has no connection.
   if (typeof navigator !== "undefined" && navigator.onLine === false) return cached || offlineFallback();
   try {
     const response = await fetchWithTimeout(request, Boolean(cached));
@@ -90,11 +85,9 @@ async function handleNavigation(event, request, url) {
   }
 }
 
-// Client navigations ask for RSC payloads whose URL depends on router state, so they are only reused on an exact match.
 async function handleRsc(event, request) {
   const cache = await caches.open(RSC_CACHE);
   const cached = await cache.match(request);
-  // Reuse the exact saved navigation payload immediately when the device is offline.
   if (typeof navigator !== "undefined" && navigator.onLine === false) return cached || Response.error();
   try {
     const response = await fetchWithTimeout(request, Boolean(cached));
@@ -103,7 +96,6 @@ async function handleRsc(event, request) {
     }
     return response;
   } catch {
-    // No saved copy: failing here makes Next fall back to a full page load, which is served from the page cache.
     return cached || Response.error();
   }
 }
@@ -111,7 +103,6 @@ async function handleRsc(event, request) {
 async function handleAsset(event, request, url) {
   const cache = await caches.open(STATIC_CACHE);
   const immutable = isImmutableAsset(url.pathname);
-  // Hashed build files never change, so any saved copy is correct (ignore the ?dpl= deployment query).
   const cached = await cache.match(request, immutable ? { ignoreSearch: true } : undefined);
   if (cached && immutable) return cached;
   try {
@@ -123,7 +114,6 @@ async function handleAsset(event, request, url) {
   }
 }
 
-/** Build-file URLs referenced by a page: script/link tags and the chunk lists inside the RSC payload. */
 function extractAssetUrls(html) {
   const found = new Set();
   const pattern = /(?:\/_next\/)?static\/(?:chunks|css|media)\/[^"'\\\s<>)]*?\.(?:js|css|woff2?)(?:\?[^"'\\\s<>)]*)?/g;
@@ -223,9 +213,6 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname === "/sw.js" || url.pathname.startsWith("/api/") || request.headers.has("authorization")) return;
 
   const isRsc = url.searchParams.has("_rsc") || request.headers.get("RSC") === "1";
-
-  // If the worker's own storage ever fails (private browsing, full disk), fall through to the plain network
-  // so a worker problem can never take the site down while online.
   const safely = (handler) => handler.catch(() => fetch(request));
 
   if (request.mode === "navigate") {
@@ -243,7 +230,6 @@ self.addEventListener("message", (event) => {
   const data = event.data || {};
   if (data.type === "SKIP_WAITING") self.skipWaiting();
   if (data.type === "CLEAR_APP_CACHE") {
-    // Signed-out devices must not keep another learner's pages. Build files hold no user data and stay.
     event.waitUntil(Promise.all([caches.delete(PAGE_CACHE), caches.delete(RSC_CACHE)]));
   }
   if (data.type === "WARM_ROUTES" && Array.isArray(data.routes)) {
