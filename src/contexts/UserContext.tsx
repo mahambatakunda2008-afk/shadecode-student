@@ -66,7 +66,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (!mounted) return;
         const currentUser = session?.user ?? null;
         const previousUserId = getRememberedUserId();
-        if (!currentUser || (previousUserId && previousUserId !== currentUser.id)) clearPrivateRouteCaches();
+        if (!currentUser) { clearPrivateRouteCaches(); clearRememberedUser(); }
+        else if (previousUserId && previousUserId !== currentUser.id) clearPrivateRouteCaches();
         setUser(currentUser);
         const cached = currentUser ? readCachedProfile(currentUser.id) : null;
         setProfile(cached ? prioritizeComputerScience(cached) : null);
