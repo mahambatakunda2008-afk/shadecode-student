@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Michroma, Space_Grotesk } from "next/font/google";
+import { Michroma } from "next/font/google";
+
+const michroma = Michroma({ weight: "400", subsets: ["latin"], variable: "--font-brand" });
 import "./globals.css";
 import "./brand-polish.css";
 import { Analytics } from "@vercel/analytics/react";
@@ -71,7 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Manifest, icons, apple-touch-icon and theme-color are emitted once from `metadata` / `viewport` above. */}
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className={`${inter.variable} ${spaceGrotesk.variable} ${michroma.variable} antialiased`}>
+      <body className={`${michroma.variable} antialiased`}>
         <IosStandaloneSafeArea />
         <ThemeContextProvider>
           <BandwidthProvider>
