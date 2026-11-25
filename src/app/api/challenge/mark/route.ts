@@ -74,7 +74,9 @@ export async function POST(request: NextRequest) {
     const { data: profile } = user.id !== challenge.challenger_id
       ? await supabase.from('profiles').select('username, display_name').eq('id', user.id).maybeSingle()
       : { data: null };
-    const learningSignals = signalsFromMarkedPaper(playSet.map((question) => ({ ...question, ...new Map((keyRow.key as KeyEntry[]).map((entry) => [entry.id, entry])).get(question.id) })) as never, marked.results, 'battle');
+    const keyById = new Map((keyRow.key as KeyEntry[]).map((entry) => [entry.id, entry]));
+    const learningQuestions = playSet.map((question) => ({ ...question, ...keyById.get(question.id) }));
+    const learningSignals = signalsFromMarkedPaper(learningQuestions as never, marked.results, 'battle');
     const saved = await recordChallengeMarkSubmission(admin, {
       challengeId,
       userId: user.id,
@@ -97,8 +99,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Result, battle row and learning signals were committed atomically by the RPC.
-
-
     return NextResponse.json(saved.result)
   } catch (error) {
     console.error('[challenge/mark]', error)
