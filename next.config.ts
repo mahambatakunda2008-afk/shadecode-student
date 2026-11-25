@@ -12,6 +12,14 @@ const nextConfig = {
   // optional dependency from node_modules instead of bundling PDF.js into a
   // server chunk where its Node-only canvas lookup can fail (DOMMatrix).
   serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
+  // PDF.js resolves its Node fake worker relative to pdf.mjs at runtime.
+  // Vercel's output-file tracer can omit this dynamically imported sibling
+  // when pdfjs-dist is externalised, leaving the server function without
+  // legacy/build/pdf.worker.mjs. Include the complete legacy build directory
+  // in API function bundles so the worker and its adjacent runtime files ship.
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./node_modules/pdfjs-dist/legacy/build/**"],
+  },
   experimental: {
     optimizePackageImports: ["lucide-react", "@supabase/supabase-js"],
   },
