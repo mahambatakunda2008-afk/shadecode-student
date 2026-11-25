@@ -85,7 +85,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   const [paperProof, setPaperProof] = useState<string | null>(null);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
   const [paperSubjectId, setPaperSubjectId] = useState<string | null>(null);
-  const workId = useRef<string | null>(null), answersRef = useRef(answers), questionsRef = useRef(questions), currentRef = useRef(current), secondsRef = useRef(seconds), totalRef = useRef(totalSeconds), canvasRef = useRef(""), fileRef = useRef<HTMLInputElement>(null), submitRef = useRef(false);
+  const workId = useRef<string | null>(null), challengeSubmissionIdRef = useRef<string | null>(null), answersRef = useRef(answers), questionsRef = useRef(questions), currentRef = useRef(current), secondsRef = useRef(seconds), totalRef = useRef(totalSeconds), canvasRef = useRef(""), fileRef = useRef<HTMLInputElement>(null), submitRef = useRef(false);
   const { help, check } = useCortexVerify();
   useEffect(() => { answersRef.current = answers; }, [answers]); useEffect(() => { questionsRef.current = questions; }, [questions]); useEffect(() => { currentRef.current = current; }, [current]); useEffect(() => { secondsRef.current = seconds; }, [seconds]); useEffect(() => { totalRef.current = totalSeconds; }, [totalSeconds]);
   useEffect(() => { const f = () => setOnline(navigator.onLine); f(); addEventListener("online", f); addEventListener("offline", f); return () => { removeEventListener("online", f); removeEventListener("offline", f); }; }, []);
@@ -291,7 +291,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           const res = await fetchWithTimeout("/api/challenge/mark", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ challenge_id: serverMarkChallengeId, submission_id: challengeSubmissionId(serverMarkChallengeId), answers: answersRef.current, timeTaken: totalRef.current - secondsRef.current })
+            body: JSON.stringify({ challenge_id: serverMarkChallengeId, submission_id: challengeSubmissionIdRef.current ?? (challengeSubmissionIdRef.current = challengeSubmissionId(serverMarkChallengeId)), answers: answersRef.current, timeTaken: totalRef.current - secondsRef.current })
           }, 25000);
           if (res.ok) markingData = await res.json();
         } catch {
