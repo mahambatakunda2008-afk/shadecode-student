@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
@@ -64,26 +64,21 @@ export default function Timetable() {
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const activeUserRef = useRef<string | null | undefined>(undefined);
   const [subjectColorMap, setSubjectColorMap] = useState<Record<string, string>>({});
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
   useEffect(() => {
-    let cancelled = false;
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
-      if (!user) { router.push("/auth/login"); return; }
-      if (cancelled) return;
-      setUserId(user.id);
-
+    let active = true;
+    const initializeUser = async (id: string) => {
       // Open the device copy first. A network failure must never erase the student's saved plan.
       const [localPlan, localSubjectRows] = await Promise.all([
-        readLocalTimetable(user.id),
-        localSubjects.list(user.id),
+        readLocalTimetable(id),
+        localSubjects.list(id),
       ]);
-      if (cancelled) return;
-      if (localSubjectRows.length) setUserSubjects(localSubjectRows.map(({ id, name }) => ({ id, name })));
+      if (!active || activeUserRef.current !== id) return;
+      if (localSubjectRows.length) setUserSubjects(localSubjectRows.map(({ id: subjectId, name }) => ({ id: subjectId, name })));
       if (localPlan?.slots.length) {
         setSchedule(localPlan.slots);
         setSaved(true);
@@ -91,27 +86,49 @@ export default function Timetable() {
 
       if (typeof navigator !== "undefined" && navigator.onLine) {
         const [{ data: subjectsData }, { data: timetableData }] = await Promise.all([
-          supabase.from("subjects").select("*").eq("user_id", user.id),
-          supabase.from("timetable").select("*").eq("user_id", user.id).order("start_time"),
+          supabase.from("subjects").select("*").eq("user_id", id),
+          supabase.from("timetable").select("*").eq("user_id", id).order("start_time"),
         ]);
-        if (cancelled) return;
+        if (!active || activeUserRef.current !== id) return;
         if (subjectsData) {
           setUserSubjects(subjectsData);
           for (const subject of subjectsData) {
-            await localFirstStore.hydrate({ id: subject.id, entity: "subject", userId: user.id, payload: { id: subject.id, userId: user.id, name: subject.name, lastUpdated: new Date().toISOString(), synced: true }, updatedAt: Date.now(), deviceId: "server", version: 0, syncVersion: 0 });
+            await localFirstStore.hydrate({ id: subject.id, entity: "subject", userId: id, payload: { id: subject.id, userId: id, name: subject.name, lastUpdated: new Date().toISOString(), synced: true }, updatedAt: Date.now(), deviceId: "server", version: 0, syncVersion: 0 });
           }
         }
         if (timetableData && timetableData.length > 0) {
-          await hydrateTimetableFromServer(user.id, timetableData);
-          if (!await hasPendingTimetableSync(user.id)) {
+          await hydrateTimetableFromServer(id, timetableData);
+          if (!active || activeUserRef.current !== id) return;
+          if (!await hasPendingTimetableSync(id)) {
             setSchedule(timetableData);
             setSaved(true);
           }
         }
       }
     };
-    void init().catch(error => console.error("[Timetable] local-first initialization failed:", error));
-    return () => { cancelled = true; };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user.id ?? null;
+      if (activeUserRef.current === nextUserId) return;
+      activeUserRef.current = nextUserId;
+      setUserId(nextUserId);
+      setUserSubjects([]);
+      setSelectedSubjects([]);
+      setCustomSubject("");
+      setSchedule([]);
+      setSaved(false);
+      setLoading(false);
+      setSaveError(null);
+      setScheduleError(null);
+      setSubjectColorMap({});
+      if (!nextUserId) {
+        router.push("/auth/login");
+        return;
+      }
+      void Promise.resolve().then(() => initializeUser(nextUserId)).catch(error => {
+        if (activeUserRef.current === nextUserId) console.error("[Timetable] local-first initialization failed:", error);
+      });
+    });
+    return () => { active = false; subscription.unsubscribe(); };
   }, [router, supabase]);
 
   useEffect(() => {
@@ -237,6 +254,7 @@ export default function Timetable() {
         subject, start_time, end_time, is_break, ...(color ? { color } : {}),
       }));
       await saveLocalTimetable(userId, slots);
+      if (activeUserRef.current !== userId) return;
       setSaved(true);
 
       if (!navigator.onLine) {
@@ -247,6 +265,7 @@ export default function Timetable() {
       // The server RPC remains the cross-device synchronization authority.
       const remoteSlots = slots.map(({ subject, start_time, end_time, is_break }) => ({ subject, start_time, end_time, is_break }));
       const { error } = await supabase.rpc("replace_own_timetable", { p_slots: remoteSlots });
+      if (activeUserRef.current !== userId) return;
       if (error) {
         console.error("[Timetable] remote sync deferred:", error.message);
         setSaveError("Saved on this device. Cloud sync will retry when your connection is available.");
@@ -265,10 +284,12 @@ export default function Timetable() {
       });
     } catch (error) {
       console.error("[Timetable] local-first save failed:", error);
-      setSaved(false);
-      setSaveError("Couldn't save your timetable on this device. Please check available storage and try again.");
+      if (activeUserRef.current === userId) {
+        setSaved(false);
+        setSaveError("Could not save your timetable on this device. Please check available storage and try again.");
+      }
     } finally {
-      setLoading(false);
+      if (activeUserRef.current === userId) setLoading(false);
     }
   };
 
