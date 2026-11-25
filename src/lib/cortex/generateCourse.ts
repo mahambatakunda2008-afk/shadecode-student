@@ -16,6 +16,27 @@ export let aiCaller = async function callAI(prompt: string, maxTokens = 2500, us
 };
 export function setAiCaller(fn: (prompt: string, maxTokens?: number, userId?: string) => Promise<string | null>) { aiCaller = fn; }
 
+export function resolveDraftInstitutionScope(
+  memberships: Array<{ institution_id: string | null; status?: string | null }>,
+  requestedInstitutionId?: string | null,
+): string | null {
+  const activeIds = [...new Set(memberships
+    .filter((membership) => membership.status === undefined || membership.status === "active")
+    .map((membership) => membership.institution_id)
+    .filter((id): id is string => typeof id === "string" && id.length > 0))];
+
+  if (requestedInstitutionId) {
+    if (!activeIds.includes(requestedInstitutionId)) {
+      throw new Error("FORBIDDEN_INSTITUTION_SCOPE");
+    }
+    return requestedInstitutionId;
+  }
+  if (activeIds.length > 1) {
+    throw new Error("INSTITUTION_SELECTION_REQUIRED");
+  }
+  return activeIds[0] ?? null;
+}
+
 function moderateDraft(draft: any) {
   const issues: string[] = [];
   const banned = ["fuck", "shit", "bitch", "idiot", "sex"];
@@ -45,7 +66,7 @@ function normalizeLessons(lessons: unknown[]) {
   }));
 }
 
-export async function generateCourseDraft(userToken: string, params: { topic: string; goal: string; level?: string }) {
+export async function generateCourseDraft(userToken: string, params: { topic: string; goal: string; level?: string; institutionId?: string | null }) {
   const supabase = getSupabaseAdmin();
   const { data: { user }, error } = await supabase.auth.getUser(userToken);
   if (error || !user) throw new Error("Unauthorized");
@@ -53,6 +74,14 @@ export async function generateCourseDraft(userToken: string, params: { topic: st
   const goal = params.goal.trim().slice(0, 500);
   const level = params.level?.trim().slice(0, 80) || "beginner";
   if (!topic || !goal) throw new Error("Topic and goal are required.");
+
+  const { data: memberships, error: membershipsError } = await supabase
+    .from("platform_institution_members")
+    .select("institution_id, status")
+    .eq("user_id", user.id)
+    .eq("status", "active");
+  if (membershipsError) throw new Error("INSTITUTION_SCOPE_UNAVAILABLE");
+  const institutionId = resolveDraftInstitutionScope(memberships ?? [], params.institutionId);
 
   try {
     const { data: profileData } = await supabase.from("user_profiles").select("last_course_generated_at").eq("user_id", user.id).maybeSingle();
@@ -100,13 +129,29 @@ Before returning, silently verify that the sequence forms a coherent learning jo
   const normalized = { title: typeof parsed.title === "string" && parsed.title.trim() ? parsed.title.trim().slice(0, 255) : topic, description: typeof parsed.description === "string" ? parsed.description.slice(0, 3000) : "", lessons, projects: Array.isArray(parsed.projects) ? parsed.projects.slice(0, 20) : [], checkpoints: Array.isArray(parsed.checkpoints) ? parsed.checkpoints.slice(0, 30) : [], assessments: Array.isArray(parsed.assessments) ? parsed.assessments.slice(0, 30) : [] };
   const moderationIssues = moderateDraft(normalized);
 
-  try { await supabase.from("generated_course_drafts").insert({ user_id: user.id, draft: normalized, moderation_issues: moderationIssues }).select("id"); }
-  catch (e) { console.error("[generateCourse] failed to persist draft to DB:", e instanceof Error ? e.message : e); }
-  try { await supabase.from("user_profiles").update({ last_course_generated_at: new Date().toISOString() }).eq("user_id", user.id); } catch {}
-  return { ...normalized, moderationIssues };
+  const { data: persistedDraft, error: persistError } = await supabase
+    .from("generated_course_drafts")
+    .insert({
+      user_id: user.id,
+      institution_id: institutionId,
+      draft: normalized,
+      moderation_issues: moderationIssues,
+    })
+    .select("id")
+    .single();
+  if (persistError || !persistedDraft?.id) {
+    console.error("[generateCourse] failed to persist durable course draft:", persistError?.message ?? "missing draft id");
+    throw new Error("COURSE_DRAFT_STORAGE_UNAVAILABLE");
+  }
+  try {
+    await supabase.from("user_profiles")
+      .update({ last_course_generated_at: new Date().toISOString() })
+      .eq("user_id", user.id);
+  } catch {}
+  return { ...normalized, draftId: persistedDraft.id, moderationIssues };
 }
 
-export async function generateCourseForUser(userToken: string, params: { topic: string; goal: string; level?: string }) {
+export async function generateCourseForUser(userToken: string, params: { topic: string; goal: string; level?: string; institutionId?: string | null }) {
   const draft = await generateCourseDraft(userToken, params);
   const supabase = getSupabaseAdmin();
   const { data: { user }, error } = await supabase.auth.getUser(userToken);
@@ -131,5 +176,5 @@ export async function generateCourseForUser(userToken: string, params: { topic: 
   const deduped = prereqInserts.filter(r => { const key = `${r.lesson_id}::${r.prerequisite_lesson_id}`; if (seen.has(key)) return false; seen.add(key); return true; });
   if (deduped.length) { const { error: prereqError } = await supabase.from("lesson_prerequisites").insert(deduped); if (prereqError) console.error("Failed inserting prereqs:", prereqError.message); }
   try { await supabase.from("learning_paths").upsert({ user_id: user.id, title: draft.title, description: draft.description, updated_at: new Date().toISOString() }, { onConflict: "user_id" }); } catch {}
-  return { title: draft.title, lessonsInserted: inserted.data?.length ?? 0, moderationIssues: draft.moderationIssues };
+  return { draftId: draft.draftId, title: draft.title, lessonsInserted: inserted.data?.length ?? 0, moderationIssues: draft.moderationIssues };
 }

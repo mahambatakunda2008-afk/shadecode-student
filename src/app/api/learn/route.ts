@@ -165,19 +165,48 @@ export async function POST(req: Request) {
   try {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter); if (rateLimitCheck) return rateLimitCheck;
     auth = await authenticateRequest(req); if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { supabase, user } = auth; const body = sanitizeLessonText(await req.json()); const { type, subject, topic, difficulty, goal, level, generationJobId } = body;
+    const { supabase, user } = auth; const body = sanitizeLessonText(await req.json()); const { type, subject, topic, difficulty, goal, level, generationJobId, institutionId } = body;
     if (type === "course_preview") {
       if (body.learningMode === "classic") return NextResponse.json({ error: "Classic mode does not use generative AI. Switch to Cortex AI to generate a new course preview.", code: "CLASSIC_MODE_AI_DISABLED" }, { status: 403 });
       const validation = validateRequestBody({ topic, goal, level }, learnCoursePreviewSchema); if (!validation.success) return NextResponse.json({ error: "Validation failed", details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });
       if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
-      try { const token = getBearerToken(req); if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); const { generateCourseDraft } = await import("@/lib/cortex/generateCourse"); return NextResponse.json({ success: true, draft: await generateCourseDraft(token, { topic, goal, level }) }); }
-      catch (e: any) { log.cortexFailure({ userId: user.id, stage: "course_preview", error: e.message || String(e) }); return NextResponse.json({ error: "Course preview failed" }, { status: 500 }); }
+      if (institutionId !== undefined && (typeof institutionId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(institutionId))) {
+        return NextResponse.json({ error: "Invalid institution selection.", code: "INVALID_INSTITUTION_ID" }, { status: 400 });
+      }
+      try {
+        const token = getBearerToken(req);
+        if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const { generateCourseDraft } = await import("@/lib/cortex/generateCourse");
+        const draft = await generateCourseDraft(token, { topic, goal, level, institutionId: institutionId ?? null });
+        return NextResponse.json({ success: true, draft });
+      } catch (e: any) {
+        const code = e?.message || "COURSE_PREVIEW_FAILED";
+        log.cortexFailure({ userId: user.id, stage: "course_preview", error: code });
+        if (code === "INSTITUTION_SELECTION_REQUIRED") return NextResponse.json({ error: "Choose which institution this course belongs to before generating it.", code }, { status: 409 });
+        if (code === "FORBIDDEN_INSTITUTION_SCOPE") return NextResponse.json({ error: "You are not an active member of the selected institution.", code }, { status: 403 });
+        if (code === "INSTITUTION_SCOPE_UNAVAILABLE" || code === "COURSE_DRAFT_STORAGE_UNAVAILABLE") return NextResponse.json({ error: "Course draft storage or institution access could not be verified. Nothing was reported as saved.", code }, { status: 503 });
+        return NextResponse.json({ error: "Course preview failed.", code: "COURSE_PREVIEW_FAILED" }, { status: 500 });
+      }
     }
     if (type === "course") {
       if (body.learningMode === "classic") return NextResponse.json({ error: "Classic mode does not use generative AI. Switch to Cortex AI to generate a new course.", code: "CLASSIC_MODE_AI_DISABLED" }, { status: 403 });
       if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
-      try { const token = getBearerToken(req); if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); const { generateCourseForUser } = await import("@/lib/cortex/generateCourse"); return NextResponse.json({ success: true, course: await generateCourseForUser(token, { topic, goal, level }) }); }
-      catch (e: any) { log.cortexFailure({ userId: user.id, stage: "course_generation", error: e.message || String(e) }); return NextResponse.json({ error: "Course generation failed" }, { status: 500 }); }
+      if (institutionId !== undefined && (typeof institutionId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(institutionId))) {
+        return NextResponse.json({ error: "Invalid institution selection.", code: "INVALID_INSTITUTION_ID" }, { status: 400 });
+      }
+      try {
+        const token = getBearerToken(req);
+        if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const { generateCourseForUser } = await import("@/lib/cortex/generateCourse");
+        return NextResponse.json({ success: true, course: await generateCourseForUser(token, { topic, goal, level, institutionId: institutionId ?? null }) });
+      } catch (e: any) {
+        const code = e?.message || "COURSE_GENERATION_FAILED";
+        log.cortexFailure({ userId: user.id, stage: "course_generation", error: code });
+        if (code === "INSTITUTION_SELECTION_REQUIRED") return NextResponse.json({ error: "Choose which institution this course belongs to before generating it.", code }, { status: 409 });
+        if (code === "FORBIDDEN_INSTITUTION_SCOPE") return NextResponse.json({ error: "You are not an active member of the selected institution.", code }, { status: 403 });
+        if (code === "INSTITUTION_SCOPE_UNAVAILABLE" || code === "COURSE_DRAFT_STORAGE_UNAVAILABLE") return NextResponse.json({ error: "Course draft storage or institution access could not be verified. Nothing was reported as saved.", code }, { status: 503 });
+        return NextResponse.json({ error: "Course generation failed.", code: "COURSE_GENERATION_FAILED" }, { status: 500 });
+      }
     }
     if (type === "course_save") {
       const draft = body.draft; if (!draft || !Array.isArray(draft.lessons) || !draft.lessons.length) return NextResponse.json({ error: "Invalid draft" }, { status: 400 });
