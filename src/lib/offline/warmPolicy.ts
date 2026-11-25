@@ -4,7 +4,7 @@
  */
 
 /** Must match VERSION in public/sw.js: a new worker version saves again. */
-export const OFFLINE_WARM_VERSION = "v7";
+export const OFFLINE_WARM_VERSION = "v8";
 export const WARM_INTERVAL_MS = 12 * 60 * 60 * 1000;
 export const WARM_START_DELAY_MS = 8_000;
 
@@ -23,6 +23,35 @@ export const CORE_OFFLINE_ROUTES: ReadonlyArray<{ href: string; label: string }>
   { href: "/achievements", label: "Achievements" },
   { href: "/settings", label: "Settings" },
 ];
+
+export interface WarmNavGroup {
+  items: ReadonlyArray<{ href: string; label?: string }>;
+}
+
+/**
+ * Warm only destinations exposed by this learner's resolved navigation.
+ * Dashboard and Settings are always included; admin, API and malformed paths
+ * are deliberately excluded. The worker applies its own 30-route safety cap.
+ */
+export function getOfflineWarmRoutes(groups: ReadonlyArray<WarmNavGroup>): string[] {
+  const routes = new Set<string>(["/dashboard", "/settings"]);
+  for (const group of groups) {
+    for (const item of group.items) {
+      const href = item.href;
+      if (
+        typeof href !== "string" ||
+        !/^\/[a-z0-9/-]+$/i.test(href) ||
+        href.startsWith("//") ||
+        href.includes("..") ||
+        href.startsWith("/admin") ||
+        href.startsWith("/api/") ||
+        href.startsWith("/teacher")
+      ) continue;
+      routes.add(href);
+    }
+  }
+  return [...routes];
+}
 
 export interface WarmContext {
   hasServiceWorker: boolean;

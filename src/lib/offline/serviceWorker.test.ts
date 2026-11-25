@@ -132,9 +132,9 @@ describe("install and activate", () => {
   });
 
   it("removes old shadecode caches but keeps current ones and unrelated ones", async () => {
-    for (const name of ["shadecode-shell-v6", "shadecode-static-v7", "shadecode-pages-v7", "other-app"]) await cachesMock.api.open(name);
+    for (const name of ["shadecode-shell-v6", "shadecode-static-v8", "shadecode-pages-v8", "other-app"]) await cachesMock.api.open(name);
     await fire("activate");
-    expect([...cachesMock.stores.keys()].sort()).toEqual(["other-app", "shadecode-pages-v7", "shadecode-static-v7"]);
+    expect([...cachesMock.stores.keys()].sort()).toEqual(["other-app", "shadecode-pages-v8", "shadecode-static-v8"]);
   });
 });
 
@@ -300,7 +300,7 @@ describe("saving routes for offline (warm-up)", () => {
 
   it("ignores unsafe or irrelevant routes", async () => {
     network.set("/dashboard", () => page(""));
-    await fire("message", { data: { type: "WARM_ROUTES", routes: ["//evil.com/x", "https://evil.com", "../etc", "/api/exam/generate", "/auth/login", "/_next/static/x.js", "/", 42, "/dashboard"] } });
+    await fire("message", { data: { type: "WARM_ROUTES", routes: ["//evil.com/x", "https://evil.com", "../etc", "/api/exam/generate", "/auth/login", "/_next/static/x.js", "/admin", "/admin/analytics", "/teacher", "/", 42, "/dashboard"] } });
     expect(fetchCalls.filter((c) => c !== "/dashboard")).toEqual([]);
     expect(clientMessages[0]).toEqual(expect.objectContaining({ pages: 1 }));
   });
@@ -342,7 +342,7 @@ describe("sign-out", () => {
     network.set("/learn", () => new Response("flight"));
     await get("/learn?_rsc=1", "cors", { RSC: "1" });
     await fire("message", { data: { type: "CLEAR_APP_CACHE" } });
-    expect([...cachesMock.stores.keys()]).toEqual(["shadecode-static-v7"]);
+    expect([...cachesMock.stores.keys()]).toEqual(["shadecode-static-v8"]);
     offline = true;
     expect((await get("/_next/static/chunks/a-1.js", "cors")).response?.type).not.toBe("error");
   });

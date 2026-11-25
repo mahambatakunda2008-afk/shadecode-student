@@ -1,21 +1,27 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useUser } from "@/contexts/UserContext";
-import { OFFLINE_WARM_VERSION, WARM_START_DELAY_MS, coreRouteHrefs, shouldWarmRoutes, warmSucceeded, warmStorageKey } from "@/lib/offline/warmPolicy";
+import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
+import { getExperienceNavGroups } from "@/lib/navigation";
+import { OFFLINE_WARM_VERSION, WARM_START_DELAY_MS, getOfflineWarmRoutes, shouldWarmRoutes, warmSucceeded, warmStorageKey } from "@/lib/offline/warmPolicy";
 
 type Connection = { saveData?: boolean; effectiveType?: string };
 type WarmDone = { type?: string; version?: string; pages?: number; skipped?: number; assets?: number; failed?: number };
 
 /**
- * Quietly saves the learner's core screens and their code on the device while they are online,
- * so the app keeps working when the signal drops. Runs a few seconds after load, rarely, and never
- * on data-saver or 2G connections. The service worker does the fetching, so no page code runs
- * (nothing is tracked, generated or marked as visited).
+ * Quietly saves the learner's permitted destinations and their referenced code
+ * while online. The route list follows the same subject- and stage-aware navigation
+ * as the visible app, so hidden/admin destinations are never prefetched.
  */
 export default function OfflineWarmup() {
   const { profile } = useUser();
   const userId = profile?.id;
+  const routes = useMemo(() => {
+    const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
+    const navGroups = getExperienceNavGroups(experience, profile?.curriculum_subjects, profile?.subjects);
+    return getOfflineWarmRoutes(navGroups);
+  }, [profile?.study_level, profile?.curriculum_subjects, profile?.subjects]);
 
   useEffect(() => {
     if (!userId || process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
@@ -47,14 +53,14 @@ export default function OfflineWarmup() {
         lastWarmAt: readLast(),
         now: Date.now(),
       });
-      if (allowed) registration.active.postMessage({ type: "WARM_ROUTES", routes: coreRouteHrefs() });
+      if (allowed) registration.active.postMessage({ type: "WARM_ROUTES", routes });
     };
 
     const onMessage = (event: MessageEvent<WarmDone>) => {
       const data = event.data;
       if (data?.type !== "WARM_DONE" || data.version !== OFFLINE_WARM_VERSION) return;
       if (!warmSucceeded({ pages: data.pages ?? 0, skipped: data.skipped ?? 0, failed: data.failed ?? 0 })) return;
-      try { window.localStorage.setItem(storageKey, String(Date.now())); } catch { /* storage unavailable: it will simply try again next visit */ }
+      try { window.localStorage.setItem(storageKey, String(Date.now())); } catch { /* storage unavailable: retry next visit */ }
     };
 
     const schedule = (delay: number) => {
@@ -73,7 +79,7 @@ export default function OfflineWarmup() {
       navigator.serviceWorker.removeEventListener("message", onMessage);
       window.removeEventListener("online", onOnline);
     };
-  }, [userId]);
+  }, [userId, routes]);
 
   return null;
 }
