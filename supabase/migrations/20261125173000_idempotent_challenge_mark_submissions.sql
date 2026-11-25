@@ -20,7 +20,8 @@ create or replace function public.record_challenge_mark_submission(
   p_user_id uuid,
   p_submission_id uuid,
   p_result jsonb,
-  p_attempt jsonb default null
+  p_attempt jsonb default null,
+  p_signals jsonb default '[]'::jsonb
 )
 returns table(inserted boolean, result jsonb)
 language plpgsql
@@ -30,6 +31,9 @@ as $$
 declare
   v_result jsonb;
 begin
+  if jsonb_typeof(coalesce(p_signals, '[]'::jsonb)) <> 'array' or jsonb_array_length(coalesce(p_signals, '[]'::jsonb)) > 50 then
+    raise exception 'Invalid challenge learning signals';
+  end if;
   insert into public.challenge_mark_submissions as saved (
     challenge_id, user_id, submission_id, result
   )
@@ -56,6 +60,28 @@ begin
       );
     end if;
 
+    -- Store the derived learning evidence in the same transaction as the result.
+    insert into public.learning_signals (
+      user_id, kind, source, item_key, syllabus_id, topic_key, correct,
+      score, mistake_id, time_spent_seconds, props
+    )
+    select
+      p_user_id,
+      signal.kind,
+      signal.source,
+      signal.item_key,
+      signal.syllabus_id,
+      signal.topic_key,
+      signal.correct,
+      signal.score,
+      signal.mistake_id,
+      signal.time_spent_seconds,
+      coalesce(signal.props, '{}'::jsonb)
+    from jsonb_to_recordset(coalesce(p_signals, '[]'::jsonb)) as signal(
+      kind text, source text, item_key text, syllabus_id text, topic_key text,
+      correct boolean, score numeric, mistake_id text, time_spent_seconds integer, props jsonb
+    );
+
     return query select true, p_result;
     return;
   end if;
@@ -74,5 +100,5 @@ begin
 end;
 $$;
 
-revoke all on function public.record_challenge_mark_submission(uuid, uuid, uuid, jsonb, jsonb) from public, anon, authenticated;
+revoke all on function public.record_challenge_mark_submission(uuid, uuid, uuid, jsonb, jsonb, jsonb) from public, anon, authenticated;
 grant execute on function public.record_challenge_mark_submission(uuid, uuid, uuid, jsonb, jsonb) to service_role;
