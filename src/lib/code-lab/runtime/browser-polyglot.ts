@@ -4,9 +4,9 @@ import { runBrowserJavaScript } from "./browser-runtime";
 type Pyodide = { runPythonAsync: (code: string) => Promise<unknown>; setStdout: (options: { batched: (text: string) => void }) => void; setStderr: (options: { batched: (text: string) => void }) => void };
 type SqlJsDatabase = { exec: (sql: string) => Array<{ columns: string[]; values: unknown[][] }>; close: () => void };
 type SqlJsModule = { Database: new () => SqlJsDatabase };
+type SqlJsInitializer = (options?: { locateFile?: (file: string) => string }) => Promise<SqlJsModule>;
 
 const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.mjs";
-const SQL_JS_URL = "https://cdn.jsdelivr.net/npm/sql.js@1.13.0/+esm";
 let pyodidePromise: Promise<Pyodide> | null = null;
 let sqlJsPromise: Promise<SqlJsModule> | null = null;
 let typescriptPromise: Promise<any> | null = null;
@@ -25,7 +25,7 @@ async function loadPyodide() {
   return pyodidePromise;
 }
 async function loadSqlJs() {
-  if (!sqlJsPromise) sqlJsPromise = import(/* webpackIgnore: true */ SQL_JS_URL).then((module: any) => module.default ?? module).catch((error) => { sqlJsPromise = null; throw error; });
+  if (!sqlJsPromise) sqlJsPromise = import("sql.js").then((module) => (module.default as unknown as SqlJsInitializer)({ locateFile: (file) => file.endsWith(".wasm") ? "/runtimes/sql-wasm.wasm" : file })).catch((error) => { sqlJsPromise = null; throw error; });
   return sqlJsPromise;
 }
 async function loadTypeScript() {
@@ -59,8 +59,8 @@ export async function runBrowserPython(request: RuntimeRequest): Promise<Runtime
 export async function runBrowserSql(request: RuntimeRequest): Promise<RuntimeResult> {
   const started = Date.now();
   try {
-    const initSqlJs = await loadSqlJs();
-    const db = new initSqlJs.Database();
+    const SQL = await loadSqlJs();
+    const db = new SQL.Database();
     const outputs: string[] = [];
     for (const statement of db.exec(request.code)) {
       const rows = [statement.columns.join(" | ")];
