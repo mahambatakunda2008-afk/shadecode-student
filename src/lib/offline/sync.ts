@@ -7,6 +7,7 @@ import { localSubjects } from "@/lib/local-first/subjects";
 import type { LocalOperation } from "@/lib/local-first/operations";
 import type { LocalEntity, LocalConflict } from "@/lib/local-first/types";
 import { buildProgressSyncPayload } from "./progressSyncPayload";
+import { offlineStorage } from "./storage";
 
 const REMOTE_TABLES: Record<string, string> = { tasks: "tasks", subjects: "subjects", learn_lessons: "learn_lessons" };
 const STORE_TO_ENTITY: Record<string, LocalEntity> = { tasks: "task", subjects: "subject", learn_lessons: "progress" };
