@@ -1,32 +1,58 @@
 /**
- * Persists one verified challenge submission through a service-role-only,
- * atomic database function. A replay returns the original marking result and
- * never creates a second battle attempt.
+ * Battle-attempt writes. The legacy self-reported route uses recordBattleAttempt;
+ * server-marked papers use the atomic recordChallengeMarkSubmission RPC.
  */
 export interface AttemptWrite {
   challengeId: string;
   userId: string;
+  userName: string | null;
+  percentage: number;
+  totalScore: number;
+  maxScore: number;
+  timeTaken: number;
+  grade: string;
+  won: boolean;
+  verified: boolean;
+}
+
+interface InsertCapableClient {
+  from(table: "challenge_attempts"): {
+    insert(row: Record<string, unknown>): PromiseLike<{ error: unknown }>;
+  };
+}
+
+export async function recordBattleAttempt(admin: InsertCapableClient | null, attempt: AttemptWrite): Promise<{ ok: boolean }> {
+  if (!admin) return { ok: false };
+  const { error } = await admin.from("challenge_attempts").insert({
+    challenge_id: attempt.challengeId,
+    user_id: attempt.userId,
+    user_name: attempt.userName,
+    percentage: attempt.percentage,
+    total_score: attempt.totalScore,
+    max_score: attempt.maxScore,
+    time_taken: attempt.timeTaken,
+    grade: attempt.grade,
+    won: attempt.won,
+    verified: attempt.verified,
+  });
+  return { ok: !error };
+}
+
+export interface ChallengeMarkSubmissionWrite {
+  challengeId: string;
+  userId: string;
   submissionId: string;
   result: unknown;
-  attempt: {
-    userName: string | null;
-    percentage: number;
-    totalScore: number;
-    maxScore: number;
-    timeTaken: number;
-    grade: string;
-    won: boolean;
-    verified: boolean;
-  } | null;
+  attempt: Omit<AttemptWrite, "challengeId" | "userId"> | null;
 }
 
 interface RpcClient {
   rpc(name: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: unknown }>;
 }
 
-export async function recordBattleAttempt(
+export async function recordChallengeMarkSubmission(
   admin: RpcClient | null,
-  submission: AttemptWrite,
+  submission: ChallengeMarkSubmissionWrite,
 ): Promise<{ ok: boolean; inserted: boolean; result?: unknown }> {
   if (!admin) return { ok: false, inserted: false };
   const { data, error } = await admin.rpc("record_challenge_mark_submission", {
