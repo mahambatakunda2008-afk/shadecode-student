@@ -219,8 +219,42 @@ class NativeApi {
     }
 
     fun updateLessonProgress(session: NativeSession, lessonId: String, progress: Float) {
-        val percentage = kotlin.math.round(progress.coerceIn(0f, 1f) * 100f).toInt()
+        val percentage = nativeLessonProgressToDatabasePercentage(progress)
         request("PATCH", "/rest/v1/learn_lessons?id=eq.$lessonId&user_id=eq.${session.userId}", JSONObject().put("progress", percentage).toString(), session.accessToken, "return=minimal")
+    }
+
+    /**
+     * Idempotently upsert a generated lesson under the authenticated learner.
+     * The stable UUID lets WorkManager safely retry after process death or a lost response.
+     */
+    fun saveGeneratedLesson(session: NativeSession, payload: JSONObject) {
+        val lessonId = payload.optString("id").trim()
+        require(runCatching { java.util.UUID.fromString(lessonId) }.isSuccess) {
+            "A cloud lesson must have a valid stable ID before it can sync."
+        }
+        val subjectId = payload.optString("subjectId").trim()
+        require(subjectId.isNotBlank()) { "A subject is required before the lesson can sync." }
+        val blocks = JSONArray(payload.optString("blocksJson", "[]"))
+        require(blocks.length() > 0) { "The recovered lesson has no content and cannot sync." }
+        val row = JSONObject()
+            .put("id", lessonId)
+            .put("user_id", session.userId)
+            .put("subject_id", subjectId)
+            .put("topic", payload.optString("topic").take(500))
+            .put("title", payload.optString("title").take(255))
+            .put("description", payload.optString("description").take(1000))
+            .put("difficulty", normalizeNativeLessonDifficulty(payload.optString("difficulty")))
+            .put("blocks", blocks)
+            // Omit progress: inserts receive the database default (0), while
+            // merge-duplicates must never reset progress on an existing lesson.
+            .put("updated_at", java.time.Instant.now().toString())
+        request(
+            "POST",
+            "/rest/v1/learn_lessons?on_conflict=id",
+            JSONArray().put(row).toString(),
+            accessToken = session.accessToken,
+            prefer = "resolution=merge-duplicates,return=minimal",
+        )
     }
 
     fun createSignedExamPaperUrl(session: NativeSession, paperId: String): String {

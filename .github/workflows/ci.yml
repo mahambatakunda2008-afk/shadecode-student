@@ -95,7 +95,7 @@ jobs:
 
   generated_lesson_sync_contract:
     name: Generated lesson sync database contract
-    if: github.event_name == 'pull_request' && github.head_ref == 'fix/sync-lesson-topic-preserve-progress-mainline'
+    if: github.event_name == 'pull_request' && (github.head_ref == 'fix/sync-lesson-topic-preserve-progress-mainline' || github.head_ref == 'fix/learn-recovery-account-scoped-storage')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:

@@ -77,7 +77,9 @@ begin
   else
     insert into public.learn_lessons(id,user_id,subject_id,topic,title,description,difficulty,progress,blocks)
     values(p_record_id::uuid,v_user,(p_payload->>'subject_id')::uuid,nullif(p_payload->>'topic',''),coalesce(p_payload->>'title',''),coalesce(p_payload->>'description',''),case when p_payload->>'difficulty' in ('easy','medium','hard') then p_payload->>'difficulty' else 'medium' end,coalesce((p_payload->>'progress')::integer,0),p_payload->'blocks')
-    on conflict(id) do update set subject_id=excluded.subject_id,topic=excluded.topic,title=excluded.title,description=excluded.description,difficulty=excluded.difficulty,progress=excluded.progress,blocks=excluded.blocks
+    -- A recovered lesson may already exist locally or remotely. Refresh its
+    -- generated content, but never reset progress that was already recorded.
+    on conflict(id) do update set subject_id=excluded.subject_id,topic=excluded.topic,title=excluded.title,description=excluded.description,difficulty=excluded.difficulty,blocks=excluded.blocks
     where public.learn_lessons.user_id=v_user;
   end if;
 

@@ -11,7 +11,7 @@ export interface OfflineLesson {
   id: string; ownerUserId?: string; title: string; subject: string; subjectId?: string; topic?: string; description?: string;
   blocks?: Array<Record<string, unknown>>; difficulty?: string;
   downloadedAt: string; lastSyncedAt?: string; size: number;
-  progress?: number; completed?: boolean;
+  progress?: number; completed?: boolean; pendingSync?: boolean; localOnly?: boolean;
 }
 export interface OfflineNotes { lessonId: string; userId: string; content: string; downloadedAt: string; lastSyncedAt?: string; }
 export interface OfflineQuiz { lessonId: string; userId: string; questions: Array<{ id: string; question: string; options: string[]; correctAnswer: string }>; downloadedAt: string; lastSyncedAt?: string; }
