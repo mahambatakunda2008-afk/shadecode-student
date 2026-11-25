@@ -105,7 +105,7 @@ export default function RouteError({ error, reset, boundary, fullPage = false }:
         </div>
         <h1 className="mb-2 text-xl font-semibold tracking-tight text-[var(--foreground)]">This page hit a problem</h1>
         <p className="mb-6 text-sm leading-relaxed text-[var(--text-secondary)]">
-          Saved work remains available. Changes that had not finished saving may need to be retried. Try again, or head back to your dashboard. If it keeps happening, tell us the reference below.
+          Work confirmed as saved should remain available. Changes that had not finished saving may need to be retried. Try again, or head back to your dashboard. If it keeps happening, share the reference below with support.
         </p>
         {error.digest && (
           <p className="mb-6 break-all rounded-lg bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-tertiary)] select-all">

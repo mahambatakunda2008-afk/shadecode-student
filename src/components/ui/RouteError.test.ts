@@ -27,9 +27,10 @@ describe("RouteError", () => {
   });
   it("does not promise unsaved work is safe when persistence is unknown", () => {
     const html = render();
-    expect(html).toContain("Saved work remains available");
+    expect(html).toContain("Work confirmed as saved should remain available");
     expect(html).toContain("Changes that had not finished saving may need to be retried");
     expect(html).not.toContain("Your work and progress are safe");
+    expect(html).not.toContain("Saved work remains available");
   });
   it("uses design tokens, not hard-coded light-on-light colours", () => {
     const html = render();
