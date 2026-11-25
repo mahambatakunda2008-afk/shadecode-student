@@ -95,7 +95,20 @@ export function CodeLabEditor({ value, language, entryFile = "main.js", onChange
   return <div className="relative h-full min-h-[430px] overflow-hidden bg-[#0b0f17]">
     <div ref={hostRef} className="absolute inset-0" />
     {state === "loading" && <div className="absolute inset-0 grid place-items-center bg-[#0b0f17] text-slate-400"><div className="flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin" />Loading editor engine…</div></div>}
-    {state === "error" && <div className="absolute inset-0 grid place-items-center bg-[#0b0f17] p-6 text-center text-slate-400"><div><p className="font-medium text-slate-200">Editor engine unavailable</p><p className="mt-1 text-sm">The workspace remains available, but the advanced editor could not load.</p></div></div>}
+    {state === "error" && <div className="absolute inset-0 bg-[#0b0f17]">
+      <div role="status" className="absolute inset-x-0 top-0 z-10 border-b border-amber-400/20 bg-amber-400/5 px-3 py-2 text-[11px] text-amber-200">Advanced editor unavailable. Plain-text editing is active, so you can keep working offline.</div>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); onSaveRef.current?.(); }
+          if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { event.preventDefault(); onRunRef.current?.(); }
+        }}
+        aria-label={`${language} source editor`}
+        spellCheck={false}
+        className="absolute inset-0 h-full min-h-[430px] w-full resize-none bg-transparent px-4 pb-5 pt-12 font-mono text-sm leading-6 text-slate-100 outline-none"
+      />
+    </div>}
     {state === "ready" && <>
       <div className="absolute right-3 top-3 z-20 flex gap-1">
         <button type="button" onClick={() => setTestsOpen((v) => !v)} title="Run tests" className={`rounded-lg border border-white/10 bg-[#0d121b]/90 p-2 shadow-sm ${testsOpen ? "text-white" : "text-slate-400 hover:text-slate-200"}`}><TestTube2 className="h-3.5 w-3.5" /></button>
