@@ -3,6 +3,7 @@
 import { type ChangeEvent, type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Download, GitBranch, Play, Plus, Save, Trash2, Upload, Workflow, X } from "lucide-react";
 import { executeCode } from "@/lib/code-lab/runtime";
+import { createClient } from "@/lib/supabase/client";
 
 type Kind = "start" | "end" | "process" | "input" | "output" | "decision";
 type Node = { id: string; kind: Kind; text: string; x: number; y: number; line: number };
@@ -24,6 +25,10 @@ function shape(kind: Kind) { if (kind === "decision") return "M 0 -36 L 108 0 L 
 function shortText(text: string) { return text.length > 26 ? `${text.slice(0, 25)}…` : text; }
 
 export default function AlgorithmStudioPlus() {
+  const [userId, setUserId] = useState<string | null>(null);
+  const supabase = useMemo(() => createClient(), []);
+  const lastUserIdRef = useRef<string | null>(null);
+  const storageKey = userId ? `shadecode:comp-lab:algorithm-studio:${userId}` : null;
   const [code, setCode] = useState(starter);
   const [nodes, setNodes] = useState<Node[]>(() => buildNodes(starter));
   const [edges, setEdges] = useState<Edge[]>(() => buildEdges(starter, buildNodes(starter)));
@@ -38,11 +43,35 @@ export default function AlgorithmStudioPlus() {
   const [saved, setSaved] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  useEffect(() => { try { const raw = localStorage.getItem("shadecode.comp-lab.algorithm-studio"); if (!raw) return; const project = JSON.parse(raw) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { /* ignore invalid local draft */ } }, []);
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => { if (active) { const id = data.session?.user.id ?? null; lastUserIdRef.current = id; setUserId(id); } });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user.id ?? null;
+      if (lastUserIdRef.current !== nextUserId) {
+        lastUserIdRef.current = nextUserId;
+        setCode(starter);
+        const freshNodes = buildNodes(starter);
+        setNodes(freshNodes);
+        setEdges(buildEdges(starter, freshNodes));
+        setTests([{ id: uid("test"), input: "8", expected: "Even" }, { id: uid("test"), input: "7", expected: "Odd" }]);
+        setOutput("");
+        setDiagnostics([]);
+        setSaved(false);
+      }
+      setUserId(nextUserId);
+    });
+    return () => { active = false; subscription.unsubscribe(); };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!storageKey) return;
+    try { const raw = localStorage.getItem(storageKey); if (!raw) return; const project = JSON.parse(raw) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { /* ignore invalid local draft */ }
+  }, [storageKey]);
 
   const trace = useMemo(() => { const marker = output.indexOf("TRACE TABLE"); if (marker < 0) return []; const rows = output.slice(marker).split(/\r?\n/).filter(row => row.trim().startsWith("|")); if (rows.length < 3) return []; const headers = rows[0].split("|").map(x => x.trim()).filter(Boolean); return rows.slice(2).map(row => row.split("|").map(x => x.trim()).filter(Boolean)).map(cells => headers.map((header, index) => [header, cells[index] ?? ""] as const)); }, [output]);
 
-  const save = () => { const project: Project = { version: 3, code, nodes, edges, tests }; localStorage.setItem("shadecode.comp-lab.algorithm-studio", JSON.stringify(project)); setSaved(true); window.setTimeout(() => setSaved(false), 1400); };
+  const save = () => { if (!storageKey) { setDiagnostics(["Your signed-in workspace is still loading. Try saving again in a moment."]); return; } const project: Project = { version: 3, code, nodes, edges, tests }; localStorage.setItem(storageKey, JSON.stringify(project)); setSaved(true); window.setTimeout(() => setSaved(false), 1400); };
   const regenerate = () => { const nextNodes = buildNodes(code); setNodes(nextNodes); setEdges(buildEdges(code, nextNodes)); setTab("flow"); };
   const run = async () => { setRunning(true); setDiagnostics([]); setOutput(""); try { const result = await executeCode({ id: uid("run"), language: "pseudocode", code, entryFile: "main.pseudo", inputs: inputs.split(/\r?\n/).filter(Boolean), timeoutMs: 5000 }); const stdout = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n"); setOutput(stdout || (result.exitCode === 0 ? "Algorithm completed with no output." : "Algorithm failed.")); setDiagnostics(result.diagnostics.map(diagnostic => `Line ${diagnostic.line ?? "?"}: ${diagnostic.message}`)); setTab(result.diagnostics.length ? "write" : "trace"); } finally { setRunning(false); } };
   const runTests = async () => { setRunning(true); const results: string[] = []; try { for (const test of tests) { const result = await executeCode({ id: uid("test-run"), language: "pseudocode", code, entryFile: "main.pseudo", inputs: test.input.split(/\r?\n/), timeoutMs: 5000 }); const actual = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").replace(/\nTRACE TABLE[\s\S]*$/i, "").trim(); results.push(`${actual === test.expected.trim() ? "PASS" : "FAIL"} | input: ${test.input.replace(/\n/g, " / ")} | expected: ${test.expected} | actual: ${actual}`); } setOutput(results.join("\n")); setTab("tests"); } finally { setRunning(false); } };

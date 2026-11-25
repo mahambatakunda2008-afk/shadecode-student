@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, FileCode2, FolderOpen, Play, RotateCcw, Save, Terminal } from "lucide-react";
 import { CodeLabEditor } from "@/components/code-lab/CodeLabEditor";
+import { createClient } from "@/lib/supabase/client";
 import type { CompLabEnvironment } from "@/lib/comp-lab/environments";
 import { getCapability } from "@/lib/platform/capabilities";
 import { executeCode } from "@/lib/code-lab/runtime";
@@ -65,7 +66,10 @@ function starterFiles(environment: CompLabEnvironment): ProjectFile[] {
 }
 
 export default function CompLabProjectWorkspace({ environment }: { environment: CompLabEnvironment }) {
-  const storageKey = `shadecode:comp-lab:project:${environment.id}`;
+  const [userId, setUserId] = useState<string | null>(null);
+  const supabase = useMemo(() => createClient(), []);
+  const lastUserIdRef = useRef<string | null>(null);
+  const storageKey = userId ? `shadecode:comp-lab:project:${userId}:${environment.id}` : null;
   const [files, setFiles] = useState<ProjectFile[]>(() => starterFiles(environment));
   const [active, setActive] = useState(0);
   const [saved, setSaved] = useState(false);
@@ -83,6 +87,24 @@ export default function CompLabProjectWorkspace({ environment }: { environment: 
   }, [environment]);
 
   useEffect(() => {
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => { if (active) { const id = data.session?.user.id ?? null; lastUserIdRef.current = id; setUserId(id); } });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user.id ?? null;
+      if (lastUserIdRef.current !== nextUserId) {
+        lastUserIdRef.current = nextUserId;
+        setFiles(starterFiles(environment));
+        setActive(0);
+        setSaved(false);
+        setMessage("");
+      }
+      setUserId(nextUserId);
+    });
+    return () => { active = false; subscription.unsubscribe(); };
+  }, [environment, supabase]);
+
+  useEffect(() => {
+    if (!storageKey) return;
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return;
@@ -98,6 +120,7 @@ export default function CompLabProjectWorkspace({ environment }: { environment: 
   }
 
   function save() {
+    if (!storageKey) { setMessage("Your signed-in workspace is still loading. Try saving again in a moment."); return; }
     localStorage.setItem(storageKey, JSON.stringify({ files, active }));
     setSaved(true);
     setMessage("Project saved on this device.");
