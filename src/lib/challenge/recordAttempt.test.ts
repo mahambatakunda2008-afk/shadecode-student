@@ -8,6 +8,7 @@ const submission: ChallengeMarkSubmissionWrite = {
   submissionId: "s1",
   result: { percentage: 80, won: true, verified: true },
   attempt: { userName: "Tendai", percentage: 80, totalScore: 8, maxScore: 10, timeTaken: 300, grade: "A", won: true, verified: true },
+  signals: [{ kind: "battle", source: "curated", item_key: null, syllabus_id: null, topic_key: null, correct: true, score: 80, mistake_id: null, time_spent_seconds: 30, props: {} }],
 };
 
 describe("recordBattleAttempt legacy self-reported write", () => {
@@ -33,7 +34,7 @@ describe("recordChallengeMarkSubmission", () => {
     await expect(recordChallengeMarkSubmission({ rpc }, submission)).resolves.toEqual({ ok: true, inserted: true, result: submission.result });
     expect(rpc).toHaveBeenCalledWith("record_challenge_mark_submission", {
       p_challenge_id: "c1", p_user_id: "u1", p_submission_id: "s1",
-      p_result: submission.result, p_attempt: submission.attempt,
+      p_result: submission.result, p_attempt: submission.attempt, p_signals: submission.signals,
     });
   });
   it("returns the original result for a replay", async () => {
