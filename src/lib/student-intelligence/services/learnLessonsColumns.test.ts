@@ -37,4 +37,14 @@ describe("learn_lessons column contract", () => {
     expect(source.indexOf("Lesson not found.")).toBeLessThan(source.indexOf('.eq("id", lessonId).maybeSingle()'));
     expect(source).toContain("[0-9a-f]{8}-[0-9a-f]{4}");
   });
+
+  it("PATCH rejects non-UUID lesson IDs before the progress update query", () => {
+    const source = readFileSync("src/app/api/learn/route.ts", "utf8");
+    const patchHandler = source.slice(source.indexOf("export async function PATCH"));
+    const guard = patchHandler.indexOf("if (!isUuid(lessonId))");
+    const query = patchHandler.indexOf('.eq("id", lessonId)');
+    expect(guard).toBeGreaterThanOrEqual(0);
+    expect(query).toBeGreaterThan(guard);
+    expect(patchHandler).toContain('status: 404');
+  });
 });
