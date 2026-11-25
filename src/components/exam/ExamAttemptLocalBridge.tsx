@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getExamAttempt, saveExamAttempt, type LocalExamAttempt } from "@/lib/local-first/exam-attempt";
 import { localFirstStore } from "@/lib/local-first/store";
@@ -97,8 +97,6 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
   const [userId, setUserId] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  const lastRaw = useRef<string | null>(null);
-
   useEffect(() => {
     let alive = true;
     void createClient().auth.getSession().then(({ data }) => { if (alive) setUserId(data.session?.user?.id ?? null); }).finally(() => { if (alive) setAuthReady(true); });
@@ -119,7 +117,6 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
           if (saved) {
             const existing = await getExamAttempt(userId, saved.workId);
             if (!existing) await saveExamAttempt(userId, toAttempt(saved, userId));
-            lastRaw.current = raw;
             return;
           }
         }
@@ -128,11 +125,11 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
         if (active && !cancelled) {
           const legacy = JSON.stringify(toLegacy(active));
           try { localStorage.setItem(key, legacy); } catch { /* The attempt remains recoverable from IndexedDB. */ }
-          lastRaw.current = legacy; return;
+          return;
         }
         if (!navigator.onLine && subject.trim() && !cancelled) {
           const seeded = seedOfflineAttempt(subject, topic, count, level);
-          if (seeded) { const legacy = JSON.stringify(seeded); try { localStorage.setItem(key, legacy); } catch { /* IndexedDB is the primary recovery store. */ } await saveExamAttempt(userId, toAttempt(seeded, userId)); lastRaw.current = legacy; }
+          if (seeded) { const legacy = JSON.stringify(seeded); try { localStorage.setItem(key, legacy); } catch { /* IndexedDB is the primary recovery store. */ } await saveExamAttempt(userId, toAttempt(seeded, userId)); }
         }
       } catch { /* Local recovery is best-effort and must never make the route hang. */ }
       finally { if (!cancelled) setHydrated(true); }
