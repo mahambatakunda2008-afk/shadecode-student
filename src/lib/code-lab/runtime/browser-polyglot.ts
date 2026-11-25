@@ -25,7 +25,29 @@ async function loadPyodide() {
   return pyodidePromise;
 }
 async function loadSqlJs() {
-  if (!sqlJsPromise) sqlJsPromise = import("sql.js").then((module) => (module.default as unknown as SqlJsInitializer)({ locateFile: (file) => file.endsWith(".wasm") ? "/runtimes/sql-wasm.wasm" : file })).catch((error) => { sqlJsPromise = null; throw error; });
+  if (!sqlJsPromise) {
+    sqlJsPromise = new Promise<void>((resolve, reject) => {
+      const runtime = globalThis as typeof globalThis & { initSqlJs?: SqlJsInitializer };
+      if (runtime.initSqlJs) { resolve(); return; }
+      const existing = document.querySelector<HTMLScriptElement>('script[data-sqljs-runtime="true"]');
+      if (existing) {
+        existing.addEventListener("load", () => resolve(), { once: true });
+        existing.addEventListener("error", () => reject(new Error("SQL.js runtime could not be loaded.")), { once: true });
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "/runtimes/sql-wasm.js";
+      script.async = true;
+      script.dataset.sqljsRuntime = "true";
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("SQL.js runtime could not be loaded."));
+      document.head.appendChild(script);
+    }).then(() => {
+      const runtime = globalThis as typeof globalThis & { initSqlJs?: SqlJsInitializer };
+      if (!runtime.initSqlJs) throw new Error("SQL.js runtime did not initialize.");
+      return runtime.initSqlJs({ locateFile: (file) => file.endsWith(".wasm") ? "/runtimes/sql-wasm.wasm" : file });
+    }).catch((error) => { sqlJsPromise = null; throw error; });
+  }
   return sqlJsPromise;
 }
 async function loadTypeScript() {
