@@ -3,7 +3,12 @@ import { localFirstStore } from "./store";
 
 export type LocalExamQuestion = {
   id: number;
-  type: "multiple_choice" | "short_answer" | "structured";
+  type: "multiple_choice" | "short_answer" | "structured" | "essay";
+  modelAnswer?: string;
+  markingCriteria?: string;
+  numeric?: unknown;
+  syllabusIdentity?: unknown;
+  offlineMarking?: unknown;
   question: string;
   options?: string[];
   marks: number;
@@ -27,6 +32,8 @@ export type LocalExamAttempt = {
   startedAt: number;
   flags: number[];
   canvas?: string;
+  paperProof?: string | null;
+  paperSubjectId?: string | null;
   status: "active" | "submitted";
   updatedAt: string;
   submittedAt?: string;
@@ -52,17 +59,44 @@ export async function saveExamAttempt(userId: string, attempt: LocalExamAttempt)
   const seconds = Math.max(0, Math.floor(attempt.seconds));
   const totalSeconds = Math.max(seconds, Math.floor(attempt.totalSeconds));
   const current = Math.max(0, Math.min(attempt.questions.length - 1, Math.floor(attempt.current)));
-  return localFirstStore.upsert({
-    id: key(userId, attempt.attemptId),
+  const recordId = key(userId, attempt.attemptId);
+  const existing = await localFirstStore.get<LocalExamAttempt>(recordId);
+  if (existing && existing.userId !== userId) throw new Error("Refusing to overwrite another user's exam attempt");
+  await localFirstStore.acknowledgeEntityOperations(userId, "exam_attempt", recordId);
+  const record: LocalRecord<LocalExamAttempt> = {
+    id: recordId,
     entity: "exam_attempt",
+    entityId: recordId,
     userId,
     payload: { ...attempt, userId, seconds, totalSeconds, current, updatedAt: new Date().toISOString() },
-  });
+    updatedAt: Date.now(),
+    deviceId: existing?.deviceId ?? await localFirstStore.deviceId(),
+    version: (existing?.version ?? 0) + 1,
+    syncVersion: existing?.syncVersion ?? 0,
+  };
+  await localFirstStore.hydrate(record);
+  return (await localFirstStore.get<LocalExamAttempt>(recordId)) ?? record;
 }
 
 export async function deleteExamAttempt(userId: string, attemptId: string): Promise<void> {
   requireUser(userId);
-  const existing = await getExamAttempt(userId, attemptId);
-  if (!existing) throw new Error("Exam attempt not found");
-  await localFirstStore.remove({ id: key(userId, attemptId), entity: "exam_attempt", userId });
+  const recordId = key(userId, attemptId);
+  const existing = await localFirstStore.get<LocalExamAttempt>(recordId);
+  if (!existing || existing.userId !== userId || existing.deletedAt) throw new Error("Exam attempt not found");
+  await localFirstStore.acknowledgeEntityOperations(userId, "exam_attempt", recordId);
+  await localFirstStore.hydrate({
+    ...existing,
+    updatedAt: Date.now(),
+    version: existing.version + 1,
+    deletedAt: Date.now(),
+  });
+}
+
+export async function getLatestActiveExamAttempt(userId: string): Promise<LocalExamAttempt | null> {
+  requireUser(userId);
+  const records = await localFirstStore.list<LocalExamAttempt>("exam_attempt", userId);
+  const active = records
+    .filter((record) => record.userId === userId && !record.deletedAt && record.payload?.userId === userId && record.payload.status === "active")
+    .sort((a, b) => Date.parse(b.payload.updatedAt) - Date.parse(a.payload.updatedAt));
+  return active[0]?.payload ?? null;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getExamAttempt, saveExamAttempt, type LocalExamAttempt } from "@/lib/local-first/exam-attempt";
 import { localFirstStore } from "@/lib/local-first/store";
@@ -22,6 +22,8 @@ type LegacyExam = {
   canvas?: string;
   level?: number;
   count?: number;
+  paperProof?: string | null;
+  paperSubjectId?: string | null;
 };
 
 type Props = { children: ReactNode; subject?: string; topic?: string; count?: number; level?: number };
@@ -46,6 +48,8 @@ function parse(raw: string | null): LegacyExam | null {
       canvas: typeof value.canvas === "string" ? value.canvas : "",
       level: Number.isFinite(value.level) ? Number(value.level) : 1,
       count: Number.isFinite(value.count) ? Number(value.count) : value.questions.length,
+      paperProof: typeof value.paperProof === "string" ? value.paperProof : null,
+      paperSubjectId: typeof value.paperSubjectId === "string" ? value.paperSubjectId : null,
     };
   } catch { return null; }
 }
@@ -68,13 +72,15 @@ function toAttempt(saved: LegacyExam, userId: string): LocalExamAttempt {
     startedAt: Number(saved.startedAt),
     flags: saved.flags || [],
     canvas: saved.canvas || "",
+    paperProof: saved.paperProof ?? null,
+    paperSubjectId: saved.paperSubjectId ?? null,
     status: "active",
     updatedAt: new Date().toISOString(),
   };
 }
 
 function toLegacy(attempt: LocalExamAttempt): LegacyExam {
-  return { workId: attempt.attemptId, subject: attempt.subject, topic: attempt.topic, questions: attempt.questions, answers: attempt.answers, current: attempt.current, seconds: attempt.seconds, totalSeconds: attempt.totalSeconds, startedAt: attempt.startedAt, flags: attempt.flags, canvas: attempt.canvas, level: attempt.level, count: attempt.count };
+  return { workId: attempt.attemptId, subject: attempt.subject, topic: attempt.topic, questions: attempt.questions, answers: attempt.answers, current: attempt.current, seconds: attempt.seconds, totalSeconds: attempt.totalSeconds, startedAt: attempt.startedAt, flags: attempt.flags, canvas: attempt.canvas, level: attempt.level, count: attempt.count, paperProof: attempt.paperProof ?? null, paperSubjectId: attempt.paperSubjectId ?? null };
 }
 
 function seedOfflineAttempt(subject: string, topic: string, count: number, level: number): LegacyExam | null {
@@ -91,8 +97,6 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
   const [userId, setUserId] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  const lastRaw = useRef<string | null>(null);
-
   useEffect(() => {
     let alive = true;
     void createClient().auth.getSession().then(({ data }) => { if (alive) setUserId(data.session?.user?.id ?? null); }).finally(() => { if (alive) setAuthReady(true); });
@@ -106,13 +110,13 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
     const hydrate = async () => {
       try {
         const key = `${LEGACY_KEY}:${userId}`;
-        const raw = localStorage.getItem(key);
+        let raw: string | null = null;
+        try { raw = localStorage.getItem(key); } catch { /* Continue with the account-scoped IndexedDB attempt store. */ }
         if (raw) {
           const saved = parse(raw);
           if (saved) {
             const existing = await getExamAttempt(userId, saved.workId);
             if (!existing) await saveExamAttempt(userId, toAttempt(saved, userId));
-            lastRaw.current = raw;
             return;
           }
         }
@@ -120,28 +124,18 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
         const active = records.filter((record) => record.entity === "exam_attempt" && !record.deletedAt).map((record) => record.payload as LocalExamAttempt).filter((attempt) => attempt.status === "active").sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0];
         if (active && !cancelled) {
           const legacy = JSON.stringify(toLegacy(active));
-          localStorage.setItem(key, legacy); lastRaw.current = legacy; return;
+          try { localStorage.setItem(key, legacy); } catch { /* The attempt remains recoverable from IndexedDB. */ }
+          return;
         }
         if (!navigator.onLine && subject.trim() && !cancelled) {
           const seeded = seedOfflineAttempt(subject, topic, count, level);
-          if (seeded) { const legacy = JSON.stringify(seeded); localStorage.setItem(key, legacy); await saveExamAttempt(userId, toAttempt(seeded, userId)); lastRaw.current = legacy; }
+          if (seeded) { const legacy = JSON.stringify(seeded); try { localStorage.setItem(key, legacy); } catch { /* IndexedDB is the primary recovery store. */ } await saveExamAttempt(userId, toAttempt(seeded, userId)); }
         }
       } catch { /* Local recovery is best-effort and must never make the route hang. */ }
       finally { if (!cancelled) setHydrated(true); }
     };
     void hydrate();
-    const sync = async () => {
-      try {
-        const raw = localStorage.getItem(`${LEGACY_KEY}:${userId}`);
-        if (!raw || raw === lastRaw.current) return;
-        lastRaw.current = raw;
-        const saved = parse(raw);
-        if (!saved) return;
-        await saveExamAttempt(userId, toAttempt(saved, userId));
-      } catch { /* Existing local workspace remains the fallback if IndexedDB is unavailable. */ }
-    };
-    const timer = window.setInterval(() => void sync(), 1000);
-    return () => { cancelled = true; window.clearInterval(timer); };
+    return () => { cancelled = true; };
   }, [authReady, count, level, subject, topic, userId]);
 
   if (!hydrated) return null;
