@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 import { trackEvent } from "@/lib/traction/client";
-import { readFocusDailyStats, readFocusSession, saveFocusDailyStats, saveFocusSession, type FocusSessionSnapshot } from "@/lib/local-first/focus";
+import { readFocusDailyStats, readFocusSession, saveFocusDailyStats, saveFocusSession } from "@/lib/local-first/focus";
 
 type Preset = { label: string; minutes: number; };
 
@@ -73,7 +73,7 @@ export default function ExperienceFocus() {
   const completeRef = useRef<() => void>(() => {});
   const sessionStartedRef = useRef(false);
   const completionHandledRef = useRef(false);
-  const restoringRef = useRef(false);
+  const restoredDurationRef = useRef<number | null>(null);
   const endAtRef = useRef<number | null>(null);
   const router = useRouter();
   const [supabase] = useState(() => createClient());
@@ -94,13 +94,14 @@ export default function ExperienceFocus() {
       if (!mounted) return;
       if (!user) { router.push("/auth/login"); return; }
       setUserId(user.id);
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const [stats, saved] = await Promise.all([readFocusDailyStats(user.id, today), readFocusSession(user.id)]);
       if (!mounted) return;
       setSessionsToday(stats.sessions);
       setTotalFocusToday(stats.minutes);
       if (saved) {
-        restoringRef.current = true;
+        restoredDurationRef.current = saved.durationSeconds;
         const presetIndex = Math.max(0, Math.min(PRESETS.length - 1, saved.presetIndex));
         const custom = Math.max(1, Math.min(120, saved.customMinutes || 30));
         const elapsed = saved.isRunning && saved.startedAt ? Math.max(0, Math.floor((Date.now() - saved.startedAt) / 1000)) : 0;
@@ -112,7 +113,7 @@ export default function ExperienceFocus() {
         setIsRunning(saved.isRunning);
         sessionStartedRef.current = saved.isRunning;
         completionHandledRef.current = saved.isFinished;
-        endAtRef.current = saved.isRunning && remaining > 0 ? Date.now() + remaining * 1000 : null;
+        endAtRef.current = saved.isRunning ? Date.now() + remaining * 1000 : null;
         if (saved.isRunning && remaining === 0) completionHandledRef.current = false;
       }
     })();
@@ -120,8 +121,8 @@ export default function ExperienceFocus() {
   }, [router, supabase]);
 
   useEffect(() => {
-    if (restoringRef.current) {
-      restoringRef.current = false;
+    if (restoredDurationRef.current === totalSeconds) {
+      restoredDurationRef.current = null;
       return;
     }
     setTimeLeft(totalSeconds);
@@ -138,7 +139,6 @@ export default function ExperienceFocus() {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
-    if (endAtRef.current === null) endAtRef.current = Date.now() + timeLeft * 1000;
     intervalRef.current = setInterval(() => {
       const remaining = Math.max(0, Math.ceil(((endAtRef.current ?? Date.now()) - Date.now()) / 1000));
       setTimeLeft(remaining);
@@ -156,7 +156,8 @@ export default function ExperienceFocus() {
 
   async function handleSessionComplete() {
     const focusMinutes = selectedPreset === 4 ? customMinutes : preset.minutes;
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     let newStats = { sessions: sessionsToday + 1, minutes: totalFocusToday + focusMinutes };
     if (userId) {
       try {
