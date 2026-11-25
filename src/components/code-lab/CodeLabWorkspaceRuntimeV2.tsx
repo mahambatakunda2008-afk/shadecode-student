@@ -77,18 +77,6 @@ export default function CodeLabWorkspaceRuntimeV2() {
   }, [objectives, query]);
 
   useEffect(() => {
-    if (!storageKey) return;
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return;
-      const savedState = JSON.parse(raw) as Partial<{ files: WorkspaceFile[]; active: string; compactTabs: boolean }>;
-      if (Array.isArray(savedState.files) && savedState.files.length) setFiles(savedState.files);
-      if (savedState.active) setActive(savedState.active);
-      if (typeof savedState.compactTabs === "boolean") setCompactTabs(savedState.compactTabs);
-    } catch {}
-  }, [storageKey]);
-
-  useEffect(() => {
     const nextProfileId = profile?.id ?? null;
     if (lastProfileIdRef.current !== nextProfileId) {
       lastProfileIdRef.current = nextProfileId;
@@ -102,7 +90,16 @@ export default function CodeLabWorkspaceRuntimeV2() {
       setEvidence([]);
       setSaved(false);
     }
-  }, [profile?.id]);
+    if (!storageKey) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const savedState = JSON.parse(raw) as Partial<{ files: WorkspaceFile[]; active: string; compactTabs: boolean }>;
+      if (Array.isArray(savedState.files) && savedState.files.length) setFiles(savedState.files);
+      if (savedState.active) setActive(savedState.active);
+      if (typeof savedState.compactTabs === "boolean") setCompactTabs(savedState.compactTabs);
+    } catch {}
+  }, [storageKey, profile?.id]);
 
   useEffect(() => {
     let cancelled = false;
