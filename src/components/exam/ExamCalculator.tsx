@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import { Activity, Calculator, ChartNoAxesCombined, Clock3, Sigma, X } from "lucide-react";
 import { definiteIntegral, derivative, descriptiveStatistics, evaluateExpression, formatResult, solveByBisection } from "@/lib/exam/calculator";
+import { differentiatePolynomial, integratePolynomial, simplifyPolynomial } from "@/lib/exam/symbolic";
 
-type Tab = "scientific" | "calculus" | "graph" | "statistics";
+type Tab = "scientific" | "algebra" | "calculus" | "graph" | "statistics";
 type HistoryItem = { expression: string; result: string };
 
 const keys = ["sin(", "cos(", "tan(", "ln(", "log(", "sqrt(", "(", ")", "π", "e", "x", "^", "!", "÷", "7", "8", "9", "×", "4", "5", "6", "−", "1", "2", "3", "+", "0", ".", "%", "⌫"];
@@ -77,9 +78,20 @@ export default function ExamCalculator({ onClose }: { onClose: () => void }) {
       <button onClick={() => setAngle((v) => v === "DEG" ? "RAD" : "DEG")} className="min-h-10 rounded-lg border border-[var(--card-border)] px-3 text-xs font-black" aria-label="Toggle angle mode">{angle}</button>
       <button onClick={onClose} className="min-h-10 min-w-10 rounded-lg hover:bg-[var(--muted)]" aria-label="Close calculator"><X size={18} /></button>
     </header>
-    <nav className="grid grid-cols-4 gap-1 border-b border-[var(--card-border)] p-2" aria-label="Calculator tools">
-      {([{ id: "scientific", label: "Scientific", icon: Calculator }, { id: "calculus", label: "Calculus", icon: Sigma }, { id: "graph", label: "Graph", icon: ChartNoAxesCombined }, { id: "statistics", label: "Statistics", icon: Activity }] as const).map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setTab(id)} aria-pressed={tab === id} className={`flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold ${tab === id ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]"}`}><Icon size={14} />{label}</button>)}
+    <nav className="grid grid-cols-5 gap-1 border-b border-[var(--card-border)] p-2" aria-label="Calculator tools">
+      {([{ id: "scientific", label: "Scientific", icon: Calculator }, { id: "algebra", label: "Algebra", icon: Sigma }, { id: "calculus", label: "Calculus", icon: Sigma }, { id: "graph", label: "Graph", icon: ChartNoAxesCombined }, { id: "statistics", label: "Statistics", icon: Activity }] as const).map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setTab(id)} aria-pressed={tab === id} className={`flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold ${tab === id ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]"}`}><Icon size={14} />{label}</button>)}
     </nav>
+    {tab === "algebra" && <div className="space-y-3 p-4">
+      <div><label className="block text-xs font-bold" htmlFor="calc-polynomial">Polynomial expression in x</label><input id="calc-polynomial" value={functionText} onChange={(e) => setFunctionText(e.target.value)} className="mt-1 min-h-12 w-full rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3 font-mono" placeholder="e.g. 2(x + 3)^2 - x^2" /></div>
+      {(() => {
+        try {
+          return <div className="grid gap-2 sm:grid-cols-3"><Metric label="Simplified / expanded" value={simplifyPolynomial(functionText)} /><Metric label="Symbolic derivative" value={differentiatePolynomial(functionText)} /><Metric label="Indefinite integral" value={integratePolynomial(functionText)} /></div>;
+        } catch (e) {
+          return <p role="alert" className="text-xs text-red-500">{e instanceof Error ? e.message : "Enter a supported polynomial."}</p>;
+        }
+      })()}
+      <p className="text-[10px] text-[var(--muted-foreground)]">Exact symbolic polynomial operations, including expansion, collection of like terms, differentiation and integration. Supports integer powers up to 12 and constant divisors. Trigonometric, logarithmic and non-polynomial expressions are not supported in this algebra mode.</p>
+    </div>}
     {tab === "scientific" && <div className="grid gap-3 p-3 md:grid-cols-[1fr_220px]">
       <div className="min-w-0">
         <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]" htmlFor="exam-calc-expression">Expression</label>
