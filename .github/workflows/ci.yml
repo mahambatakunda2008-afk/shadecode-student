@@ -132,6 +132,10 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 --file supabase/tests/sync_generated_lesson_topic_preserves_progress.test.sql
+      - name: Verify progress-only content preservation and delete protection
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 --file supabase/tests/offline_progress_sync_preserves_lesson.test.sql
 
   verify:
     name: Typecheck, lint, test, build
