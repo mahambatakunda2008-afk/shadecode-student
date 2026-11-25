@@ -1,3 +1,5 @@
+import type { LearningSignal } from "@/lib/learning/signals";
+
 /**
  * Battle-attempt writes. The legacy self-reported route uses recordBattleAttempt;
  * server-marked papers use the atomic recordChallengeMarkSubmission RPC.
@@ -37,8 +39,6 @@ export async function recordBattleAttempt(admin: InsertCapableClient | null, att
   });
   return { ok: !error };
 }
-
-import type { LearningSignal } from "@/lib/learning/signals";
 
 export interface ChallengeMarkSubmissionWrite {
   challengeId: string;
