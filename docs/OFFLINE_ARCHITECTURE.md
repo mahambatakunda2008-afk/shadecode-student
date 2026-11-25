@@ -1,4 +1,4 @@
-# Offline architecture (service worker v9)
+# Offline architecture (service worker v10)
 
 Goal: a student who loses signal (load-shedding, data runs out, bad coverage) keeps working instead of hitting a crash screen.
 
