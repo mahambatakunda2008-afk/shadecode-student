@@ -50,7 +50,8 @@ export default function CodeLabWorkspaceRuntimeV2() {
   const { profile } = useUser();
   const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
   const db = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
-  const storageKey = `${STORAGE_PREFIX}${profile?.id ?? "guest"}`;
+  const storageKey = profile?.id ? `${STORAGE_PREFIX}${profile.id}` : null;
+  const lastProfileIdRef = useRef<string | null>(null);
   const [files, setFiles] = useState<WorkspaceFile[]>(initialFiles);
   const [active, setActive] = useState("main.js");
   const [objectives, setObjectives] = useState<Objective[]>([]);
@@ -76,6 +77,20 @@ export default function CodeLabWorkspaceRuntimeV2() {
   }, [objectives, query]);
 
   useEffect(() => {
+    const nextProfileId = profile?.id ?? null;
+    if (lastProfileIdRef.current !== nextProfileId) {
+      lastProfileIdRef.current = nextProfileId;
+      setFiles(initialFiles());
+      setActive("main.js");
+      setObjectives([]);
+      setSelectedObjective(null);
+      setQuery("");
+      setOutput([]);
+      setDiagnostics([]);
+      setEvidence([]);
+      setSaved(false);
+    }
+    if (!storageKey) return;
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return;
@@ -84,7 +99,7 @@ export default function CodeLabWorkspaceRuntimeV2() {
       if (savedState.active) setActive(savedState.active);
       if (typeof savedState.compactTabs === "boolean") setCompactTabs(savedState.compactTabs);
     } catch {}
-  }, [storageKey]);
+  }, [storageKey, profile?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,6 +127,10 @@ export default function CodeLabWorkspaceRuntimeV2() {
   }, [db, profile?.curriculum_subjects]);
 
   function persist() {
+    if (!storageKey) {
+      setSaved(false);
+      return;
+    }
     try {
       localStorage.setItem(storageKey, JSON.stringify({ files: files.map((file) => ({ ...file, dirty: false })), active, compactTabs }));
       setFiles((items) => items.map((file) => ({ ...file, dirty: false })));
