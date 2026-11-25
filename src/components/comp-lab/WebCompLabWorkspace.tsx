@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bug, Eye, EyeOff, Maximize2, Monitor, Play, RotateCcw, Save, Smartphone, Tablet, Terminal, X } from "lucide-react";
 import { CodeLabEditor } from "@/components/code-lab/CodeLabEditor";
+import { createClient } from "@/lib/supabase/client";
 
 type WebPath = "index.html" | "styles.css" | "script.js";
 type WebFile = { path: WebPath; content: string; language: string };
@@ -32,6 +33,9 @@ function buildDocument(files: WebFile[]) {
 }
 
 export default function WebCompLabWorkspace() {
+  const [userId, setUserId] = useState<string | null>(null);
+  const supabase = useMemo(() => createClient(), []);
+  const storageKey = userId ? `${STORAGE}${userId}` : null;
   const [files, setFiles] = useState<WebFile[]>(START);
   const [active, setActive] = useState<WebPath>("index.html");
   const [preview, setPreview] = useState("");
@@ -46,8 +50,23 @@ export default function WebCompLabWorkspace() {
   const current = useMemo(() => files.find((file) => file.path === active) ?? files[0], [active, files]);
 
   useEffect(() => {
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => { if (active) setUserId(data.session?.user.id ?? null); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user.id ?? null);
+      setFiles(START);
+      setActive("index.html");
+      setPreview("");
+      setSaved(false);
+      setConsoleLines([]);
+    });
+    return () => { active = false; subscription.unsubscribe(); };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!storageKey) return;
     try {
-      const raw = localStorage.getItem(STORAGE);
+      const raw = localStorage.getItem(storageKey);
       if (!raw) return;
       const parsed = JSON.parse(raw) as { files?: WebFile[]; active?: WebPath; viewport?: Viewport; autoPreview?: boolean; previewVisible?: boolean };
       if (Array.isArray(parsed.files) && parsed.files.length) {
@@ -59,7 +78,7 @@ export default function WebCompLabWorkspace() {
       if (typeof parsed.autoPreview === "boolean") setAutoPreview(parsed.autoPreview);
       if (typeof parsed.previewVisible === "boolean") setPreviewVisible(parsed.previewVisible);
     } catch { /* ignore corrupt local state */ }
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     const handler = (event: MessageEvent<PreviewMessage>) => {
@@ -93,7 +112,8 @@ export default function WebCompLabWorkspace() {
   }
 
   function save() {
-    localStorage.setItem(STORAGE, JSON.stringify({ files, active, viewport, autoPreview, previewVisible }));
+    if (!storageKey) { setConsoleLines(lines => [...lines.slice(-99), "[warn] Your signed-in workspace is still loading. Try saving again in a moment."]); return; }
+    localStorage.setItem(storageKey, JSON.stringify({ files, active, viewport, autoPreview, previewVisible }));
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1200);
   }
