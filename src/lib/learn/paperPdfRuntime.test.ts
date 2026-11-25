@@ -36,4 +36,7 @@ describe("paper PDF runtime", () => {
     const pages = await extractPdfPages(file);
 
     expect(pages.length).toBeGreaterThan(0);
-    expect(pages.som¶»§q«^
+    expect(pages.some(page => page.text.trim().length > 0)).toBe(true);
+    expect(pages[0].visual.width).toBeGreaterThan(0);
+  });
+});
