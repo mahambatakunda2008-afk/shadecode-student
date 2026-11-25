@@ -112,7 +112,8 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
     const hydrate = async () => {
       try {
         const key = `${LEGACY_KEY}:${userId}`;
-        const raw = localStorage.getItem(key);
+        let raw: string | null = null;
+        try { raw = localStorage.getItem(key); } catch { /* Continue with the account-scoped IndexedDB attempt store. */ }
         if (raw) {
           const saved = parse(raw);
           if (saved) {
@@ -126,11 +127,12 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
         const active = records.filter((record) => record.entity === "exam_attempt" && !record.deletedAt).map((record) => record.payload as LocalExamAttempt).filter((attempt) => attempt.status === "active").sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0];
         if (active && !cancelled) {
           const legacy = JSON.stringify(toLegacy(active));
-          localStorage.setItem(key, legacy); lastRaw.current = legacy; return;
+          try { localStorage.setItem(key, legacy); } catch { /* The attempt remains recoverable from IndexedDB. */ }
+          lastRaw.current = legacy; return;
         }
         if (!navigator.onLine && subject.trim() && !cancelled) {
           const seeded = seedOfflineAttempt(subject, topic, count, level);
-          if (seeded) { const legacy = JSON.stringify(seeded); localStorage.setItem(key, legacy); await saveExamAttempt(userId, toAttempt(seeded, userId)); lastRaw.current = legacy; }
+          if (seeded) { const legacy = JSON.stringify(seeded); try { localStorage.setItem(key, legacy); } catch { /* IndexedDB is the primary recovery store. */ } await saveExamAttempt(userId, toAttempt(seeded, userId)); lastRaw.current = legacy; }
         }
       } catch { /* Local recovery is best-effort and must never make the route hang. */ }
       finally { if (!cancelled) setHydrated(true); }
