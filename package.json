@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "predev": "npm run generate:brand",
+    "predev": "npm run generate:brand && npm run prepare:offline-runtimes",
     "build": "next build",
-    "prebuild": "npm run generate:brand",
+    "prebuild": "npm run generate:brand && npm run prepare:offline-runtimes",
     "start": "next start",
     "test": "vitest run",
     "lint": "eslint",
@@ -24,7 +24,8 @@
     "test:learn:e2e": "playwright test e2e/learn",
     "test:exam:e2e": "playwright test e2e/exam-simulation.spec.ts",
     "validate:curriculum-queue": "node scripts/validate-curriculum-intake-queue.mjs",
-    "test:mobile:e2e": "playwright test e2e/mobile"
+    "test:mobile:e2e": "playwright test e2e/mobile",
+    "prepare:offline-runtimes": "node scripts/prepare-offline-runtimes.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
@@ -54,7 +55,8 @@
     "shadcn": "^4.3.0",
     "sharp": "^0.35.4",
     "tailwind-merge": "^3.5.0",
-    "server-only": "0.0.1"
+    "server-only": "0.0.1",
+    "sql.js": "1.13.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
