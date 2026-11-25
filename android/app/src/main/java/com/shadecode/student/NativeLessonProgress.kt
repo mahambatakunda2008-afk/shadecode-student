@@ -8,3 +8,7 @@ import kotlin.math.roundToInt
 
 internal fun nativeLessonProgressToDatabasePercentage(progress: Float): Int =
     (progress.coerceIn(0f, 1f) * 100f).roundToInt()
+
+/** Normalize generated content to the values accepted by learn_lessons.difficulty. */
+internal fun normalizeNativeLessonDifficulty(value: String): String =
+    value.trim().lowercase().takeIf { it in setOf("easy", "medium", "hard") } ?: "medium"
