@@ -10,7 +10,7 @@ import StudyGoalInput from "@/components/StudyGoalInput";
 import type { StudyPlan, StudyGoals } from "@/lib/studyPlan/types";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 import { useUser } from "@/contexts/UserContext";
-import { cacheStudyPlan, readLocalStudyPlan } from "@/lib/local-first/study-plan";
+import { cacheStudyPlan, clearLocalStudyPlan, readLocalStudyPlan } from "@/lib/local-first/study-plan";
 
 const COPY = {
   foundation: { title: "Your learning routine", subtitle: "Choose a few things to practise and build into your day. Keep it realistic.", button: "Build my routine", loading: "Putting your routine together..." },
@@ -58,6 +58,7 @@ export default function ExperienceStudyPlan() {
       if (!res.ok) { const body = await res.json().catch(() => ({})); throw new Error(body.error ?? "Failed to load learning plan"); }
       const body = await res.json();
       if (body.stale) {
+        await clearLocalStudyPlan(user.id);
         setPlan(null);
         setLoadError(typeof body.message === "string" ? body.message : "Your selected subjects changed. Generate a new study plan.");
         return;
