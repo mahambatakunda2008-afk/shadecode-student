@@ -116,6 +116,7 @@ export default function Timetable() {
       setCustomSubject("");
       setSchedule([]);
       setSaved(false);
+      setLoading(false);
       setSaveError(null);
       setScheduleError(null);
       setSubjectColorMap({});
