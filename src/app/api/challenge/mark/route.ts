@@ -9,7 +9,6 @@ import { didWin } from '@/lib/challenge/attempt'
 import { gradeForPercentage } from '@/lib/challenge/fromResult'
 import { recordChallengeMarkSubmission } from '@/lib/challenge/recordAttempt'
 import { signalsFromMarkedPaper } from '@/lib/learning/signals'
-import { recordSignalsServer } from '@/lib/learning/server'
 import type { ExamAnswer } from '@/lib/exam/types'
 import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
 
@@ -75,11 +74,13 @@ export async function POST(request: NextRequest) {
     const { data: profile } = user.id !== challenge.challenger_id
       ? await supabase.from('profiles').select('username, display_name').eq('id', user.id).maybeSingle()
       : { data: null };
+    const learningSignals = signalsFromMarkedPaper(playSet.map((question) => ({ ...question, ...new Map((keyRow.key as KeyEntry[]).map((entry) => [entry.id, entry])).get(question.id) })) as never, marked.results, 'battle');
     const saved = await recordChallengeMarkSubmission(admin, {
       challengeId,
       userId: user.id,
       submissionId,
       result: { ...marked, won, verified: true },
+      signals: learningSignals,
       attempt: user.id === challenge.challenger_id ? null : {
         userName: profile?.username ?? profile?.display_name ?? 'A student',
         percentage,
@@ -95,11 +96,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Your marked result could not be saved. Please retry.', retryable: true }, { status: 503 });
     }
 
-    // Replays return the persisted result above and never project learning twice.
-    if (saved.inserted) {
-      const keyById = new Map((keyRow.key as KeyEntry[]).map((entry) => [entry.id, entry]));
-      await recordSignalsServer(supabase, user.id, signalsFromMarkedPaper(playSet.map((question) => ({ ...question, ...keyById.get(question.id) })) as never, marked.results, 'battle'));
-    }
+    // Result, battle row and learning signals were committed atomically by the RPC.
 
 
     return NextResponse.json(saved.result)
