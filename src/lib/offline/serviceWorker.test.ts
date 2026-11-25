@@ -132,9 +132,9 @@ describe("install and activate", () => {
   });
 
   it("removes old shadecode caches but keeps current ones and unrelated ones", async () => {
-    for (const name of ["shadecode-shell-v6", "shadecode-static-v8", "shadecode-pages-v8", "other-app"]) await cachesMock.api.open(name);
+    for (const name of ["shadecode-shell-v6", "shadecode-static-v9", "shadecode-pages-v9", "other-app"]) await cachesMock.api.open(name);
     await fire("activate");
-    expect([...cachesMock.stores.keys()].sort()).toEqual(["other-app", "shadecode-pages-v8", "shadecode-static-v8"]);
+    expect([...cachesMock.stores.keys()].sort()).toEqual(["other-app", "shadecode-pages-v9", "shadecode-static-v9"]);
   });
 });
 
@@ -251,6 +251,17 @@ describe("build files and images", () => {
     expect(await text((await get("/_next/image?url=%2Fa.png&w=64&q=75", "no-cors")).response)).toBe("img");
   });
 
+  it("caches the local SQL.js WASM runtime for offline execution after its first load", async () => {
+    network.set("/runtimes/sql-wasm.wasm", () => new Response("wasm-binary", { headers: { "content-type": "application/wasm" } }));
+    const online = await get("/runtimes/sql-wasm.wasm", "cors");
+    expect(await text(online.response)).toBe("wasm-binary");
+    offline = true;
+    fetchCalls.length = 0;
+    const saved = await get("/runtimes/sql-wasm.wasm", "cors");
+    expect(await text(saved.response)).toBe("wasm-binary");
+    expect(fetchCalls).toEqual([]);
+  });
+
   it("returns a network error (not a crash) for a file that was never saved", async () => {
     offline = true;
     const { response } = await get("/_next/static/chunks/never-seen.js", "cors");
@@ -342,7 +353,7 @@ describe("sign-out", () => {
     network.set("/learn", () => new Response("flight"));
     await get("/learn?_rsc=1", "cors", { RSC: "1" });
     await fire("message", { data: { type: "CLEAR_APP_CACHE" } });
-    expect([...cachesMock.stores.keys()]).toEqual(["shadecode-static-v8"]);
+    expect([...cachesMock.stores.keys()]).toEqual(["shadecode-static-v9"]);
     offline = true;
     expect((await get("/_next/static/chunks/a-1.js", "cors")).response?.type).not.toBe("error");
   });
