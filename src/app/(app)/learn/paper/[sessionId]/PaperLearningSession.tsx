@@ -105,8 +105,9 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
       else if (action === "reveal") setRevealed(data.solution || null);
       else {
         setResult(data as Evaluation);
-        // Each self-rating is its own attempt; reusing the id would replay the previous one.
-        if (selfRating) setSubmitActionId(null);
+        // A successful response completes this submission identity. Keep it only
+        // across failed requests so retries replay the same saved attempt.
+        setSubmitActionId(null);
         if (data.verdict === "correct") {
           const next = new Set(completedIds); next.add(currentBlock.id);
           const nextSession = { ...session, progress: { ...(session?.progress ?? {}), completedBlockIds: [...next], lastBlockId: currentBlock.id, lastVerdict: data.verdict } } as Session;
