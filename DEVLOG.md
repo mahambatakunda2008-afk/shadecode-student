@@ -580,3 +580,13 @@ The next real curriculum blocker after Mathematics 9709 was Physics 9702. The of
 
 ### Result
 Physics 9702 is no longer blocked at the "objectives exist but whole-syllabus knowledge is missing" layer. Cortex can now resolve the verified Physics syllabus at the teaching tier once a learner has an exact stored Physics curriculum identity.
+
+## 2026-11-25 — Cortex Auto-Cycle
+
+Completed regression test coverage for the `increment_xp` authorization boundary as part of the security audit. Created `src/lib/__tests__/authorization.test.ts` to verify that client-side attempts to call the `increment_xp` Supabase RPC function are correctly blocked by RLS, ensuring the 'service-role only' constraint is enforced. This directly addresses the leaderboard integrity hole fix mentioned in the audit. Other audit points related to SQL/configuration were noted as out of scope for application code changes.
+
+**Task:** Add regression tests for `increment_xp` authorization boundary
+
+**Change:** Introduces `src/lib/__tests__/authorization.test.ts` to add regression coverage for the `increment_xp` authorization boundary. As per the audit, `increment_xp` should be 'service-role only'. This test verifies that direct calls to the `increment_xp` RPC function from a client-side `supabase` instance (using the `anon` key), whether unauthenticated or authenticated as a regular user, are consistently blocked by Supabase Row-Level Security policies. This helps prevent re-introduction of the leaderboard integrity hole.
+
+---
