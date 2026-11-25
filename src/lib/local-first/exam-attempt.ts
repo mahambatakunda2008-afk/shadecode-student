@@ -3,7 +3,12 @@ import { localFirstStore } from "./store";
 
 export type LocalExamQuestion = {
   id: number;
-  type: "multiple_choice" | "short_answer" | "structured";
+  type: "multiple_choice" | "short_answer" | "structured" | "essay";
+  modelAnswer?: string;
+  markingCriteria?: string;
+  numeric?: unknown;
+  syllabusIdentity?: unknown;
+  offlineMarking?: unknown;
   question: string;
   options?: string[];
   marks: number;
@@ -27,6 +32,8 @@ export type LocalExamAttempt = {
   startedAt: number;
   flags: number[];
   canvas?: string;
+  paperProof?: string | null;
+  paperSubjectId?: string | null;
   status: "active" | "submitted";
   updatedAt: string;
   submittedAt?: string;
