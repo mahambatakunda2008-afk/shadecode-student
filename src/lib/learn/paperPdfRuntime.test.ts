@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 describe("paper PDF runtime", () => {
   it("loads the Node PDF.js build without a browser DOMMatrix global", async () => {
-    const runtime = globalThis as typeof globalThis & { DOMMatrix?: unknown };
+    const runtime = globalThis as unknown as { DOMMatrix?: unknown };
     const original = runtime.DOMMatrix;
     try {
       delete runtime.DOMMatrix;
