@@ -176,8 +176,9 @@ async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block,
     .eq("type", "paper_checkpoint")
     .contains("metadata", { clientActionId })
     .maybeSingle();
-  if (eventLookupError) throw eventLookupError;
-  if (!existingEvent) {
+  if (eventLookupError) {
+    console.error("[paper-learning] learning event lookup failed", eventLookupError);
+  } else if (!existingEvent) {
     const { error: eventError } = await auth.supabase.from("learning_events").insert({
       user_id: auth.user.id,
       type: "paper_checkpoint",
@@ -195,7 +196,7 @@ async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block,
         clientActionId,
       },
     });
-    if (eventError) throw eventError;
+    if (eventError) console.error("[paper-learning] learning event insert failed", eventError);
   }
 }
 
