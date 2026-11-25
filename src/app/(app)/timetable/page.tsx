@@ -64,7 +64,7 @@ export default function Timetable() {
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const activeUserRef = useRef<string | null>(null);
+  const activeUserRef = useRef<string | null | undefined>(undefined);
   const [subjectColorMap, setSubjectColorMap] = useState<Record<string, string>>({});
   const router = useRouter();
   const [supabase] = useState(() => createClient());
