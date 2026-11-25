@@ -73,3 +73,12 @@ export async function deleteExamAttempt(userId: string, attemptId: string): Prom
   if (!existing) throw new Error("Exam attempt not found");
   await localFirstStore.remove({ id: key(userId, attemptId), entity: "exam_attempt", userId });
 }
+
+export async function getLatestActiveExamAttempt(userId: string): Promise<LocalExamAttempt | null> {
+  requireUser(userId);
+  const records = await localFirstStore.list<LocalExamAttempt>("exam_attempt", userId);
+  const active = records
+    .filter((record) => record.userId === userId && !record.deletedAt && record.payload?.userId === userId && record.payload.status === "active")
+    .sort((a, b) => Date.parse(b.payload.updatedAt) - Date.parse(a.payload.updatedAt));
+  return active[0]?.payload ?? null;
+}
