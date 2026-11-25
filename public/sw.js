@@ -1,4 +1,4 @@
-/* Shadecode Student service worker v8. Design notes: docs/OFFLINE_ARCHITECTURE.md
+/* Shadecode Student service worker v9. Design notes: docs/OFFLINE_ARCHITECTURE.md
  *
  * - Documents are cached by PATH (not full URL), network-first with a timeout, so a weak connection
  *   falls back to the saved copy instead of hanging.
@@ -6,12 +6,12 @@
  * - WARM_ROUTES lets the app save the learner's permitted destinations and their JavaScript while online.
  * - Authenticated pages and RSC payloads are removed on sign-out and account changes. API calls are never intercepted.
  */
-const VERSION = "v8";
+const VERSION = "v9";
 const STATIC_CACHE = `shadecode-static-${VERSION}`;
 const PAGE_CACHE = `shadecode-pages-${VERSION}`;
 const RSC_CACHE = `shadecode-rsc-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
-const STATIC_RE = /\.(?:js|css|svg|png|jpg|jpeg|gif|webp|avif|ico|woff2?)$/i;
+const STATIC_RE = /\.(?:js|css|svg|png|jpg|jpeg|gif|webp|avif|ico|woff2?|wasm)$/i;
 const NETWORK_TIMEOUT_MS = 6000;
 const MAX_PAGES = 80;
 const MAX_RSC = 120;
