@@ -10,6 +10,7 @@ import StudyGoalInput from "@/components/StudyGoalInput";
 import type { StudyPlan, StudyGoals } from "@/lib/studyPlan/types";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 import { useUser } from "@/contexts/UserContext";
+import { cacheStudyPlan, readLocalStudyPlan } from "@/lib/local-first/study-plan";
 
 const COPY = {
   foundation: { title: "Your learning routine", subtitle: "Choose a few things to practise and build into your day. Keep it realistic.", button: "Build my routine", loading: "Putting your routine together..." },
@@ -32,26 +33,64 @@ export default function ExperienceStudyPlan() {
 
   const load = async () => {
     setLoading(true); setLoadError(null);
+    let cachedPlan: StudyPlan | null = null;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { router.push("/auth/login"); return; }
+
+      // Show the device copy first. It is account-scoped and does not wait for the network.
+      cachedPlan = await readLocalStudyPlan(user.id);
+      if (cachedPlan) {
+        setPlan(cachedPlan);
+        setPrefillSubjects(cachedPlan.goals.subjects);
+        setLoading(false);
+      }
+
+      if (!navigator.onLine) {
+        if (!cachedPlan) setLoadError("No study plan has been saved on this device yet. Connect once to load or create your plan.");
+        return;
+      }
+
       const { data: profileRow } = await supabase.from("profiles").select("subjects").eq("id", user.id).maybeSingle();
-      setPrefillSubjects((profileRow?.subjects as string[] | null) ?? []);
+      if (profileRow?.subjects) setPrefillSubjects(profileRow.subjects as string[]);
       const res = await fetchWithTimeout("/api/study-plan", {}, 20000);
       if (!res.ok) { const body = await res.json().catch(() => ({})); throw new Error(body.error ?? "Failed to load learning plan"); }
-      const body = await res.json(); setPlan(body.plan ?? null);
+      const body = await res.json();
+      if (body.stale) {
+        setPlan(null);
+        setLoadError(typeof body.message === "string" ? body.message : "Your selected subjects changed. Generate a new study plan.");
+        return;
+      }
+      if (body.plan) {
+        await cacheStudyPlan(user.id, body.plan as StudyPlan);
+        setPlan(body.plan as StudyPlan);
+      } else if (!cachedPlan) {
+        setPlan(null);
+      }
     } catch (err) {
-      setLoadError(err instanceof FetchTimeoutError ? "This is taking longer than expected. Please try again." : err instanceof Error ? err.message : "Something went wrong");
+      // Keep the saved plan usable if a refresh request fails.
+      if (!cachedPlan) setLoadError(err instanceof FetchTimeoutError ? "This is taking longer than expected. Please try again." : err instanceof Error ? err.message : "Something went wrong");
     } finally { setLoading(false); }
   };
 
   useEffect(() => { if (!profileLoading) void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [profileLoading]);
 
   const handleGenerate = async (goals: StudyGoals) => {
-    setSubmitError(null); setSubmitting(true);
+    setSubmitError(null);
+    if (!navigator.onLine) {
+      setSubmitError("Creating a new study plan needs a connection. Your previously saved plan remains available offline.");
+      return;
+    }
+    setSubmitting(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { router.push("/auth/login"); return; }
       const res = await fetchWithTimeout("/api/study-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(goals) }, 30000);
-      const body = await res.json(); if (!res.ok) throw new Error(body.error ?? "Failed to generate learning plan"); setPlan(body.plan);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to generate learning plan");
+      await cacheStudyPlan(session.user.id, body.plan as StudyPlan);
+      setPlan(body.plan as StudyPlan);
     } catch (err) {
       setSubmitError(err instanceof FetchTimeoutError ? "This is taking longer than expected. Please try again." : err instanceof Error ? err.message : "Something went wrong");
     } finally { setSubmitting(false); }
