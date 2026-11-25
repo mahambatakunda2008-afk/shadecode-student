@@ -4,10 +4,10 @@ import type { LearningEvent } from "@/lib/intelligence/learningEvents";
 import { normalizeLearningContextLabel } from "@/lib/intelligence/learningContextKey";
 
 function subjectForEvent(event: LearningEvent): string | null {
+  // Subject identity must be supplied by the server-resolved curriculum
+  // context. Never let free-form event metadata choose a mastery partition.
   const subjectId = event.subjectId?.trim() ?? "";
-  const subject = typeof event.metadata.subject === "string" ? event.metadata.subject.trim() : "";
-  const resolved = subject || subjectId;
-  return resolved ? normalizeLearningContextLabel(resolved) : null;
+  return subjectId ? normalizeLearningContextLabel(subjectId) : null;
 }
 
 /**
