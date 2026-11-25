@@ -132,9 +132,9 @@ describe("install and activate", () => {
   });
 
   it("removes old shadecode caches but keeps current ones and unrelated ones", async () => {
-    for (const name of ["shadecode-shell-v6", "shadecode-static-v9", "shadecode-pages-v9", "other-app"]) await cachesMock.api.open(name);
+    for (const name of ["shadecode-shell-v6", "shadecode-static-v10", "shadecode-pages-v10", "other-app"]) await cachesMock.api.open(name);
     await fire("activate");
-    expect([...cachesMock.stores.keys()].sort()).toEqual(["other-app", "shadecode-pages-v9", "shadecode-static-v9"]);
+    expect([...cachesMock.stores.keys()].sort()).toEqual(["other-app", "shadecode-pages-v10", "shadecode-static-v10"]);
   });
 });
 
@@ -353,7 +353,7 @@ describe("sign-out", () => {
     network.set("/learn", () => new Response("flight"));
     await get("/learn?_rsc=1", "cors", { RSC: "1" });
     await fire("message", { data: { type: "CLEAR_APP_CACHE" } });
-    expect([...cachesMock.stores.keys()]).toEqual(["shadecode-static-v9"]);
+    expect([...cachesMock.stores.keys()]).toEqual(["shadecode-static-v10"]);
     offline = true;
     expect((await get("/_next/static/chunks/a-1.js", "cors")).response?.type).not.toBe("error");
   });
