@@ -59,7 +59,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (remembered) { const cached = readCachedProfile(remembered); if (cached) setProfile(prioritizeComputerScience(cached)); }
     setLoading(false);
 
-    if (!navigator.onLine) return () => { mounted = false; };
+    // Supabase getSession() reads the persisted local session and does not require
+    // a network round-trip. Always restore it, even offline; fetchProfile() already
+    // skips its remote request when the device has no connection.
     const initAuth = async () => {
       try {
         const { data: { session } } = await withTimeout(supabase.auth.getSession(), AUTH_BOOT_TIMEOUT_MS);
