@@ -56,10 +56,10 @@ export async function POST(request: NextRequest) {
     };
 
     const curriculum = await resolveUserSystemCurriculum(user.id, input.subjectId);
-    const verifiedSyllabusId = curriculum.resolved.status === "resolved"
-      ? curriculum.identity?.syllabusId ?? undefined
-      : undefined;
+    const resolvedIdentity = curriculum.resolved.status === "resolved" ? curriculum.identity : undefined;
+    const verifiedSyllabusId = resolvedIdentity?.syllabusId;
     const topicMapping = resolveVerifiedCurriculumTopic(curriculum.resolved, input.topicId);
+    const verifiedTopic = resolvedIdentity && topicMapping.status === "matched" ? topicMapping : undefined;
     const normalized = normalizeLearningEvent({
       ...input,
       syllabusId: verifiedSyllabusId,
@@ -80,12 +80,22 @@ export async function POST(request: NextRequest) {
 
     let projection: { projected: boolean; reason?: string } = { projected: false, reason: "not-attempted" };
     try {
-      // The projection RPC is deliberately service_role-only. Keep event
-      // ingestion on the learner session, then use the server-only admin
-      // client for the isolated projection transaction.
-      const projectionClient = createSupabaseAdminClient();
-      if (!projectionClient) throw new Error("SERVICE_ROLE_UNAVAILABLE");
-      projection = await projectLearningEvent(projectionClient, normalized.event);
+      // Client labels remain useful telemetry, but only the server-resolved
+      // curriculum identity and an exact verified topic may enter mastery.
+      // The projection RPC is service_role-only; keep its client server-side.
+      if (!resolvedIdentity || !verifiedTopic) {
+        projection = { projected: false, reason: "unverified-curriculum-topic" };
+      } else {
+        const projectionClient = createSupabaseAdminClient();
+        if (!projectionClient) throw new Error("SERVICE_ROLE_UNAVAILABLE");
+        projection = await projectLearningEvent(projectionClient, {
+          ...normalized.event,
+          subjectId: resolvedIdentity.subjectName ?? resolvedIdentity.subjectId,
+          topicId: verifiedTopic.title,
+          syllabusId: resolvedIdentity.syllabusId,
+          curriculumTopicKey: verifiedTopic.curriculumTopicKey,
+        });
+      }
     } catch (projectionError) {
       console.error("[learning-events] mastery projection failed:", projectionError);
       return NextResponse.json({
