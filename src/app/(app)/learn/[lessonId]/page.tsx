@@ -262,7 +262,7 @@ export default function LessonDetailPage() {
       if (userId && (status === undefined || status >= 500 || status === 404)) {
         try {
           const cached = await offlineStorage.getLesson(lessonId, userId);
-          const mayUsePendingRecovery = cached?.pendingSync === true && status === 404;
+          const mayUsePendingRecovery = (cached?.pendingSync === true || cached?.localOnly === true) && status === 404;
           if (cached && (mayUsePendingRecovery || status === undefined || status >= 500)) {
             const cachedLesson: Lesson = { ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt };
             setLesson(await applyPendingLocalProgress(cachedLesson, userId));
