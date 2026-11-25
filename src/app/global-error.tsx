@@ -13,7 +13,6 @@ export default function GlobalErrorBoundary({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log fatal layout crash to Sentry
     Sentry.captureException(error, {
       tags: {
         boundary: "global-error-boundary",
@@ -29,35 +28,32 @@ export default function GlobalErrorBoundary({
         <div className="absolute bottom-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 w-full max-w-md bg-white/10 border border-white/10 shadow-2xl rounded-2xl p-8 text-center">
-          {/* Animated Icon */}
-          <div className="inline-flex items-center justify-center p-4 bg-rose-500/10 rounded-full text-rose-400 mb-6 ring-8 ring-rose-500/5 animate-pulse">
-            <ShieldAlert className="w-10 h-10" />
+          <div className="inline-flex items-center justify-center p-4 bg-rose-500/10 rounded-full text-rose-400 mb-6 ring-8 ring-rose-500/5">
+            <ShieldAlert className="w-10 h-10" aria-hidden="true" />
           </div>
 
-          {/* Text Details */}
           <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent mb-2">
-            System Failure
+            Something went wrong
           </h1>
           <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-            A fatal error has occurred in the application root. Sentry has captured this trace, and our operations team is diagnosing the failure.
+            Shadecode could not load part of the application. You can try again. If the problem continues, share the reference below with support.
           </p>
 
-          {/* Technical Digest */}
           {error.digest && (
             <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3 mb-6 text-left font-mono text-[10px] text-slate-500 break-all select-all">
-              <span className="text-rose-400 font-semibold block mb-1">FATAL TRACE ID</span>
+              <span className="text-rose-400 font-semibold block mb-1">ERROR REFERENCE</span>
               {error.digest}
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex gap-3 justify-center">
             <button
+              type="button"
               onClick={() => reset()}
               className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-600 to-violet-600 hover:from-rose-500 hover:to-violet-500 active:scale-98 text-white text-sm font-medium rounded-xl shadow-lg shadow-rose-600/15 transition-all cursor-pointer"
             >
-              <RotateCcw className="w-4 h-4" />
-              Reload Application
+              <RotateCcw className="w-4 h-4" aria-hidden="true" />
+              Try again
             </button>
           </div>
         </div>
