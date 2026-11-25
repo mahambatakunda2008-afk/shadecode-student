@@ -58,9 +58,16 @@ export default function ExperienceStudyPlan() {
       if (!res.ok) { const body = await res.json().catch(() => ({})); throw new Error(body.error ?? "Failed to load learning plan"); }
       const body = await res.json();
       if (body.stale) {
-        await clearLocalStudyPlan(user.id);
+        const staleMessage = typeof body.message === "string" ? body.message : "Your selected subjects changed. Generate a new study plan.";
+        // Never keep displaying a server-invalidated plan, even if IndexedDB fails.
         setPlan(null);
-        setLoadError(typeof body.message === "string" ? body.message : "Your selected subjects changed. Generate a new study plan.");
+        try {
+          await clearLocalStudyPlan(user.id);
+          cachedPlan = null;
+          setLoadError(staleMessage);
+        } catch {
+          setLoadError(`${staleMessage} The outdated device copy could not be cleared, so keep a connection available before relying on this plan.`);
+        }
         return;
       }
       if (body.plan) {
