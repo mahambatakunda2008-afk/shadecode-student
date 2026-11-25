@@ -1,4 +1,4 @@
-# Offline architecture (service worker v8)
+# Offline architecture (service worker v9)
 
 Goal: a student who loses signal (load-shedding, data runs out, bad coverage) keeps working instead of hitting a crash screen.
 
@@ -41,3 +41,12 @@ Data-cost rules (students pay for data): skipped on data-saver and 2G, at most o
 
 - `src/lib/offline/serviceWorker.test.ts` loads the real `sw.js` into a sandbox with an in-memory Cache API and simulates going online and offline. It was mutation-checked: breaking the redirect guard, path keying or sign-out clearing makes tests fail.
 - Real-device check (needed, not automatable here): install/update the PWA and Android app online; wait for warm-up; switch on airplane mode; force-close and cold-start; traverse every visible navigation destination; exercise notes, answers, tasks, timetable, focus, Comp Lab and practical tools; force-close/reopen; switch accounts; restore connectivity and verify idempotent sync.
+
+
+## Comp Lab runtime availability
+
+- JavaScript and the Shade interpreter run locally.
+- TypeScript uses a lazy same-origin Next.js chunk and is available offline after its first successful online load.
+- SQL uses the locally bundled `sql.js` package. The WASM binary is copied from the pinned npm dependency into `public/runtimes/sql-wasm.wasm` during dev/build preparation. The service worker caches same-origin WASM assets after first successful fetch, so SQL is available offline after its first successful online execution.
+- Python/Pyodide still uses a remote runtime distribution and remains online-dependent. It needs a separate learner-controlled runtime pack because its assets are substantially larger.
+- First-ever execution of TypeScript or SQL while already offline is not guaranteed unless the runtime was loaded online beforehand.
