@@ -154,11 +154,12 @@ export default function LearnPageClientV2() {
         : undefined;
       if (recovered && userId) {
         try {
+          const recoveredAt = new Date().toISOString();
           await offlineStorage.saveLesson({
             ...recovered,
             ownerUserId: userId,
             pendingSync: true,
-            downloadedAt: new Date().toISOString(),
+            downloadedAt: recoveredAt,
             size: JSON.stringify(recovered).length,
           });
           try {
@@ -175,6 +176,7 @@ export default function LearnPageClientV2() {
                 difficulty: recovered.difficulty,
                 progress: recovered.progress,
                 blocks: recovered.blocks,
+                updated_at: recoveredAt,
               },
               clientVersion: 1,
               baseVersion: 0,
