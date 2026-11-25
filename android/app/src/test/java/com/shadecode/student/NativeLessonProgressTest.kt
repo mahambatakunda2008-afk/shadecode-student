@@ -18,4 +18,12 @@ class NativeLessonProgressTest {
     @Test fun roundsToNearestWholePercentage() {
         assertEquals(43, nativeLessonProgressToDatabasePercentage(0.425f))
     }
+
+    @Test fun normalizesDifficultyToDatabaseConstraint() {
+        assertEquals("easy", normalizeNativeLessonDifficulty("easy"))
+        assertEquals("medium", normalizeNativeLessonDifficulty(" MEDIUM "))
+        assertEquals("hard", normalizeNativeLessonDifficulty("hard"))
+        assertEquals("medium", normalizeNativeLessonDifficulty("adaptive"))
+        assertEquals("medium", normalizeNativeLessonDifficulty(""))
+    }
 }
