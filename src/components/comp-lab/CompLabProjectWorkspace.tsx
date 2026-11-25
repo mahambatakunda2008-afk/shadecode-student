@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, FileCode2, FolderOpen, Play, RotateCcw, Save, Terminal } from "lucide-react";
 import { CodeLabEditor } from "@/components/code-lab/CodeLabEditor";
 import { createClient } from "@/lib/supabase/client";
@@ -68,6 +68,7 @@ function starterFiles(environment: CompLabEnvironment): ProjectFile[] {
 export default function CompLabProjectWorkspace({ environment }: { environment: CompLabEnvironment }) {
   const [userId, setUserId] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
+  const lastUserIdRef = useRef<string | null>(null);
   const storageKey = userId ? `shadecode:comp-lab:project:${userId}:${environment.id}` : null;
   const [files, setFiles] = useState<ProjectFile[]>(() => starterFiles(environment));
   const [active, setActive] = useState(0);
@@ -87,13 +88,17 @@ export default function CompLabProjectWorkspace({ environment }: { environment: 
 
   useEffect(() => {
     let active = true;
-    void supabase.auth.getSession().then(({ data }) => { if (active) setUserId(data.session?.user.id ?? null); });
+    void supabase.auth.getSession().then(({ data }) => { if (active) { const id = data.session?.user.id ?? null; lastUserIdRef.current = id; setUserId(id); } });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user.id ?? null);
-      setFiles(starterFiles(environment));
-      setActive(0);
-      setSaved(false);
-      setMessage("");
+      const nextUserId = session?.user.id ?? null;
+      if (lastUserIdRef.current !== nextUserId) {
+        lastUserIdRef.current = nextUserId;
+        setFiles(starterFiles(environment));
+        setActive(0);
+        setSaved(false);
+        setMessage("");
+      }
+      setUserId(nextUserId);
     });
     return () => { active = false; subscription.unsubscribe(); };
   }, [environment, supabase]);
