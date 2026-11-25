@@ -49,6 +49,18 @@ function removeLocalExamSnapshot(userId: string) {
 function grade(p: number) { return p >= 90 ? "A*" : p >= 80 ? "A" : p >= 70 ? "B" : p >= 60 ? "C" : p >= 50 ? "D" : p >= 40 ? "E" : "U"; }
 function time(s: number) { const n = Math.max(0, Math.floor(s)); const h = Math.floor(n / 3600); const m = Math.floor((n % 3600) / 60); const sec = n % 60; return h ? `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`; }
 function id() { return `${Date.now()}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`; }
+function challengeSubmissionId(challengeId: string): string {
+  const key = `shadecode:challenge-submission:v1:${challengeId}`;
+  try {
+    const existing = sessionStorage.getItem(key);
+    if (existing && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(existing)) return existing;
+    const next = crypto.randomUUID();
+    sessionStorage.setItem(key, next);
+    return next;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 function formulas(subject: string) { const s = subject.toLowerCase(); if (s.includes("math")) return ["a² + b² = c²", "ax² + bx + c = 0", "sin²θ + cos²θ = 1", "gradient = Δy / Δx"]; if (s.includes("physics")) return ["v = u + at", "s = ut + ½at²", "F = ma", "p = mv", "V = IR"]; if (s.includes("chem")) return ["n = m/M", "c = n/V", "PV = nRT", "pH = −log₁₀[H⁺]"]; if (s.includes("computer")) return ["T(n) = O(n)", "binary search: O(log n)", "1 byte = 8 bits"]; return ["State definitions precisely.", "Show method where marks depend on it.", "Check units, assumptions and final statements."]; }
 
 export default function ExamWorkspace({ initialSubject = "", initialTopic = "", initialDifficulty = 1, initialQuestionCount = 10, onExit, onFinished, frozenQuestions, serverMarkChallengeId }: Props) {
@@ -73,7 +85,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   const [paperProof, setPaperProof] = useState<string | null>(null);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
   const [paperSubjectId, setPaperSubjectId] = useState<string | null>(null);
-  const workId = useRef<string | null>(null), answersRef = useRef(answers), questionsRef = useRef(questions), currentRef = useRef(current), secondsRef = useRef(seconds), totalRef = useRef(totalSeconds), canvasRef = useRef(""), fileRef = useRef<HTMLInputElement>(null), submitRef = useRef(false);
+  const workId = useRef<string | null>(null), challengeSubmissionIdRef = useRef<string | null>(null), answersRef = useRef(answers), questionsRef = useRef(questions), currentRef = useRef(current), secondsRef = useRef(seconds), totalRef = useRef(totalSeconds), canvasRef = useRef(""), fileRef = useRef<HTMLInputElement>(null), submitRef = useRef(false);
   const { help, check } = useCortexVerify();
   useEffect(() => { answersRef.current = answers; }, [answers]); useEffect(() => { questionsRef.current = questions; }, [questions]); useEffect(() => { currentRef.current = current; }, [current]); useEffect(() => { secondsRef.current = seconds; }, [seconds]); useEffect(() => { totalRef.current = totalSeconds; }, [totalSeconds]);
   useEffect(() => { const f = () => setOnline(navigator.onLine); f(); addEventListener("online", f); addEventListener("offline", f); return () => { removeEventListener("online", f); removeEventListener("offline", f); }; }, []);
@@ -279,7 +291,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           const res = await fetchWithTimeout("/api/challenge/mark", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ challenge_id: serverMarkChallengeId, answers: answersRef.current, timeTaken: totalRef.current - secondsRef.current })
+            body: JSON.stringify({ challenge_id: serverMarkChallengeId, submission_id: challengeSubmissionIdRef.current ?? (challengeSubmissionIdRef.current = challengeSubmissionId(serverMarkChallengeId)), answers: answersRef.current, timeTaken: totalRef.current - secondsRef.current })
           }, 25000);
           if (res.ok) markingData = await res.json();
         } catch {

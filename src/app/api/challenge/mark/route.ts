@@ -7,15 +7,14 @@ import { sanitizeQuestions } from '@/lib/challenge/questions'
 import { markAgainstKey, type KeyEntry } from '@/lib/challenge/serverMarking'
 import { didWin } from '@/lib/challenge/attempt'
 import { gradeForPercentage } from '@/lib/challenge/fromResult'
-import { recordBattleAttempt } from '@/lib/challenge/recordAttempt'
+import { recordChallengeMarkSubmission } from '@/lib/challenge/recordAttempt'
 import { signalsFromMarkedPaper } from '@/lib/learning/signals'
-import { recordSignalsServer } from '@/lib/learning/server'
 import type { ExamAnswer } from '@/lib/exam/types'
 import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
 
 export const dynamic = 'force-dynamic'
 
-const ID = /^[0-9a-f-]{8,64}$/i
+const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 /**
  * Marks a battle submission against the private answer key and records a
@@ -33,7 +32,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => null)
     const challengeId: unknown = body?.challenge_id
-    if (typeof challengeId !== 'string' || !ID.test(challengeId) || !Array.isArray(body?.answers) || body.answers.length > 20) {
+    const submissionId: unknown = body?.submission_id
+    if (typeof challengeId !== 'string' || !ID.test(challengeId) || typeof submissionId !== 'string' || !ID.test(submissionId) || !Array.isArray(body?.answers) || body.answers.length > 20) {
       return NextResponse.json({ error: 'Invalid submission' }, { status: 400 })
     }
 
@@ -69,12 +69,21 @@ export async function POST(request: NextRequest) {
     const percentage = Math.round(marked.percentage)
     const won = didWin(percentage, Number(challenge.percentage))
 
-    // The challenger practising their own paper is marked but never recorded as a battle.
-    if (user.id !== challenge.challenger_id) {
-      const { data: profile } = await supabase.from('profiles').select('username, display_name').eq('id', user.id).maybeSingle()
-      const saved = await recordBattleAttempt(admin, {
-        challengeId,
-        userId: user.id,
+    // Persist the result and (for opponents) the battle row in one database transaction.
+    // The unique submission key makes concurrent retries return the first result.
+    const { data: profile } = user.id !== challenge.challenger_id
+      ? await supabase.from('profiles').select('username, display_name').eq('id', user.id).maybeSingle()
+      : { data: null };
+    const keyById = new Map((keyRow.key as KeyEntry[]).map((entry) => [entry.id, entry]));
+    const learningQuestions = playSet.map((question) => ({ ...question, ...keyById.get(question.id) }));
+    const learningSignals = signalsFromMarkedPaper(learningQuestions as never, marked.results, 'battle');
+    const saved = await recordChallengeMarkSubmission(admin, {
+      challengeId,
+      userId: user.id,
+      submissionId,
+      result: { ...marked, won, verified: true },
+      signals: learningSignals,
+      attempt: user.id === challenge.challenger_id ? null : {
         userName: profile?.username ?? profile?.display_name ?? 'A student',
         percentage,
         totalScore: Math.round(marked.totalScore),
@@ -83,15 +92,14 @@ export async function POST(request: NextRequest) {
         grade: gradeForPercentage(percentage),
         won,
         verified: true,
-      })
-      if (!saved.ok) console.error('[challenge/mark] attempt not recorded')
+      },
+    });
+    if (!saved.ok || !saved.result) {
+      return NextResponse.json({ error: 'Your marked result could not be saved. Please retry.', retryable: true }, { status: 503 });
     }
 
-    // Learning loop: each question's outcome, with the key's generator id and any diagnosed mistake.
-    const keyById = new Map((keyRow.key as KeyEntry[]).map((entry) => [entry.id, entry]))
-    await recordSignalsServer(supabase, user.id, signalsFromMarkedPaper(playSet.map((question) => ({ ...question, ...keyById.get(question.id) })) as never, marked.results, 'battle'))
-
-    return NextResponse.json({ ...marked, won, verified: true })
+    // Result, battle row and learning signals were committed atomically by the RPC.
+    return NextResponse.json(saved.result)
   } catch (error) {
     console.error('[challenge/mark]', error)
     return NextResponse.json({ error: 'Marking failed. Please try again.', retryable: true }, { status: 500 })
