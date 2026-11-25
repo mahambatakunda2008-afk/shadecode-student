@@ -22,7 +22,12 @@ export class OfflineSync {
   startAutoSync(): void { if (this.syncInterval) return; if (typeof window !== "undefined") { this.onlineHandler = () => void this.syncAll(); window.addEventListener("online", this.onlineHandler); } this.syncInterval = setInterval(() => { if (typeof navigator !== "undefined" && navigator.onLine) void this.syncAll(); }, 30000); }
   stopAutoSync(): void { if (this.syncInterval) clearInterval(this.syncInterval); this.syncInterval = null; if (typeof window !== "undefined" && this.onlineHandler) window.removeEventListener("online", this.onlineHandler); this.onlineHandler = null; }
   async syncAll(): Promise<void> { if (this.syncInProgress || (typeof navigator !== "undefined" && !navigator.onLine)) return; this.syncInProgress = true; try { await this.bridgeLocalOperations(); const auth = await this.getCurrentUser(); if (auth) await this.queuePendingGeneratedLessons(auth.user.id); await this.syncMutations(); } catch (error) { console.error("[OfflineSync] Sync failed:", error); } finally { this.syncInProgress = false; } }
-  async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">): Promise<OfflineMutation<T>> { const auth = await this.getCurrentUser(); if (!auth) throw new Error("Cannot queue offline mutation without an authenticated user"); return mutationQueue.enqueue({ ...input, ownerId: auth.user.id }); }
+  async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">): Promise<OfflineMutation<T>> {
+    const auth = await this.getCurrentUser();
+    if (!auth) throw new Error("Cannot queue offline mutation without an authenticated user");
+    const deviceId = input.deviceId ?? await localFirstStore.deviceId();
+    return mutationQueue.enqueue({ ...input, deviceId, ownerId: auth.user.id });
+  }
   private async getCurrentUser() { const supabase = createClient(); const { data: { session } } = await supabase.auth.getSession(); if (!session?.user) return null; return { supabase, user: session.user }; }
   async getAuthenticatedUserId(): Promise<string | null> {
     const auth = await this.getCurrentUser();
