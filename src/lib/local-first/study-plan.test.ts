@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { localFirstStore } from "@/lib/local-first/store";
+import { clearLocalStudyPlan } from "./study-plan";
 import type { StudyPlan } from "@/lib/studyPlan/types";
 import { isStudyPlanOwnedBy, studyPlanRecordId } from "./study-plan";
 
@@ -25,5 +27,34 @@ describe("local study plan cache contract", () => {
     expect(isStudyPlanOwnedBy(plan("user-a"), "user-a")).toBe(true);
     expect(isStudyPlanOwnedBy(plan("user-a"), "user-b")).toBe(false);
     expect(isStudyPlanOwnedBy(null, "user-a")).toBe(false);
+  });
+
+  it("tombstones the active account's stale plan in the local-first store", async () => {
+    const id = studyPlanRecordId("user-a");
+    const existing = {
+      id,
+      entity: "study_state" as const,
+      entityId: id,
+      userId: "user-a",
+      payload: { plan: plan("user-a"), updatedAt: "2026-11-25T00:00:00.000Z" },
+      updatedAt: 100,
+      deviceId: "server",
+      version: 1,
+      syncVersion: 0,
+    };
+    const get = vi.spyOn(localFirstStore, "get").mockResolvedValue(existing);
+    const hydrate = vi.spyOn(localFirstStore, "hydrate").mockResolvedValue();
+    try {
+      await clearLocalStudyPlan("user-a");
+      expect(hydrate).toHaveBeenCalledWith(expect.objectContaining({
+        id,
+        userId: "user-a",
+        version: 2,
+        deletedAt: expect.any(Number),
+      }));
+    } finally {
+      get.mockRestore();
+      hydrate.mockRestore();
+    }
   });
 });
