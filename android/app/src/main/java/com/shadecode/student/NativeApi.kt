@@ -243,7 +243,7 @@ class NativeApi {
             .put("topic", payload.optString("topic").take(500))
             .put("title", payload.optString("title").take(255))
             .put("description", payload.optString("description").take(1000))
-            .put("difficulty", payload.optString("difficulty").lowercase().takeIf { it in setOf("easy", "medium", "hard") } ?: "medium")
+            .put("difficulty", normalizeNativeLessonDifficulty(payload.optString("difficulty")))
             .put("blocks", blocks)
             .put("progress", payload.optDouble("progress", 0.0).coerceIn(0.0, 100.0))
             .put("updated_at", java.time.Instant.now().toString())
