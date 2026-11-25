@@ -16,6 +16,7 @@ import LessonDiagram from "@/components/learn/LessonDiagram";
 import TeacherTutorials from "@/components/learn/TeacherTutorials";
 import { downloadManager } from "@/lib/offline/downloadManager";
 import { offlineStorage } from "@/lib/offline/storage";
+import { offlineSync } from "@/lib/offline/sync";
 import { localFirstStore } from "@/lib/local-first/store";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { useLessonNarration } from "@/hooks/useLessonNarration";
@@ -258,11 +259,16 @@ export default function LessonDetailPage() {
       void offlineStorage.saveLesson({ ...lessonWithLocalProgress, ownerUserId: userId, downloadedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(), size: JSON.stringify(lessonWithLocalProgress).length }).catch(() => undefined);
     } catch (err) {
       const status = (err as Error & { status?: number })?.status;
-      if (userId && (status === undefined || status >= 500)) {
-      try {
-        const cached = await offlineStorage.getLesson(lessonId, userId);
-        if (cached) { const cachedLesson: Lesson = { ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt }; setLesson(userId ? await applyPendingLocalProgress(cachedLesson, userId) : cachedLesson); return; }
-      } catch {}
+      if (userId && (status === undefined || status >= 500 || status === 404)) {
+        try {
+          const cached = await offlineStorage.getLesson(lessonId, userId);
+          const mayUsePendingRecovery = (cached?.pendingSync === true || cached?.localOnly === true) && status === 404;
+          if (cached && (mayUsePendingRecovery || status === undefined || status >= 500)) {
+            const cachedLesson: Lesson = { ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt };
+            setLesson(await applyPendingLocalProgress(cachedLesson, userId));
+            return;
+          }
+        } catch {}
       }
       setError(err instanceof Error ? err.message : "Lesson unavailable.");
     } finally { setLoading(false); }
@@ -281,8 +287,19 @@ export default function LessonDetailPage() {
   }, [lessonId]);
 
   useEffect(() => {
-    const online = () => { if (currentUser) void downloadManager.syncProgress(currentUser).catch(() => undefined); };
-    window.addEventListener("online", online); return () => window.removeEventListener("online", online);
+    offlineSync.startAutoSync();
+    return () => offlineSync.stopAutoSync();
+  }, []);
+
+  useEffect(() => {
+    const online = () => {
+      if (currentUser) {
+        void downloadManager.syncProgress(currentUser).catch(() => undefined);
+        void offlineSync.syncAll();
+      }
+    };
+    window.addEventListener("online", online);
+    return () => window.removeEventListener("online", online);
   }, [currentUser]);
 
   useEffect(() => {

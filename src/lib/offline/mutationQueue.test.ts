@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMutationReady, retryDelayMs, type OfflineMutation } from "./mutationQueue";
+import { isMutationReady, isSameMutation, retryDelayMs, type OfflineMutation } from "./mutationQueue";
 
 const mutation = (overrides: Partial<OfflineMutation> = {}): OfflineMutation => ({
   id: "m1",
@@ -40,4 +40,25 @@ describe("offline mutation retry policy", () => {
   it("treats an invalid timestamp as immediately retryable", () => {
     expect(isMutationReady(mutation({ attempts: 1, lastAttemptAt: "not-a-date" }), Date.now())).toBe(true);
   });
+ 
+  it("preserves retry state when the same mutation is re-enqueued", () => {
+    const existing = mutation({ attempts: 4, lastAttemptAt: new Date(100_000).toISOString() });
+    expect(isSameMutation(existing, {
+      operation: existing.operation,
+      store: existing.store,
+      payload: existing.payload,
+      clientVersion: existing.clientVersion,
+      baseVersion: existing.baseVersion,
+      deviceId: existing.deviceId,
+    })).toBe(true);
+    expect(isSameMutation(existing, {
+      operation: existing.operation,
+      store: existing.store,
+      payload: { id: "t1", user_id: "u1", completed: false },
+      clientVersion: existing.clientVersion,
+      baseVersion: existing.baseVersion,
+      deviceId: existing.deviceId,
+    })).toBe(false);
+  });
+
 });
