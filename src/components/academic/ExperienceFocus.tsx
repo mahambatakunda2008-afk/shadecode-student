@@ -108,8 +108,8 @@ export default function ExperienceFocus() {
         setSelectedPreset(presetIndex);
         setCustomMinutes(custom);
         setTimeLeft(saved.isFinished ? 0 : remaining);
-        setIsFinished(saved.isFinished || (saved.isRunning && remaining === 0));
-        setIsRunning(saved.isRunning && remaining > 0);
+        setIsFinished(saved.isFinished);
+        setIsRunning(saved.isRunning);
         sessionStartedRef.current = saved.isRunning;
         completionHandledRef.current = saved.isFinished;
         endAtRef.current = saved.isRunning && remaining > 0 ? Date.now() + remaining * 1000 : null;
@@ -131,14 +131,6 @@ export default function ExperienceFocus() {
     sessionStartedRef.current = false;
     completionHandledRef.current = false;
     if (intervalRef.current) clearInterval(intervalRef.current);
-    if (userId) {
-      const snapshot: FocusSessionSnapshot = {
-        presetIndex: selectedPreset, customMinutes, remainingSeconds: totalSeconds,
-        durationSeconds: totalSeconds, isRunning: false, startedAt: null, isFinished: false,
-        updatedAt: new Date().toISOString(),
-      };
-      void saveFocusSession(userId, snapshot).catch(error => console.error("[Focus] local reset persistence failed:", error));
-    }
   }, [totalSeconds]);
 
   useEffect(() => {
