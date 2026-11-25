@@ -22,15 +22,31 @@ export async function readLocalStudyPlan(userId: string): Promise<StudyPlan | nu
 /** Cache a plan already returned by the authenticated server. This is a read-through cache, not a queued server mutation. */
 export async function cacheStudyPlan(userId: string, plan: StudyPlan): Promise<void> {
   if (!userId || !isStudyPlanOwnedBy(plan, userId)) throw new Error("Study plan cache requires the authenticated owner");
+  const id = studyPlanRecordId(userId);
+  const existing = await localFirstStore.get<LocalStudyPlanRecord>(id);
+  if (existing && existing.userId !== userId) throw new Error("Refusing to overwrite another user's study plan");
   await localFirstStore.hydrate({
-    id: studyPlanRecordId(userId),
+    id,
     entity: "study_state",
-    entityId: studyPlanRecordId(userId),
+    entityId: id,
     userId,
     payload: { plan, updatedAt: plan.updatedAt || new Date().toISOString() } satisfies LocalStudyPlanRecord,
     updatedAt: Date.parse(plan.updatedAt) || Date.now(),
-    deviceId: "server",
-    version: 0,
-    syncVersion: 0,
+    deviceId: existing?.deviceId ?? "server",
+    version: (existing?.version ?? 0) + 1,
+    syncVersion: existing?.syncVersion ?? 0,
+  });
+}
+
+export async function clearLocalStudyPlan(userId: string): Promise<void> {
+  if (!userId) return;
+  const id = studyPlanRecordId(userId);
+  const existing = await localFirstStore.get<LocalStudyPlanRecord>(id);
+  if (!existing || existing.userId !== userId || existing.deletedAt) return;
+  await localFirstStore.hydrate({
+    ...existing,
+    updatedAt: Date.now(),
+    version: existing.version + 1,
+    deletedAt: Date.now(),
   });
 }
