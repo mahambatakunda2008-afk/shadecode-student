@@ -81,6 +81,7 @@ async function authenticateRequest(req: Request): Promise<AuthContext | null> {
 }
 function normalizeDifficulty(v: string | null): LessonDifficulty { return v === "medium" || v === "hard" ? v : "easy"; }
 function clampProgress(v: number | null): number { return typeof v === "number" && Number.isFinite(v) ? Math.min(100, Math.max(0, Math.round(v))) : 0; }
+function isUuid(value: string): boolean { return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value); }
 function toLearnLesson(row: LearnLessonRow, subjectById: Map<string, string>) {
   const progress = clampProgress(row.progress);
   return { id: row.id, subjectId: row.subject_id, topic: row.topic ?? undefined, subject: subjectById.get(row.subject_id) ?? "Unknown subject", title: row.title, description: row.description ?? "", difficulty: normalizeDifficulty(row.difficulty), progress, completed: progress >= 100, updated_at: row.updated_at ?? undefined, blocks: row.blocks ?? undefined } as LearnLesson;
@@ -145,7 +146,7 @@ export async function GET(req: Request) {
     if (lessonId) {
       // A non-UUID id (e.g. the "tutorials" path segment resolving to /learn/[lessonId]) makes Postgres
       // reject the query with HTTP 400. It cannot be a lesson, so answer 404 without a database round trip.
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lessonId)) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
+      if (!isUuid(lessonId)) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
       const { data: lessonData, error: lessonError } = await supabase.from("learn_lessons").select("id, subject_id, topic, title, description, difficulty, progress, updated_at, blocks").eq("user_id", user.id).eq("id", lessonId).maybeSingle();
       if (lessonError) return NextResponse.json({ error: "Unable to load lesson." }, { status: 500 });
       if (!lessonData) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
@@ -986,6 +987,8 @@ export async function PATCH(req: Request) {
     if (typeof lessonId !== "string" || !lessonId.trim() || typeof progress !== "number" || !Number.isFinite(progress)) {
       return NextResponse.json({ error: "Missing or invalid lessonId or progress" }, { status: 400 });
     }
+    // Reject tutorial slugs and other non-UUID identifiers before PostgREST casts the UUID column.
+    if (!isUuid(lessonId)) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
     const clamped = Math.min(100, Math.max(0, Math.round(progress)));
     const { data: updated, error } = await supabase
