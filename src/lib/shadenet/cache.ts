@@ -1,4 +1,4 @@
-const DB_NAME = "shadecode-shadenet";
+const DB_NAME = "shadecode-shadenet-cache";
 const DB_VERSION = 1;
 const STORE = "resources";
 const CACHED_AT_INDEX = "cachedAt";
@@ -20,7 +20,7 @@ export class ShadeNetResourceCache {
     await new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => { this.db = request.result; resolve(); };
+      request.onsuccess = () => { this.db = request.result; this.db.onversionchange = () => { this.db?.close(); this.db = null; }; resolve(); };
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(STORE)) {

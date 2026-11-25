@@ -54,3 +54,21 @@ Safety and resource limits:
 - Extracted material remains **unverified**. It is not automatically saved as an official curriculum source or teacher-approved resource.
 
 This is a bounded reader, not a general-purpose crawler. It reads only a source the learner explicitly selects from the search results.
+
+
+## Durable offline resource transfers
+
+The browser ShadeNet client stages verified peer-transfer chunks in the separate
+`shadecode-shadenet-transfers` IndexedDB database. Staging is keyed by resource
+ID and the expected final SHA-256 hash, so a later session can restore partial
+progress even when its request/session ID changes. Every restored or newly
+received chunk is hash-checked before it enters the transfer state. The complete
+resource is checked against its expected SHA-256 before it is placed in the
+resource cache. Successful transfers clear their staging records; abandoned
+records older than seven days are pruned on the next staging lookup.
+
+Transfer acceptance is bounded to 150 MB and 10,000 chunks. This is resumable
+device-local staging, not a guarantee that a browser will retain data forever:
+storage eviction, private browsing, quota exhaustion, or a user clearing site
+data can still remove staged chunks. A peer or another source must remain
+available to finish an incomplete transfer.
