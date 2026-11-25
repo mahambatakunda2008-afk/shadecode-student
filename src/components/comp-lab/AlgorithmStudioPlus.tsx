@@ -27,6 +27,7 @@ function shortText(text: string) { return text.length > 26 ? `${text.slice(0, 25
 export default function AlgorithmStudioPlus() {
   const [userId, setUserId] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
+  const lastUserIdRef = useRef<string | null>(null);
   const storageKey = userId ? `shadecode:comp-lab:algorithm-studio:${userId}` : null;
   const [code, setCode] = useState(starter);
   const [nodes, setNodes] = useState<Node[]>(() => buildNodes(starter));
@@ -44,17 +45,21 @@ export default function AlgorithmStudioPlus() {
 
   useEffect(() => {
     let active = true;
-    void supabase.auth.getSession().then(({ data }) => { if (active) setUserId(data.session?.user.id ?? null); });
+    void supabase.auth.getSession().then(({ data }) => { if (active) { const id = data.session?.user.id ?? null; lastUserIdRef.current = id; setUserId(id); } });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user.id ?? null);
-      setCode(starter);
-      const freshNodes = buildNodes(starter);
-      setNodes(freshNodes);
-      setEdges(buildEdges(starter, freshNodes));
-      setTests([{ id: uid("test"), input: "8", expected: "Even" }, { id: uid("test"), input: "7", expected: "Odd" }]);
-      setOutput("");
-      setDiagnostics([]);
-      setSaved(false);
+      const nextUserId = session?.user.id ?? null;
+      if (lastUserIdRef.current !== nextUserId) {
+        lastUserIdRef.current = nextUserId;
+        setCode(starter);
+        const freshNodes = buildNodes(starter);
+        setNodes(freshNodes);
+        setEdges(buildEdges(starter, freshNodes));
+        setTests([{ id: uid("test"), input: "8", expected: "Even" }, { id: uid("test"), input: "7", expected: "Odd" }]);
+        setOutput("");
+        setDiagnostics([]);
+        setSaved(false);
+      }
+      setUserId(nextUserId);
     });
     return () => { active = false; subscription.unsubscribe(); };
   }, [supabase]);
