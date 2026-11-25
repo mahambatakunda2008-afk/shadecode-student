@@ -58,7 +58,7 @@ export function Sidebar() {
     <ShadecodeFeatureIcon icon={NAV_ITEMS.settings.icon} feature={NAV_ITEMS.settings.feature} size="sm" tile={false} active={isRouteActive(pathname, NAV_ITEMS.settings.href)} className="h-[18px] w-[18px]" />
   </span>
   <span>Settings</span>
-</div></Link><button onClick={handleSignOut} className={cn("group relative flex items-center gap-3 min-h-[44px] px-3 py-2.5 rounded-[10px] w-full text-left cursor-pointer", "text-[14px] font-medium leading-snug transition-all duration-200 text-[var(--muted-foreground)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)]")}><LogOut className="w-[19px] h-[19px] flex-shrink-0 text-[var(--muted-foreground)] group-hover:text-[var(--danger)] transition-colors duration-150" strokeWidth={1.8} /><span>Sign out</span></button></div>
+</div></Link><button onClick={handleSignOut} className={cn("group relative flex items-center gap-3 min-h-[44px] px-3 py-2.5 rounded-[10px] w-full text-left cursor-pointer", "text-[14px] font-medium leading-snug transition-all duration-200 text-[var(--muted-foreground)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset")}><LogOut className="w-[19px] h-[19px] flex-shrink-0 text-[var(--muted-foreground)] group-hover:text-[var(--danger)] transition-colors duration-150" strokeWidth={1.8} /><span>Sign out</span></button></div>
     </aside>
   );
 }
