@@ -200,10 +200,12 @@ class NativeStore(private val context: Context) {
             buildList {
                 for (index in 0 until rows.length()) {
                     val row = rows.getJSONObject(index)
+                    val rowAccountId = row.optString("accountId", accountId)
+                    if (rowAccountId != accountId) continue
                     add(
                         NativePendingOperation(
                             id = row.getString("id"),
-                            accountId = row.optString("accountId", accountId),
+                            accountId = rowAccountId,
                             operation = row.getString("operation"),
                             payload = row.optString("payload", "{}"),
                             createdAt = row.optLong("createdAt"),
