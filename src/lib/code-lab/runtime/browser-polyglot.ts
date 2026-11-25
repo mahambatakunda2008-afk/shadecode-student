@@ -40,7 +40,7 @@ async function loadSqlJs() {
       script.async = true;
       script.dataset.sqljsRuntime = "true";
       script.onload = () => resolve();
-      script.onerror = () => reject(new Error("SQL.js runtime could not be loaded."));
+      script.onerror = () => { script.remove(); reject(new Error("SQL.js runtime could not be loaded.")); };
       document.head.appendChild(script);
     }).then(() => {
       const runtime = globalThis as typeof globalThis & { initSqlJs?: SqlJsInitializer };
