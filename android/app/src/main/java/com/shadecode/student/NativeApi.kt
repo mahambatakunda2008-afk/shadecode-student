@@ -245,7 +245,8 @@ class NativeApi {
             .put("description", payload.optString("description").take(1000))
             .put("difficulty", normalizeNativeLessonDifficulty(payload.optString("difficulty")))
             .put("blocks", blocks)
-            .put("progress", payload.optDouble("progress", 0.0).coerceIn(0.0, 100.0))
+            // Omit progress: inserts receive the database default (0), while
+            // merge-duplicates must never reset progress on an existing lesson.
             .put("updated_at", java.time.Instant.now().toString())
         request(
             "POST",
