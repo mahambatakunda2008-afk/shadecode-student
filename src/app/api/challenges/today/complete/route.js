@@ -3,110 +3,41 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(req) {
   try {
-    const supabase = createServerClient();
-    const body = await req.json();
-    const challengeId = body?.challengeId;
-
-    if (!challengeId) {
-      return Response.json(
-        {
-          error: "Challenge ID is required",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    // Get authenticated user from session cookie
     const authClient = await createSupabaseServerClient();
     const { data: { user } } = await authClient.auth.getUser();
+    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!user) {
-      return Response.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    const body = await req.json().catch(() => null);
+    const challengeId = body?.challengeId;
+    if (typeof challengeId !== "string" || !UUID_PATTERN.test(challengeId)) {
+      return Response.json({ error: "A valid challenge ID is required" }, { status: 400 });
     }
 
-    const userId = user.id;
+    const supabase = createServerClient();
+    const { data, error } = await supabase.rpc("complete_daily_challenge", {
+      p_assignment_id: challengeId,
+      p_user_id: user.id,
+    });
 
-    const { data: challengeRow, error: fetchError } = await supabase
-      .from("daily_challenges")
-      .select("*")
-      .eq("id", challengeId)
-      .eq("user_id", userId)
-      .single();
+    if (error) throw error;
+    const result = Array.isArray(data) ? data[0] : data;
 
-    if (fetchError || !challengeRow) {
-      return Response.json(
-        {
-          error: "Challenge not found",
-        },
-        {
-          status: 404,
-        }
-      );
-    }
-
-    // Prevent XP farming
-    if (challengeRow.completed) {
-      return Response.json({
-        success: true,
-        already_completed: true,
-        xp_awarded: 0,
-      });
-    }
-
-    const xpReward =
-      challengeRow?.challenge?.xp_reward || 50;
-
-    const { error: updateError } = await supabase
-      .from("daily_challenges")
-      .update({
-        completed: true,
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", challengeId)
-      .eq("user_id", userId);
-
-    if (updateError) {
-      throw updateError;
-    }
-
-    // XP logging
-    try {
-      await supabase.from("xp").insert({
-        user_id: userId,
-        amount: xpReward,
-        source: "daily_challenge",
-        challenge_id: challengeId,
-        created_at: new Date().toISOString(),
-      });
-    } catch (xpError) {
-      console.error(
-        "XP award failed but challenge completed:",
-        xpError
-      );
+    if (!result?.success) {
+      return Response.json({ error: "Challenge not found" }, { status: 404 });
     }
 
     return Response.json({
       success: true,
-      xp_awarded: xpReward,
+      already_completed: Boolean(result.already_completed),
+      xp_awarded: result.xp_awarded || 0,
       challenge_completed: true,
     });
   } catch (err) {
-    console.error(err);
-
-    return Response.json(
-      {
-        error: "Failed to complete challenge",
-      },
-      {
-        status: 500,
-      }
-    );
+    console.error("[daily-challenge] completion failed:", err);
+    return Response.json({ error: "Failed to complete challenge" }, { status: 500 });
   }
 }
