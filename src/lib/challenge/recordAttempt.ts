@@ -38,12 +38,15 @@ export async function recordBattleAttempt(admin: InsertCapableClient | null, att
   return { ok: !error };
 }
 
+import type { LearningSignal } from "@/lib/learning/signals";
+
 export interface ChallengeMarkSubmissionWrite {
   challengeId: string;
   userId: string;
   submissionId: string;
   result: unknown;
   attempt: Omit<AttemptWrite, "challengeId" | "userId"> | null;
+  signals: LearningSignal[];
 }
 
 interface RpcClient {
@@ -61,6 +64,7 @@ export async function recordChallengeMarkSubmission(
     p_submission_id: submission.submissionId,
     p_result: submission.result,
     p_attempt: submission.attempt,
+    p_signals: submission.signals,
   });
   if (error) return { ok: false, inserted: false };
 
