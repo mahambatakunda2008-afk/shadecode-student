@@ -7,16 +7,18 @@ import { BrandMark } from "@/components/brand/BrandMark";
 import { createClient } from "@/lib/supabase/client";
 import { mutationQueue } from "@/lib/offline/mutationQueue";
 import { offlineSync } from "@/lib/offline/sync";
+import { localFirstStore } from "@/lib/local-first/store";
+import { countLocalOnlyOperations } from "@/lib/offline/syncStatus";
 import { summarizeFailedMutations, type FailedChangeSummary } from "@/lib/offline/failureSummary";
 
-type SyncStatus = { pending: number; failed: number };
+type SyncStatus = { pending: number; failed: number; localOnly: number };
 
 const DETAILS_ID = "offline-shell-details";
 
 /** Non-blocking offline/sync indicator. Cached/local content remains usable. */
 export default function OfflineShell() {
   const isOnline = useOnlineStatus();
-  const [status, setStatus] = useState<SyncStatus>({ pending: 0, failed: 0 });
+  const [status, setStatus] = useState<SyncStatus>({ pending: 0, failed: 0, localOnly: 0 });
   const [syncing, setSyncing] = useState(false);
   const [failedItems, setFailedItems] = useState<FailedChangeSummary[]>([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -32,9 +34,10 @@ export default function OfflineShell() {
         const user = session?.user;
         if (!user || cancelled) return;
         const next = await mutationQueue.getStatus(user.id);
+        const localOnly = countLocalOnlyOperations(await localFirstStore.listPendingOperations(user.id));
         const items = next.failed > 0 ? summarizeFailedMutations(await mutationQueue.listFailed(user.id)) : [];
         if (cancelled) return;
-        setStatus(next);
+        setStatus({ ...next, localOnly });
         setFailedItems(items);
         if (next.failed === 0) setDetailsOpen(false);
       } catch {
@@ -60,7 +63,8 @@ export default function OfflineShell() {
       if (status.failed > 0) await mutationQueue.resetFailed(user.id);
       await offlineSync.syncAll();
       const next = await mutationQueue.getStatus(user.id);
-      setStatus(next);
+      const localOnly = countLocalOnlyOperations(await localFirstStore.listPendingOperations(user.id));
+      setStatus({ ...next, localOnly });
       setFailedItems(next.failed > 0 ? summarizeFailedMutations(await mutationQueue.listFailed(user.id)) : []);
       if (next.failed === 0) setDetailsOpen(false);
     } finally {
@@ -68,15 +72,17 @@ export default function OfflineShell() {
     }
   };
 
-  if (isOnline && status.pending === 0 && status.failed === 0) return null;
+  if (isOnline && status.pending === 0 && status.failed === 0 && status.localOnly === 0) return null;
 
   const message = !isOnline
-    ? status.pending > 0
-      ? `${status.pending} change${status.pending === 1 ? "" : "s"} saved on this device`
+    ? status.pending + status.localOnly > 0
+      ? `${status.pending + status.localOnly} change${status.pending + status.localOnly === 1 ? "" : "s"} saved on this device`
       : "You’re offline — saved work stays on this device"
     : status.failed > 0
       ? `${status.failed} change${status.failed === 1 ? "" : "s"} need${status.failed === 1 ? "s" : ""} attention`
-      : `Syncing ${status.pending} saved change${status.pending === 1 ? "" : "s"}`;
+      : status.localOnly > 0
+        ? `${status.localOnly} change${status.localOnly === 1 ? "" : "s"} saved locally outside the main sync queue`
+        : `Syncing ${status.pending} saved change${status.pending === 1 ? "" : "s"}`;
 
   const canExpand = isOnline && failedItems.length > 0;
 
