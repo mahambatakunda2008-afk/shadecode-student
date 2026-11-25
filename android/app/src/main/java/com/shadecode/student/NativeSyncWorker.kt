@@ -80,8 +80,12 @@ class NativeSyncWorker(
         api: NativeApi,
         store: NativeStore,
     ) {
+        check(item.accountId == session.userId) {
+            "Pending operation belongs to a different learner account."
+        }
         val payload = JSONObject(item.payload)
         when (item.operation) {
+            "lesson_create" -> api.saveGeneratedLesson(session, payload)
             "task_create" -> {
                 val localId = payload.getString("localId")
                 val remote = api.createTask(
