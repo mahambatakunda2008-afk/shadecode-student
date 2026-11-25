@@ -1,14 +1,14 @@
 -- Run against a disposable Supabase test project after migrations are applied.
--- Generated lesson reconciliation must persist topic while the current
--- progress-only mutation contract remains covered by
--- offline_progress_sync_preserves_lesson.test.sql.
+-- The fixture is created inside this transaction so the contract also runs on
+-- a clean branch with no copied production data.
 begin;
 do $$
 declare
-  v_user uuid;
-  v_subject uuid;
+  v_user uuid := gen_random_uuid();
+  v_subject uuid := gen_random_uuid();
   v_lesson uuid := gen_random_uuid();
   v_result jsonb;
+  v_difficulty text;
 begin
   if has_function_privilege('public', 'public.apply_sync_mutation(text,text,text,jsonb,bigint,bigint,text)', 'execute') then
     raise exception 'PUBLIC must not execute apply_sync_mutation';
@@ -17,18 +17,23 @@ begin
     raise exception 'authenticated must execute apply_sync_mutation';
   end if;
 
-  select l.user_id,l.subject_id
-  into v_user,v_subject
-  from public.learn_lessons l
-  where l.user_id is not null and l.subject_id is not null
-  order by l.created_at desc nulls last
-  limit 1;
+  insert into auth.users(id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
+  values (
+    v_user,
+    'authenticated',
+    'authenticated',
+    'sync-contract-' || v_user::text || '@example.invalid',
+    '',
+    now(),
+    now(),
+    now()
+  );
 
-  if v_user is null or v_subject is null then
-    raise exception 'Missing owned lesson fixture with subject for generated lesson sync contract';
-  end if;
+  insert into public.subjects(id, user_id, name)
+  values (v_subject, v_user, 'Sync contract subject');
 
-  perform set_config('request.jwt.claim.sub',v_user::text,true);
+  perform set_config('request.jwt.claim.sub', v_user::text, true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub',v_user::text,'role','authenticated')::text, true);
   execute 'set local role authenticated';
 
   select public.apply_sync_mutation(
@@ -55,15 +60,17 @@ begin
     raise exception 'Generated lesson sync was not accepted: %',v_result;
   end if;
 
-  if not exists (
-    select 1 from public.learn_lessons
-    where id=v_lesson
-      and user_id=v_user
-      and subject_id=v_subject
-      and topic='Quadratic inequalities'
-      and title='Quadratic inequalities: a complete lesson'
-  ) then
+  select difficulty into v_difficulty
+  from public.learn_lessons
+  where id=v_lesson and user_id=v_user and subject_id=v_subject
+    and topic='Quadratic inequalities'
+    and title='Quadratic inequalities: a complete lesson';
+
+  if not found then
     raise exception 'Generated lesson sync did not persist its topic and metadata';
+  end if;
+  if v_difficulty <> 'medium' then
+    raise exception 'Unsupported difficulty was not normalized to medium: %',v_difficulty;
   end if;
 end $$;
 rollback;
