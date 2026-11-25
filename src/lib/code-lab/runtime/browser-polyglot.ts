@@ -4,10 +4,9 @@ import { runBrowserJavaScript } from "./browser-runtime";
 type Pyodide = { runPythonAsync: (code: string) => Promise<unknown>; setStdout: (options: { batched: (text: string) => void }) => void; setStderr: (options: { batched: (text: string) => void }) => void };
 type SqlJsDatabase = { exec: (sql: string) => Array<{ columns: string[]; values: unknown[][] }>; close: () => void };
 type SqlJsModule = { Database: new () => SqlJsDatabase };
+type SqlJsInitializer = (options?: { locateFile?: (file: string) => string }) => Promise<SqlJsModule>;
 
 const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.mjs";
-const SQL_JS_URL = "https://cdn.jsdelivr.net/npm/sql.js@1.13.0/+esm";
-const TYPESCRIPT_URL = "https://esm.sh/typescript@5.9.2";
 let pyodidePromise: Promise<Pyodide> | null = null;
 let sqlJsPromise: Promise<SqlJsModule> | null = null;
 let typescriptPromise: Promise<any> | null = null;
@@ -22,15 +21,37 @@ function failure(request: RuntimeRequest, started: number, message: string): Run
 }
 
 async function loadPyodide() {
-  if (!pyodidePromise) pyodidePromise = import(/* webpackIgnore: true */ PYODIDE_URL).then(async (module: any) => module.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/" }));
+  if (!pyodidePromise) pyodidePromise = import(/* webpackIgnore: true */ PYODIDE_URL).then(async (module: any) => module.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/" })).catch((error) => { pyodidePromise = null; throw error; });
   return pyodidePromise;
 }
 async function loadSqlJs() {
-  if (!sqlJsPromise) sqlJsPromise = import(/* webpackIgnore: true */ SQL_JS_URL).then((module: any) => module.default ?? module);
+  if (!sqlJsPromise) {
+    sqlJsPromise = new Promise<void>((resolve, reject) => {
+      const runtime = globalThis as typeof globalThis & { initSqlJs?: SqlJsInitializer };
+      if (runtime.initSqlJs) { resolve(); return; }
+      const existing = document.querySelector<HTMLScriptElement>('script[data-sqljs-runtime="true"]');
+      if (existing) {
+        existing.addEventListener("load", () => resolve(), { once: true });
+        existing.addEventListener("error", () => reject(new Error("SQL.js runtime could not be loaded.")), { once: true });
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "/runtimes/sql-wasm.js";
+      script.async = true;
+      script.dataset.sqljsRuntime = "true";
+      script.onload = () => resolve();
+      script.onerror = () => { script.remove(); reject(new Error("SQL.js runtime could not be loaded.")); };
+      document.head.appendChild(script);
+    }).then(() => {
+      const runtime = globalThis as typeof globalThis & { initSqlJs?: SqlJsInitializer };
+      if (!runtime.initSqlJs) throw new Error("SQL.js runtime did not initialize.");
+      return runtime.initSqlJs({ locateFile: (file) => file.endsWith(".wasm") ? "/runtimes/sql-wasm.wasm" : file });
+    }).catch((error) => { sqlJsPromise = null; throw error; });
+  }
   return sqlJsPromise;
 }
 async function loadTypeScript() {
-  if (!typescriptPromise) typescriptPromise = import(/* webpackIgnore: true */ TYPESCRIPT_URL).then((module: any) => module);
+  if (!typescriptPromise) typescriptPromise = import("typescript").then((module) => module).catch((error) => { typescriptPromise = null; throw error; });
   return typescriptPromise;
 }
 function outputResult(request: RuntimeRequest, started: number, output: string, language: RuntimeLanguage): RuntimeResult {
@@ -60,8 +81,8 @@ export async function runBrowserPython(request: RuntimeRequest): Promise<Runtime
 export async function runBrowserSql(request: RuntimeRequest): Promise<RuntimeResult> {
   const started = Date.now();
   try {
-    const initSqlJs = await loadSqlJs();
-    const db = new initSqlJs.Database();
+    const SQL = await loadSqlJs();
+    const db = new SQL.Database();
     const outputs: string[] = [];
     for (const statement of db.exec(request.code)) {
       const rows = [statement.columns.join(" | ")];
