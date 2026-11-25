@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 import { trackEvent } from "@/lib/traction/client";
+import { readFocusDailyStats, readFocusSession, saveFocusDailyStats, saveFocusSession, type FocusSessionSnapshot } from "@/lib/local-first/focus";
 
 type Preset = { label: string; minutes: number; };
 
@@ -72,6 +73,8 @@ export default function ExperienceFocus() {
   const completeRef = useRef<() => void>(() => {});
   const sessionStartedRef = useRef(false);
   const completionHandledRef = useRef(false);
+  const restoringRef = useRef(false);
+  const endAtRef = useRef<number | null>(null);
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
@@ -91,26 +94,51 @@ export default function ExperienceFocus() {
       if (!mounted) return;
       if (!user) { router.push("/auth/login"); return; }
       setUserId(user.id);
-      const today = new Date().toDateString();
-      try {
-        const stats = JSON.parse(localStorage.getItem(`focus_stats_${user.id}_${today}`) || '{"sessions":0,"minutes":0}');
-        setSessionsToday(Number(stats.sessions) || 0);
-        setTotalFocusToday(Number(stats.minutes) || 0);
-      } catch {
-        setSessionsToday(0);
-        setTotalFocusToday(0);
+      const today = new Date().toISOString().slice(0, 10);
+      const [stats, saved] = await Promise.all([readFocusDailyStats(user.id, today), readFocusSession(user.id)]);
+      if (!mounted) return;
+      setSessionsToday(stats.sessions);
+      setTotalFocusToday(stats.minutes);
+      if (saved) {
+        restoringRef.current = true;
+        const presetIndex = Math.max(0, Math.min(PRESETS.length - 1, saved.presetIndex));
+        const custom = Math.max(1, Math.min(120, saved.customMinutes || 30));
+        const elapsed = saved.isRunning && saved.startedAt ? Math.max(0, Math.floor((Date.now() - saved.startedAt) / 1000)) : 0;
+        const remaining = Math.max(0, saved.remainingSeconds - elapsed);
+        setSelectedPreset(presetIndex);
+        setCustomMinutes(custom);
+        setTimeLeft(saved.isFinished ? 0 : remaining);
+        setIsFinished(saved.isFinished || (saved.isRunning && remaining === 0));
+        setIsRunning(saved.isRunning && remaining > 0);
+        sessionStartedRef.current = saved.isRunning;
+        completionHandledRef.current = saved.isFinished;
+        endAtRef.current = saved.isRunning && remaining > 0 ? Date.now() + remaining * 1000 : null;
+        if (saved.isRunning && remaining === 0) completionHandledRef.current = false;
       }
     })();
     return () => { mounted = false; };
   }, [router, supabase]);
 
   useEffect(() => {
+    if (restoringRef.current) {
+      restoringRef.current = false;
+      return;
+    }
     setTimeLeft(totalSeconds);
     setIsRunning(false);
     setIsFinished(false);
+    endAtRef.current = null;
     sessionStartedRef.current = false;
     completionHandledRef.current = false;
     if (intervalRef.current) clearInterval(intervalRef.current);
+    if (userId) {
+      const snapshot: FocusSessionSnapshot = {
+        presetIndex: selectedPreset, customMinutes, remainingSeconds: totalSeconds,
+        durationSeconds: totalSeconds, isRunning: false, startedAt: null, isFinished: false,
+        updatedAt: new Date().toISOString(),
+      };
+      void saveFocusSession(userId, snapshot).catch(error => console.error("[Focus] local reset persistence failed:", error));
+    }
   }, [totalSeconds]);
 
   useEffect(() => {
@@ -118,9 +146,11 @@ export default function ExperienceFocus() {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
+    if (endAtRef.current === null) endAtRef.current = Date.now() + timeLeft * 1000;
     intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => Math.max(0, prev - 1));
-    }, 1000);
+      const remaining = Math.max(0, Math.ceil(((endAtRef.current ?? Date.now()) - Date.now()) / 1000));
+      setTimeLeft(remaining);
+    }, 250);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isRunning]);
 
@@ -134,15 +164,22 @@ export default function ExperienceFocus() {
 
   async function handleSessionComplete() {
     const focusMinutes = selectedPreset === 4 ? customMinutes : preset.minutes;
-    const today = new Date().toDateString();
-    let stats = { sessions: 0, minutes: 0 };
-    try { stats = JSON.parse(localStorage.getItem(`focus_stats_${userId}_${today}`) || '{"sessions":0,"minutes":0}'); } catch { /* use defaults */ }
-    const newStats = { sessions: (Number(stats.sessions) || 0) + 1, minutes: (Number(stats.minutes) || 0) + focusMinutes };
-    try {
-      localStorage.setItem(`focus_stats_${userId}_${today}`, JSON.stringify(newStats));
-    } catch {
-      // Keep this session usable when browser storage is unavailable.
+    const today = new Date().toISOString().slice(0, 10);
+    let newStats = { sessions: sessionsToday + 1, minutes: totalFocusToday + focusMinutes };
+    if (userId) {
+      try {
+        const stats = await readFocusDailyStats(userId, today);
+        newStats = { sessions: stats.sessions + 1, minutes: stats.minutes + focusMinutes };
+        await saveFocusDailyStats(userId, today, newStats);
+        await saveFocusSession(userId, {
+          presetIndex: selectedPreset, customMinutes, remainingSeconds: 0, durationSeconds: totalSeconds,
+          isRunning: false, startedAt: null, isFinished: true, updatedAt: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error("[Focus] durable completion save failed:", error);
+      }
     }
+    endAtRef.current = null;
     setSessionsToday(newStats.sessions);
     setTotalFocusToday(newStats.minutes);
 
@@ -183,6 +220,26 @@ export default function ExperienceFocus() {
       completionHandledRef.current = false;
     }
     const nextRunning = !isRunning;
+    if (nextRunning) {
+      const startingSeconds = isFinished ? totalSeconds : timeLeft;
+      setTimeLeft(startingSeconds);
+      setIsFinished(false);
+      endAtRef.current = Date.now() + startingSeconds * 1000;
+      if (userId) void saveFocusSession(userId, {
+        presetIndex: selectedPreset, customMinutes, remainingSeconds: startingSeconds,
+        durationSeconds: totalSeconds, isRunning: true, startedAt: Date.now(), isFinished: false,
+        updatedAt: new Date().toISOString(),
+      }).catch(error => console.error("[Focus] start persistence failed:", error));
+    } else {
+      const remaining = endAtRef.current === null ? timeLeft : Math.max(0, Math.ceil((endAtRef.current - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      endAtRef.current = null;
+      if (userId) void saveFocusSession(userId, {
+        presetIndex: selectedPreset, customMinutes, remainingSeconds: remaining,
+        durationSeconds: totalSeconds, isRunning: false, startedAt: null, isFinished: false,
+        updatedAt: new Date().toISOString(),
+      }).catch(error => console.error("[Focus] pause persistence failed:", error));
+    }
     setIsRunning(nextRunning);
     if (nextRunning && !sessionStartedRef.current) {
       sessionStartedRef.current = true;
@@ -199,8 +256,14 @@ export default function ExperienceFocus() {
     setIsRunning(false);
     setIsFinished(false);
     setTimeLeft(totalSeconds);
+    endAtRef.current = null;
     sessionStartedRef.current = false;
     completionHandledRef.current = false;
+    if (userId) void saveFocusSession(userId, {
+      presetIndex: selectedPreset, customMinutes, remainingSeconds: totalSeconds,
+      durationSeconds: totalSeconds, isRunning: false, startedAt: null, isFinished: false,
+      updatedAt: new Date().toISOString(),
+    }).catch(error => console.error("[Focus] reset persistence failed:", error));
   };
 
   const requestNotificationPermission = () => {
