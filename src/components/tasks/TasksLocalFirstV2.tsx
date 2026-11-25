@@ -81,8 +81,8 @@ export default function TasksLocalFirstV2() {
       if (profile && activeUserRef.current === id) { setXp(profile.xp ?? 0); setLevel(profile.level ?? 1); }
     } catch (error) {
       console.error("[TasksLocalFirst] background refresh failed", error);
-      if (subjects.length === 0 && tasks.length === 0) notify("Your saved local workspace is available while offline.");
-    } finally { setRefreshing(false); }
+      if (activeUserRef.current === id && subjects.length === 0 && tasks.length === 0) notify("Your saved local workspace is available while offline.");
+    } finally { if (activeUserRef.current === id) setRefreshing(false); }
   }, [loadLocal, notify, subjects.length, supabase, tasks.length]);
 
   useEffect(() => {
@@ -132,6 +132,7 @@ export default function TasksLocalFirstV2() {
     const id = crypto.randomUUID();
     try {
       const subject = await localSubjects.save({ id, userId, name });
+      if (activeUserRef.current !== userId) return;
       setSubjects(prev => [...prev, { id: subject.id, name: subject.name }]); setNewSubject(""); notify("Subject saved on this device.");
       if (navigator.onLine) void offlineSync.syncAll();
     } catch (error) { console.error(error); notify("Couldn't save that subject."); }
@@ -142,6 +143,7 @@ export default function TasksLocalFirstV2() {
     const id = crypto.randomUUID();
     try {
       const task = await localTasks.create({ id, userId, subject_id: subjectId, title, completed: false });
+      if (activeUserRef.current !== userId) return;
       setTasks(prev => [...prev, { id: task.id, subject_id: task.subject_id, title: task.title, completed: false }]); setNewTasks(prev => ({ ...prev, [subjectId]: "" })); notify("Task saved on this device.");
       if (navigator.onLine) void offlineSync.syncAll();
     } catch (error) { console.error(error); notify("Couldn't save that task."); }
@@ -150,7 +152,7 @@ export default function TasksLocalFirstV2() {
   const completeTask = async (task: Task) => {
     if (task.completed || !userId) return;
     try {
-      const updated = await localTasks.complete(task.id, userId); if (!updated) return;
+      const updated = await localTasks.complete(task.id, userId); if (!updated || activeUserRef.current !== userId) return;
       setTasks(prev => prev.map(item => item.id === task.id ? { ...item, completed: true } : item));
       const [xpState] = await Promise.all([awardXp(userId, 10, `task-complete:${task.id}`), recordStudyDay(userId)]);
       if (activeUserRef.current !== userId) return;
@@ -167,7 +169,7 @@ export default function TasksLocalFirstV2() {
 
   const deleteTask = async (taskId: string) => {
     if (!userId) return;
-    try { await localTasks.remove(taskId, userId); setTasks(prev => prev.filter(task => task.id !== taskId)); notify("Task deleted locally."); if (navigator.onLine) void offlineSync.syncAll(); }
+    try { await localTasks.remove(taskId, userId); if (activeUserRef.current !== userId) return; setTasks(prev => prev.filter(task => task.id !== taskId)); notify("Task deleted locally."); if (navigator.onLine) void offlineSync.syncAll(); }
     catch (error) { console.error(error); notify("Couldn't delete that task."); }
   };
 
@@ -176,6 +178,7 @@ export default function TasksLocalFirstV2() {
     try {
       for (const task of tasks.filter(item => item.subject_id === subjectId)) await localTasks.remove(task.id, userId);
       await localSubjects.remove(subjectId, userId);
+      if (activeUserRef.current !== userId) return;
       setTasks(prev => prev.filter(task => task.subject_id !== subjectId)); setSubjects(prev => prev.filter(subject => subject.id !== subjectId));
       notify("Subject deleted locally."); if (navigator.onLine) void offlineSync.syncAll();
     } catch (error) { console.error(error); notify("Couldn't delete that subject."); }
