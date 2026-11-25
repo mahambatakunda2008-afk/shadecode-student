@@ -35,6 +35,7 @@ function buildDocument(files: WebFile[]) {
 export default function WebCompLabWorkspace() {
   const [userId, setUserId] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
+  const lastUserIdRef = useRef<string | null>(null);
   const storageKey = userId ? `${STORAGE}${userId}` : null;
   const [files, setFiles] = useState<WebFile[]>(START);
   const [active, setActive] = useState<WebPath>("index.html");
@@ -51,14 +52,18 @@ export default function WebCompLabWorkspace() {
 
   useEffect(() => {
     let active = true;
-    void supabase.auth.getSession().then(({ data }) => { if (active) setUserId(data.session?.user.id ?? null); });
+    void supabase.auth.getSession().then(({ data }) => { if (active) { const id = data.session?.user.id ?? null; lastUserIdRef.current = id; setUserId(id); } });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user.id ?? null);
-      setFiles(START);
-      setActive("index.html");
-      setPreview("");
-      setSaved(false);
-      setConsoleLines([]);
+      const nextUserId = session?.user.id ?? null;
+      if (lastUserIdRef.current !== nextUserId) {
+        lastUserIdRef.current = nextUserId;
+        setFiles(START);
+        setActive("index.html");
+        setPreview("");
+        setSaved(false);
+        setConsoleLines([]);
+      }
+      setUserId(nextUserId);
     });
     return () => { active = false; subscription.unsubscribe(); };
   }, [supabase]);
