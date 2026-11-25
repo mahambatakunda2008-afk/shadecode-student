@@ -311,3 +311,10 @@
 @media (max-width: 640px) { .dashboard-goal-streak-row { grid-template-columns: minmax(0, 1fr); } }
 .dashboard-momentum { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 .dashboard-grid-single { grid-template-columns: minmax(0, 1fr); }
+
+/* Keep the dashboard's primary and recovery actions visibly keyboard-reachable. */
+.dashboard-primary-action:focus-visible,
+.dashboard-outline-action:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
