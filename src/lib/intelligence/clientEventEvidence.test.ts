@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sanitizeClientLearningEvidenceMetadata } from "./clientEventEvidence";
+import { learningEventToObservation } from "./learningObservation";
+import { normalizeLearningEvent } from "./learningEvents";
 
 describe("client learning event evidence boundary", () => {
   it("removes browser-supplied correctness, scores and trust claims", () => {
@@ -32,6 +34,30 @@ describe("client learning event evidence boundary", () => {
       attemptId: "attempt-123",
       aggregateOnly: true,
     });
+  });
+
+  it("cannot turn a forged browser correctness claim into a mastery observation", () => {
+    const normalized = normalizeLearningEvent({
+      userId: "learner-1",
+      source: "server",
+      sourceEventId: "forged-attempt",
+      type: "question.attempted",
+      subjectId: "physics",
+      topicId: "Kinematics",
+      metadata: sanitizeClientLearningEvidenceMetadata({
+        correct: true,
+        percentage: 100,
+        score: 10,
+        maxScore: 10,
+        verified: true,
+        serverVerified: true,
+      }),
+    });
+
+    expect(normalized.status).toBe("accepted");
+    if (normalized.status === "accepted") {
+      expect(learningEventToObservation(normalized.event)).toBeNull();
+    }
   });
 
   it("preserves safe activity metadata and leaves absent metadata absent", () => {
