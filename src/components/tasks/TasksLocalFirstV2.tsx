@@ -33,6 +33,7 @@ export default function TasksLocalFirstV2() {
   const [refreshing, setRefreshing] = useState(false);
   const [toast, setToast] = useState("");
   const toastTimerRef = useRef<number | null>(null);
+  const activeUserRef = useRef<string | null>(null);
 
   const notify = useCallback((message: string) => {
     if (toastTimerRef.current !== null) window.clearTimeout(toastTimerRef.current);
@@ -49,9 +50,11 @@ export default function TasksLocalFirstV2() {
 
   const loadLocal = useCallback(async (id: string) => {
     const [localSubjectRows, localTaskRows, localXp] = await Promise.all([localSubjects.list(id), localTasks.list(id), getXp(id)]);
+    if (activeUserRef.current !== id) return;
     setSubjects(toSubjects(localSubjectRows));
     setTasks(toTasks(localTaskRows));
-    if (localXp) { setXp(localXp.totalXp); setLevel(localXp.level); }
+    setXp(localXp?.totalXp ?? 0);
+    setLevel(localXp?.level ?? 1);
   }, []);
 
   const refreshFromServer = useCallback(async (id: string) => {
@@ -75,7 +78,7 @@ export default function TasksLocalFirstV2() {
         await localFirstStore.hydrate({ id: task.id, entity: "task", userId: id, payload: { id: task.id, userId: id, subject_id: task.subject_id, title: task.title, completed: task.completed, lastUpdated: new Date().toISOString(), synced: true }, updatedAt: Date.now(), deviceId: "server", version: 0 });
       }
       await loadLocal(id);
-      if (profile) { setXp(profile.xp ?? 0); setLevel(profile.level ?? 1); }
+      if (profile && activeUserRef.current === id) { setXp(profile.xp ?? 0); setLevel(profile.level ?? 1); }
     } catch (error) {
       console.error("[TasksLocalFirst] background refresh failed", error);
       if (subjects.length === 0 && tasks.length === 0) notify("Your saved local workspace is available while offline.");
@@ -83,20 +86,38 @@ export default function TasksLocalFirstV2() {
   }, [loadLocal, notify, subjects.length, supabase, tasks.length]);
 
   useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/auth/login"); return; }
-      if (cancelled) return;
-      setUserId(user.id);
-      await loadLocal(user.id);
-      if (!cancelled) setLoading(false);
-      void refreshFromServer(user.id);
-    })().catch(error => {
-      console.error("[TasksLocalFirst] load failed", error);
-      if (!cancelled) { setLoading(false); notify("Your local workspace could not be opened."); }
+    let active = true;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user.id ?? null;
+      if (activeUserRef.current === nextUserId) return;
+      activeUserRef.current = nextUserId;
+      setUserId(nextUserId);
+      setSubjects([]);
+      setTasks([]);
+      setXp(0);
+      setLevel(1);
+      setNewSubject("");
+      setNewTasks({});
+      setRefreshing(false);
+      setLoading(Boolean(nextUserId));
+      if (!nextUserId) {
+        setLoading(false);
+        router.push("/auth/login");
+        return;
+      }
+      void loadLocal(nextUserId).then(() => {
+        if (!active || activeUserRef.current !== nextUserId) return;
+        setLoading(false);
+        void Promise.resolve().then(() => refreshFromServer(nextUserId));
+      }).catch(error => {
+        console.error("[TasksLocalFirst] load failed", error);
+        if (active && activeUserRef.current === nextUserId) {
+          setLoading(false);
+          notify("Your local workspace could not be opened.");
+        }
+      });
     });
-    return () => { cancelled = true; };
+    return () => { active = false; subscription.unsubscribe(); };
   }, [loadLocal, notify, refreshFromServer, router, supabase]);
 
   useEffect(() => {
@@ -132,6 +153,7 @@ export default function TasksLocalFirstV2() {
       const updated = await localTasks.complete(task.id, userId); if (!updated) return;
       setTasks(prev => prev.map(item => item.id === task.id ? { ...item, completed: true } : item));
       const [xpState] = await Promise.all([awardXp(userId, 10, `task-complete:${task.id}`), recordStudyDay(userId)]);
+      if (activeUserRef.current !== userId) return;
       setXp(xpState.payload.totalXp); setLevel(xpState.payload.level);
       void taskCompletedEvent(task.id, task.subject_id, {
         xpEarned: 10,
