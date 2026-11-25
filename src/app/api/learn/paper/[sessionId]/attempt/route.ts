@@ -114,7 +114,7 @@ function findBlock(plan: Plan, blockId: string) {
 
 const cleanTopic = canonicalLabel;
 
-async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block, verdict: EvaluationVerdict, attemptNo: number, paperScope: PaperScope | null, evidenceOverride?: number) {
+async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block, verdict: EvaluationVerdict, attemptNo: number, paperScope: PaperScope | null, clientActionId: string, evidenceOverride?: number) {
   const subject = cleanTopic(plan.subject || "Paper Study") || "Paper Study";
   // Self-check blocks carry the exact verified subsection: record one row for it instead of one per outcome sentence.
   const exact = (block as Block & { curriculum?: { syllabusId: string; topicKey: string; title: string } }).curriculum;
@@ -134,21 +134,31 @@ async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block,
       .eq("topic", topic)
       .maybeSingle();
 
-    const { row, revisionPriority } = projectPaperSignal(existing, verdict, now, evidenceOverride);
+    const { revisionPriority } = projectPaperSignal(existing, verdict, now, evidenceOverride);
 
     const curriculumLink = exact
       ? { syllabus_id: exact.syllabusId, curriculum_topic_key: exact.topicKey }
       : await resolveCurriculumLink(auth.supabase, subject, topic, plan.level, paperScope);
 
-    await auth.supabase.from("topic_mastery").upsert({
-      user_id: auth.user.id,
-      subject,
-      topic,
-      ...row,
-      ...curriculumLink,
-    }, { onConflict: "user_id,subject,topic" });
+    // The canonical projection ledger makes each topic update idempotent. A
+    // retry can safely repair a partially completed checkpoint without
+    // incrementing mastery twice for topics already projected.
+    const { error: projectionError } = await auth.supabase.rpc("project_canonical_learning_observation", {
+      p_user_id: auth.user.id,
+      p_event_id: `paper-learning:${clientActionId}:${topic}`,
+      p_subject: subject,
+      p_topic: topic,
+      p_syllabus_id: curriculumLink.syllabus_id ?? null,
+      p_curriculum_topic_key: curriculumLink.curriculum_topic_key ?? null,
+      p_evidence_score: evidenceOverride ?? VERDICT_SCORE[verdict],
+      p_correct: verdict === "correct",
+      p_confidence: null,
+      p_response_seconds: null,
+      p_observed_at: now,
+    });
+    if (projectionError) throw projectionError;
 
-    await auth.supabase.from("revision_queue").upsert({
+    const { error: queueError } = await auth.supabase.from("revision_queue").upsert({
       user_id: auth.user.id,
       topic,
       subject,
@@ -156,24 +166,38 @@ async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block,
       source: "paper_learning",
       last_seen: now,
     }, { onConflict: "user_id,topic,subject" });
+    if (queueError) throw queueError;
   }
 
-  await auth.supabase.from("learning_events").insert({
-    user_id: auth.user.id,
-    type: "paper_checkpoint",
-    subject,
-    topic: topics[0] || cleanTopic(block.title || "paper checkpoint") || "Paper checkpoint",
-    score,
-    metadata: {
-      source: "paper_learning",
-      blockId: block.id,
-      attemptNo,
-      verdict,
-      concepts: topics,
-      level: plan.level || null,
-      board: plan.board || null,
-    },
-  });
+  const { data: existingEvent, error: eventLookupError } = await auth.supabase
+    .from("learning_events")
+    .select("id")
+    .eq("user_id", auth.user.id)
+    .eq("type", "paper_checkpoint")
+    .contains("metadata", { clientActionId })
+    .maybeSingle();
+  if (eventLookupError) {
+    console.error("[paper-learning] learning event lookup failed", eventLookupError);
+  } else if (!existingEvent) {
+    const { error: eventError } = await auth.supabase.from("learning_events").insert({
+      user_id: auth.user.id,
+      type: "paper_checkpoint",
+      subject,
+      topic: topics[0] || cleanTopic(block.title || "paper checkpoint") || "Paper checkpoint",
+      score,
+      metadata: {
+        source: "paper_learning",
+        blockId: block.id,
+        attemptNo,
+        verdict,
+        concepts: topics,
+        level: plan.level || null,
+        board: plan.board || null,
+        clientActionId,
+      },
+    });
+    if (eventError) console.error("[paper-learning] learning event insert failed", eventError);
+  }
 }
 
 export async function POST(req: Request, context: { params: Promise<{ sessionId: string }> }) {
@@ -203,28 +227,17 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     if (sessionError) return NextResponse.json({ error: "Couldn't load this learning session." }, { status: 500 });
     if (!session) return NextResponse.json({ error: "Learning session not found." }, { status: 404 });
 
+    let existingAction: { attempt_no: number; verdict: string; feedback: string | null; misconception: string | null; next_action: string | null } | null = null;
     if (action === "submit" && clientActionId) {
-      const { data: existingAction } = await auth.supabase
+      const { data, error } = await auth.supabase
         .from("paper_learning_attempts")
         .select("attempt_no,verdict,feedback,misconception,next_action")
         .eq("session_id", sessionId)
         .eq("user_id", auth.user.id)
         .eq("client_action_id", clientActionId)
         .maybeSingle();
-      if (existingAction) {
-        return NextResponse.json({
-          action: "submit",
-          verdict: existingAction.verdict,
-          feedback: existingAction.feedback || "",
-          misconception: existingAction.misconception || null,
-          nextAction: existingAction.next_action || null,
-          hint: null,
-          solution: existingAction.verdict === "correct" ? undefined : null,
-          attemptCount: existingAction.attempt_no,
-          completed: existingAction.verdict === "correct",
-          replayed: true,
-        });
-      }
+      if (error) return NextResponse.json({ error: "Couldn't verify the saved attempt. Please retry." }, { status: 503 });
+      existingAction = data;
     }
 
     const plan = session.learning_plan as Plan;
@@ -236,6 +249,37 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     const selfCheck = block?.interaction?.evaluationMode === "self_check";
     if (!block?.interaction?.prompt || !block.interaction.rubric || !block.interaction.modelAnswer) {
       return NextResponse.json({ error: "This checkpoint does not have enough evaluation data yet. Generate a new paper session." }, { status: 422 });
+    }
+
+    if (existingAction) {
+      if (existingAction.verdict !== "correct" && existingAction.verdict !== "partially_correct" && existingAction.verdict !== "incorrect") {
+        return NextResponse.json({ error: "The saved attempt has an invalid result. Please contact support." }, { status: 500 });
+      }
+      const savedVerdict = existingAction.verdict as EvaluationVerdict;
+      const progress = (session.progress && typeof session.progress === "object" ? session.progress : {}) as Record<string, unknown>;
+      const completed = Array.isArray(progress.completedBlockIds) ? progress.completedBlockIds.filter((id): id is string => typeof id === "string") : [];
+      const nextCompleted = savedVerdict === "correct" && !completed.includes(blockId) ? [...completed, blockId] : completed;
+      const nextProgress = { ...progress, completedBlockIds: nextCompleted, lastBlockId: blockId, lastVerdict: savedVerdict, updatedAt: new Date().toISOString() };
+      const { error: progressError } = await auth.supabase.from("paper_learning_sessions").update({ progress: nextProgress }).eq("id", sessionId).eq("user_id", auth.user.id);
+      if (progressError) return NextResponse.json({ error: "Your answer is saved, but session progress could not sync. Retry to finish saving it.", saved: true }, { status: 503 });
+      try {
+        await recordLearningSignal(auth, plan, block, savedVerdict, existingAction.attempt_no, readPaperScope(session.source_metadata), clientActionId!, selfCheck && selfRating ? RATING_EVIDENCE[selfRating].evidence : undefined);
+      } catch (signalError) {
+        console.error("[paper-learning] replay learning signal recovery failed", signalError);
+        return NextResponse.json({ error: "Your answer is saved, but learning evidence is still syncing. Retry to finish updating mastery.", saved: true, learningEvidencePending: true, replayed: true }, { status: 503 });
+      }
+      return NextResponse.json({
+        action: "submit",
+        verdict: savedVerdict,
+        feedback: existingAction.feedback || "",
+        misconception: existingAction.misconception || null,
+        nextAction: existingAction.next_action || null,
+        hint: null,
+        solution: savedVerdict === "correct" ? undefined : null,
+        attemptCount: existingAction.attempt_no,
+        completed: savedVerdict === "correct",
+        replayed: true,
+      });
     }
 
     const { data: previousAttempts } = await auth.supabase
@@ -335,7 +379,7 @@ Return ONLY JSON with:
       evaluation = graded;
     }
 
-    const attemptNo = submitCount + 1;
+    let attemptNo = submitCount + 1;
     const { error: attemptError } = await auth.supabase.from("paper_learning_attempts").insert({
       session_id: sessionId,
       user_id: auth.user.id,
@@ -353,20 +397,37 @@ Return ONLY JSON with:
       const { data: savedAction } = clientActionId
         ? await auth.supabase.from("paper_learning_attempts").select("attempt_no,verdict,feedback,misconception,next_action").eq("session_id", sessionId).eq("user_id", auth.user.id).eq("client_action_id", clientActionId).maybeSingle()
         : { data: null };
-      if (savedAction) return NextResponse.json({ action: "submit", verdict: savedAction.verdict, feedback: savedAction.feedback || "", misconception: savedAction.misconception || null, nextAction: savedAction.next_action || null, hint: null, solution: savedAction.verdict === "correct" ? undefined : null, attemptCount: savedAction.attempt_no, completed: savedAction.verdict === "correct", replayed: true });
-      return NextResponse.json({ error: "The attempt could not be saved, so mastery was not changed." }, { status: 500 });
+      if (savedAction) {
+        if (savedAction.verdict !== "correct" && savedAction.verdict !== "partially_correct" && savedAction.verdict !== "incorrect") {
+          return NextResponse.json({ error: "The saved attempt has an invalid result. Please contact support." }, { status: 500 });
+        }
+        evaluation = {
+          ...evaluation,
+          verdict: savedAction.verdict as EvaluationVerdict,
+          feedback: savedAction.feedback || "",
+          misconception: savedAction.misconception || "",
+          nextAction: savedAction.next_action || "",
+        };
+        attemptNo = savedAction.attempt_no;
+      } else {
+        return NextResponse.json({ error: "The attempt could not be saved, so mastery was not changed." }, { status: 500 });
+      }
     }
 
     const progress = (session.progress && typeof session.progress === "object" ? session.progress : {}) as Record<string, unknown>;
     const completed = Array.isArray(progress.completedBlockIds) ? progress.completedBlockIds.filter((id): id is string => typeof id === "string") : [];
     const nextCompleted = evaluation.verdict === "correct" && !completed.includes(blockId) ? [...completed, blockId] : completed;
     const nextProgress = { ...progress, completedBlockIds: nextCompleted, lastBlockId: blockId, lastVerdict: evaluation.verdict, updatedAt: new Date().toISOString() };
-    await auth.supabase.from("paper_learning_sessions").update({ progress: nextProgress }).eq("id", sessionId).eq("user_id", auth.user.id);
+    const { error: progressError } = await auth.supabase.from("paper_learning_sessions").update({ progress: nextProgress }).eq("id", sessionId).eq("user_id", auth.user.id);
+    if (progressError) {
+      return NextResponse.json({ error: "Your answer was saved, but session progress could not sync. Retry to finish saving it.", saved: true }, { status: 503 });
+    }
 
     try {
-      await recordLearningSignal(auth, plan, block, evaluation.verdict, attemptNo, readPaperScope(session.source_metadata), selfCheck && selfRating ? RATING_EVIDENCE[selfRating].evidence : undefined);
+      await recordLearningSignal(auth, plan, block, evaluation.verdict, attemptNo, readPaperScope(session.source_metadata), clientActionId!, selfCheck && selfRating ? RATING_EVIDENCE[selfRating].evidence : undefined);
     } catch (signalError) {
       console.error("[paper-learning] learning signal update failed", signalError);
+      return NextResponse.json({ error: "Your answer is saved, but learning evidence is still syncing. Retry to finish updating mastery.", saved: true, learningEvidencePending: true }, { status: 503 });
     }
 
     return NextResponse.json({

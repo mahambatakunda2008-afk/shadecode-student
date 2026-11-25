@@ -51,7 +51,8 @@ function pageTextFromItems(items: Array<Record<string, unknown>>) {
 
 export async function extractPdfPages(file: File): Promise<PaperPage[]> {
   const data = new Uint8Array(await file.arrayBuffer());
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const { loadPaperPdfRuntime } = await import("@/lib/learn/paperPdfRuntime");
+  const pdfjs = await loadPaperPdfRuntime();
   const loadingTask = pdfjs.getDocument({ data });
   const pdf = await loadingTask.promise;
   const pages: PaperPage[] = [];
