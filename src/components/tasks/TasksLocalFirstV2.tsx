@@ -33,7 +33,7 @@ export default function TasksLocalFirstV2() {
   const [refreshing, setRefreshing] = useState(false);
   const [toast, setToast] = useState("");
   const toastTimerRef = useRef<number | null>(null);
-  const activeUserRef = useRef<string | null>(null);
+  const activeUserRef = useRef<string | null | undefined>(undefined);
 
   const notify = useCallback((message: string) => {
     if (toastTimerRef.current !== null) window.clearTimeout(toastTimerRef.current);
