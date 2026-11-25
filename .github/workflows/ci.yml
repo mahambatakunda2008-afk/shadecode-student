@@ -93,6 +93,50 @@ jobs:
           psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 \
             --file supabase/tests/security_execute_grants_contract.sql
 
+  generated_lesson_sync_contract:
+    name: Generated lesson sync database contract
+    if: github.event_name == 'pull_request' && github.head_ref == 'fix/sync-lesson-topic-preserve-progress-mainline'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shadecode_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d shadecode_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Prepare isolated lesson sync schema
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 --file supabase/tests/fixtures/sync_generated_lesson_schema.sql
+      - name: Apply current progress-preserving sync contract
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 --file supabase/migrations/20261122170000_sync_lesson_progress_without_overwriting_content.sql
+      - name: Apply generated lesson topic migration
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 --file supabase/migrations/20261125160000_sync_generated_lesson_topic_preserve_progress.sql
+      - name: Verify topic, difficulty and execute-grant contract
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 --file supabase/tests/sync_generated_lesson_topic_preserves_progress.test.sql
+      - name: Verify progress-only content preservation and delete protection
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d shadecode_test --set ON_ERROR_STOP=1 --file supabase/tests/offline_progress_sync_preserves_lesson.test.sql
+
   verify:
     name: Typecheck, lint, test, build
     runs-on: ubuntu-latest
