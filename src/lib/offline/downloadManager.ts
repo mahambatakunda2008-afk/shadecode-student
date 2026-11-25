@@ -236,8 +236,9 @@ class DownloadManager {
     return quiz !== null;
   }
 
-  async deleteLesson(lessonId: string): Promise<void> {
-    await offlineStorage.deleteLesson(lessonId);
+  async deleteLesson(lessonId: string, userId: string): Promise<void> {
+    if (!userId) throw new Error("Deleting an offline lesson requires its authenticated owner");
+    await offlineStorage.deleteLesson(lessonId, userId);
     this.activeDownloads.delete(`${lessonId}-lesson`);
   }
 
