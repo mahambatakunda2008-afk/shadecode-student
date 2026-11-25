@@ -47,6 +47,6 @@ Data-cost rules (students pay for data): skipped on data-saver and 2G, at most o
 
 - JavaScript and the Shade interpreter run locally.
 - TypeScript uses a lazy same-origin Next.js chunk and is available offline after its first successful online load.
-- SQL uses the locally bundled `sql.js` package. The WASM binary is copied from the pinned npm dependency into `public/runtimes/sql-wasm.wasm` during dev/build preparation. The service worker caches same-origin WASM assets after first successful fetch, so SQL is available offline after its first successful online execution.
+- SQL uses the pinned `sql.js` package's browser distribution, copied with its WASM binary into `public/runtimes/` during dev/build preparation. The runtime JavaScript is loaded as a same-origin script to avoid bundling its Node-only `fs` branch into the browser graph. The service worker caches same-origin JavaScript and WASM assets after first successful fetch, so SQL is available offline after its first successful online execution.
 - Python/Pyodide still uses a remote runtime distribution and remains online-dependent. It needs a separate learner-controlled runtime pack because its assets are substantially larger.
 - First-ever execution of TypeScript or SQL while already offline is not guaranteed unless the runtime was loaded online beforehand.
