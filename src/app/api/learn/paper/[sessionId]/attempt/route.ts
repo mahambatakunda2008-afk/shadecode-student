@@ -378,7 +378,7 @@ Return ONLY JSON with:
       evaluation = graded;
     }
 
-    const attemptNo = submitCount + 1;
+    let attemptNo = submitCount + 1;
     const { error: attemptError } = await auth.supabase.from("paper_learning_attempts").insert({
       session_id: sessionId,
       user_id: auth.user.id,
@@ -396,8 +396,21 @@ Return ONLY JSON with:
       const { data: savedAction } = clientActionId
         ? await auth.supabase.from("paper_learning_attempts").select("attempt_no,verdict,feedback,misconception,next_action").eq("session_id", sessionId).eq("user_id", auth.user.id).eq("client_action_id", clientActionId).maybeSingle()
         : { data: null };
-      if (savedAction) return NextResponse.json({ action: "submit", verdict: savedAction.verdict, feedback: savedAction.feedback || "", misconception: savedAction.misconception || null, nextAction: savedAction.next_action || null, hint: null, solution: savedAction.verdict === "correct" ? undefined : null, attemptCount: savedAction.attempt_no, completed: savedAction.verdict === "correct", replayed: true });
-      return NextResponse.json({ error: "The attempt could not be saved, so mastery was not changed." }, { status: 500 });
+      if (savedAction) {
+        if (savedAction.verdict !== "correct" && savedAction.verdict !== "partially_correct" && savedAction.verdict !== "incorrect") {
+          return NextResponse.json({ error: "The saved attempt has an invalid result. Please contact support." }, { status: 500 });
+        }
+        evaluation = {
+          ...evaluation,
+          verdict: savedAction.verdict as EvaluationVerdict,
+          feedback: savedAction.feedback || "",
+          misconception: savedAction.misconception || "",
+          nextAction: savedAction.next_action || "",
+        };
+        attemptNo = savedAction.attempt_no;
+      } else {
+        return NextResponse.json({ error: "The attempt could not be saved, so mastery was not changed." }, { status: 500 });
+      }
     }
 
     const progress = (session.progress && typeof session.progress === "object" ? session.progress : {}) as Record<string, unknown>;
