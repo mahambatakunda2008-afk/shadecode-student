@@ -10,6 +10,13 @@ declare
   v_lesson uuid := gen_random_uuid();
   v_result jsonb;
 begin
+  if has_function_privilege('public', 'public.apply_sync_mutation(text,text,text,jsonb,bigint,bigint,text)', 'execute') then
+    raise exception 'PUBLIC must not execute apply_sync_mutation';
+  end if;
+  if not has_function_privilege('authenticated', 'public.apply_sync_mutation(text,text,text,jsonb,bigint,bigint,text)', 'execute') then
+    raise exception 'authenticated must execute apply_sync_mutation';
+  end if;
+
   select l.user_id,l.subject_id
   into v_user,v_subject
   from public.learn_lessons l
