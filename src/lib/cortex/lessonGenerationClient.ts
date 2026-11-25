@@ -1,5 +1,6 @@
 import { createGenerationJob, getActiveGenerationJobs, getGenerationJob, getGenerationJobs, markInterruptedJobsForRetry, restoreGenerationJob, retryGenerationJob, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
 import { offlineStorage } from "@/lib/offline/storage";
+import { offlineSync } from "@/lib/offline/sync";
 import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
 import { getLocalCurriculumGrounding, readLocalCurriculumGrounding, readLocalCurriculumGroundingData } from "@/lib/cortex/localCurriculumGrounding";
 import { readOfflineCurriculumPack, buildOfflineCurriculumScope } from "@/lib/cortex/offlineCurriculumPack";
@@ -613,6 +614,7 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
     id: localOnly.id,
     title: localOnly.title,
     subject: job.request.subject,
+    ownerUserId: await offlineSync.getAuthenticatedUserId() ?? undefined,
     description: `Cloud save failed. This generated lesson is stored on this device only. Persistence error: ${persistenceError.slice(0, 240)}`,
     blocks: localOnly.blocks,
     difficulty: job.request.difficulty,
