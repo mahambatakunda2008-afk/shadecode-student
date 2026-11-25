@@ -161,25 +161,30 @@ export default function LearnPageClientV2() {
             downloadedAt: new Date().toISOString(),
             size: JSON.stringify(recovered).length,
           });
-          await offlineSync.queueMutation({
-            operation: "create",
-            store: "learn_lessons",
-            payload: {
-              id: recovered.id,
-              user_id: userId,
-              subject_id: recovered.subjectId,
-              topic: recovered.topic,
-              title: recovered.title,
-              description: recovered.description,
-              difficulty: recovered.difficulty,
-              progress: recovered.progress,
-              blocks: recovered.blocks,
-            },
-            clientVersion: 1,
-            baseVersion: 0,
-          });
+          try {
+            await offlineSync.queueMutation({
+              operation: "create",
+              store: "learn_lessons",
+              payload: {
+                id: recovered.id,
+                user_id: userId,
+                subject_id: recovered.subjectId,
+                topic: recovered.topic,
+                title: recovered.title,
+                description: recovered.description,
+                difficulty: recovered.difficulty,
+                progress: recovered.progress,
+                blocks: recovered.blocks,
+              },
+              clientVersion: 1,
+              baseVersion: 0,
+            });
+          } catch (queueError) {
+            // The durable lesson copy is already saved. Auto-sync can rediscover it.
+            console.error("[Learn] Immediate recovery queue failed; retaining local copy:", queueError);
+          }
           if (navigator.onLine) void offlineSync.syncAll();
-          setGenerateError("Cloud saving failed, but your lesson is safe on this device and queued for automatic sync.");
+          setGenerateError("Cloud saving failed, but your lesson is safe on this device and will retry cloud sync.");
           router.push(`/learn/${recovered.id}`);
           return;
         } catch (saveError) {
