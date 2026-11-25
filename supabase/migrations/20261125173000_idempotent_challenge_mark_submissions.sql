@@ -101,4 +101,4 @@ end;
 $$;
 
 revoke all on function public.record_challenge_mark_submission(uuid, uuid, uuid, jsonb, jsonb, jsonb) from public, anon, authenticated;
-grant execute on function public.record_challenge_mark_submission(uuid, uuid, uuid, jsonb, jsonb) to service_role;
+grant execute on function public.record_challenge_mark_submission(uuid, uuid, uuid, jsonb, jsonb, jsonb) to service_role;
