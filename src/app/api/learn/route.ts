@@ -155,7 +155,7 @@ export async function GET(req: Request) {
         .select("status").eq("id", lessonId).eq("user_id", user.id).maybeSingle();
       if (generationJobError) console.warn("[LEARN] generation status lookup failed for lesson detail", { lessonId, error: generationJobError.message });
       if (generationJob && generationJob.status !== "complete") {
-        return NextResponse.json({ error: "This lesson is still being prepared. Its saved work is preserved and can be resumed." }, { status: 409 });
+        return NextResponse.json({ error: "This lesson is not complete yet. Its saved work is preserved; return to Learn to resume or retry generation." }, { status: 409 });
       }
       const response: LearnDetailResponse = { lesson: toLearnLesson(lessonData as LearnLessonRow, subjectById) }; return NextResponse.json(response);
     }
