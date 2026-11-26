@@ -352,7 +352,6 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // about how to approach exams. Generic advice can accompany a question but cannot
   // substitute for one.
   const examBlocks = normalized.filter(block => block.normalizedType === "exam");
-  const checkpointBlocks = normalized.filter(block => block.normalizedType === "checkpoint");
   const hasAssessmentTask = practiceBlocks.some(block =>
     /(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*\d+\s*:|(?:^|\s)\d+[.)]\s+/im.test(block.content),
   ) || checkpointBlocks.some(block =>
