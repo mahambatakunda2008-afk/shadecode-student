@@ -188,7 +188,7 @@ export default function LearnPageResilient() {
     if (generationJob?.status !== "complete" || !generationJob.result || typeof generationJob.result !== "object" || !("id" in generationJob.result)) return;
     const result = generationJob.result as { id: string; title: string };
     setLessons(current => current.some(item => item.id === result.id) ? current : [{
-      id: result.id, title: result.title, subject: generationJob.request.subject, subjectId: "",
+      id: result.id, title: normalizeGeneratedLessonTitle(result.title, generationJob.request.prompt), subject: generationJob.request.subject, subjectId: "",
       topic: generationJob.request.prompt, description: `A complete ${generationJob.request.difficulty} lesson on ${generationJob.request.prompt}`,
       difficulty: generationJob.request.difficulty, progress: 0, completed: false,
     }, ...current]);

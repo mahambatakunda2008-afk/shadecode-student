@@ -19,6 +19,8 @@ import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
+import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
+import { buildLearnerProfileGenerationHints } from "@/lib/curriculum/user-profile";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -149,12 +151,32 @@ export async function GET(req: Request) {
       const { data: lessonData, error: lessonError } = await supabase.from("learn_lessons").select("id, subject_id, topic, title, description, difficulty, progress, updated_at, blocks").eq("user_id", user.id).eq("id", lessonId).maybeSingle();
       if (lessonError) return NextResponse.json({ error: "Unable to load lesson." }, { status: 500 });
       if (!lessonData) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
+      const { data: generationJob, error: generationJobError } = await supabase.from("cortex_generation_jobs")
+        .select("status").eq("id", lessonId).eq("user_id", user.id).maybeSingle();
+      if (generationJobError) console.warn("[LEARN] generation status lookup failed for lesson detail", { lessonId, error: generationJobError.message });
+      if (generationJob && generationJob.status !== "complete") {
+        return NextResponse.json({ error: "This lesson is not complete yet. Its saved work is preserved; return to Learn to resume or retry generation." }, { status: 409 });
+      }
       const response: LearnDetailResponse = { lesson: toLearnLesson(lessonData as LearnLessonRow, subjectById) }; return NextResponse.json(response);
     }
     const { data: allLessonData, error: allLessonsError } = await supabase.from("learn_lessons").select("id, subject_id, topic, title, description, difficulty, progress, updated_at, blocks").eq("user_id", user.id).order("updated_at", { ascending: false });
     if (allLessonsError) return NextResponse.json({ subjects: buildSubjectTabs(subjects, []), lessons: [], summary });
-    const allLessons = (allLessonData ?? []) as LearnLessonRow[]; const filtered = subjectId === "all" ? allLessons : allLessons.filter(l => l.subject_id === subjectId);
-    const response: LearnListResponse = { subjects: buildSubjectTabs(subjects, allLessons), lessons: filtered.map(l => toLearnLesson(l, subjectById)), summary }; return NextResponse.json(response);
+    const allLessons = (allLessonData ?? []) as LearnLessonRow[];
+    let visibleLessons = allLessons;
+    const lessonIds = allLessons.map(lesson => lesson.id);
+    if (lessonIds.length) {
+      const { data: generationJobs, error: generationJobsError } = await supabase.from("cortex_generation_jobs")
+        .select("id,status").eq("user_id", user.id).in("id", lessonIds);
+      if (generationJobsError) {
+        console.warn("[LEARN] generation status lookup failed for lesson list", { error: generationJobsError.message });
+      } else {
+        const statusByLessonId = new Map<string, string>((generationJobs ?? []).map(job => [String(job.id), String(job.status)] as [string, string]));
+        // In-progress/failed drafts are not lessons. Keep legacy lessons that predate durable jobs.
+        visibleLessons = allLessons.filter(lesson => !statusByLessonId.has(lesson.id) || statusByLessonId.get(lesson.id) === "complete");
+      }
+    }
+    const filtered = subjectId === "all" ? visibleLessons : visibleLessons.filter(l => l.subject_id === subjectId);
+    const response: LearnListResponse = { subjects: buildSubjectTabs(subjects, visibleLessons), lessons: filtered.map(l => toLearnLesson(l, subjectById)), summary }; return NextResponse.json(response);
   } catch (err: any) {
     log.apiFailure({ route: "/api/learn", method: "GET", error: err.message || String(err), userId: auth?.user?.id }); return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
@@ -205,15 +227,56 @@ export async function POST(req: Request) {
     const effectiveSubject = subjectAccess.subject;
     const resolvedSubject = { id: subjectAccess.subjectId, name: subjectAccess.subject };
     const validDifficulty: LessonDifficulty = ["easy", "medium", "hard"].includes(difficulty) ? difficulty : "medium";
+
+    // The sectioned Cortex path must use the learner's saved curriculum profile too.
+    // The old route trusted only request-body level/board fields, which the Learn UI
+    // did not send, so lessons silently lost the learner's actual study context.
+    const { data: curriculumProfile } = await supabase.from("profiles")
+      .select("study_level, education_stage, curriculum_board, qualification, syllabus_year, curriculum_profile")
+      .eq("id", user.id)
+      .maybeSingle();
+    const reportedCurriculum = buildLearnerProfileGenerationHints(curriculumProfile, effectiveSubject);
+    const effectiveLevel = typeof level === "string" && level.trim() ? level.trim() : reportedCurriculum.level;
+    const effectiveBoard = typeof body.examBoard === "string" && body.examBoard.trim() ? body.examBoard.trim() : reportedCurriculum.examBoard;
     const request = resolveLessonRequest({
       prompt: topic.trim(),
       subject: effectiveSubject,
       topic: topic.trim(),
-      level: typeof level === "string" ? level : undefined,
+      level: effectiveLevel || undefined,
       difficulty: validDifficulty,
       goal: typeof goal === "string" ? goal : undefined,
-      examBoard: typeof body.examBoard === "string" ? body.examBoard : undefined,
+      examBoard: effectiveBoard || undefined,
     });
+
+    // Prefer the exact verified syllabus identity when one has been configured.
+    // A missing or incomplete verified curriculum must not block general learning;
+    // the separately labelled profile hint is never promoted to official evidence.
+    let verifiedCurriculumContext = "";
+    try {
+      const curriculum = await resolveVerifiedCurriculumPromptContext(
+        user.id,
+        `${buildResolvedLessonPrompt(request)}\nmaster this request: "${request.topic}"`,
+      );
+      if (curriculum.status === "resolved") {
+        verifiedCurriculumContext = curriculum.promptContext;
+        if (curriculum.resolvedTopic?.trim()) request.topic = curriculum.resolvedTopic.trim();
+      } else if (curriculum.status === "blocked") {
+        console.info("[LEARN] verified curriculum unavailable; continuing with clearly labelled profile context", {
+          subject: effectiveSubject,
+          reason: curriculum.reason,
+        });
+      }
+    } catch (error) {
+      console.warn("[LEARN] verified curriculum lookup failed; continuing with profile context", {
+        subject: effectiveSubject,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    const learnerCurriculumContext = reportedCurriculum.promptContext;
+    const repairCurriculumContext = [
+      learnerCurriculumContext,
+      verifiedCurriculumContext ? `VERIFIED CURRICULUM EVIDENCE\n${verifiedCurriculumContext}` : "",
+    ].filter(Boolean).join("\n\n");
     const learnerTopicKey = normalizeLearnerTopic(effectiveSubject, request.topic);
     const shouldRecordLearnerRequest =
       body.generationMode !== "persist" &&
@@ -228,7 +291,7 @@ export async function POST(req: Request) {
         event_type: "request",
         outcome: "started",
         difficulty: validDifficulty,
-        metadata: { examBoard: typeof body.examBoard === "string" ? body.examBoard.slice(0, 80) : "", level: typeof level === "string" ? level.slice(0, 80) : "" },
+        metadata: { examBoard: request.examBoard?.slice(0, 80) ?? "", level: request.level?.slice(0, 80) ?? "" },
       }).catch((error) => {
         console.warn("[LEARN] request signal write failed; continuing generation", {
           topic: request.topic,
@@ -331,7 +394,7 @@ export async function POST(req: Request) {
           ).slice(0, request.broadTopic ? 36 : 28)
         : [];
       const minimumPersistBlocks = verifiedCurriculumFallback ? 10 : request.broadTopic ? 16 : 10;
-      const persistableCandidate = candidate ?? (
+      const persistableCandidateCandidate = candidate ?? (
         verifiedCurriculumFallback &&
         typeof generated.title === "string" &&
         generated.title.trim().length > 0 &&
@@ -339,7 +402,7 @@ export async function POST(req: Request) {
           ? { title: generated.title.trim().slice(0, 255), blocks: normalizedGeneratedBlocks }
           : null
       );
-      if (!persistableCandidate) {
+      if (!persistableCandidateCandidate) {
         console.info("[LEARN] persist rejected by server contract", {
           topic: request.topic,
           blockCount: normalizedGeneratedBlocks.length,
@@ -348,6 +411,10 @@ export async function POST(req: Request) {
         });
         return NextResponse.json({ error: "Generated lesson failed the server lesson contract.", retryable: true }, { status: 422 });
       }
+      const persistableCandidate = {
+        ...persistableCandidateCandidate,
+        title: normalizeGeneratedLessonTitle(persistableCandidateCandidate.title, request.topic),
+      };
 
       const quality = lessonQualityFailures(persistableCandidate, request).failures;
       if (quality.length > 0 && !verifiedCurriculumFallback) {
@@ -491,9 +558,7 @@ export async function POST(req: Request) {
           ? checkpoint.partial as Record<string, unknown>
           : {};
         const completedBlocks = Array.isArray(partial.blocks) ? partial.blocks : [];
-        const completedTitle = typeof partial.title === "string"
-          ? partial.title
-          : `Cortex lesson: ${request.topic}`;
+        const completedTitle = normalizeGeneratedLessonTitle(partial.title, request.topic);
         return NextResponse.json({
           sectionIndex: expectedSectionCount - 1,
           sectionCount: expectedSectionCount,
@@ -507,16 +572,19 @@ export async function POST(req: Request) {
 
       // The section lane must have a durable lesson draft before the first model
       // response arrives. This makes the initial section atomic with the job id
-      // and removes the create-job/create-draft race.
+      // and removes the create-job/create-draft race. Keep the first real lesson title
+      // stable across later section checkpoints instead of overwriting it with a draft label.
+      let existingDraftTitle = "";
       if (durableJobId && resolvedSubject.id) {
         const { data: existingDraft, error: draftLookupError } = await supabase.from("learn_lessons")
-          .select("id,blocks")
+          .select("id,title,blocks")
           .eq("id", durableJobId)
           .eq("user_id", user.id)
           .maybeSingle();
         if (draftLookupError) {
           return NextResponse.json({ error: "Unable to load the resumable lesson draft.", retryable: true }, { status: 500 });
         }
+        existingDraftTitle = typeof existingDraft?.title === "string" ? existingDraft.title : "";
         if (!existingDraft) {
           const { error: draftInsertError } = await supabase.from("learn_lessons")
             .insert({
@@ -563,7 +631,8 @@ export async function POST(req: Request) {
       const sectionPrompt = [
         `Generate section ${generationSectionIndex + 1} of ${generationSectionCount} for a coherent lesson.`,
         buildResolvedLessonPrompt(request),
-        buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+        buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty, verifiedCurriculumContext),
+        learnerCurriculumContext,
         learnerMemoryContext,
         learnerResearchContext,
         `SECTION JOB: ${sectionJob}`,
@@ -736,6 +805,9 @@ Repair only the defective section. Preserve correct material where possible. Do 
           retryable: true,
         }, { status: 503 });
       }
+      const durableLessonTitle = generationSectionIndex === 0
+        ? normalizeGeneratedLessonTitle(section.title, request.topic)
+        : normalizeGeneratedLessonTitle(existingDraftTitle, request.topic);
       const currentBlocks = [...priorBlocks, ...section.blocks];
 
       // Persist the lesson draft and durable Cortex checkpoint in one database transaction.
@@ -755,7 +827,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
             p_status: "partial",
             p_subject_id: resolvedSubject.id,
             p_stage: `section_${generationSectionIndex + 1}_of_${generationSectionCount}`,
-            p_title: sanitizeLessonText((generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255)),
+            p_title: sanitizeLessonText(durableLessonTitle),
             p_topic: sanitizeLessonText(request.topic.slice(0, 500)),
             p_description: "Generation is resumable. Partial sections are saved as they complete.",
             p_difficulty: validDifficulty,
@@ -783,7 +855,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
       return NextResponse.json({
         sectionIndex: generationSectionIndex,
         sectionCount: generationSectionCount,
-        title: section.title,
+        title: durableLessonTitle,
         blocks: section.blocks,
         partialBlocks: currentBlocks,
         complete: generationSectionIndex + 1 >= generationSectionCount,
@@ -792,7 +864,8 @@ Repair only the defective section. Preserve correct material where possible. Do 
 
     const prompt = [
       buildResolvedLessonPrompt(request),
-      buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+      buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty, verifiedCurriculumContext),
+      learnerCurriculumContext,
       buildPresentationGuidance(effectiveSubject, request.topic),
       learnerMemoryContext,
       learnerResearchContext,
@@ -848,7 +921,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
             effectiveSubject,
             request.topic,
             raw,
-            `Learner level: ${level || "unspecified"}\nExam board: ${body.examBoard || "unspecified"}\nResolved request: ${buildResolvedLessonPrompt(request)}`,
+            [repairCurriculumContext, `Resolved request: ${buildResolvedLessonPrompt(request)}`].filter(Boolean).join("\n\n"),
             validDifficulty,
             failures,
           ) + `

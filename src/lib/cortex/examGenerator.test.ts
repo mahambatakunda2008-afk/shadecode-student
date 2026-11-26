@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { topicMatchesAny } from "./examGenerator";
+import { topicMatchesAny, questionDifficultyMatchesRequest } from "./examGenerator";
 
 describe("topicMatchesAny", () => {
   it("accepts a question assigned to any one of the selected topics", () => {
@@ -24,5 +24,14 @@ describe("topicMatchesAny", () => {
   it("preserves parent and child topic matching", () => {
     expect(topicMatchesAny(["Mechanics"], "Mechanics: Kinematics", "Calculate acceleration.")).toBe(true);
     expect(topicMatchesAny(["Kinematics: SUVAT"], "Kinematics", "Use SUVAT equations.")).toBe(true);
+  });
+});
+
+describe("questionDifficultyMatchesRequest", () => {
+  it("does not accept questions at a different requested difficulty", () => {
+    expect(questionDifficultyMatchesRequest("hard", "hard")).toBe(true);
+    expect(questionDifficultyMatchesRequest("easy", "hard")).toBe(false);
+    expect(questionDifficultyMatchesRequest("medium", "easy")).toBe(false);
+    expect(questionDifficultyMatchesRequest(undefined, "hard")).toBe(true);
   });
 });

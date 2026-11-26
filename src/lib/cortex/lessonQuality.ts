@@ -29,6 +29,20 @@ export type LessonQualityRequest = {
 
 export type LessonQualityBlock = { type: string; title?: string; content: string };
 
+/** Prevent internal draft labels or section headings from becoming saved lesson titles. */
+export function normalizeGeneratedLessonTitle(candidate: unknown, topic: string): string {
+  const title = typeof candidate === "string" ? candidate.trim() : "";
+  const normalized = title.toLowerCase().replace(/\s+/g, " ");
+  const genericTitles = new Set(["", "untitled", "new lesson", "lesson", "introduction", "overview", "learning objectives", "summary", "practice", "conclusion"]);
+  const isInternalPlaceholder = /^cortex is building\b/i.test(title);
+  const placeholderTopic = isInternalPlaceholder ? title.replace(/^cortex is building\b/i, "").trim() : "";
+  if (genericTitles.has(normalized) || isInternalPlaceholder) {
+    const safeTopic = (placeholderTopic || topic.trim() || "Learning").slice(0, 190);
+    return `${safeTopic}: Core concepts and practice`.slice(0, 255);
+  }
+  return title.slice(0, 255);
+}
+
 const aliases: Record<string, string> = {
   objective: "objective", learning_objective: "objective", "learning objective": "objective", outcome: "objective", outcomes: "objective", goal: "objective", goals: "objective",
   prior_knowledge: "prior", "prior knowledge": "prior", prerequisite: "prior", prerequisites: "prior", background: "prior",
@@ -164,8 +178,13 @@ export function normalizeLessonBlockType(value: string) {
 function topicTokens(request: LessonQualityRequest) {
   // Only the resolved topic belongs in the topic-drift signal. Including the full
   // learner command made words such as "teach", "me" and "please" falsely count
-  // as evidence that an off-topic lesson was relevant.
-  return request.topic.toLowerCase().split(/[^a-z0-9]+/).filter(token => token.length >= 4);
+  // as evidence that an off-topic lesson was relevant. Include common curriculum
+  // synonyms so a curated parent lesson can correctly serve a narrower named topic.
+  const topic = request.topic.toLowerCase().trim();
+  if (/^hydrocarbons?$/.test(topic)) return ["hydrocarbon", "hydrocarbons", "alkane", "alkanes", "alkene", "alkenes"];
+  if (/^alkanes?$/.test(topic)) return ["alkane", "alkanes", "hydrocarbon", "hydrocarbons"];
+  if (/^alkenes?$/.test(topic)) return ["alkene", "alkenes", "hydrocarbon", "hydrocarbons"];
+  return topic.split(/[^a-z0-9]+/).filter(token => token.length >= 4);
 }
 
 function hasTopicSignal(block: { title?: string; content: string }, tokens: string[]) {
@@ -263,8 +282,8 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const titleText = (lesson.title ?? "").toLowerCase();
   if (tokens.length > 0 && !tokens.some(token => titleText.includes(token))) failures.push("title-topic-drift");
 
-  const checkpointBlocks = normalized.filter(block => block.normalizedType === "checkpoint");
-  if (request.intent !== "practice" && checkpointBlocks.some(block => hasAnswerLeak(block.content))) failures.push("checkpoint-reveals-answer");
+  const taskCheckpointBlocks = normalized.filter(block => block.normalizedType === "checkpoint");
+  if (request.intent !== "practice" && taskCheckpointBlocks.some(block => hasAnswerLeak(block.content))) failures.push("checkpoint-reveals-answer");
 
   const artificialHeadings = ["demanded worked example", "distribution myth", "verification habit", "examiner looks for", "common exam error"];
   if (normalized.some(block => artificialHeadings.some(heading => `${block.title ?? ""} ${block.content}`.toLowerCase().startsWith(heading)))) failures.push("template-heading");
@@ -302,6 +321,65 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const quantitative = isQuantitativeSubject(request.subject);
   const formulaTopic = isFormulaTopic(request.topic, request.prompt);
   if (quantitative && formulaTopic && request.intent !== "comparison" && !has("formula") && !/formula|equation|relationship|method|calculation|substitut|identity/i.test(searchableText)) failures.push("formula");
+
+  // Math/physics/chemistry lessons use dollar signs as expression delimiters.
+  // An odd count or a dollar delimiter nested inside \\text{...} can break KaTeX
+  // and make an otherwise useful worked example unreadable.
+  if (/math|mathematics|physics|chemistry/i.test(request.subject)) {
+    const mathBlocks = normalized.filter(block =>
+      /\$|\\(?:frac|int|sqrt|times|cdot|Delta|text)\b/.test(block.content),
+    );
+    if (mathBlocks.some(block => {
+      const hasMathExpression = /[=+*/^_∫√]|\\(?:frac|int|sqrt|times|cdot|Delta|text)\b/.test(block.content);
+      if (!hasMathExpression) return false;
+      const delimiterCount = (block.content.match(/\$/g) ?? []).length;
+      const nestedTextDelimiter = /\\text\{[^}]*\$/i.test(block.content);
+      const splitNumericDelimiter = /[0-9]\$\s*\.\s*[0-9]|\$\s*\.\s*\$/i.test(block.content);
+      return delimiterCount % 2 === 1 || nestedTextDelimiter || splitNumericDelimiter;
+    })) {
+      failures.push("math-delimiters-unbalanced");
+    }
+  }
+
+  // A practice set is not self-study-ready when it asks several numbered questions
+  // but only supplies answer guidance for some of them. This caught a live Integration
+  // lesson where Question 3 had no guidance while Questions 1 and 2 did.
+  const practiceBlocks = normalized.filter(block => block.normalizedType === "practice");
+  for (const block of practiceBlocks) {
+    const answerKeyStart = block.content.search(/\b(?:answers|answer\s+key)\s*(?:\([^)]*\))?\s*:/i);
+    const questionText = answerKeyStart >= 0 ? block.content.slice(0, answerKeyStart) : block.content;
+    const answerKeyText = answerKeyStart >= 0 ? block.content.slice(answerKeyStart) : "";
+    const questions = [...questionText.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\s)(\d{1,2})[.)]\s+(?=(?:evaluate|find|calculate|integrate|differentiate|explain|state|describe|show|write|name|identify|simplify|prove|sketch|draw|compare|determine|complete|which|what|how|why|given|if|when|for|use|list|define|predict|give|balance|convert|select|choose|a|an|the|two)\b)/gim)];
+    const answerIds = new Set([...block.content.matchAll(/(?:answer\s+guidance|worked\s+solution|solution|answer)\s*#?\s*(\d+)\s*:/gi)]
+      .map(match => match[1]));
+    const answerKeyIds = new Set([...answerKeyText.matchAll(/(?:^|[:\n])\s*(\d{1,2})[.)]\s+/gim)]
+      .map(match => match[1] ?? match[2]));
+    const missingGuidance = questions.some((question, index) => {
+      const id = question[1] ?? question[2];
+      const start = question.index ?? 0;
+      const end = questions[index + 1]?.index ?? questionText.length;
+      const questionSegment = questionText.slice(start, end);
+      const hasInlineGuidance = /\b(?:answer\s+guidance|worked\s+solution|solution|answer)\s*:/i.test(questionSegment);
+      return !hasInlineGuidance && !answerIds.has(id) && !answerKeyIds.has(id);
+    });
+    if (questions.length > 0 && missingGuidance) {
+      failures.push("practice-answer-guidance-incomplete");
+    }
+  }
+
+  // The exam-transfer section must contain an actual task, not only generic advice
+  // about how to approach exams. Generic advice can accompany a question but cannot
+  // substitute for one.
+  const examBlocks = normalized.filter(block => block.normalizedType === "exam");
+  const hasAssessmentTask = practiceBlocks.some(block =>
+    /(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*\d+\s*:|(?:^|\s)\d{1,2}[.)]\s+(?=(?:evaluate|find|calculate|integrate|differentiate|explain|state|describe|show|write|name|identify|simplify|prove|sketch|draw|compare|determine|complete|which|what|how|why|given|if|when|for|use|list|define|predict|give|balance|convert|select|choose|a|an|the|two)\b)/im.test(block.content),
+  ) || taskCheckpointBlocks.some(block =>
+    /\bquestion\s*(?:#?\s*\d+)?\s*:/i.test(block.content)
+    || /\b(search|draw|calculate|write|balance|explain|name|find|state|describe|trace|compare|evaluate|show|identify)\b/i.test(block.content),
+  );
+  if (examBlocks.some(block => !/\bquestion\s*(?:#?\s*\d+)?\s*:/i.test(block.content)) && !hasAssessmentTask) {
+    failures.push("exam-transfer-no-task");
+  }
 
   return { failures: [...new Set(failures)], types: [...types] };
 }
