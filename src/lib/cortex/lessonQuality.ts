@@ -295,9 +295,9 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // lesson where Question 3 had no guidance while Questions 1 and 2 did.
   const practiceBlocks = normalized.filter(block => block.normalizedType === "practice");
   for (const block of practiceBlocks) {
-    const questionIds = [...block.content.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\\d+)\s*:/gi)]
+    const questionIds = [...block.content.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:/gi)]
       .map(match => match[1]);
-    const answerIds = new Set([...block.content.matchAll(/(?:answer\s+guidance|worked\s+solution|solution|answer)\s*#?\s*(\\d+)\s*:/gi)]
+    const answerIds = new Set([...block.content.matchAll(/(?:answer\s+guidance|worked\s+solution|solution|answer)\s*#?\s*(\d+)\s*:/gi)]
       .map(match => match[1]));
     if (questionIds.length >= 2 && questionIds.some(id => !answerIds.has(id))) {
       failures.push("practice-answer-guidance-incomplete");
