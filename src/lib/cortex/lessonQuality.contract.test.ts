@@ -50,11 +50,9 @@ describe("lesson quality: usable assessment content", () => {
       "Practice Question 1: Integrate 2x. Answer Guidance 1: x squared plus C. Practice Question 2: Integrate 3x squared. Answer Guidance 2: x cubed plus C.",
       "Question: Evaluate the integral from 0 to 2 of 3x squared.",
     );
-    draft.blocks.push({
-      type: "example",
-      title: "Malformed unit expression",
-      content: String.raw`Given: velocity is $-2.0\\text{ $\\frac{m}{s}$}.`,
-    });
+    const example = draft.blocks.find(block => block.type === "example");
+    if (!example) throw new Error("Expected a worked example in the test lesson.");
+    example.content = "Given: velocity is $v = 2.0 m/s";
 
     const result = lessonQualityFailures(draft, request);
     expect(result.failures).toContain("math-delimiters-unbalanced");
@@ -79,6 +77,15 @@ describe("lesson quality: usable assessment content", () => {
     const result = lessonQualityFailures(lesson(
       "Practice Question 1: Integrate 2x. Answer Guidance 1: x squared plus C. Practice Question 2: Integrate 3x squared. Answer Guidance 2: x cubed plus C. Practice Question 3: Integrate 4x.",
       "Question: Evaluate the integral from 0 to 2 of 3x squared. Approach: Find the antiderivative and apply the limits.",
+    ), request);
+
+    expect(result.failures).toContain("practice-answer-guidance-incomplete");
+  });
+
+  it("rejects plain numbered practice lists when one item has no guidance", () => {
+    const result = lessonQualityFailures(lesson(
+      "1. Integrate 2x. Answer guidance: x squared plus C. 2. Integrate 3x squared. Answer guidance: x cubed plus C. 3. Integrate 4x.",
+      "Question: Evaluate the integral from 0 to 2 of 3x squared.",
     ), request);
 
     expect(result.failures).toContain("practice-answer-guidance-incomplete");
