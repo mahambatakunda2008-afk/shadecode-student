@@ -165,8 +165,13 @@ export function normalizeLessonBlockType(value: string) {
 function topicTokens(request: LessonQualityRequest) {
   // Only the resolved topic belongs in the topic-drift signal. Including the full
   // learner command made words such as "teach", "me" and "please" falsely count
-  // as evidence that an off-topic lesson was relevant.
-  return request.topic.toLowerCase().split(/[^a-z0-9]+/).filter(token => token.length >= 4);
+  // as evidence that an off-topic lesson was relevant. Include common curriculum
+  // synonyms so a curated parent lesson can correctly serve a narrower named topic.
+  const topic = request.topic.toLowerCase().trim();
+  if (/^hydrocarbons?$/.test(topic)) return ["hydrocarbon", "hydrocarbons", "alkane", "alkanes", "alkene", "alkenes"];
+  if (/^alkanes?$/.test(topic)) return ["alkane", "alkanes", "hydrocarbon", "hydrocarbons"];
+  if (/^alkenes?$/.test(topic)) return ["alkene", "alkenes", "hydrocarbon", "hydrocarbons"];
+  return topic.split(/[^a-z0-9]+/).filter(token => token.length >= 4);
 }
 
 function hasTopicSignal(block: { title?: string; content: string }, tokens: string[]) {
@@ -331,7 +336,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
     const answerKeyStart = block.content.search(/\b(?:answers|answer\s+key)\s*(?:\([^)]*\))?\s*:/i);
     const questionText = answerKeyStart >= 0 ? block.content.slice(0, answerKeyStart) : block.content;
     const answerKeyText = answerKeyStart >= 0 ? block.content.slice(answerKeyStart) : "";
-    const questions = [...questionText.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\s)(\d{1,2})[.)]\s+(?=(?:evaluate|find|calculate|explain|state|describe|show|write|name|identify|simplify|prove|sketch|draw|compare|determine|complete|which|what|how|why|given|if|when|for|use|list|define|predict|give|balance|convert|select|choose|a|an|the|two)\b)/gim)];
+    const questions = [...questionText.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\s)(\d{1,2})[.)]\s+(?=(?:evaluate|find|calculate|integrate|differentiate|explain|state|describe|show|write|name|identify|simplify|prove|sketch|draw|compare|determine|complete|which|what|how|why|given|if|when|for|use|list|define|predict|give|balance|convert|select|choose|a|an|the|two)\b)/gim)];
     const answerIds = new Set([...block.content.matchAll(/(?:answer\s+guidance|worked\s+solution|solution|answer)\s*#?\s*(\d+)\s*:/gi)]
       .map(match => match[1]));
     const answerKeyIds = new Set([...answerKeyText.matchAll(/(?:^|[:\n])\s*(\d{1,2})[.)]\s+/gim)]
@@ -354,7 +359,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // substitute for one.
   const examBlocks = normalized.filter(block => block.normalizedType === "exam");
   const hasAssessmentTask = practiceBlocks.some(block =>
-    /(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*\d+\s*:|(?:^|\s)\d{1,2}[.)]\s+(?=(?:evaluate|find|calculate|explain|state|describe|show|write|name|identify|simplify|prove|sketch|draw|compare|determine|complete|which|what|how|why|given|if|when|for|use|list|define|predict|give|balance|convert|select|choose|a|an|the|two)\b)/im.test(block.content),
+    /(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*\d+\s*:|(?:^|\s)\d{1,2}[.)]\s+(?=(?:evaluate|find|calculate|integrate|differentiate|explain|state|describe|show|write|name|identify|simplify|prove|sketch|draw|compare|determine|complete|which|what|how|why|given|if|when|for|use|list|define|predict|give|balance|convert|select|choose|a|an|the|two)\b)/im.test(block.content),
   ) || checkpointBlocks.some(block =>
     /\bquestion\s*(?:#?\s*\d+)?\s*:/i.test(block.content)
     || /\b(search|draw|calculate|write|balance|explain|name|find|state|describe|trace|compare|evaluate|show|identify)\b/i.test(block.content),
