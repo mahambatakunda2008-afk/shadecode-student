@@ -108,6 +108,8 @@ ${formatTeachingProfile(subject)}
 
 ${formatCurriculumPlan(topic)}
 
+${curriculumContext ? "CURRICULUM CONTEXT (preserve its verification status):\n" + curriculumContext : ""}
+
 The draft below may be shallow, repetitive, incomplete, or structurally invalid. Rewrite it into a genuinely teachable lesson. The quality gate failures found in the draft are listed below. Treat them as concrete defects to repair, not suggestions.\n\nQUALITY GATE FAILURES:\n${qualityFailures.length ? qualityFailures.map((failure) => `- ${failure}`).join("\n") : "- No failure codes were provided; perform the full quality review yourself."} Preserve correct useful material, but replace generic filler and expand missing reasoning. If the topic is broad, use the curriculum map as the spine and cover its major branches rather than treating the request as one tiny definition.
 
 Requirements:
