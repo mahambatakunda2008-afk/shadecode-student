@@ -1322,6 +1322,26 @@ export async function retryPendingGeneratedLessonSync(options: { manual?: boolea
     const leaseId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : null;
     if (!leaseId) continue;
     try {
+      // Offline-only generation may never have reached the server to create its
+      // durable job. Recreate that owner-scoped identity before canonical save.
+      const durableResponse = await fetch("/api/cortex/generation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          event: "created", id: lesson.generationJobId, kind: "lesson",
+          status: "complete", stage: "awaiting_sync",
+          request: {
+            prompt: lesson.generationPrompt, subject: lesson.subject,
+            difficulty: lesson.difficulty || "medium",
+            goal: lesson.generationGoal || "Understand and apply the topic.",
+            level: lesson.generationLevel, examBoard: lesson.generationExamBoard,
+          },
+          progress: 100, partial: null, result: null, error: null,
+          completedUnits: 0, totalUnits: 0, retryCount: lesson.syncRetryCount || 0,
+        }),
+        cache: "no-store",
+      });
+      if (!durableResponse.ok) throw new Error(`Unable to register lesson for sync (${durableResponse.status}).`);
       const response = await fetch("/api/learn", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
