@@ -5,7 +5,7 @@ import { createClient as createSupabaseClient, type SupabaseClient, type User } 
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
-import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
+import { lessonQualityFailures, normalizeGeneratedLessonTitle } from "@/lib/cortex/lessonQuality";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt } from "@/lib/learn/contentQuality";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
@@ -257,13 +257,14 @@ export async function POST(req: Request) {
     if (!parsed) return NextResponse.json({ error: "Cortex could not produce a lesson that met the teaching standard. The topic itself is valid, so try again while Cortex retries the lesson construction." }, { status: 422 });
 
     const subjectId = subjectAccess.subjectId;
-    const { data: inserted, error } = await auth.supabase.from("learn_lessons").insert({ user_id: auth.user.id, subject_id: subjectId, topic: generationRequest.topic.slice(0, 500), title: parsed.title, description: `A complete ${generationRequest.intent} lesson on ${generationRequest.topic}`.slice(0, 1000), difficulty: generationRequest.difficulty, progress: 0, blocks: parsed.blocks }).select("id").single();
+    const lessonTitle = normalizeGeneratedLessonTitle(parsed.title, generationRequest.topic);
+    const { data: inserted, error } = await auth.supabase.from("learn_lessons").insert({ user_id: auth.user.id, subject_id: subjectId, topic: generationRequest.topic.slice(0, 500), title: lessonTitle, description: `A complete ${generationRequest.intent} lesson on ${generationRequest.topic}`.slice(0, 1000), difficulty: generationRequest.difficulty, progress: 0, blocks: parsed.blocks }).select("id").single();
     if (error || !inserted?.id) {
       log.lessonGenerationFailed({ userId: auth.user.id, subject: generationRequest.subject, topic: generationRequest.topic, difficulty: generationRequest.difficulty, error: error?.message || "Insert returned no lesson id" });
       return NextResponse.json({ error: "The lesson was generated but could not be saved." }, { status: 500 });
     }
 
-    return NextResponse.json({ id: inserted.id, title: parsed.title, blocks: parsed.blocks, subject: authorizedSubject, subjectId });
+    return NextResponse.json({ id: inserted.id, title: lessonTitle, blocks: parsed.blocks, subject: authorizedSubject, subjectId });
   } catch (error) {
     log.apiFailure({ route: "/api/learn/generate", method: "POST", error: error instanceof Error ? error.message : String(error), userId: auth?.user.id });
     return NextResponse.json({ error: "Something went wrong while Cortex was generating the lesson." }, { status: 500 });
