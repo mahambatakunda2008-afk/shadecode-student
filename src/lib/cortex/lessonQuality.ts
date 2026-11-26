@@ -310,8 +310,8 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
       ["formula", "example", "concept", "mechanism", "definition"].includes(block.normalizedType),
     );
     if (mathBlocks.some(block => {
-      const delimiterCount = (block.content.match(/\\$/g) ?? []).length;
-      return delimiterCount % 2 === 1 || /\\\\text\\{[^}]*\\$/i.test(block.content);
+      const delimiterCount = (block.content.match(/\$/g) ?? []).length;
+      return delimiterCount % 2 === 1 || /\\text\{[^}]*\$/i.test(block.content);
     })) {
       failures.push("math-delimiters-unbalanced");
     }
