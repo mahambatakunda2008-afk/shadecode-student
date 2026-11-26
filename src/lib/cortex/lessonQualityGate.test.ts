@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { checkCompleteness, validateLessonStructure } from "./validators";
 import type { StructuredLesson } from "./templates";
+import { lessonQualityFailures } from "./lessonQuality";
 
 function lesson(overrides: Record<string, unknown> = {}) {
   return {
@@ -60,6 +61,44 @@ describe("generated lesson title normalization", () => {
     const { normalizeGeneratedLessonTitle } = await import("./lessonQuality");
     expect(normalizeGeneratedLessonTitle("Kinematics: Motion and acceleration", "Physics")).toBe("Kinematics: Motion and acceleration");
     expect(normalizeGeneratedLessonTitle("x".repeat(300), "Physics")).toHaveLength(255);
+  });
+});
+
+describe("generated lesson completeness checks", () => {
+  const request = {
+    intent: "teach" as const,
+    subject: "Mathematics",
+    topic: "Integration",
+    prompt: "Teach integration",
+    requestedParts: [],
+  };
+
+  it("rejects numbered practice questions without matching answer guidance", () => {
+    const failures = lessonQualityFailures({
+      title: "Integration",
+      blocks: [
+        { type: "practice", content: "1. Evaluate the integral of x squared?\\n2. Find the constant of integration?" },
+      ],
+    }, request);
+    expect(failures.failures).toContain("practice-answer-guidance-incomplete");
+  });
+
+  it("accepts numbered practice questions with corresponding answers", () => {
+    const failures = lessonQualityFailures({
+      title: "Integration",
+      blocks: [
+        { type: "practice", content: "1. Evaluate the integral of x squared?\\nAnswer: x cubed over 3 plus C.\\n2. Find the constant of integration?\\nGuidance: Use the initial condition to determine C." },
+      ],
+    }, request);
+    expect(failures.failures).not.toContain("practice-answer-guidance-incomplete");
+  });
+
+  it("rejects an exam block that contains no actual question or task", () => {
+    const failures = lessonQualityFailures({
+      title: "Integration",
+      blocks: [{ type: "exam", content: "Use clear working and check your answer." }],
+    }, request);
+    expect(failures.failures).toContain("exam-transfer-without-question");
   });
 });
 
