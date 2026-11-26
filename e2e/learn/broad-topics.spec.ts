@@ -106,6 +106,15 @@ test.describe("Learn deep-generation browser contract", () => {
       expect(body).not.toContain("no content yet");
       expect(body.length).toBeGreaterThan(3500);
 
+      // A completed lesson must survive a full document reload from the saved record.
+      // This catches the case where a generated lesson only exists in transient client state.
+      const completedLessonUrl = page.url();
+      const completedLessonTitle = await page.locator("h1.lesson-title").innerText();
+      await page.reload();
+      await expect(page).toHaveURL(completedLessonUrl);
+      await expect(page.locator("h1.lesson-title")).toHaveText(completedLessonTitle, { timeout: 20_000 });
+      await expect.poll(() => page.locator(".lesson-unit").count(), { timeout: 20_000 }).toBeGreaterThanOrEqual(16);
+
       await page.screenshot({
         path: `test-results/learn-${topic.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`,
         fullPage: true,
