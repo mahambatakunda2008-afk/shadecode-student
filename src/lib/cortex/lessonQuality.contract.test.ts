@@ -55,6 +55,21 @@ describe("lesson quality: usable assessment content", () => {
     expect(result.failures).toContain("math-delimiters-unbalanced");
   });
 
+  it("rejects math delimiters that split decimal numbers", () => {
+    const draft = lesson(
+      "Practice Question 1: Calculate the force. Answer Guidance 1: Substitute the values.",
+      "Question: Calculate the force from the given values.",
+    );
+    draft.blocks.push({
+      type: "example",
+      title: "Malformed substitution",
+      content: "Substitute: F = (8.99 x $10^{9}) * (3$.0 x $10^{-6}) / (0$.$20)^{2}.",
+    });
+
+    const result = lessonQualityFailures(draft, request);
+    expect(result.failures).toContain("math-delimiters-unbalanced");
+  });
+
   it("rejects a practice set with missing answer guidance for a numbered question", () => {
     const result = lessonQualityFailures(lesson(
       "Practice Question 1: Integrate 2x. Answer Guidance 1: x squared plus C. Practice Question 2: Integrate 3x squared. Answer Guidance 2: x cubed plus C. Practice Question 3: Integrate 4x.",
