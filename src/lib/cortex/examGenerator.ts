@@ -166,9 +166,18 @@ export function selectBalancedQuestions(
   if (limit === 0) return [];
   if (requestedTopics.length <= 1) return candidates.slice(0, limit);
 
-  const buckets = requestedTopics.map(topic => candidates.filter(question =>
-    topicMatchesAny([topic], question.topic, question.question)
-  ));
+  const buckets: ExamQuestion[][] = requestedTopics.map(() => []);
+  for (const question of candidates) {
+    const actualTopic = normalizedText(cleanTopic(question.topic));
+    const exactIndex = requestedTopics.findIndex(topic =>
+      normalizedText(cleanTopic(topic)) === actualTopic
+    );
+    const matchingIndex = requestedTopics.findIndex(topic =>
+      topicMatchesAny([topic], question.topic, question.question)
+    );
+    const bucketIndex = exactIndex >= 0 ? exactIndex : matchingIndex;
+    if (bucketIndex >= 0) buckets[bucketIndex].push(question);
+  }
   const selected: ExamQuestion[] = [];
   const selectedIds = new Set<string>();
   let addedInPass = true;
