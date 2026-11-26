@@ -354,7 +354,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // substitute for one.
   const examBlocks = normalized.filter(block => block.normalizedType === "exam");
   const hasAssessmentTask = practiceBlocks.some(block =>
-    /(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*\d+\s*:|(?:^|\n)\s*\d{1,2}[.)]\s+/im.test(block.content),
+    /(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*\d+\s*:|(?:^|\s)\d{1,2}[.)]\s+(?=(?:evaluate|find|calculate|explain|state|describe|show|write|name|identify|simplify|prove|sketch|draw|compare|determine|complete|which|what|how|why|given|if|when|for|use|list|define|predict|give|balance|convert|select|choose|a|an|the|two)\b)/im.test(block.content),
   ) || checkpointBlocks.some(block =>
     /\bquestion\s*(?:#?\s*\d+)?\s*:/i.test(block.content)
     || /\b(search|draw|calculate|write|balance|explain|name|find|state|describe|trace|compare|evaluate|show|identify)\b/i.test(block.content),
