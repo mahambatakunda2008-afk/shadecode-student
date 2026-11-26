@@ -14,6 +14,18 @@ export function buildDeepLessonPrompt(
     ? "This is a BROAD MASTERCLASS request. Map the subject area first, then teach its major branches in one coherent journey. Do not reduce a broad subject to a definition and a few examples. Cover the canonical subtopics a serious learner would expect, explain how they connect, and finish by opening paths for deeper study."
     : "This is a focused topic. Go deep enough that the learner can explain it, apply it, recognise traps, and connect it to neighbouring ideas.";
 
+  const topicSpecificChecks = /integration/i.test(topic) && /math/i.test(subject)
+    ? `INTEGRATION ACCURACY CHECKS
+- State the power rule with its exact restriction: the exponent must not be -1. The x^-1 case integrates to ln|x| + C.
+- Distinguish a definite integral (signed accumulation) from total geometric area; split at axis crossings and add absolute areas when total area is required.
+- Integrating velocity gives displacement. Total distance requires integrating speed or treating intervals where velocity changes sign separately.
+- Explain why an indefinite integral includes + C and why the constant cancels in a definite-integral evaluation.`
+    : "";
+  const notationGuidance = /math|physics|chemistry|economics/i.test(subject)
+    ? `MATHEMATICAL NOTATION
+Use standard symbolic notation for routine expressions and equations. Render mathematical expressions with single-dollar LaTeX delimiters (for example, $\\int x^n\\,dx$ and $x^4$). Never put dollar delimiters inside a numeric literal: write $3.0$, never $3$.0 or $0$.$20$. Do not spell out simple algebraic expressions in prose when notation is clearer. Define every symbol and state relevant conditions and units.`
+    : "";
+
   const difficultyGuide = {
     easy: "Use accessible language and build from first principles, but keep intellectual depth. Never confuse beginner-friendly with shallow.",
     medium: "Use rigorous terminology, derivations or mechanisms where useful, worked reasoning, applications, and exam-level precision.",
@@ -35,6 +47,10 @@ ${curriculumContext ? `VERIFIED CURRICULUM CONTEXT:\n${curriculumContext}` : "No
 ${formatCurriculumPlan(topic)}
 
 ${depth}
+
+${topicSpecificChecks}
+
+${notationGuidance}
 
 TEACHING STANDARD
 ${difficultyGuide}
@@ -89,9 +105,14 @@ DEPTH RULES
 14. Never mention being an AI, this prompt, JSON, token limits, or generation instructions.
 15. Do not pad the lesson with motivational filler. Substance first.
 16. Prefer connections over isolated facts. A learner should finish knowing not only the pieces, but the structure formed by the pieces.
+17. Independently recompute every numerical result, algebraic transformation, unit conversion and answer-guidance item before returning it. A plausible-looking worked solution is not enough.
+18. Every numbered practice question must have matching, useful answer guidance. Do not leave the final question unanswered or replace an answer with a hint.
+19. Never leave a sentence, equation, worked solution or answer unfinished. If the response budget is tight, reduce the number of blocks rather than truncating teaching content.
+20. Distinguish closely related quantities precisely (for example, displacement versus distance, and signed integral versus total geometric area).
+21. The exam-transfer block must contain a real task explicitly labelled "Question:". General advice about exam technique is not a substitute for a question.
 
 QUALITY BAR
-Before returning the JSON, silently check: Is this genuinely teachable without another AI response? Could a student explain the core ideas after reading it? Are the connections visible? Are there worked examples, traps, checks, and a path forward? Does the lesson respect the curriculum map? If not, deepen it before returning it.`;
+Before returning the JSON, silently check: Is this genuinely teachable without another AI response? Could a student explain the core ideas after reading it? Are the connections visible? Are there worked examples, traps, checks, and a path forward? Does the lesson respect the curriculum map? Recalculate every worked answer independently, verify that every numbered practice question has answer guidance, and check that no block ends mid-thought. If not, deepen or repair it before returning it.`;
 }
 
 export function buildLessonRepairPrompt(subject: string, topic: string, raw: string, curriculumContext = "", difficulty: LessonDifficulty = "medium", qualityFailures: string[] = []) {
@@ -104,6 +125,8 @@ ${formatTeachingProfile(subject)}
 
 ${formatCurriculumPlan(topic)}
 
+${curriculumContext ? "CURRICULUM CONTEXT (preserve its verification status):\\n" + curriculumContext : ""}
+
 The draft below may be shallow, repetitive, incomplete, or structurally invalid. Rewrite it into a genuinely teachable lesson. The quality gate failures found in the draft are listed below. Treat them as concrete defects to repair, not suggestions.\n\nQUALITY GATE FAILURES:\n${qualityFailures.length ? qualityFailures.map((failure) => `- ${failure}`).join("\n") : "- No failure codes were provided; perform the full quality review yourself."} Preserve correct useful material, but replace generic filler and expand missing reasoning. If the topic is broad, use the curriculum map as the spine and cover its major branches rather than treating the request as one tiny definition.
 
 Requirements:
@@ -115,6 +138,12 @@ Requirements:
 - Explain WHY and HOW, not only WHAT.
 - Do not invent syllabus requirements.
 - Make the subject's reasoning style visible in explanations and worked examples.
+- Independently recompute every worked answer, numerical result, unit conversion and answer-guidance item.
+- Ensure every numbered practice question has matching answer guidance; do not leave the final question unanswered.
+- Include a real exam-style task labelled "Question:"; generic exam technique advice does not count as a task.
+- Finish every sentence, equation and worked solution. Reduce block count rather than truncating content.
+${/math|mathematics|physics|chemistry/i.test(subject) ? "- Use standard symbolic notation with single-dollar LaTeX delimiters. Never split numeric literals with dollar signs (write $3.0$, never $3$.0 or $0$.$20$)." : ""}
+${/integration/i.test(topic) && /math/i.test(subject) ? "- For integration, state that the power rule excludes n = -1 (not all negative exponents); distinguish signed integral from total geometric area; and distinguish displacement from distance when integrating velocity." : ""}
 - Avoid fictional narratives, anecdotes, story hooks, and story-based analogies. Teach the requested material directly, using concise worked examples and explicit reasoning.
 - If the topic itself is story composition or creative writing, explain the techniques directly and use only short annotated excerpts when needed. Do not write a complete story unless explicitly requested.
 
