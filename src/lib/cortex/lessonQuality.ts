@@ -7,7 +7,7 @@ export function normalizeGeneratedLessonTitle(candidate: unknown, topic: string)
   const placeholderTopic = isInternalPlaceholder ? title.replace(/^cortex is building\b/i, "").trim() : "";
   if (genericTitles.has(normalized) || isInternalPlaceholder) {
     const safeTopic = (placeholderTopic || topic.trim() || "Learning").slice(0, 190);
-    return safeTopic + ": Core concepts and practice".slice(0, 255);
+    return (safeTopic + ": Core concepts and practice").slice(0, 255);
   }
   return title.slice(0, 255);
 }
