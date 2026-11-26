@@ -49,6 +49,15 @@ describe("lesson quality: usable assessment content", () => {
     expect(result.failures).toContain("practice-answer-guidance-incomplete");
   });
 
+  it("catches a missing answer explanation when guidance is written inline", () => {
+    const result = lessonQualityFailures(lesson(
+      "Practice Question 1: Integrate 2x. Answer guidance: x squared plus C. Practice Question 2: Integrate 3x squared. Answer guidance: x cubed plus C. Practice Question 3: Integrate 4x.",
+      "Question: Evaluate the integral from 0 to 2 of 3x squared. Approach: Find the antiderivative and apply the limits.",
+    ), request);
+
+    expect(result.failures).toContain("practice-answer-guidance-incomplete");
+  });
+
   it("rejects generic exam advice that contains no actual task", () => {
     const result = lessonQualityFailures(lesson(
       "Practice Question 1: Integrate 2x. Answer Guidance 1: x squared plus C. Practice Question 2: Integrate 3x squared. Answer Guidance 2: x cubed plus C.",
