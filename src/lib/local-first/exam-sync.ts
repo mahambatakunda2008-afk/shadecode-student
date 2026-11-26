@@ -70,3 +70,23 @@ export async function syncPendingExamAttempts(userId: string): Promise<void> {
     await syncExamAttempt(userId, attemptId);
   }
 }
+
+
+/** Restore cloud copies only into missing local slots. Existing local work is never overwritten. */
+export async function restoreCloudExamAttempts(userId: string): Promise<{ restored: number; skipped: number }> {
+  if (!userId || typeof navigator !== "undefined" && !navigator.onLine) return { restored: 0, skipped: 0 };
+  const response = await fetch("/api/exam/attempt-sync", { method: "GET", credentials: "same-origin" }).catch(() => null);
+  if (!response?.ok) return { restored: 0, skipped: 0 };
+  const body = await response.json().catch(() => null) as { attempts?: Array<{ attempt_id: string; client_revision: number; device_id: string; status: "active" | "submitted"; payload: unknown; updated_at: string }> } | null;
+  if (!Array.isArray(body?.attempts)) return { restored: 0, skipped: 0 };
+  let restored = 0, skipped = 0;
+  for (const row of body.attempts) {
+    if (!row || typeof row.attempt_id !== "string" || !Number.isSafeInteger(row.client_revision) || row.client_revision < 1 || !row.payload || typeof row.payload !== "object" || (row.payload as { attemptId?: unknown }).attemptId !== row.attempt_id || (row.payload as { userId?: unknown }).userId !== userId) { skipped++; continue; }
+    const id = `exam_attempt:${userId}:${row.attempt_id}`;
+    const existing = await localFirstStore.get(id);
+    if (existing) { skipped++; continue; }
+    await localFirstStore.hydrate({ id, entity: "exam_attempt", entityId: row.attempt_id, userId, payload: row.payload, updatedAt: Date.parse(row.updated_at) || Date.now(), deviceId: row.device_id, version: row.client_revision, syncVersion: row.client_revision });
+    restored++;
+  }
+  return { restored, skipped };
+}
