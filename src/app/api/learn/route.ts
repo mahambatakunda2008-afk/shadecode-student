@@ -13,7 +13,7 @@ import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
-import { breakUpLongParagraphs, isSectionTooThin, missingSectionTypes, needsFormulaBlock, requiredSectionTypes, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure } from "@/lib/cortex/lessonQuality";
+import { breakUpLongParagraphs, isSectionTooThin, missingSectionTypes, needsFormulaBlock, requiredSectionTypes, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure, normalizeGeneratedLessonTitle } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
@@ -83,7 +83,7 @@ function normalizeDifficulty(v: string | null): LessonDifficulty { return v === 
 function clampProgress(v: number | null): number { return typeof v === "number" && Number.isFinite(v) ? Math.min(100, Math.max(0, Math.round(v))) : 0; }
 function toLearnLesson(row: LearnLessonRow, subjectById: Map<string, string>) {
   const progress = clampProgress(row.progress);
-  return { id: row.id, subjectId: row.subject_id, topic: row.topic ?? undefined, subject: subjectById.get(row.subject_id) ?? "Unknown subject", title: row.title, description: row.description ?? "", difficulty: normalizeDifficulty(row.difficulty), progress, completed: progress >= 100, updated_at: row.updated_at ?? undefined, blocks: row.blocks ?? undefined } as LearnLesson;
+  return { id: row.id, subjectId: row.subject_id, topic: row.topic ?? undefined, subject: subjectById.get(row.subject_id) ?? "Unknown subject", title: normalizeGeneratedLessonTitle(row.title, row.topic ?? "Learning"), description: row.description ?? "", difficulty: normalizeDifficulty(row.difficulty), progress, completed: progress >= 100, updated_at: row.updated_at ?? undefined, blocks: row.blocks ?? undefined } as LearnLesson;
 }
 function buildSubjectTabs(subjects: SubjectRow[], lessons: LearnLessonRow[]): LearnSubject[] {
   const counts = lessons.reduce<Record<string, number>>((acc, l) => { acc[l.subject_id] = (acc[l.subject_id] ?? 0) + 1; return acc; }, {});
