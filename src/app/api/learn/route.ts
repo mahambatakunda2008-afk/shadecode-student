@@ -19,6 +19,8 @@ import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
+import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
+import { buildLearnerCurriculumContext } from "@/lib/curriculum/learner-generation-context";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -205,15 +207,55 @@ export async function POST(req: Request) {
     const effectiveSubject = subjectAccess.subject;
     const resolvedSubject = { id: subjectAccess.subjectId, name: subjectAccess.subject };
     const validDifficulty: LessonDifficulty = ["easy", "medium", "hard"].includes(difficulty) ? difficulty : "medium";
+
+    // The sectioned Cortex path must use the learner's saved curriculum profile too.
+    // The old route trusted only request-body level/board fields, which the Learn UI
+    // did not send, so lessons silently lost the learner's actual study context.
+    const { data: curriculumProfile } = await supabase.from("profiles")
+      .select("study_level, education_stage, curriculum_board, qualification, syllabus_code, syllabus_year, curriculum_profile, curriculum_subjects")
+      .eq("id", user.id)
+      .maybeSingle();
+    const reportedCurriculum = buildLearnerCurriculumContext(curriculumProfile, effectiveSubject);
+    const effectiveLevel = typeof level === "string" && level.trim() ? level.trim() : reportedCurriculum.level;
+    const effectiveBoard = typeof body.examBoard === "string" && body.examBoard.trim() ? body.examBoard.trim() : reportedCurriculum.examBoard;
     const request = resolveLessonRequest({
       prompt: topic.trim(),
       subject: effectiveSubject,
       topic: topic.trim(),
-      level: typeof level === "string" ? level : undefined,
+      level: effectiveLevel || undefined,
       difficulty: validDifficulty,
       goal: typeof goal === "string" ? goal : undefined,
-      examBoard: typeof body.examBoard === "string" ? body.examBoard : undefined,
+      examBoard: effectiveBoard || undefined,
     });
+
+    // Prefer the exact verified syllabus identity when one has been configured.
+    // A missing or incomplete verified curriculum must not block general learning;
+    // the separately labelled profile hint is never promoted to official evidence.
+    let verifiedCurriculumContext = "";
+    try {
+      const curriculum = await resolveVerifiedCurriculumPromptContext(
+        user.id,
+        `${buildResolvedLessonPrompt(request)}\\nmaster this request: "${request.topic}"`,
+      );
+      if (curriculum.status === "resolved") {
+        verifiedCurriculumContext = curriculum.promptContext;
+        if (curriculum.resolvedTopic?.trim()) request.topic = curriculum.resolvedTopic.trim();
+      } else if (curriculum.status === "blocked") {
+        console.info("[LEARN] verified curriculum unavailable; continuing with clearly labelled profile context", {
+          subject: effectiveSubject,
+          reason: curriculum.reason,
+        });
+      }
+    } catch (error) {
+      console.warn("[LEARN] verified curriculum lookup failed; continuing with profile context", {
+        subject: effectiveSubject,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    const learnerCurriculumContext = [
+      reportedCurriculum.promptContext,
+      verifiedCurriculumContext ? `VERIFIED CURRICULUM EVIDENCE\\n${verifiedCurriculumContext}` : "",
+    ].filter(Boolean).join("\\n\\n");
     const learnerTopicKey = normalizeLearnerTopic(effectiveSubject, request.topic);
     const shouldRecordLearnerRequest =
       body.generationMode !== "persist" &&
@@ -228,7 +270,7 @@ export async function POST(req: Request) {
         event_type: "request",
         outcome: "started",
         difficulty: validDifficulty,
-        metadata: { examBoard: typeof body.examBoard === "string" ? body.examBoard.slice(0, 80) : "", level: typeof level === "string" ? level.slice(0, 80) : "" },
+        metadata: { examBoard: request.examBoard?.slice(0, 80) ?? "", level: request.level?.slice(0, 80) ?? "" },
       }).catch((error) => {
         console.warn("[LEARN] request signal write failed; continuing generation", {
           topic: request.topic,
@@ -563,7 +605,8 @@ export async function POST(req: Request) {
       const sectionPrompt = [
         `Generate section ${generationSectionIndex + 1} of ${generationSectionCount} for a coherent lesson.`,
         buildResolvedLessonPrompt(request),
-        buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+        buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty, verifiedCurriculumContext),
+        learnerCurriculumContext,
         learnerMemoryContext,
         learnerResearchContext,
         `SECTION JOB: ${sectionJob}`,
@@ -792,7 +835,8 @@ Repair only the defective section. Preserve correct material where possible. Do 
 
     const prompt = [
       buildResolvedLessonPrompt(request),
-      buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+      buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty, verifiedCurriculumContext),
+      learnerCurriculumContext,
       buildPresentationGuidance(effectiveSubject, request.topic),
       learnerMemoryContext,
       learnerResearchContext,
