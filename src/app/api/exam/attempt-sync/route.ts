@@ -33,7 +33,10 @@ export async function POST(request: Request) {
   if (typeof deviceId !== "string" || deviceId.length < 1 || deviceId.length > 200) return bad("Invalid deviceId");
   if (status !== "active" && status !== "submitted") return bad("Invalid attempt status");
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return bad("Invalid attempt payload");
-  if ((payload as Record<string, unknown>).attemptId !== attemptId) return bad("Attempt identity does not match payload");\n  if ((payload as Record<string, unknown>).userId !== user.id) return bad("Attempt account does not match authenticated user", 403);\n  let payloadBytes = 0; try { payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length; } catch { return bad("Invalid attempt payload"); }\n  if (payloadBytes > 1_500_000) return bad("Attempt payload exceeds the 1.5 MB sync limit", 413);
+  if ((payload as Record<string, unknown>).attemptId !== attemptId) return bad("Attempt identity does not match payload");
+  if ((payload as Record<string, unknown>).userId !== user.id) return bad("Attempt account does not match authenticated user", 403);
+  let payloadBytes = 0; try { payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length; } catch { return bad("Invalid attempt payload"); }
+  if (payloadBytes > 1_500_000) return bad("Attempt payload exceeds the 1.5 MB sync limit", 413);
 
   const { data, error } = await supabase.rpc("sync_exam_attempt", {
     p_attempt_id: attemptId,
@@ -66,5 +69,6 @@ export async function GET() {
     console.error("[api/exam/attempt-sync] recovery failed", { userId: user.id, code: error.code });
     return bad("Exam attempt recovery failed", 500);
   }
-  const attempts = Array.isArray(data) ? data.filter((row) => row && row.user_id === user.id && row.payload && typeof row.payload === "object" && (row.payload as Record<string, unknown>).userId === user.id && (row.payload as Record<string, unknown>).attemptId === row.attempt_id) : [];\n  return NextResponse.json({ ok: true, attempts });
+  const attempts = Array.isArray(data) ? data.filter((row) => row && row.user_id === user.id && row.payload && typeof row.payload === "object" && (row.payload as Record<string, unknown>).userId === user.id && (row.payload as Record<string, unknown>).attemptId === row.attempt_id) : [];
+  return NextResponse.json({ ok: true, attempts });
 }
