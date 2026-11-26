@@ -172,10 +172,11 @@ export function selectBalancedQuestions(
     const exactIndex = requestedTopics.findIndex(topic =>
       normalizedText(cleanTopic(topic)) === actualTopic
     );
-    const matchingIndex = requestedTopics.findIndex(topic =>
-      topicMatchesAny([topic], question.topic, question.question)
-    );
-    const bucketIndex = exactIndex >= 0 ? exactIndex : matchingIndex;
+    const matchingIndexes = requestedTopics
+      .map((topic, index) => ({ index, specificity: normalizedText(cleanTopic(topic)).length }))
+      .filter(({ index }) => topicMatchesAny([requestedTopics[index]], question.topic, question.question))
+      .sort((a, b) => b.specificity - a.specificity);
+    const bucketIndex = exactIndex >= 0 ? exactIndex : (matchingIndexes[0]?.index ?? -1);
     if (bucketIndex >= 0) buckets[bucketIndex].push(question);
   }
   const selected: ExamQuestion[] = [];
