@@ -183,14 +183,11 @@ function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: 
   const markingCriteria = typeof q.markingCriteria === "string" ? q.markingCriteria.trim() : "";
   if (markingCriteria.length < 10) return null;
 
-  const requestedDifficulty: "easy" | "medium" | "hard" = difficulty === "hard" || difficulty === "easy" ? difficulty : "medium";
-  const declaredDifficulty = q.difficulty === "easy" || q.difficulty === "medium" || q.difficulty === "hard"
-    ? q.difficulty
-    : requestedDifficulty;
   // A paper labelled "hard" must not quietly contain easy questions (and vice versa).
   // Reject mismatches so the caller can use its verified fallback instead.
-  if (declaredDifficulty !== requestedDifficulty) return null;
-  const normalizedDifficulty = requestedDifficulty;
+  if (!questionDifficultyMatchesRequest(q.difficulty, difficulty)) return null;
+  const normalizedDifficulty: "easy" | "medium" | "hard" =
+    difficulty === "easy" || difficulty === "hard" ? difficulty : "medium";
   const marks = Math.max(1, Math.min(20, Math.round(Number(q.marks))));
   if (normalizedDifficulty === "hard" && marks < 2 && requestedType !== "multiple_choice") return null;
 
