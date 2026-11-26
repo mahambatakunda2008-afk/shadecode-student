@@ -212,7 +212,7 @@ export async function POST(req: Request) {
     // The old route trusted only request-body level/board fields, which the Learn UI
     // did not send, so lessons silently lost the learner's actual study context.
     const { data: curriculumProfile } = await supabase.from("profiles")
-      .select("study_level, education_stage, curriculum_board, qualification, syllabus_code, syllabus_year, curriculum_profile, curriculum_subjects")
+      .select("study_level, education_stage, curriculum_board, qualification, syllabus_year, curriculum_profile")
       .eq("id", user.id)
       .maybeSingle();
     const reportedCurriculum = buildLearnerProfileGenerationHints(curriculumProfile, effectiveSubject);
