@@ -274,7 +274,10 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
     for (const block of practiceBlocks) {
       const numberedQuestions = (block.content.match(/(?:^|\n)\s*(?:Q(?:uestion)?\s*)?\d+[.)]\s+[^\n]{8,}/gi) ?? []).length;
       const answerMarkers = (block.content.match(/(?:^|\n)\s*(?:answer|solution|guidance)(?:\s+(?:key|guide|and explanation))?\s*:/gi) ?? []).length;
-      const hasAnswerSection = /(?:answers?\s*(?:\([^)]*\))?\s*:|answer key|answers and explanations|worked solutions|answer guidance)/i.test(block.content);
+      // A bare "Answers:" heading is not answer guidance. Require meaningful content
+      // after the heading; otherwise a model can pass this gate with an empty answer section.
+      const answerSection = block.content.match(/(?:^|\n)\s*(?:answers?\s*(?:\([^)]*\))?\s*:|answer key|answers and explanations|worked solutions|answer guidance)\s*\n([\s\S]*)/i);
+      const hasAnswerSection = Boolean(answerSection?.[1]?.trim() && answerSection[1].trim().length >= 20);
       if (numberedQuestions > 0 && !hasAnswerSection && answerMarkers < numberedQuestions) {
         failures.push("practice-answer-guidance-incomplete");
         break;
