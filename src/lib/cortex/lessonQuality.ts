@@ -290,5 +290,27 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const formulaTopic = isFormulaTopic(request.topic, request.prompt);
   if (quantitative && formulaTopic && request.intent !== "comparison" && !has("formula") && !/formula|equation|relationship|method|calculation|substitut|identity/i.test(searchableText)) failures.push("formula");
 
+  // A practice set is not self-study-ready when it asks several numbered questions
+  // but only supplies answer guidance for some of them. This caught a live Integration
+  // lesson where Question 3 had no guidance while Questions 1 and 2 did.
+  const practiceBlocks = normalized.filter(block => block.normalizedType === "practice");
+  for (const block of practiceBlocks) {
+    const questionIds = [...block.content.matchAll(/(?:practice\\s+)?(?:question|problem|exercise)\\s*#?\\s*(\\d+)\\s*:/gi)]
+      .map(match => match[1]);
+    const answerIds = new Set([...block.content.matchAll(/(?:answer\\s+guidance|worked\\s+solution|solution|answer)\\s*#?\\s*(\\d+)\\s*:/gi)]
+      .map(match => match[1]));
+    if (questionIds.length >= 2 && questionIds.some(id => !answerIds.has(id))) {
+      failures.push("practice-answer-guidance-incomplete");
+    }
+  }
+
+  // The exam-transfer section must contain an actual task, not only generic advice
+  // about how to approach exams. Generic advice can accompany a question but cannot
+  // substitute for one.
+  const examBlocks = normalized.filter(block => block.normalizedType === "exam");
+  if (examBlocks.some(block => !/\\bquestion\\s*:/i.test(block.content) && !/\\?/.test(block.content))) {
+    failures.push("exam-transfer-no-task");
+  }
+
   return { failures: [...new Set(failures)], types: [...types] };
 }
