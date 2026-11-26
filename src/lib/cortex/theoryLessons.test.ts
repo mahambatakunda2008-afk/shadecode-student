@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildDeterministicLessonFallback } from "./lessonFallback";
 import { THEORY_EXCLUSIONS, THEORY_LESSONS } from "./theoryLessons";
 
-const ALLOWED_TYPES = new Set(["objective", "prior", "concept", "definition", "formula", "example", "checkpoint", "application", "exam", "summary", "misconception", "mistake", "practice", "synthesis"]);
+const ALLOWED_TYPES = new Set(["objective", "prior", "concept", "definition", "formula", "example", "checkpoint", "application", "exam", "summary", "misconception", "mistake", "practice", "synthesis", "diagram"]);
 const LESSONS = [...new Set(Object.values(THEORY_LESSONS))];
 const byTitle = (needle: string) => LESSONS.find((l) => l.title.startsWith(needle))!;
 const blockText = (lesson: { blocks: Array<{ title?: string; content: string }> }, title: string) => lesson.blocks.find((b) => b.title === title)!.content;
