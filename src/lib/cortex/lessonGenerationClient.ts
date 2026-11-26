@@ -1306,7 +1306,7 @@ export async function startLessonGeneration(input: LessonGenerationInput, token:
 
 
 /** Retry locally preserved lessons without running generation again. */
-export async function retryPendingGeneratedLessonSync(options: { manual?: boolean } = {}): Promise<{ synced: number; pending: number }> {
+async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {}): Promise<{ synced: number; pending: number }> {
   if (!isBrowser() || !navigator.onLine) return { synced: 0, pending: 0 };
   const { createClient } = await import("@/lib/supabase/client");
   const { data: sessionData } = await createClient().auth.getSession();
@@ -1384,6 +1384,17 @@ export async function retryPendingGeneratedLessonSync(options: { manual?: boolea
     }
   }
   return { synced, pending: (await offlineStorage.getPendingLessonSync(userId)).length };
+}
+
+let pendingLessonSyncInFlight: Promise<{ synced: number; pending: number }> | null = null;
+export function retryPendingGeneratedLessonSync(options: { manual?: boolean } = {}): Promise<{ synced: number; pending: number }> {
+  if (pendingLessonSyncInFlight) return pendingLessonSyncInFlight;
+  const task = runPendingGeneratedLessonSync(options);
+  pendingLessonSyncInFlight = task;
+  void task.finally(() => {
+    if (pendingLessonSyncInFlight === task) pendingLessonSyncInFlight = null;
+  });
+  return task;
 }
 
 if (isBrowser()) {
