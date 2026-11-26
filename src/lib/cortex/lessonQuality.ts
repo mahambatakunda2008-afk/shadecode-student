@@ -311,7 +311,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
       /\$|\\(?:frac|int|sqrt|times|cdot|Delta|text)\b/.test(block.content),
     );
     if (mathBlocks.some(block => {
-      const hasMathExpression = /[=+*/^_∫√]|\\\\(?:frac|int|sqrt|times|cdot|Delta|text)\\b/.test(block.content);
+      const hasMathExpression = /[=+*/^_∫√]|\\(?:frac|int|sqrt|times|cdot|Delta|text)\b/.test(block.content);
       if (!hasMathExpression) return false;
       const delimiterCount = (block.content.match(/\$/g) ?? []).length;
       const nestedTextDelimiter = /\\text\{[^}]*\$/i.test(block.content);
