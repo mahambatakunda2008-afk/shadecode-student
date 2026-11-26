@@ -1391,9 +1391,8 @@ export function retryPendingGeneratedLessonSync(options: { manual?: boolean } = 
   if (pendingLessonSyncInFlight) return pendingLessonSyncInFlight;
   const task = runPendingGeneratedLessonSync(options);
   pendingLessonSyncInFlight = task;
-  void task.finally(() => {
-    if (pendingLessonSyncInFlight === task) pendingLessonSyncInFlight = null;
-  });
+  const clearFlight = () => { if (pendingLessonSyncInFlight === task) pendingLessonSyncInFlight = null; };
+  void task.then(clearFlight, clearFlight);
   return task;
 }
 
