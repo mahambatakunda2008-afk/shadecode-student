@@ -33,13 +33,14 @@ export async function POST(request: Request) {
   if (typeof deviceId !== "string" || deviceId.length < 1 || deviceId.length > 200) return bad("Invalid deviceId");
   if (status !== "active" && status !== "submitted") return bad("Invalid attempt status");
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return bad("Invalid attempt payload");
+  if ((payload as Record<string, unknown>).attemptId !== attemptId) return bad("Attempt identity does not match payload");
 
   const { data, error } = await supabase.rpc("sync_exam_attempt", {
     p_attempt_id: attemptId,
     p_client_revision: clientRevision,
     p_device_id: deviceId,
     p_status: status,
-    p_payload: payload,
+    p_payload: payload as never,
   });
 
   if (error) {
