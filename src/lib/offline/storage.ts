@@ -12,6 +12,16 @@ export interface OfflineLesson {
   blocks?: Array<Record<string, unknown>>; difficulty?: string;
   downloadedAt: string; lastSyncedAt?: string; size: number;
   progress?: number; completed?: boolean;
+  generationJobId?: string;
+  generationPrompt?: string;
+  generationGoal?: string;
+  generationLevel?: string;
+  generationExamBoard?: string;
+  generationVerifiedFallback?: boolean;
+  syncStatus?: "pending" | "retry-needed" | "synced";
+  syncRetryCount?: number;
+  syncRetryAfter?: number;
+  syncError?: string;
 }
 export interface OfflineNotes { lessonId: string; userId: string; content: string; downloadedAt: string; lastSyncedAt?: string; }
 export interface OfflineQuiz { lessonId: string; userId: string; questions: Array<{ id: string; question: string; options: string[]; correctAnswer: string }>; downloadedAt: string; lastSyncedAt?: string; }
@@ -99,6 +109,17 @@ class OfflineStorage {
     if (!userId) return [];
     await this.init();
     return new Promise((resolve, reject) => { const request = this.db!.transaction(["lessonsByUser"], "readonly").objectStore("lessonsByUser").index("userId").getAll(userId); request.onerror = () => reject(request.error); request.onsuccess = () => resolve((request.result || []).filter((lesson: OfflineLesson) => isOfflineLessonOwnedBy(lesson, userId))); });
+  }
+  async updateLesson(id: string, userId: string, patch: Partial<OfflineLesson>): Promise<OfflineLesson | null> {
+    const current = await this.getLesson(id, userId);
+    if (!current) return null;
+    const updated = { ...current, ...patch, id: current.id, ownerUserId: current.ownerUserId };
+    await this.saveLesson(updated);
+    return updated;
+  }
+  async getPendingLessonSync(userId: string): Promise<OfflineLesson[]> {
+    if (!userId) return [];
+    return (await this.getAllLessons(userId)).filter((lesson) => lesson.syncStatus === "pending" || lesson.syncStatus === "retry-needed");
   }
   async deleteLesson(id: string, userId: string): Promise<void> { if (!userId) throw new Error("Deleting an offline lesson requires its authenticated owner"); await this.init(); return this.delete("lessonsByUser", offlineLessonKey(userId, id)); }
   async saveNotes(notes: OfflineNotes): Promise<void> {
