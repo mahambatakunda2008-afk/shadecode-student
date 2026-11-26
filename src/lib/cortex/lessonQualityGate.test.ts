@@ -93,6 +93,14 @@ describe("generated lesson completeness checks", () => {
     expect(failures.failures).not.toContain("practice-answer-guidance-incomplete");
   });
 
+  it("recognizes capitalized Question and Task labels in exam blocks", () => {
+    const failures = lessonQualityFailures({
+      title: "Integration",
+      blocks: [{ type: "exam", content: "Question: Evaluate the integral of 2x.\nTask: Show your working." }],
+    }, request);
+    expect(failures.failures).not.toContain("exam-transfer-without-question");
+  });
+
   it("rejects an exam block that contains no actual question or task", () => {
     const failures = lessonQualityFailures({
       title: "Integration",
