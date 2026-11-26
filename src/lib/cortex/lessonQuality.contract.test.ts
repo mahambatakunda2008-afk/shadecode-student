@@ -18,7 +18,7 @@ function lesson(practice: string, exam: string) {
       { type: "objective", title: "Learning objective", content: "By the end, explain and apply integration." },
       { type: "concept", title: "What integration means", content: "Integration is accumulation and the reverse operation of differentiation." },
       { type: "example", title: "Worked example", content: "Given: integrate 2x. Method: use the reverse power rule. Answer: x squared plus C." },
-      { type: "checkpoint", title: "Check", content: "Question: What happens to the power when you integrate x squared? Think: reverse differentiation." },
+      { type: "checkpoint", title: "Check", content: "Key idea: integration reverses differentiation." },
       { type: "practice", title: "Practice", content: practice },
       { type: "exam", title: "Exam transfer", content: exam },
       { type: "mistake", title: "Common mistake", content: "Do not forget the constant of integration for an indefinite integral." },
