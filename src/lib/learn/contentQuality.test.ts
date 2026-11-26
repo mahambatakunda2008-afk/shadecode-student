@@ -23,6 +23,17 @@ describe("Learn content quality", () => {
     expect(prompt).toContain("displacement from distance");
   });
 
+  it("preserves curriculum context in targeted repairs", () => {
+    const prompt = buildLessonRepairPrompt(
+      "Mathematics",
+      "Integration",
+      "weak draft",
+      "LEARNER-REPORTED CURRICULUM PROFILE (NOT VERIFIED SYLLABUS EVIDENCE)\\nStudy stage: AS Level",
+    );
+    expect(prompt).toContain("CURRICULUM CONTEXT (preserve its verification status)");
+    expect(prompt).toContain("NOT VERIFIED SYLLABUS EVIDENCE");
+  });
+
   it("does not inject integration-specific corrections into unrelated subjects", () => {
     const prompt = buildLessonRepairPrompt("Physics", "Waves", "weak draft");
     expect(prompt).not.toContain("the power rule excludes n = -1");
