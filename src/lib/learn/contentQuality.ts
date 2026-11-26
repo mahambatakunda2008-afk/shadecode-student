@@ -23,7 +23,7 @@ export function buildDeepLessonPrompt(
     : "";
   const notationGuidance = /math|physics|chemistry|economics/i.test(subject)
     ? `MATHEMATICAL NOTATION
-Use standard symbolic notation for routine expressions and equations. Render mathematical expressions with single-dollar LaTeX delimiters (for example, $\\int x^n\\,dx$ and $x^4$). Do not spell out simple algebraic expressions in prose when notation is clearer. Define every symbol and state relevant conditions and units.`
+Use standard symbolic notation for routine expressions and equations. Render mathematical expressions with single-dollar LaTeX delimiters (for example, $\\int x^n\\,dx$ and $x^4$). Never put dollar delimiters inside a numeric literal: write $3.0$, never $3$.0 or $0$.$20$. Do not spell out simple algebraic expressions in prose when notation is clearer. Define every symbol and state relevant conditions and units.`
     : "";
 
   const difficultyGuide = {
@@ -140,6 +140,7 @@ Requirements:
 - Independently recompute every worked answer, numerical result, unit conversion and answer-guidance item.
 - Ensure every numbered practice question has matching answer guidance; do not leave the final question unanswered.
 - Finish every sentence, equation and worked solution. Reduce block count rather than truncating content.
+${/math|mathematics|physics|chemistry/i.test(subject) ? "- Use standard symbolic notation with single-dollar LaTeX delimiters. Never split numeric literals with dollar signs (write $3.0$, never $3$.0 or $0$.$20$)." : ""}
 - Avoid fictional narratives, anecdotes, story hooks, and story-based analogies. Teach the requested material directly, using concise worked examples and explicit reasoning.
 ${/integration/i.test(topic) && /math/i.test(subject) ? "- For integration, state that the power rule excludes n = -1 (not all negative exponents); distinguish signed integral from total geometric area; and distinguish displacement from distance when integrating velocity." : ""}
 - If the topic itself is story composition or creative writing, explain the techniques directly and use only short annotated excerpts when needed. Do not write a complete story unless explicitly requested.
