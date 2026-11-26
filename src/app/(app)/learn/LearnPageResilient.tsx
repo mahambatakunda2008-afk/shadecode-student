@@ -9,8 +9,8 @@ import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 import { lessonViewedEvent } from "@/lib/intelligence/emitLearningEvent";
 import { getGenerationJob, subscribeGenerationJobs, type GenerationJob } from "@/lib/cortex/generationJob";
 import { hasCompletedLessonCheckpoint } from "@/lib/cortex/lessonCheckpoint";
-import { resumeLessonGeneration, retryLessonGeneration, startLessonGeneration, type LessonGenerationInput } from "@/lib/cortex/lessonGenerationClient";
-import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, Compass, GraduationCap, Loader2, RefreshCw, Sparkles, Target, Wifi, WifiOff, Zap, Flame, BrainCircuit, ChevronRight, CirclePlay, NotebookPen, ShieldCheck } from "lucide-react";
+import { resumeLessonGeneration, retryLessonGeneration, retryPendingGeneratedLessonSync, startLessonGeneration, type LessonGenerationInput } from "@/lib/cortex/lessonGenerationClient";
+import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, Compass, GraduationCap, Loader2, RefreshCw, Sparkles, Target, Wifi, WifiOff, Zap, Flame, BrainCircuit, ChevronRight, CirclePlay, NotebookPen, ShieldCheck, CloudUpload } from "lucide-react";
 import type { LearnLesson, LearnSubject, LearnSummary } from "./types";
 import PaperStudyLauncher from "./PaperStudyLauncher";
 import LearnBrainStatus from "./LearnBrainStatus";
@@ -78,6 +78,8 @@ export default function LearnPageResilient() {
   const [mode, setMode] = useState<Mode>("guided");
   const [generationJob, setGenerationJob] = useState<LessonJob | null>(null);
   const [showAllLessons, setShowAllLessons] = useState(false);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [syncingPending, setSyncingPending] = useState(false);
   const [learningMode, setLearningModeState] = useState<LearningMode>("classic");
   const openedJobRef = useRef<string | null>(null);
 
@@ -151,6 +153,7 @@ export default function LearnPageResilient() {
         if (authTimer) clearTimeout(authTimer);
       }
       const local = await readDeviceLessons(session?.user.id);
+      if (session?.user.id) setPendingSyncCount((await offlineStorage.getPendingLessonSync(session.user.id).catch(() => [])).length);
       if (cancelled) return;
       if (local.length) setLessons(local);
       setLoading(false);
@@ -205,6 +208,7 @@ export default function LearnPageResilient() {
     if (!r.ok) throw new Error(data.error || `Learn sync failed (${r.status})`);
     setSubjects(data.subjects ?? []);
     const deviceLessons = await offlineStorage.getAllLessons(ownerUserId).catch(() => [] as OfflineLesson[]);
+    setPendingSyncCount(deviceLessons.filter((lesson) => lesson.syncStatus === "pending" || lesson.syncStatus === "retry-needed").length);
     setLessons(mergeDeviceAndCloudLessons(data.lessons ?? [], deviceLessons));
     setSummary(data.summary ?? null);
     const syncedAt = new Date().toISOString();
@@ -245,6 +249,21 @@ export default function LearnPageResilient() {
   function openLesson(lesson: LearnLesson) {
     void lessonViewedEvent(lesson.id, lesson.subject, lesson.topic);
     router.push(`/learn/${lesson.id}`);
+  }
+
+  async function retryPendingSync() {
+    if (!token || !userId || syncingPending || offline) return;
+    setSyncingPending(true);
+    try {
+      await retryPendingGeneratedLessonSync({ manual: true });
+      const pending = await offlineStorage.getPendingLessonSync(userId).catch(() => []);
+      setPendingSyncCount(pending.length);
+      await load(token, userId);
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : "Could not retry lesson sync.");
+    } finally {
+      setSyncingPending(false);
+    }
   }
 
   const completedResult = generationJob?.result && typeof generationJob.result === "object"
@@ -435,7 +454,10 @@ export default function LearnPageResilient() {
         <section className="mt-9">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div><p className="text-xs font-bold uppercase tracking-[0.17em] text-[var(--muted-foreground)] dark:text-[var(--primary)]">Your library</p><h2 className="mt-1 text-2xl font-semibold tracking-tight">Pick up where you left off.</h2><p className="mt-1 text-sm text-[var(--muted-foreground)] dark:text-[var(--muted-foreground)]">Your recent lessons, including the ones saved on this device.</p></div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-xs font-semibold dark:border-[var(--card-border)] dark:bg-[var(--surface-2)]"><BookOpen size={14} /> {visibleLessons.length} lessons</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {pendingSyncCount > 0 && <><span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-xs font-semibold text-[var(--muted-foreground)]"><CloudUpload size={14} /> {pendingSyncCount} waiting to sync</span><button type="button" onClick={() => void retryPendingSync()} disabled={offline || syncingPending} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] px-3 py-2 text-xs font-semibold transition hover:bg-[var(--interactive-hover)] disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw size={14} className={syncingPending ? "animate-spin" : ""} /> {syncingPending ? "Syncing…" : "Retry sync"}</button></>}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-xs font-semibold dark:border-[var(--card-border)] dark:bg-[var(--surface-2)]"><BookOpen size={14} /> {visibleLessons.length} lessons</span>
+            </div>
           </div>
           {visibleLessons.length === 0 ? <div className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[var(--surface)] px-5 py-12 text-center dark:border-[var(--card-border)] dark:bg-[var(--surface-2)]"><span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)] dark:bg-[var(--surface-2)] dark:text-[var(--primary)]"><BookOpen size={22} /></span><h3 className="mt-4 text-lg font-semibold">Your library starts with one good lesson.</h3><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--muted-foreground)] dark:text-[var(--muted-foreground)]">Choose a subject above, name what you need to understand, and build a lesson you can return to.</p></div> : <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {displayedLessons.map((lesson, index) => <button key={lesson.id} type="button" onClick={() => openLesson(lesson)} className="group rounded-[20px] border border-[var(--card-border)] bg-[var(--surface)] p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[var(--primary)]/60 hover:shadow-[0_12px_28px_rgba(20,30,20,0.06)] dark:border-[var(--card-border)] dark:bg-[var(--surface)] dark:hover:bg-[var(--surface-2)] sm:p-5">
