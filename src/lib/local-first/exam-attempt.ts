@@ -76,7 +76,7 @@ export async function deleteExamAttempt(userId: string, attemptId: string): Prom
   const recordId = key(userId, attemptId);
   const existing = await localFirstStore.get<LocalExamAttempt>(recordId);
   if (!existing || existing.userId !== userId || existing.deletedAt) throw new Error("Exam attempt not found");
-  await localFirstStore.acknowledgeEntityOperations(userId, "exam_attempt", recordId);
+  await localFirstStore.acknowledgeEntityOperations(userId, "exam_attempt", attemptId);
   await localFirstStore.hydrate({
     ...existing,
     updatedAt: Date.now(),
