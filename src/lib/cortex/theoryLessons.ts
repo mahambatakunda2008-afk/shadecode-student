@@ -31,7 +31,7 @@ const BINARY_SEARCH: TheoryLesson = {
 };
 
 const ORGANIC_CHEMISTRY: TheoryLesson = {
-  title: "Organic chemistry basics: homologous series, naming, isomers and key reactions",
+  title: "Hydrocarbons and organic chemistry: homologous series, naming, isomers and key reactions",
   blocks: [
     { type: "objective", title: "What you will be able to do", content: "By the end, you should be able to define a homologous series and a functional group, and give the general formulae and first members of alkanes, alkenes, alcohols and carboxylic acids. You should also be able to name simple compounds, recognise isomers, and describe and write balanced equations for their key reactions." },
     { type: "prior", title: "Before you start", content: "Organic chemistry is the chemistry of carbon compounds. A carbon atom has four outer electrons and forms four covalent bonds, which lets it build long chains. A hydrocarbon contains only carbon and hydrogen.\nA molecular formula shows how many atoms of each element there are (C4H10). A structural formula shows how they are joined (CH3CH2CH2CH3). A displayed formula shows every bond." },
