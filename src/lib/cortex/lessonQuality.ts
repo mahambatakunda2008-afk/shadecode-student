@@ -281,7 +281,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
       }
     }
     const examBlocks = normalized.filter(block => block.normalizedType === "exam");
-    if (examBlocks.length > 0 && !examBlocks.some(block => /(?:^|\n)\s*(?:question|task)\s*[:.)-]|\?/.test(block.content))) {
+    if (examBlocks.length > 0 && !examBlocks.some(block => /(?:^|\n)\s*(?:question|task)\s*[:.)-]|\?/i.test(block.content))) {
       failures.push("exam-transfer-without-question");
     }
   }
