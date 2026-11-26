@@ -55,3 +55,16 @@ export async function POST(request: Request) {
   }
   return NextResponse.json({ ok: true, ...result }, { status: result.status === "conflict" ? 409 : 200 });
 }
+
+
+export async function GET() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return bad("Authentication required", 401);
+  const { data, error } = await supabase.rpc("get_my_exam_attempts");
+  if (error) {
+    console.error("[api/exam/attempt-sync] recovery failed", { userId: user.id, code: error.code });
+    return bad("Exam attempt recovery failed", 500);
+  }
+  return NextResponse.json({ ok: true, attempts: data ?? [] });
+}
