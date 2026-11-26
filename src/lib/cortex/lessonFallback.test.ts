@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildDeterministicLessonFallback } from "./lessonFallback";
 import { lessonQualityFailures, type LessonQualityRequest } from "./lessonQuality";
 import { resolveLessonRequest } from "./lessonRequest";
+import { THEORY_LESSONS } from "./theoryLessons";
 
 // These authored examples check fallback matching and the quality gate for
 // topics whose lesson shape is designed to satisfy it. Some deep topics (such
@@ -122,6 +123,14 @@ describe("buildDeterministicLessonFallback", () => {
     ).slice(0, 28);
     expect(persistableBlocks.length).toBeGreaterThanOrEqual(10);
     expect(persistableBlocks.every((block) => typeof block.type === "string")).toBe(true);
+  });
+
+  it("keeps every curated theory lesson compatible with the lesson quality contract", () => {
+    for (const [key, lesson] of Object.entries(THEORY_LESSONS)) {
+      const [subject, topic] = key.split("|");
+      const request = resolveLessonRequest({ prompt: topic, subject, topic });
+      expect(lessonQualityFailures(lesson, request).failures, key).toEqual([]);
+    }
   });
 
   it("returns null for a topic with no hand-authored fallback", () => {
