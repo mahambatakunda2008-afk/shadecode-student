@@ -20,7 +20,7 @@ import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal 
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
 import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
-import { buildLearnerCurriculumContext } from "@/lib/curriculum/learner-generation-context";
+import { buildLearnerProfileGenerationHints } from "@/lib/curriculum/user-profile";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -215,7 +215,7 @@ export async function POST(req: Request) {
       .select("study_level, education_stage, curriculum_board, qualification, syllabus_code, syllabus_year, curriculum_profile, curriculum_subjects")
       .eq("id", user.id)
       .maybeSingle();
-    const reportedCurriculum = buildLearnerCurriculumContext(curriculumProfile, effectiveSubject);
+    const reportedCurriculum = buildLearnerProfileGenerationHints(curriculumProfile, effectiveSubject);
     const effectiveLevel = typeof level === "string" && level.trim() ? level.trim() : reportedCurriculum.level;
     const effectiveBoard = typeof body.examBoard === "string" && body.examBoard.trim() ? body.examBoard.trim() : reportedCurriculum.examBoard;
     const request = resolveLessonRequest({
