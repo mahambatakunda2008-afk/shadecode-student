@@ -40,6 +40,21 @@ describe("lesson title normalization", () => {
 });
 
 describe("lesson quality: usable assessment content", () => {
+  it("rejects unbalanced or nested LaTeX delimiters in mathematical examples", () => {
+    const draft = lesson(
+      "Practice Question 1: Integrate 2x. Answer Guidance 1: x squared plus C. Practice Question 2: Integrate 3x squared. Answer Guidance 2: x cubed plus C.",
+      "Question: Evaluate the integral from 0 to 2 of 3x squared.",
+    );
+    draft.blocks.push({
+      type: "example",
+      title: "Malformed unit expression",
+      content: String.raw`Given: velocity is $-2.0\\text{ $\\frac{m}{s}$}.`,
+    });
+
+    const result = lessonQualityFailures(draft, request);
+    expect(result.failures).toContain("math-delimiters-unbalanced");
+  });
+
   it("rejects a practice set with missing answer guidance for a numbered question", () => {
     const result = lessonQualityFailures(lesson(
       "Practice Question 1: Integrate 2x. Answer Guidance 1: x squared plus C. Practice Question 2: Integrate 3x squared. Answer Guidance 2: x cubed plus C. Practice Question 3: Integrate 4x.",
