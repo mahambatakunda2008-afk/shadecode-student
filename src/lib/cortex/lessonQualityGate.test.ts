@@ -93,6 +93,26 @@ describe("generated lesson completeness checks", () => {
     expect(failures.failures).not.toContain("practice-answer-guidance-incomplete");
   });
 
+  it("rejects an empty Answers heading as missing practice guidance", () => {
+    const failures = lessonQualityFailures({
+      title: "Integration",
+      blocks: [
+        { type: "practice", content: "1. Evaluate the integral of x squared.\n2. Find the constant of integration.\n\nAnswers:" },
+      ],
+    }, request);
+    expect(failures.failures).toContain("practice-answer-guidance-incomplete");
+  });
+
+  it("accepts a substantive answer section for practice questions", () => {
+    const failures = lessonQualityFailures({
+      title: "Integration",
+      blocks: [
+        { type: "practice", content: "1. Evaluate the integral of x squared.\n2. Find the constant of integration.\n\nAnswers:\n1. Integrate using the power rule to obtain x cubed over 3 plus C.\n2. Substitute the initial condition and solve for C." },
+      ],
+    }, request);
+    expect(failures.failures).not.toContain("practice-answer-guidance-incomplete");
+  });
+
   it("recognizes capitalized Question and Task labels in exam blocks", () => {
     const failures = lessonQualityFailures({
       title: "Integration",
