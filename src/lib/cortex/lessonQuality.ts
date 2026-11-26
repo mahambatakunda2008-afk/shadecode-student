@@ -347,7 +347,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // about how to approach exams. Generic advice can accompany a question but cannot
   // substitute for one.
   const examBlocks = normalized.filter(block => block.normalizedType === "exam");
-  if (examBlocks.some(block => !/\bquestion\s*:/i.test(block.content) && !/\?/.test(block.content))) {
+  if (examBlocks.some(block => !/\bquestion\s*(?:#?\s*\d+)?\s*:/i.test(block.content))) {
     failures.push("exam-transfer-no-task");
   }
 
