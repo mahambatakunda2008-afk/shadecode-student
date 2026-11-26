@@ -70,7 +70,11 @@ export async function syncPendingExamAttempts(userId: string): Promise<void> {
     .filter((operation) => operation.entity === "exam_attempt" && operation.userId === userId)
     .map((operation) => operation.entityId))];
   for (const attemptId of attemptIds.slice(0, 25)) {
-    await syncExamAttempt(userId, attemptId);
+    try {
+      await syncExamAttempt(userId, attemptId);
+    } catch {
+      // Keep this operation pending; retry after the next reconnect or save.
+    }
   }
 }
 
