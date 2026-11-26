@@ -331,7 +331,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
     const answerKeyStart = block.content.search(/\b(?:answers|answer\s+key)\s*(?:\([^)]*\))?\s*:/i);
     const questionText = answerKeyStart >= 0 ? block.content.slice(0, answerKeyStart) : block.content;
     const answerKeyText = answerKeyStart >= 0 ? block.content.slice(answerKeyStart) : "";
-    const questions = [...questionText.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\n)\s*(\d{1,2})[.)]\s+/gim)];
+    const questions = [...questionText.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\s)(\d{1,2})[.)]\s+(?=(?:evaluate|find|calculate|explain|state|describe|show|write|name|identify|simplify|prove|sketch|draw|compare|determine|complete|which|what|how|why|given|if|when|for|use|list|define|predict|give|balance|convert|select|choose|a|an|the|two)\b)/gim)];
     const answerIds = new Set([...block.content.matchAll(/(?:answer\s+guidance|worked\s+solution|solution|answer)\s*#?\s*(\d+)\s*:/gi)]
       .map(match => match[1]));
     const answerKeyIds = new Set([...answerKeyText.matchAll(/(?:^|[:\n])\s*(\d{1,2})[.)]\s+/gim)]
