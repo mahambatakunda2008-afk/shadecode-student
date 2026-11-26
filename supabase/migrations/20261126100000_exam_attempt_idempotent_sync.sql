@@ -69,6 +69,7 @@ begin
     payload = excluded.payload,
     updated_at = now()
   where public.exam_attempt_sync.client_revision < excluded.client_revision
+    and (public.exam_attempt_sync.status <> 'submitted' or excluded.status = 'submitted')
   returning * into v_saved;
 
   if found then
