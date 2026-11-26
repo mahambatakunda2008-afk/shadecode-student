@@ -62,20 +62,13 @@ export async function saveExamAttempt(userId: string, attempt: LocalExamAttempt)
   const recordId = key(userId, attempt.attemptId);
   const existing = await localFirstStore.get<LocalExamAttempt>(recordId);
   if (existing && existing.userId !== userId) throw new Error("Refusing to overwrite another user's exam attempt");
-  await localFirstStore.acknowledgeEntityOperations(userId, "exam_attempt", recordId);
-  const record: LocalRecord<LocalExamAttempt> = {
+  return localFirstStore.upsert<LocalExamAttempt>({
     id: recordId,
     entity: "exam_attempt",
-    entityId: recordId,
+    entityId: attempt.attemptId,
     userId,
     payload: { ...attempt, userId, seconds, totalSeconds, current, updatedAt: new Date().toISOString() },
-    updatedAt: Date.now(),
-    deviceId: existing?.deviceId ?? await localFirstStore.deviceId(),
-    version: (existing?.version ?? 0) + 1,
-    syncVersion: existing?.syncVersion ?? 0,
-  };
-  await localFirstStore.hydrate(record);
-  return (await localFirstStore.get<LocalExamAttempt>(recordId)) ?? record;
+  });
 }
 
 export async function deleteExamAttempt(userId: string, attemptId: string): Promise<void> {
