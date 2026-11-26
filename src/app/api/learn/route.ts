@@ -235,7 +235,7 @@ export async function POST(req: Request) {
     try {
       const curriculum = await resolveVerifiedCurriculumPromptContext(
         user.id,
-        `${buildResolvedLessonPrompt(request)}\\nmaster this request: "${request.topic}"`,
+        `${buildResolvedLessonPrompt(request)}\nmaster this request: "${request.topic}"`,
       );
       if (curriculum.status === "resolved") {
         verifiedCurriculumContext = curriculum.promptContext;
@@ -254,8 +254,8 @@ export async function POST(req: Request) {
     }
     const learnerCurriculumContext = [
       reportedCurriculum.promptContext,
-      verifiedCurriculumContext ? `VERIFIED CURRICULUM EVIDENCE\\n${verifiedCurriculumContext}` : "",
-    ].filter(Boolean).join("\\n\\n");
+      verifiedCurriculumContext ? `VERIFIED CURRICULUM EVIDENCE\n${verifiedCurriculumContext}` : "",
+    ].filter(Boolean).join("\n\n");
     const learnerTopicKey = normalizeLearnerTopic(effectiveSubject, request.topic);
     const shouldRecordLearnerRequest =
       body.generationMode !== "persist" &&
