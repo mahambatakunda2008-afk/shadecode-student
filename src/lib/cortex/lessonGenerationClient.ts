@@ -225,9 +225,9 @@ async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, genera
   if (!validated) throw new Error("Generated lesson failed the learning-quality checks.");
   // This path only writes to IndexedDB. Mark the result device-only so callers never
   // mistake a local save for durable server persistence or complete the cloud job.
-  const result: LessonGenerationResult = { id: validated.id, title: validated.title, blocks: validated.blocks, offlineFallback: !generated?.localModel, localModel: !!generated?.localModel, localOnly: true };
+  const result: LessonGenerationResult = { id: job.id, title: validated.title, blocks: validated.blocks, offlineFallback: !generated?.localModel, localModel: !!generated?.localModel, localOnly: true };
   const now = new Date().toISOString();
-  await offlineStorage.saveLesson({ id: result.id, ownerUserId, title: result.title, subject: job.request.subject, description: generated?.offlineFallback ? `Curated curriculum recovery lesson on ${job.request.prompt}. This lesson uses authored material while AI generation is unavailable. Stored on this device only.` : generated?.localModel ? `Locally generated Cortex lesson for ${job.request.prompt}. Stored on this device only.` : `Offline curriculum lesson for ${job.request.prompt}. Stored on this device only.`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: undefined, size: JSON.stringify(result).length });
+  await offlineStorage.saveLesson({ id: result.id, ownerUserId, title: result.title, subject: job.request.subject, topic: job.request.prompt, description: `Generated locally for ${job.request.prompt}. Waiting to sync to your cloud library.`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: undefined, generationJobId: job.id, generationPrompt: job.request.prompt, generationGoal: job.request.goal, generationLevel: job.request.level, generationExamBoard: job.request.examBoard, generationVerifiedFallback: generated?.offlineFallback === true, syncStatus: "pending", syncRetryCount: 0, size: JSON.stringify(result).length });
   updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
   if (getActiveId() === job.id) saveActiveId(null); openCompletedLesson(result);
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
@@ -601,7 +601,7 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
   // Save it to this device and explicitly mark it local-only; callers must not report
   // cloud completion when no server lesson row was confirmed.
   const localOnly: LessonGenerationResult = {
-    id: validated.id || job.id,
+    id: job.id,
     title: validated.title,
     blocks: validated.blocks,
     localModel: validated.localModel,
@@ -623,7 +623,8 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
     ownerUserId,
     title: localOnly.title,
     subject: job.request.subject,
-    description: `Cloud save failed. This generated lesson is stored on this device only. Persistence error: ${persistenceError.slice(0, 240)}`,
+    topic: job.request.prompt,
+    description: `Cloud save failed. This generated lesson is waiting to sync. Last error: ${persistenceError.slice(0, 240)}`,
     blocks: localOnly.blocks,
     difficulty: job.request.difficulty,
     progress: 0,
@@ -631,6 +632,14 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
     downloadedAt: now,
     // This lesson has not been confirmed in cloud storage. Do not label it synced.
     lastSyncedAt: undefined,
+    generationJobId: job.id,
+    generationPrompt: job.request.prompt,
+    generationGoal: job.request.goal,
+    generationLevel: job.request.level,
+    generationExamBoard: job.request.examBoard,
+    generationVerifiedFallback: validated.offlineFallback === true,
+    syncStatus: "pending",
+    syncRetryCount: 0,
     size: JSON.stringify(localOnly).length,
   });
   updateGenerationJob(job.id, {
@@ -1293,4 +1302,77 @@ export async function startLessonGeneration(input: LessonGenerationInput, token:
     return saveLocalResult(job);
   }
   return job;
+}
+
+
+/** Retry locally preserved lessons without running generation again. */
+export async function retryPendingGeneratedLessonSync(options: { manual?: boolean } = {}): Promise<{ synced: number; pending: number }> {
+  if (!isBrowser() || !navigator.onLine) return { synced: 0, pending: 0 };
+  const { createClient } = await import("@/lib/supabase/client");
+  const { data: sessionData } = await createClient().auth.getSession();
+  const userId = sessionData.session?.user.id;
+  const token = sessionData.session?.access_token;
+  if (!userId || !token) return { synced: 0, pending: 0 };
+  const pending = await offlineStorage.getPendingLessonSync(userId);
+  let synced = 0;
+  for (const lesson of pending) {
+    if (!navigator.onLine) break;
+    if (lesson.ownerUserId !== userId || !lesson.generationJobId || !lesson.generationPrompt || !lesson.blocks?.length) continue;
+    if (!options.manual && typeof lesson.syncRetryAfter === "number" && lesson.syncRetryAfter > Date.now()) continue;
+    const leaseId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : null;
+    if (!leaseId) continue;
+    try {
+      const response = await fetch("/api/learn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          type: "lesson", learningMode: getLearningMode(), generationMode: "persist",
+          generationJobId: lesson.generationJobId, generationLeaseId: leaseId,
+          subject: lesson.subject, topic: lesson.generationPrompt,
+          difficulty: lesson.difficulty || "medium",
+          goal: lesson.generationGoal || "Understand and apply the topic.",
+          level: lesson.generationLevel, examBoard: lesson.generationExamBoard,
+          generatedLesson: { title: lesson.title, blocks: lesson.blocks, verifiedCurriculumFallback: lesson.generationVerifiedFallback === true },
+        }),
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data?.id === lesson.generationJobId && Array.isArray(data?.blocks)) {
+        await offlineStorage.updateLesson(lesson.id, userId, {
+          syncStatus: "synced", lastSyncedAt: new Date().toISOString(),
+          syncError: undefined, syncRetryAfter: undefined,
+          description: "Saved to your cloud library and kept on this device for offline study.",
+        });
+        synced += 1;
+      } else {
+        const retryCount = (lesson.syncRetryCount || 0) + 1;
+        const delay = Math.min(6 * 60 * 60 * 1000, 30_000 * (2 ** Math.min(retryCount - 1, 10)));
+        await offlineStorage.updateLesson(lesson.id, userId, {
+          syncStatus: "retry-needed", syncRetryCount: retryCount,
+          syncRetryAfter: Date.now() + delay,
+          syncError: typeof data?.error === "string" ? data.error.slice(0, 240) : `Sync failed (${response.status}).`,
+        });
+      }
+    } catch (error) {
+      const retryCount = (lesson.syncRetryCount || 0) + 1;
+      const delay = Math.min(6 * 60 * 60 * 1000, 30_000 * (2 ** Math.min(retryCount - 1, 10)));
+      await offlineStorage.updateLesson(lesson.id, userId, {
+        syncStatus: "retry-needed", syncRetryCount: retryCount,
+        syncRetryAfter: Date.now() + delay,
+        syncError: error instanceof Error ? error.message.slice(0, 240) : "Network sync failed.",
+      });
+    }
+  }
+  return { synced, pending: (await offlineStorage.getPendingLessonSync(userId)).length };
+}
+
+if (isBrowser()) {
+  let syncTimer: ReturnType<typeof setTimeout> | null = null;
+  const scheduleSync = () => {
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => { void retryPendingGeneratedLessonSync().catch((error) => console.warn("[LEARN] pending lesson sync could not start", error)); }, 1200);
+  };
+  window.addEventListener("online", scheduleSync);
+  window.addEventListener("focus", scheduleSync);
+  if (navigator.onLine) scheduleSync();
 }
