@@ -151,6 +151,52 @@ function dedupeQuestions(questions: Partial<ExamQuestion>[]): Partial<ExamQuesti
   return result;
 }
 
+/**
+ * Selects a balanced paper from validated candidates. When several topics are
+ * requested, take one question per topic per pass before taking a second from
+ * any topic. If a topic has no valid candidates, remaining topics can still
+ * fill the paper; invalid questions are never fabricated to fill a quota.
+ */
+export function selectBalancedQuestions(
+  candidates: ExamQuestion[],
+  requestedTopics: string[],
+  count: number,
+): ExamQuestion[] {
+  const limit = Math.max(0, Math.floor(count));
+  if (limit === 0) return [];
+  if (requestedTopics.length <= 1) return candidates.slice(0, limit);
+
+  const buckets = requestedTopics.map(topic => candidates.filter(question =>
+    topicMatchesAny([topic], question.topic, question.question)
+  ));
+  const selected: ExamQuestion[] = [];
+  const selectedIds = new Set<string>();
+  let addedInPass = true;
+
+  while (selected.length < limit && addedInPass) {
+    addedInPass = false;
+    for (const bucket of buckets) {
+      const next = bucket.find(question => !selectedIds.has(question.id));
+      if (!next) continue;
+      selected.push(next);
+      selectedIds.add(next.id);
+      addedInPass = true;
+      if (selected.length >= limit) break;
+    }
+  }
+
+  if (selected.length < limit) {
+    for (const question of candidates) {
+      if (selectedIds.has(question.id)) continue;
+      selected.push(question);
+      selectedIds.add(question.id);
+      if (selected.length >= limit) break;
+    }
+  }
+
+  return selected;
+}
+
 export function questionDifficultyMatchesRequest(
   declared: unknown,
   requested: string,
@@ -261,7 +307,7 @@ export async function generateExam(subject: string, topics: string[], difficulty
       return null;
     }
 
-    const finalQuestions = questions.slice(0, safeCount);
+    const finalQuestions = selectBalancedQuestions(questions, safeTopics, safeCount);
     const generatedTopics = Array.isArray(parsed.topics)
       ? parsed.topics.filter((t): t is string => typeof t === "string" && Boolean(t.trim())).map(cleanTopic).slice(0, 20)
       : safeTopics;
