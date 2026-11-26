@@ -14,6 +14,18 @@ export function buildDeepLessonPrompt(
     ? "This is a BROAD MASTERCLASS request. Map the subject area first, then teach its major branches in one coherent journey. Do not reduce a broad subject to a definition and a few examples. Cover the canonical subtopics a serious learner would expect, explain how they connect, and finish by opening paths for deeper study."
     : "This is a focused topic. Go deep enough that the learner can explain it, apply it, recognise traps, and connect it to neighbouring ideas.";
 
+  const topicSpecificChecks = /integration/i.test(topic) && /math/i.test(subject)
+    ? `INTEGRATION ACCURACY CHECKS
+- State the power rule with its exact restriction: the exponent must not be -1. The x^-1 case integrates to ln|x| + C.
+- Distinguish a definite integral (signed accumulation) from total geometric area; split at axis crossings and add absolute areas when total area is required.
+- Integrating velocity gives displacement. Total distance requires integrating speed or treating intervals where velocity changes sign separately.
+- Explain why an indefinite integral includes + C and why the constant cancels in a definite-integral evaluation.`
+    : "";
+  const notationGuidance = /math|physics|chemistry|economics/i.test(subject)
+    ? `MATHEMATICAL NOTATION
+Use standard symbolic notation for routine expressions and equations. Render mathematical expressions with single-dollar LaTeX delimiters (for example, $\\int x^n\\,dx$ and $x^4$). Do not spell out simple algebraic expressions in prose when notation is clearer. Define every symbol and state relevant conditions and units.`
+    : "";
+
   const difficultyGuide = {
     easy: "Use accessible language and build from first principles, but keep intellectual depth. Never confuse beginner-friendly with shallow.",
     medium: "Use rigorous terminology, derivations or mechanisms where useful, worked reasoning, applications, and exam-level precision.",
@@ -35,6 +47,10 @@ ${curriculumContext ? `VERIFIED CURRICULUM CONTEXT:\n${curriculumContext}` : "No
 ${formatCurriculumPlan(topic)}
 
 ${depth}
+
+${topicSpecificChecks}
+
+${notationGuidance}
 
 TEACHING STANDARD
 ${difficultyGuide}
