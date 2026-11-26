@@ -53,6 +53,15 @@ describe("selectBalancedQuestions", () => {
       .toEqual(["k1", "f1", "m1", "k2"]);
   });
 
+  it("does not let a parent topic steal questions from an explicitly selected child topic", () => {
+    const candidates = [
+      question("kin1", "Kinematics"), question("kin2", "Kinematics"),
+      question("forces1", "Forces"),
+    ];
+    expect(selectBalancedQuestions(candidates, ["Mechanics", "Kinematics", "Forces"], 3).map(q => q.id))
+      .toEqual(["kin1", "kin2", "forces1"]);
+  });
+
   it("does not invent questions when a selected topic has no valid candidates", () => {
     const candidates = [question("k1", "Kinematics"), question("f1", "Forces")];
     expect(selectBalancedQuestions(candidates, ["Kinematics", "Forces", "Momentum"], 5).map(q => q.id))
