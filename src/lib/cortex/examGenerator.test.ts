@@ -62,6 +62,15 @@ describe("selectBalancedQuestions", () => {
       .toEqual(["kin1", "forces1", "kin2"]);
   });
 
+  it("assigns hierarchical topic labels to the most specific selected topic", () => {
+    const candidates = [
+      question("kin", "Mechanics: Kinematics"),
+      question("forces", "Mechanics: Forces"),
+    ];
+    expect(selectBalancedQuestions(candidates, ["Mechanics", "Kinematics", "Forces"], 2).map(q => q.id))
+      .toEqual(["kin", "forces"]);
+  });
+
   it("does not invent questions when a selected topic has no valid candidates", () => {
     const candidates = [question("k1", "Kinematics"), question("f1", "Forces")];
     expect(selectBalancedQuestions(candidates, ["Kinematics", "Forces", "Momentum"], 5).map(q => q.id))
