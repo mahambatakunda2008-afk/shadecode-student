@@ -16,6 +16,7 @@ describe("Learn content quality", () => {
     expect(prompt).toContain("Never leave a sentence, equation, worked solution or answer unfinished");
     expect(prompt).toContain("The x^-1 case integrates to ln|x| + C");
     expect(prompt).toContain("single-dollar LaTeX delimiters");
+    expect(prompt).toContain("Never put dollar delimiters inside a numeric literal");
   });
 
   it("adds integration-specific mathematical safeguards during repair", () => {
@@ -23,6 +24,7 @@ describe("Learn content quality", () => {
     expect(prompt).toContain("the power rule excludes n = -1");
     expect(prompt).toContain("signed integral from total geometric area");
     expect(prompt).toContain("displacement from distance");
+    expect(prompt).toContain("Never split numeric literals with dollar signs");
   });
 
   it("preserves curriculum context in targeted repairs", () => {
