@@ -270,7 +270,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   if (tokens.length > 0 && !tokens.some(token => titleText.includes(token))) failures.push("title-topic-drift");
 
   const taskCheckpointBlocks = normalized.filter(block => block.normalizedType === "checkpoint");
-  if (request.intent !== "practice" && checkpointBlocks.some(block => hasAnswerLeak(block.content))) failures.push("checkpoint-reveals-answer");
+  if (request.intent !== "practice" && taskCheckpointBlocks.some(block => hasAnswerLeak(block.content))) failures.push("checkpoint-reveals-answer");
 
   const artificialHeadings = ["demanded worked example", "distribution myth", "verification habit", "examiner looks for", "common exam error"];
   if (normalized.some(block => artificialHeadings.some(heading => `${block.title ?? ""} ${block.content}`.toLowerCase().startsWith(heading)))) failures.push("template-heading");
