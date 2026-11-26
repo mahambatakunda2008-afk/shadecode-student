@@ -85,7 +85,7 @@ begin
     return jsonb_build_object('status', 'already-applied', 'revision', v_saved.client_revision);
   end if;
 
-  return jsonb_build_object('status', 'conflict', 'revision', v_saved.client_revision);
+  return jsonb_build_object('status', 'conflict', 'revision', v_saved.client_revision, 'deviceId', v_saved.device_id, 'savedStatus', v_saved.status, 'savedPayload', v_saved.payload, 'updatedAt', v_saved.updated_at);
 end;
 $$;
 
