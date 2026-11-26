@@ -125,6 +125,15 @@ describe("buildDeterministicLessonFallback", () => {
     expect(persistableBlocks.every((block) => typeof block.type === "string")).toBe(true);
   });
 
+  it("keeps the authored mathematics fallbacks compatible with the lesson quality contract", () => {
+    for (const topic of ["Coordinate geometry", "Numerical solution of equations"]) {
+      const lesson = buildDeterministicLessonFallback("Mathematics", topic);
+      expect(lesson).not.toBeNull();
+      const request = resolveLessonRequest({ prompt: topic, subject: "Mathematics", topic });
+      expect(lessonQualityFailures(lesson!, request).failures, topic).toEqual([]);
+    }
+  });
+
   it("keeps every curated theory lesson compatible with the lesson quality contract", () => {
     for (const [key, lesson] of Object.entries(THEORY_LESSONS)) {
       const [subject, topic] = key.split("|");
