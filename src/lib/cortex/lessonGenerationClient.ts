@@ -1025,7 +1025,19 @@ async function runJob(
   } catch (error) {
     // Use the latest stored job because section generation updates its checkpoint in storage.
     const currentJob = (getGenerationJob(job.id) ?? job) as GenerationJob<LessonGenerationInput>;
-    const message = errorMessage(error); const context = await localContext(currentJob as GenerationJob<LessonGenerationInput>);
+    const message = errorMessage(error);
+    // Connectivity loss is a pause, not a generation failure. Keep the last
+    // completed section checkpoint intact and let reconnect recovery resume it.
+    if (isBrowser() && !navigator.onLine) {
+      updateGenerationJob(job.id, {
+        status: "queued",
+        progress: Math.min(90, Math.max(20, currentJob.progress ?? job.progress)),
+        error: "Waiting for a connection.",
+      });
+      saveActiveId(job.id);
+      return getGenerationJobs().find(item => item.id === job.id) ?? currentJob;
+    }
+    const context = await localContext(currentJob as GenerationJob<LessonGenerationInput>);
     const failureClass = classifyCortexExecutionFailure(error);
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
       hasVerifiedData: isBrowser() && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context),
