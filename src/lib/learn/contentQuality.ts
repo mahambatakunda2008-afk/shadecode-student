@@ -89,9 +89,13 @@ DEPTH RULES
 14. Never mention being an AI, this prompt, JSON, token limits, or generation instructions.
 15. Do not pad the lesson with motivational filler. Substance first.
 16. Prefer connections over isolated facts. A learner should finish knowing not only the pieces, but the structure formed by the pieces.
+17. Independently recompute every numerical result, algebraic transformation, unit conversion and answer-guidance item before returning it. A plausible-looking worked solution is not enough.
+18. Every numbered practice question must have matching, useful answer guidance. Do not leave the final question unanswered or replace an answer with a hint.
+19. Never leave a sentence, equation, worked solution or answer unfinished. If the response budget is tight, reduce the number of blocks rather than truncating teaching content.
+20. Distinguish closely related quantities precisely (for example, displacement versus distance, and signed integral versus total geometric area).
 
 QUALITY BAR
-Before returning the JSON, silently check: Is this genuinely teachable without another AI response? Could a student explain the core ideas after reading it? Are the connections visible? Are there worked examples, traps, checks, and a path forward? Does the lesson respect the curriculum map? If not, deepen it before returning it.`;
+Before returning the JSON, silently check: Is this genuinely teachable without another AI response? Could a student explain the core ideas after reading it? Are the connections visible? Are there worked examples, traps, checks, and a path forward? Does the lesson respect the curriculum map? Recalculate every worked answer independently, verify that every numbered practice question has answer guidance, and check that no block ends mid-thought. If not, deepen or repair it before returning it.`;
 }
 
 export function buildLessonRepairPrompt(subject: string, topic: string, raw: string, curriculumContext = "", difficulty: LessonDifficulty = "medium", qualityFailures: string[] = []) {
@@ -115,7 +119,11 @@ Requirements:
 - Explain WHY and HOW, not only WHAT.
 - Do not invent syllabus requirements.
 - Make the subject's reasoning style visible in explanations and worked examples.
+- Independently recompute every worked answer, numerical result, unit conversion and answer-guidance item.
+- Ensure every numbered practice question has matching answer guidance; do not leave the final question unanswered.
+- Finish every sentence, equation and worked solution. Reduce block count rather than truncating content.
 - Avoid fictional narratives, anecdotes, story hooks, and story-based analogies. Teach the requested material directly, using concise worked examples and explicit reasoning.
+- For integration, state that the power rule excludes n = -1 (not all negative exponents); distinguish signed integral from total geometric area; and distinguish displacement from distance when integrating velocity.
 - If the topic itself is story composition or creative writing, explain the techniques directly and use only short annotated excerpts when needed. Do not write a complete story unless explicitly requested.
 
 Draft to repair:
