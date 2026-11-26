@@ -68,8 +68,15 @@ test.describe("Exam Simulation acceptance journey", () => {
     await expect(page.getByRole("tab", { name: "Topic overview" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Review questions" })).toBeVisible();
 
-    const resultQuestionCount = await page.locator('[role="tabpanel"][aria-label="Topic overview"]').count();
-    expect(resultQuestionCount).toBeGreaterThan(0);
+    const topicOverview = page.getByRole("tabpanel", { name: "Topic overview" });
+    await expect(topicOverview).toBeVisible();
+    await expect.poll(() => topicOverview.innerText().then(text => text.trim().length), { timeout: 15_000 }).toBeGreaterThan(20);
+
+    await page.getByRole("tab", { name: "Review questions" }).click();
+    const questionReview = page.getByRole("tabpanel", { name: "Review questions" });
+    await expect(questionReview).toBeVisible();
+    await expect.poll(() => questionReview.innerText().then(text => text.trim().length), { timeout: 15_000 }).toBeGreaterThan(100);
+
     await page.screenshot({ path: "test-results/exam-simulation-results.png", fullPage: true });
   });
 });
