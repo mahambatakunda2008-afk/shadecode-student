@@ -1,3 +1,16 @@
+/** Replace internal generation placeholders with a stable, learner-facing lesson title. */
+export function normalizeGeneratedLessonTitle(candidate: unknown, topic: string): string {
+  const title = typeof candidate === "string" ? candidate.trim() : "";
+  const normalized = title.toLowerCase().replace(/\s+/g, " ");
+  const genericTitles = new Set(["", "untitled", "new lesson", "lesson", "introduction", "overview", "learning objectives", "summary", "practice", "conclusion"]);
+  const isInternalPlaceholder = /^cortex is building\b/i.test(title);
+  const placeholderTopic = isInternalPlaceholder ? title.replace(/^cortex is building\b/i, "").trim() : "";
+  if (genericTitles.has(normalized) || isInternalPlaceholder) {
+    const safeTopic = (placeholderTopic || topic.trim() || "Learning").slice(0, 190);
+    return safeTopic + ": Core concepts and practice".slice(0, 255);
+  }
+  return title.slice(0, 255);
+}
 export type LessonQualityRequest = {
   intent: "teach" | "remedial" | "revision" | "practice" | "comparison";
   subject: string;
