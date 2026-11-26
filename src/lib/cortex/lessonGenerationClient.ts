@@ -608,9 +608,19 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
     offlineFallback: validated.offlineFallback,
     localOnly: true,
   };
+  // The local lesson store is user-scoped. Resolve the owner from the same
+  // bearer token used for the failed cloud write so a shared device cannot
+  // strand the lesson in an ownerless record or expose it to another account.
+  const { createClient } = await import("@/lib/supabase/client");
+  const { data: ownerData, error: ownerError } = await createClient().auth.getUser(token);
+  const ownerUserId = ownerData.user?.id;
+  if (ownerError || !ownerUserId) {
+    throw new Error("Cloud save failed and this device could not verify the lesson owner. Sign in again before retrying; the generated lesson remains in the current generation checkpoint.");
+  }
   const now = new Date().toISOString();
   await offlineStorage.saveLesson({
     id: localOnly.id,
+    ownerUserId,
     title: localOnly.title,
     subject: job.request.subject,
     description: `Cloud save failed. This generated lesson is stored on this device only. Persistence error: ${persistenceError.slice(0, 240)}`,
