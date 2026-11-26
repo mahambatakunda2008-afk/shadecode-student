@@ -38,6 +38,11 @@ describe("lesson title normalization", () => {
       .toBe("Static electricity: Core concepts and practice");
   });
 
+  it("replaces generic section headings with a topic-level lesson title", () => {
+    expect(normalizeGeneratedLessonTitle("Summary", "Integration"))
+      .toBe("Integration: Core concepts and practice");
+  });
+
   it("preserves a meaningful generated title", () => {
     expect(normalizeGeneratedLessonTitle("Mastering Integration: Applications and Practice", "Integration"))
       .toBe("Mastering Integration: Applications and Practice");
