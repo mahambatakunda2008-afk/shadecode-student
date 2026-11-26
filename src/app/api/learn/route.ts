@@ -85,7 +85,7 @@ function normalizeDifficulty(v: string | null): LessonDifficulty { return v === 
 function clampProgress(v: number | null): number { return typeof v === "number" && Number.isFinite(v) ? Math.min(100, Math.max(0, Math.round(v))) : 0; }
 function toLearnLesson(row: LearnLessonRow, subjectById: Map<string, string>) {
   const progress = clampProgress(row.progress);
-  return { id: row.id, subjectId: row.subject_id, topic: row.topic ?? undefined, subject: subjectById.get(row.subject_id) ?? "Unknown subject", title: row.title, description: row.description ?? "", difficulty: normalizeDifficulty(row.difficulty), progress, completed: progress >= 100, updated_at: row.updated_at ?? undefined, blocks: row.blocks ?? undefined } as LearnLesson;
+  return { id: row.id, subjectId: row.subject_id, topic: row.topic ?? undefined, subject: subjectById.get(row.subject_id) ?? "Unknown subject", title: normalizeGeneratedLessonTitle(row.title, row.topic ?? "Learning"), description: row.description ?? "", difficulty: normalizeDifficulty(row.difficulty), progress, completed: progress >= 100, updated_at: row.updated_at ?? undefined, blocks: row.blocks ?? undefined } as LearnLesson;
 }
 function buildSubjectTabs(subjects: SubjectRow[], lessons: LearnLessonRow[]): LearnSubject[] {
   const counts = lessons.reduce<Record<string, number>>((acc, l) => { acc[l.subject_id] = (acc[l.subject_id] ?? 0) + 1; return acc; }, {});
@@ -151,12 +151,32 @@ export async function GET(req: Request) {
       const { data: lessonData, error: lessonError } = await supabase.from("learn_lessons").select("id, subject_id, topic, title, description, difficulty, progress, updated_at, blocks").eq("user_id", user.id).eq("id", lessonId).maybeSingle();
       if (lessonError) return NextResponse.json({ error: "Unable to load lesson." }, { status: 500 });
       if (!lessonData) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
+      const { data: generationJob, error: generationJobError } = await supabase.from("cortex_generation_jobs")
+        .select("status").eq("id", lessonId).eq("user_id", user.id).maybeSingle();
+      if (generationJobError) console.warn("[LEARN] generation status lookup failed for lesson detail", { lessonId, error: generationJobError.message });
+      if (generationJob && generationJob.status !== "complete") {
+        return NextResponse.json({ error: "This lesson is still being prepared. Its saved work is preserved and can be resumed." }, { status: 409 });
+      }
       const response: LearnDetailResponse = { lesson: toLearnLesson(lessonData as LearnLessonRow, subjectById) }; return NextResponse.json(response);
     }
     const { data: allLessonData, error: allLessonsError } = await supabase.from("learn_lessons").select("id, subject_id, topic, title, description, difficulty, progress, updated_at, blocks").eq("user_id", user.id).order("updated_at", { ascending: false });
     if (allLessonsError) return NextResponse.json({ subjects: buildSubjectTabs(subjects, []), lessons: [], summary });
-    const allLessons = (allLessonData ?? []) as LearnLessonRow[]; const filtered = subjectId === "all" ? allLessons : allLessons.filter(l => l.subject_id === subjectId);
-    const response: LearnListResponse = { subjects: buildSubjectTabs(subjects, allLessons), lessons: filtered.map(l => toLearnLesson(l, subjectById)), summary }; return NextResponse.json(response);
+    const allLessons = (allLessonData ?? []) as LearnLessonRow[];
+    let visibleLessons = allLessons;
+    const lessonIds = allLessons.map(lesson => lesson.id);
+    if (lessonIds.length) {
+      const { data: generationJobs, error: generationJobsError } = await supabase.from("cortex_generation_jobs")
+        .select("id,status").eq("user_id", user.id).in("id", lessonIds);
+      if (generationJobsError) {
+        console.warn("[LEARN] generation status lookup failed for lesson list", { error: generationJobsError.message });
+      } else {
+        const statusByLessonId = new Map((generationJobs ?? []).map(job => [job.id as string, job.status as string]));
+        // In-progress/failed drafts are not lessons. Keep legacy lessons that predate durable jobs.
+        visibleLessons = allLessons.filter(lesson => !statusByLessonId.has(lesson.id) || statusByLessonId.get(lesson.id) === "complete");
+      }
+    }
+    const filtered = subjectId === "all" ? visibleLessons : visibleLessons.filter(l => l.subject_id === subjectId);
+    const response: LearnListResponse = { subjects: buildSubjectTabs(subjects, visibleLessons), lessons: filtered.map(l => toLearnLesson(l, subjectById)), summary }; return NextResponse.json(response);
   } catch (err: any) {
     log.apiFailure({ route: "/api/learn", method: "GET", error: err.message || String(err), userId: auth?.user?.id }); return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
@@ -373,7 +393,7 @@ export async function POST(req: Request) {
           ).slice(0, request.broadTopic ? 36 : 28)
         : [];
       const minimumPersistBlocks = verifiedCurriculumFallback ? 10 : request.broadTopic ? 16 : 10;
-      const persistableCandidate = candidate ?? (
+      const persistableCandidateCandidate = candidate ?? (
         verifiedCurriculumFallback &&
         typeof generated.title === "string" &&
         generated.title.trim().length > 0 &&
@@ -381,7 +401,7 @@ export async function POST(req: Request) {
           ? { title: generated.title.trim().slice(0, 255), blocks: normalizedGeneratedBlocks }
           : null
       );
-      if (!persistableCandidate) {
+      if (!persistableCandidateCandidate) {
         console.info("[LEARN] persist rejected by server contract", {
           topic: request.topic,
           blockCount: normalizedGeneratedBlocks.length,
@@ -390,6 +410,10 @@ export async function POST(req: Request) {
         });
         return NextResponse.json({ error: "Generated lesson failed the server lesson contract.", retryable: true }, { status: 422 });
       }
+      const persistableCandidate = {
+        ...persistableCandidateCandidate,
+        title: normalizeGeneratedLessonTitle(persistableCandidateCandidate.title, request.topic),
+      };
 
       const quality = lessonQualityFailures(persistableCandidate, request).failures;
       if (quality.length > 0 && !verifiedCurriculumFallback) {
@@ -533,9 +557,7 @@ export async function POST(req: Request) {
           ? checkpoint.partial as Record<string, unknown>
           : {};
         const completedBlocks = Array.isArray(partial.blocks) ? partial.blocks : [];
-        const completedTitle = typeof partial.title === "string"
-          ? partial.title
-          : `Cortex lesson: ${request.topic}`;
+        const completedTitle = normalizeGeneratedLessonTitle(partial.title, request.topic);
         return NextResponse.json({
           sectionIndex: expectedSectionCount - 1,
           sectionCount: expectedSectionCount,
@@ -549,16 +571,19 @@ export async function POST(req: Request) {
 
       // The section lane must have a durable lesson draft before the first model
       // response arrives. This makes the initial section atomic with the job id
-      // and removes the create-job/create-draft race.
+      // and removes the create-job/create-draft race. Keep the first real lesson title
+      // stable across later section checkpoints instead of overwriting it with a draft label.
+      let existingDraftTitle = "";
       if (durableJobId && resolvedSubject.id) {
         const { data: existingDraft, error: draftLookupError } = await supabase.from("learn_lessons")
-          .select("id,blocks")
+          .select("id,title,blocks")
           .eq("id", durableJobId)
           .eq("user_id", user.id)
           .maybeSingle();
         if (draftLookupError) {
           return NextResponse.json({ error: "Unable to load the resumable lesson draft.", retryable: true }, { status: 500 });
         }
+        existingDraftTitle = typeof existingDraft?.title === "string" ? existingDraft.title : "";
         if (!existingDraft) {
           const { error: draftInsertError } = await supabase.from("learn_lessons")
             .insert({
@@ -779,6 +804,9 @@ Repair only the defective section. Preserve correct material where possible. Do 
           retryable: true,
         }, { status: 503 });
       }
+      const durableLessonTitle = generationSectionIndex === 0
+        ? normalizeGeneratedLessonTitle(section.title, request.topic)
+        : normalizeGeneratedLessonTitle(existingDraftTitle, request.topic);
       const currentBlocks = [...priorBlocks, ...section.blocks];
 
       // Persist the lesson draft and durable Cortex checkpoint in one database transaction.
@@ -798,7 +826,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
             p_status: "partial",
             p_subject_id: resolvedSubject.id,
             p_stage: `section_${generationSectionIndex + 1}_of_${generationSectionCount}`,
-            p_title: sanitizeLessonText((generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255)),
+            p_title: sanitizeLessonText(durableLessonTitle),
             p_topic: sanitizeLessonText(request.topic.slice(0, 500)),
             p_description: "Generation is resumable. Partial sections are saved as they complete.",
             p_difficulty: validDifficulty,
@@ -826,7 +854,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
       return NextResponse.json({
         sectionIndex: generationSectionIndex,
         sectionCount: generationSectionCount,
-        title: section.title,
+        title: durableLessonTitle,
         blocks: section.blocks,
         partialBlocks: currentBlocks,
         complete: generationSectionIndex + 1 >= generationSectionCount,
