@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { topicMatchesAny, questionDifficultyMatchesRequest } from "./examGenerator";
+import { topicMatchesAny, questionDifficultyMatchesRequest, selectBalancedQuestions, type ExamQuestion } from "./examGenerator";
 
 describe("topicMatchesAny", () => {
   it("accepts a question assigned to any one of the selected topics", () => {
@@ -33,5 +33,35 @@ describe("questionDifficultyMatchesRequest", () => {
     expect(questionDifficultyMatchesRequest("easy", "hard")).toBe(false);
     expect(questionDifficultyMatchesRequest("medium", "easy")).toBe(false);
     expect(questionDifficultyMatchesRequest(undefined, "hard")).toBe(true);
+  });
+});
+
+describe("selectBalancedQuestions", () => {
+  const question = (id: string, topic: string): ExamQuestion => ({
+    id, type: "structured", question: `Calculate and explain the result for the ${topic} scenario.`,
+    marks: 4, topic, difficulty: "medium", modelAnswer: "A sufficiently detailed model answer.",
+    markingCriteria: "Award marks for method and correct conclusion.",
+  });
+
+  it("balances candidates across selected topics before taking a second from one topic", () => {
+    const candidates = [
+      question("k1", "Kinematics"), question("k2", "Kinematics"),
+      question("f1", "Forces"), question("f2", "Forces"),
+      question("m1", "Momentum"),
+    ];
+    expect(selectBalancedQuestions(candidates, ["Kinematics", "Forces", "Momentum"], 4).map(q => q.id))
+      .toEqual(["k1", "f1", "m1", "k2"]);
+  });
+
+  it("does not invent questions when a selected topic has no valid candidates", () => {
+    const candidates = [question("k1", "Kinematics"), question("f1", "Forces")];
+    expect(selectBalancedQuestions(candidates, ["Kinematics", "Forces", "Momentum"], 5).map(q => q.id))
+      .toEqual(["k1", "f1"]);
+  });
+
+  it("keeps original order for a single topic or full-syllabus selection", () => {
+    const candidates = [question("a", "Kinematics"), question("b", "Forces")];
+    expect(selectBalancedQuestions(candidates, ["Mechanics"], 2).map(q => q.id)).toEqual(["a", "b"]);
+    expect(selectBalancedQuestions(candidates, [], 1).map(q => q.id)).toEqual(["a"]);
   });
 });
