@@ -80,7 +80,7 @@ function displayStudyLevel(value: string): string {
   if (normalized === "alevel") return "A Level";
   if (normalized === "olevel") return "O Level";
   if (normalized === "igcse") return "IGCSE";
-  return value.replace(/[_-]+/g, " ").replace(/\\s+/g, " ").trim();
+  return value.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function profileSubjectAliases(subject: string): string[] {
@@ -135,6 +135,6 @@ export function buildLearnerProfileGenerationHints(
       "- Do not claim that a topic, method, notation, paper, mark allocation or learning objective is required by this board or syllabus.",
       "- If the requested topic may be outside the reported level, distinguish core level-appropriate teaching from clearly labelled extension material.",
       "- Exact syllabus identity and current syllabus version have not been verified unless a separate verified curriculum context is supplied.",
-    ].join("\\n"),
+    ].join("\n"),
   };
 }
