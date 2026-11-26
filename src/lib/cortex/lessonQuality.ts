@@ -21,8 +21,9 @@ export function normalizeGeneratedLessonTitle(candidate: unknown, topic: string)
   const title = typeof candidate === "string" ? candidate.trim() : "";
   const normalized = title.toLowerCase().replace(/\s+/g, " ");
   const genericTitles = new Set(["", "untitled", "new lesson", "lesson", "introduction", "overview", "learning objectives", "summary", "practice", "conclusion"]);
+  const placeholderTopic = title.replace(/^cortex is building\b/i, "").trim();
   if (genericTitles.has(normalized) || /^cortex is building\b/i.test(title)) {
-    const safeTopic = topic.trim().slice(0, 190) || "Learning";
+    const safeTopic = (placeholderTopic || topic.trim() || "Learning").slice(0, 190);
     return `${safeTopic}: Core concepts and practice`.slice(0, 255);
   }
   return title.slice(0, 255);
