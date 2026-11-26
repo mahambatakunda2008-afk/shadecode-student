@@ -91,3 +91,19 @@ $$;
 
 revoke all on function public.sync_exam_attempt(text, bigint, text, text, jsonb) from public, anon;
 grant execute on function public.sync_exam_attempt(text, bigint, text, text, jsonb) to authenticated;
+
+
+-- Fetch only the authenticated user's cloud copies for recovery on another device.
+create or replace function public.get_my_exam_attempts()
+returns setof public.exam_attempt_sync
+language sql
+security invoker
+set search_path = public, auth
+as $$
+  select * from public.exam_attempt_sync
+  where user_id = auth.uid()
+  order by updated_at desc
+  limit 100;
+$$;
+revoke all on function public.get_my_exam_attempts() from public, anon;
+grant execute on function public.get_my_exam_attempts() to authenticated;
