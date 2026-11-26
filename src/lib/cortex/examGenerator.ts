@@ -151,6 +151,15 @@ function dedupeQuestions(questions: Partial<ExamQuestion>[]): Partial<ExamQuesti
   return result;
 }
 
+export function questionDifficultyMatchesRequest(
+  declared: unknown,
+  requested: string,
+): boolean {
+  const target = requested === "easy" || requested === "hard" ? requested : "medium";
+  const actual = declared === "easy" || declared === "medium" || declared === "hard" ? declared : target;
+  return actual === target;
+}
+
 function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: string, requestedTopics: string[]): ExamQuestion | null {
   if (!isQuestion(q) || looksGeneric(q.question!)) return null;
 
@@ -174,7 +183,14 @@ function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: 
   const markingCriteria = typeof q.markingCriteria === "string" ? q.markingCriteria.trim() : "";
   if (markingCriteria.length < 10) return null;
 
-  const normalizedDifficulty: "easy" | "medium" | "hard" = q.difficulty === "hard" || q.difficulty === "medium" ? q.difficulty : difficulty === "hard" ? "hard" : difficulty === "easy" ? "easy" : "medium";
+  const requestedDifficulty: "easy" | "medium" | "hard" = difficulty === "hard" || difficulty === "easy" ? difficulty : "medium";
+  const declaredDifficulty = q.difficulty === "easy" || q.difficulty === "medium" || q.difficulty === "hard"
+    ? q.difficulty
+    : requestedDifficulty;
+  // A paper labelled "hard" must not quietly contain easy questions (and vice versa).
+  // Reject mismatches so the caller can use its verified fallback instead.
+  if (declaredDifficulty !== requestedDifficulty) return null;
+  const normalizedDifficulty = requestedDifficulty;
   const marks = Math.max(1, Math.min(20, Math.round(Number(q.marks))));
   if (normalizedDifficulty === "hard" && marks < 2 && requestedType !== "multiple_choice") return null;
 
