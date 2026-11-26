@@ -327,16 +327,21 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // lesson where Question 3 had no guidance while Questions 1 and 2 did.
   const practiceBlocks = normalized.filter(block => block.normalizedType === "practice");
   for (const block of practiceBlocks) {
-    const questions = [...block.content.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\s)(\d+)[.)]\s+/gim)];
+    const answerKeyStart = block.content.search(/\banswers?\s*(?:\([^)]*\))?\s*:/i);
+    const questionText = answerKeyStart >= 0 ? block.content.slice(0, answerKeyStart) : block.content;
+    const answerKeyText = answerKeyStart >= 0 ? block.content.slice(answerKeyStart) : "";
+    const questions = [...questionText.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\s)(\d+)[.)]\s+/gim)];
     const answerIds = new Set([...block.content.matchAll(/(?:answer\s+guidance|worked\s+solution|solution|answer)\s*#?\s*(\d+)\s*:/gi)]
       .map(match => match[1]));
+    const answerKeyIds = new Set([...answerKeyText.matchAll(/(?:^|\s)(\d+)[.)]\s+/gim)]
+      .map(match => match[1] ?? match[2]));
     const missingGuidance = questions.some((question, index) => {
       const id = question[1] ?? question[2];
       const start = question.index ?? 0;
-      const end = questions[index + 1]?.index ?? block.content.length;
-      const questionSegment = block.content.slice(start, end);
+      const end = questions[index + 1]?.index ?? questionText.length;
+      const questionSegment = questionText.slice(start, end);
       const hasInlineGuidance = /\b(?:answer\s+guidance|worked\s+solution|solution|answer)\s*:/i.test(questionSegment);
-      return !hasInlineGuidance && !answerIds.has(id);
+      return !hasInlineGuidance && !answerIds.has(id) && !answerKeyIds.has(id);
     });
     if (questions.length > 0 && missingGuidance) {
       failures.push("practice-answer-guidance-incomplete");
