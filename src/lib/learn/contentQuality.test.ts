@@ -14,6 +14,8 @@ describe("Learn content quality", () => {
     expect(prompt).toContain("Independently recompute every numerical result");
     expect(prompt).toContain("matching, useful answer guidance");
     expect(prompt).toContain("Never leave a sentence, equation, worked solution or answer unfinished");
+    expect(prompt).toContain("The x^-1 case integrates to ln|x| + C");
+    expect(prompt).toContain("single-dollar LaTeX delimiters");
   });
 
   it("adds integration-specific mathematical safeguards during repair", () => {
