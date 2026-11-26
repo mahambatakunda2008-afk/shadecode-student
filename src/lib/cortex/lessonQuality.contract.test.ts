@@ -33,6 +33,11 @@ describe("lesson title normalization", () => {
       .toBe("Integration: Core concepts and practice");
   });
 
+  it("keeps the specific topic embedded in an old generation placeholder", () => {
+    expect(normalizeGeneratedLessonTitle("Cortex is building Static electricity", "Electricity"))
+      .toBe("Static electricity: Core concepts and practice");
+  });
+
   it("preserves a meaningful generated title", () => {
     expect(normalizeGeneratedLessonTitle("Mastering Integration: Applications and Practice", "Integration"))
       .toBe("Mastering Integration: Applications and Practice");
