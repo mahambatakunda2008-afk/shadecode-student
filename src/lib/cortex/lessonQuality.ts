@@ -311,7 +311,9 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
     );
     if (mathBlocks.some(block => {
       const delimiterCount = (block.content.match(/\$/g) ?? []).length;
-      return delimiterCount % 2 === 1 || /\\text\{[^}]*\$/i.test(block.content);
+      const nestedTextDelimiter = /\\text\{[^}]*\$/i.test(block.content);
+      const splitNumericDelimiter = /[0-9]\$\s*\.\s*[0-9]|\$\s*\.\s*\$/i.test(block.content);
+      return delimiterCount % 2 === 1 || nestedTextDelimiter || splitNumericDelimiter;
     })) {
       failures.push("math-delimiters-unbalanced");
     }
