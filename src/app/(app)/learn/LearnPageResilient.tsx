@@ -21,6 +21,7 @@ import NextTopicSuggestion from "./components/NextTopicSuggestion";
 import { MAX_TOPIC_CHARS, applyTeachingApproach, topicTooLongMessage } from "@/lib/learn/teachingApproach";
 import { normalizeSubjectKey } from "@/lib/academic/subjectContract";
 import { getLearningMode, setLearningMode, type LearningMode } from "@/lib/learningMode";
+import { normalizeGeneratedLessonTitle } from "@/lib/cortex/lessonQuality";
 
 const AUTH_TIMEOUT = 3_000;
 const LOCAL_TIMEOUT = 2_500;
@@ -44,7 +45,7 @@ async function readDeviceLessons(userId?: string): Promise<LearnLesson[]> {
     return await Promise.all(rows.map(async row => {
       const progress = userId ? await offlineStorage.getProgress(row.id, userId).catch(() => null) : null;
       return {
-        id: row.id, title: row.title, subject: row.subject, subjectId: "", topic: row.title,
+        id: row.id, title: normalizeGeneratedLessonTitle(row.title, row.topic ?? row.title), subject: row.subject, subjectId: "", topic: row.topic ?? row.title,
         description: row.description ?? "",
         difficulty: (row.difficulty === "hard" || row.difficulty === "medium" ? row.difficulty : "easy") as LearnLesson["difficulty"],
         progress: progress?.progress ?? row.progress ?? 0,
@@ -187,7 +188,7 @@ export default function LearnPageResilient() {
     if (generationJob?.status !== "complete" || !generationJob.result || typeof generationJob.result !== "object" || !("id" in generationJob.result)) return;
     const result = generationJob.result as { id: string; title: string };
     setLessons(current => current.some(item => item.id === result.id) ? current : [{
-      id: result.id, title: result.title, subject: generationJob.request.subject, subjectId: "",
+      id: result.id, title: normalizeGeneratedLessonTitle(result.title, generationJob.request.prompt), subject: generationJob.request.subject, subjectId: "",
       topic: generationJob.request.prompt, description: `A complete ${generationJob.request.difficulty} lesson on ${generationJob.request.prompt}`,
       difficulty: generationJob.request.difficulty, progress: 0, completed: false,
     }, ...current]);
