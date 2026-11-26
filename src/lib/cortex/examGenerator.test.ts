@@ -27,9 +27,11 @@ describe("topicMatchesAny", () => {
   });
 });
 
+describe("questionDifficultyMatchesRequest", () => {
   it("does not accept questions at a different requested difficulty", () => {
     expect(questionDifficultyMatchesRequest("hard", "hard")).toBe(true);
     expect(questionDifficultyMatchesRequest("easy", "hard")).toBe(false);
     expect(questionDifficultyMatchesRequest("medium", "easy")).toBe(false);
     expect(questionDifficultyMatchesRequest(undefined, "hard")).toBe(true);
   });
+});
