@@ -66,7 +66,7 @@ export async function syncPendingExamAttempts(userId: string): Promise<void> {
   const attemptIds = [...new Set(operations
     .filter((operation) => operation.entity === "exam_attempt" && operation.userId === userId)
     .map((operation) => operation.entityId))];
-  for (const attemptId of attemptIds) {
+  for (const attemptId of attemptIds.slice(0, 25)) {
     await syncExamAttempt(userId, attemptId);
   }
 }
@@ -86,6 +86,9 @@ export async function restoreCloudExamAttempts(userId: string): Promise<{ restor
     const existing = await localFirstStore.get(id);
     if (existing) { skipped++; continue; }
     await localFirstStore.hydrate({ id, entity: "exam_attempt", entityId: row.attempt_id, userId, payload: row.payload, updatedAt: Date.parse(row.updated_at) || Date.now(), deviceId: row.device_id, version: row.client_revision, syncVersion: row.client_revision });
+    const clock = await localFirstDB.getMeta("lamport");
+    const clockValue = typeof clock?.value === "number" ? clock.value : 0;
+    if (row.client_revision > clockValue) await localFirstDB.putMeta({ key: "lamport", value: row.client_revision });
     restored++;
   }
   return { restored, skipped };
