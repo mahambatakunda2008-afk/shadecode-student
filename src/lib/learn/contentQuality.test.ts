@@ -30,7 +30,7 @@ describe("Learn content quality", () => {
       "Mathematics",
       "Integration",
       "weak draft",
-      "LEARNER-REPORTED CURRICULUM PROFILE (NOT VERIFIED SYLLABUS EVIDENCE)\\nStudy stage: AS Level",
+      "LEARNER-REPORTED CURRICULUM PROFILE (NOT VERIFIED SYLLABUS EVIDENCE)\nStudy stage: AS Level",
     );
     expect(prompt).toContain("CURRICULUM CONTEXT (preserve its verification status)");
     expect(prompt).toContain("NOT VERIFIED SYLLABUS EVIDENCE");
