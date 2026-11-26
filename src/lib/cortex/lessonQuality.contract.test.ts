@@ -102,11 +102,20 @@ describe("lesson quality: usable assessment content", () => {
 
   it("rejects generic exam advice that contains no actual task", () => {
     const result = lessonQualityFailures(lesson(
-      "Practice Question 1: Integrate 2x. Answer Guidance 1: x squared plus C. Practice Question 2: Integrate 3x squared. Answer Guidance 2: x cubed plus C.",
+      "Review the power rule and check the limits carefully.",
       "When answering integration questions, show each step and check the limits carefully.",
     ), request);
 
     expect(result.failures).toContain("exam-transfer-no-task");
+  });
+
+  it("accepts exam guidance when a separate practice block already contains real tasks", () => {
+    const result = lessonQualityFailures(lesson(
+      "Practice Question 1: Integrate 2x. Answer Guidance 1: x squared plus C. Practice Question 2: Integrate 3x squared. Answer Guidance 2: x cubed plus C.",
+      "When tackling integration questions, show each step and check the limits carefully.",
+    ), request);
+
+    expect(result.failures).not.toContain("exam-transfer-no-task");
   });
 
   it("accepts numbered practice questions with matching guidance and a real exam task", () => {
