@@ -269,7 +269,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const titleText = (lesson.title ?? "").toLowerCase();
   if (tokens.length > 0 && !tokens.some(token => titleText.includes(token))) failures.push("title-topic-drift");
 
-  const checkpointBlocks = normalized.filter(block => block.normalizedType === "checkpoint");
+  const taskCheckpointBlocks = normalized.filter(block => block.normalizedType === "checkpoint");
   if (request.intent !== "practice" && checkpointBlocks.some(block => hasAnswerLeak(block.content))) failures.push("checkpoint-reveals-answer");
 
   const artificialHeadings = ["demanded worked example", "distribution myth", "verification habit", "examiner looks for", "common exam error"];
@@ -360,7 +360,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const examBlocks = normalized.filter(block => block.normalizedType === "exam");
   const hasAssessmentTask = practiceBlocks.some(block =>
     /(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*\d+\s*:|(?:^|\s)\d{1,2}[.)]\s+(?=(?:evaluate|find|calculate|integrate|differentiate|explain|state|describe|show|write|name|identify|simplify|prove|sketch|draw|compare|determine|complete|which|what|how|why|given|if|when|for|use|list|define|predict|give|balance|convert|select|choose|a|an|the|two)\b)/im.test(block.content),
-  ) || checkpointBlocks.some(block =>
+  ) || taskCheckpointBlocks.some(block =>
     /\bquestion\s*(?:#?\s*\d+)?\s*:/i.test(block.content)
     || /\b(search|draw|calculate|write|balance|explain|name|find|state|describe|trace|compare|evaluate|show|identify)\b/i.test(block.content),
   );
