@@ -269,6 +269,23 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const artificialHeadings = ["demanded worked example", "distribution myth", "verification habit", "examiner looks for", "common exam error"];
   if (normalized.some(block => artificialHeadings.some(heading => `${block.title ?? ""} ${block.content}`.toLowerCase().startsWith(heading)))) failures.push("template-heading");
 
+  if (request.intent === "teach") {
+    const practiceBlocks = normalized.filter(block => block.normalizedType === "practice");
+    for (const block of practiceBlocks) {
+      const numberedQuestions = (block.content.match(/(?:^|\\n)\\s*(?:Q(?:uestion)?\\s*)?\\d+[.)]\\s+[^\\n?]*\\?/gi) ?? []).length;
+      const answerMarkers = (block.content.match(/(?:^|\\n)\\s*(?:answer|solution|guidance)(?:\\s+(?:key|guide|and explanation))?\\s*:/gi) ?? []).length;
+      const hasAnswerSection = /(?:answer key|answers and explanations|worked solutions|answer guidance)/i.test(block.content);
+      if (numberedQuestions > 0 && !hasAnswerSection && answerMarkers < numberedQuestions) {
+        failures.push("practice-answer-guidance-incomplete");
+        break;
+      }
+    }
+    const examBlocks = normalized.filter(block => block.normalizedType === "exam");
+    if (examBlocks.length > 0 && !examBlocks.some(block => /(?:^|\\n)\\s*(?:question|task)\\s*[:.)-]|\\?/.test(block.content))) {
+      failures.push("exam-transfer-without-question");
+    }
+  }
+
   const applications = normalized.filter(block => block.normalizedType === "application");
   // "Application" also covers real-world and transfer blocks, which explain rather than set a task, so
   // only genuinely empty or placeholder content is rejected (production 2026-11-21: valid sections
