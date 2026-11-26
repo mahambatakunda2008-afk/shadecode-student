@@ -838,8 +838,10 @@ async function runJob(
   allowCheckpointResume = true,
 ) {
   // One browser job owns one durable identity. Retries and refreshes reuse it.
-  if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
-  runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
+  // A reconnect event can arrive while the original fetch is still unwinding.
+  // Never start a second runner for the same durable job and lease.
+  if (runningJobId) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
+  runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: Math.max(5, getGenerationJob(job.id)?.progress ?? 5), error: undefined });
   let localModelAttempted = false;
   const classicMode = getLearningMode() === "classic";
   try {
@@ -1202,7 +1204,28 @@ async function runJob(
       if (getActiveId() === job.id) saveActiveId(null);
     }
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
-  } finally { if (runningJobId === job.id) runningJobId = null; }
+  } finally {
+    if (runningJobId === job.id) runningJobId = null;
+    // If the browser's "online" event fired before the failed request unwound,
+    // the event handler correctly did not start a duplicate runner. Resume here
+    // once the original runner has released its lock, using the saved checkpoint.
+    const latest = getGenerationJob(job.id);
+    if (
+      isBrowser() &&
+      navigator.onLine &&
+      latest?.status === "queued" &&
+      latest.error === "Waiting for a connection."
+    ) {
+      setTimeout(() => {
+        const current = getGenerationJob(job.id);
+        if (!runningJobId && navigator.onLine && current?.status === "queued" && current.error === "Waiting for a connection.") {
+          void resumeLessonGeneration(token).catch((resumeError) => {
+            console.warn("[LEARN] reconnect resume could not start", resumeError);
+          });
+        }
+      }, 650);
+    }
+  }
 }
 export function queueLessonGeneration(input: LessonGenerationInput) { return createGenerationJob("lesson", input); }
 const RESUMABLE_DURABLE_STATUSES = new Set(["queued", "warming", "generating", "partial", "interrupted"]);
