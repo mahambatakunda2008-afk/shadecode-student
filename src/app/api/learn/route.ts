@@ -892,7 +892,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
             effectiveSubject,
             request.topic,
             raw,
-            `Learner level: ${level || "unspecified"}\nExam board: ${body.examBoard || "unspecified"}\nResolved request: ${buildResolvedLessonPrompt(request)}`,
+            [learnerCurriculumContext, `Resolved request: ${buildResolvedLessonPrompt(request)}`].filter(Boolean).join("\n\n"),
             validDifficulty,
             failures,
           ) + `
