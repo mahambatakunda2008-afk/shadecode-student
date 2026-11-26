@@ -16,6 +16,18 @@ export type LessonQualityRequest = {
 
 export type LessonQualityBlock = { type: string; title?: string; content: string };
 
+/** Prevent internal draft labels or section headings from becoming saved lesson titles. */
+export function normalizeGeneratedLessonTitle(candidate: unknown, topic: string): string {
+  const title = typeof candidate === "string" ? candidate.trim() : "";
+  const normalized = title.toLowerCase().replace(/\\s+/g, " ");
+  const genericTitles = new Set(["", "untitled", "new lesson", "lesson", "introduction", "overview", "learning objectives", "summary", "practice", "conclusion"]);
+  if (genericTitles.has(normalized) || /^cortex is building\\b/i.test(title)) {
+    const safeTopic = topic.trim().slice(0, 190) || "Learning";
+    return `${safeTopic}: Core concepts and practice`.slice(0, 255);
+  }
+  return title.slice(0, 255);
+}
+
 const aliases: Record<string, string> = {
   objective: "objective", learning_objective: "objective", "learning objective": "objective", outcome: "objective", outcomes: "objective", goal: "objective", goals: "objective",
   prior_knowledge: "prior", "prior knowledge": "prior", prerequisite: "prior", prerequisites: "prior", background: "prior",
