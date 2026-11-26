@@ -14,6 +14,7 @@ describe("Learn content quality", () => {
     expect(prompt).toContain("Independently recompute every numerical result");
     expect(prompt).toContain("matching, useful answer guidance");
     expect(prompt).toContain("Never leave a sentence, equation, worked solution or answer unfinished");
+    expect(prompt).toContain("explicitly labelled `Question:`");
     expect(prompt).toContain("The x^-1 case integrates to ln|x| + C");
     expect(prompt).toContain("single-dollar LaTeX delimiters");
     expect(prompt).toContain("Never put dollar delimiters inside a numeric literal");
