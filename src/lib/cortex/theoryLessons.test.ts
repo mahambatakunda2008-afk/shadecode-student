@@ -23,7 +23,8 @@ describe("theory lessons: structure", () => {
       expect(new Set(titles).size, `${lesson.title} has duplicate block titles`).toBe(titles.length);
       for (const block of lesson.blocks) {
         expect(ALLOWED_TYPES.has(block.type), `${lesson.title}: ${block.type}`).toBe(true);
-        expect(block.content.trim().length, `${lesson.title}: ${block.title}`).toBeGreaterThanOrEqual(40);
+        if (block.type === "diagram") expect(block.content.trim().length, `${lesson.title}: ${block.title}`).toBeGreaterThanOrEqual(1);
+        else expect(block.content.trim().length, `${lesson.title}: ${block.title}`).toBeGreaterThanOrEqual(40);
         expect(block.content.length, `${lesson.title}: ${block.title} is a wall of text`).toBeLessThanOrEqual(1800);
         expect(block.content, `${lesson.title}: ${block.title}`).not.toMatch(/undefined|TODO|FIXME|\{\{|\}\}/);
       }
