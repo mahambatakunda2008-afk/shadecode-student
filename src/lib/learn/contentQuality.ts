@@ -123,7 +123,7 @@ Requirements:
 - Ensure every numbered practice question has matching answer guidance; do not leave the final question unanswered.
 - Finish every sentence, equation and worked solution. Reduce block count rather than truncating content.
 - Avoid fictional narratives, anecdotes, story hooks, and story-based analogies. Teach the requested material directly, using concise worked examples and explicit reasoning.
-- For integration, state that the power rule excludes n = -1 (not all negative exponents); distinguish signed integral from total geometric area; and distinguish displacement from distance when integrating velocity.
+${/integration/i.test(topic) && /math/i.test(subject) ? "- For integration, state that the power rule excludes n = -1 (not all negative exponents); distinguish signed integral from total geometric area; and distinguish displacement from distance when integrating velocity." : ""}
 - If the topic itself is story composition or creative writing, explain the techniques directly and use only short annotated excerpts when needed. Do not write a complete story unless explicitly requested.
 
 Draft to repair:
