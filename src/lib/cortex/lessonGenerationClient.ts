@@ -225,7 +225,7 @@ async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, genera
   if (!validated) throw new Error("Generated lesson failed the learning-quality checks.");
   // This path only writes to IndexedDB. Mark the result device-only so callers never
   // mistake a local save for durable server persistence or complete the cloud job.
-  const result: LessonGenerationResult = { id: job.id, title: validated.title, blocks: validated.blocks, offlineFallback: !generated?.localModel, localModel: !!generated?.localModel, localOnly: true };
+  const result: LessonGenerationResult = { id: job.id, title: validated.title, blocks: validated.blocks, offlineFallback: generated?.offlineFallback === true, localModel: !!generated?.localModel, localOnly: true };
   const now = new Date().toISOString();
   await offlineStorage.saveLesson({ id: result.id, ownerUserId, title: result.title, subject: job.request.subject, topic: job.request.prompt, description: `Generated locally for ${job.request.prompt}. Waiting to sync to your cloud library.`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: undefined, generationJobId: job.id, generationPrompt: job.request.prompt, generationGoal: job.request.goal, generationLevel: job.request.level, generationExamBoard: job.request.examBoard, generationVerifiedFallback: generated?.offlineFallback === true, syncStatus: "pending", syncRetryCount: 0, size: JSON.stringify(result).length });
   updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
