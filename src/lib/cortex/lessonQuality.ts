@@ -327,11 +327,11 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // lesson where Question 3 had no guidance while Questions 1 and 2 did.
   const practiceBlocks = normalized.filter(block => block.normalizedType === "practice");
   for (const block of practiceBlocks) {
-    const questions = [...block.content.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:/gi)];
+    const questions = [...block.content.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\s)(\d+)[.)]\s+/gim)];
     const answerIds = new Set([...block.content.matchAll(/(?:answer\s+guidance|worked\s+solution|solution|answer)\s*#?\s*(\d+)\s*:/gi)]
       .map(match => match[1]));
     const missingGuidance = questions.some((question, index) => {
-      const id = question[1];
+      const id = question[1] ?? question[2];
       const start = question.index ?? 0;
       const end = questions[index + 1]?.index ?? block.content.length;
       const questionSegment = block.content.slice(start, end);
