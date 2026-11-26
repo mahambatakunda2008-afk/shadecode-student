@@ -848,7 +848,7 @@ async function runJob(
     rememberLocalTopic(job.request.prompt);
     updateGenerationJob(job.id, {
       status: "generating",
-      progress: 15,
+      progress: Math.max(15, getGenerationJob(job.id)?.progress ?? 15),
       error: "Cortex is selecting the best available generation lane…",
     });
     const online = isBrowser() ? navigator.onLine : false;
