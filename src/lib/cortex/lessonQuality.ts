@@ -302,6 +302,21 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const formulaTopic = isFormulaTopic(request.topic, request.prompt);
   if (quantitative && formulaTopic && request.intent !== "comparison" && !has("formula") && !/formula|equation|relationship|method|calculation|substitut|identity/i.test(searchableText)) failures.push("formula");
 
+  // Math/physics/chemistry lessons use dollar signs as expression delimiters.
+  // An odd count or a dollar delimiter nested inside \\text{...} can break KaTeX
+  // and make an otherwise useful worked example unreadable.
+  if (/math|mathematics|physics|chemistry/i.test(request.subject)) {
+    const mathBlocks = normalized.filter(block =>
+      ["formula", "example", "concept", "mechanism", "definition"].includes(block.normalizedType),
+    );
+    if (mathBlocks.some(block => {
+      const delimiterCount = (block.content.match(/\\$/g) ?? []).length;
+      return delimiterCount % 2 === 1 || /\\\\text\\{[^}]*\\$/i.test(block.content);
+    })) {
+      failures.push("math-delimiters-unbalanced");
+    }
+  }
+
   // A practice set is not self-study-ready when it asks several numbered questions
   // but only supplies answer guidance for some of them. This caught a live Integration
   // lesson where Question 3 had no guidance while Questions 1 and 2 did.
