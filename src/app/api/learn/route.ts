@@ -272,8 +272,9 @@ export async function POST(req: Request) {
         error: error instanceof Error ? error.message : String(error),
       });
     }
-    const learnerCurriculumContext = [
-      reportedCurriculum.promptContext,
+    const learnerCurriculumContext = reportedCurriculum.promptContext;
+    const repairCurriculumContext = [
+      learnerCurriculumContext,
       verifiedCurriculumContext ? `VERIFIED CURRICULUM EVIDENCE\n${verifiedCurriculumContext}` : "",
     ].filter(Boolean).join("\n\n");
     const learnerTopicKey = normalizeLearnerTopic(effectiveSubject, request.topic);
@@ -920,7 +921,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
             effectiveSubject,
             request.topic,
             raw,
-            [learnerCurriculumContext, `Resolved request: ${buildResolvedLessonPrompt(request)}`].filter(Boolean).join("\n\n"),
+            [repairCurriculumContext, `Resolved request: ${buildResolvedLessonPrompt(request)}`].filter(Boolean).join("\n\n"),
             validDifficulty,
             failures,
           ) + `
