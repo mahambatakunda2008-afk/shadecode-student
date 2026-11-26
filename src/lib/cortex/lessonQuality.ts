@@ -352,10 +352,14 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // about how to approach exams. Generic advice can accompany a question but cannot
   // substitute for one.
   const examBlocks = normalized.filter(block => block.normalizedType === "exam");
-  const hasNumberedPracticeTask = practiceBlocks.some(block =>
+  const checkpointBlocks = normalized.filter(block => block.normalizedType === "checkpoint");
+  const hasAssessmentTask = practiceBlocks.some(block =>
     /(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*\d+\s*:|(?:^|\s)\d+[.)]\s+/im.test(block.content),
+  ) || checkpointBlocks.some(block =>
+    /\bquestion\s*(?:#?\s*\d+)?\s*:/i.test(block.content)
+    || /\b(search|draw|calculate|write|balance|explain|name|find|state|describe|trace|compare|evaluate|show|identify)\b/i.test(block.content),
   );
-  if (examBlocks.some(block => !/\bquestion\s*(?:#?\s*\d+)?\s*:/i.test(block.content)) && !hasNumberedPracticeTask) {
+  if (examBlocks.some(block => !/\bquestion\s*(?:#?\s*\d+)?\s*:/i.test(block.content)) && !hasAssessmentTask) {
     failures.push("exam-transfer-no-task");
   }
 
