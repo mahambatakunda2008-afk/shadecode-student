@@ -1,0 +1,89 @@
+name: Authenticated student journeys
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Deployed preview URL to test (use a preview, not production)
+        required: true
+        type: string
+      learn_subject:
+        description: Exact Learn subject label on the test account
+        required: true
+        type: string
+      learn_topic:
+        description: Real broad curriculum topic for lesson generation
+        required: true
+        type: string
+      exam_subject:
+        description: Exact Exam Simulation subject label on the test account
+        required: true
+        type: string
+      exam_topic:
+        description: Optional Exam Simulation topic
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: authenticated-student-journeys
+  cancel-in-progress: false
+
+jobs:
+  student-journeys:
+    name: Learn generation and Exam Simulation
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v5
+
+      - name: Validate test configuration
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+          BASE_URL: ${{ inputs.base_url }}
+        run: |
+          test -n "$E2E_EMAIL" || { echo "::error::Add E2E_EMAIL as a repository Actions secret."; exit 1; }
+          test -n "$E2E_PASSWORD" || { echo "::error::Add E2E_PASSWORD as a repository Actions secret."; exit 1; }
+          node -e 'const u = new URL(process.env.BASE_URL); if (u.protocol !== "https:") process.exit(1)' || {
+            echo "::error::BASE_URL must be a valid HTTPS preview URL."; exit 1;
+          }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run authenticated Learn and Exam Simulation journeys
+        env:
+          CI: "true"
+          BASE_URL: ${{ inputs.base_url }}
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+          E2E_LEARN_SUBJECT: ${{ inputs.learn_subject }}
+          E2E_LEARN_TOPICS: ${{ inputs.learn_topic }}
+          E2E_EXAM_SUBJECT: ${{ inputs.exam_subject }}
+          E2E_EXAM_TOPIC: ${{ inputs.exam_topic }}
+        run: |
+          npx playwright test e2e/learn/broad-topics.spec.ts e2e/exam-simulation.spec.ts
+
+      - name: Upload Playwright evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authenticated-student-journeys
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
