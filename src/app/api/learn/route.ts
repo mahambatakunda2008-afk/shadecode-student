@@ -170,7 +170,7 @@ export async function GET(req: Request) {
       if (generationJobsError) {
         console.warn("[LEARN] generation status lookup failed for lesson list", { error: generationJobsError.message });
       } else {
-        const statusByLessonId = new Map((generationJobs ?? []).map(job => [job.id as string, job.status as string]));
+        const statusByLessonId = new Map<string, string>((generationJobs ?? []).map(job => [String(job.id), String(job.status)] as [string, string]));
         // In-progress/failed drafts are not lessons. Keep legacy lessons that predate durable jobs.
         visibleLessons = allLessons.filter(lesson => !statusByLessonId.has(lesson.id) || statusByLessonId.get(lesson.id) === "complete");
       }
