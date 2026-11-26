@@ -42,3 +42,24 @@ describe("Learn quality gate", () => {
     expect(validateLessonStructure(value).isValid).toBe(false);
   });
 });
+
+describe("generated lesson title normalization", () => {
+  it("replaces empty and generic shell titles with the requested topic", async () => {
+    const { normalizeGeneratedLessonTitle } = await import("./lessonQuality");
+    expect(normalizeGeneratedLessonTitle("", "Kinematics")).toBe("Kinematics: Core concepts and practice");
+    expect(normalizeGeneratedLessonTitle("Overview", "Kinematics")).toBe("Kinematics: Core concepts and practice");
+    expect(normalizeGeneratedLessonTitle("New lesson", "Waves")).toBe("Waves: Core concepts and practice");
+  });
+
+  it("replaces the internal generation shell title without exposing it", async () => {
+    const { normalizeGeneratedLessonTitle } = await import("./lessonQuality");
+    expect(normalizeGeneratedLessonTitle("Cortex is building Kinematics", "Physics")).toBe("Kinematics: Core concepts and practice");
+  });
+
+  it("preserves meaningful generated titles and enforces the database length limit", async () => {
+    const { normalizeGeneratedLessonTitle } = await import("./lessonQuality");
+    expect(normalizeGeneratedLessonTitle("Kinematics: Motion and acceleration", "Physics")).toBe("Kinematics: Motion and acceleration");
+    expect(normalizeGeneratedLessonTitle("x".repeat(300), "Physics")).toHaveLength(255);
+  });
+});
+
