@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lessonQualityFailures } from "./lessonQuality";
+import { lessonQualityFailures, normalizeGeneratedLessonTitle } from "./lessonQuality";
 
 const request = {
   intent: "teach" as const,
@@ -26,6 +26,18 @@ function lesson(practice: string, exam: string) {
     ],
   };
 }
+
+describe("lesson title normalization", () => {
+  it("replaces internal generation placeholders with a stable topic title", () => {
+    expect(normalizeGeneratedLessonTitle("Cortex is building Integration", "Integration"))
+      .toBe("Integration: Core concepts and practice");
+  });
+
+  it("preserves a meaningful generated title", () => {
+    expect(normalizeGeneratedLessonTitle("Mastering Integration: Applications and Practice", "Integration"))
+      .toBe("Mastering Integration: Applications and Practice");
+  });
+});
 
 describe("lesson quality: usable assessment content", () => {
   it("rejects a practice set with missing answer guidance for a numbered question", () => {
