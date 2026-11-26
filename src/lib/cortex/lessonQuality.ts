@@ -331,10 +331,10 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
     const answerKeyStart = block.content.search(/\b(?:answers|answer\s+key)\s*(?:\([^)]*\))?\s*:/i);
     const questionText = answerKeyStart >= 0 ? block.content.slice(0, answerKeyStart) : block.content;
     const answerKeyText = answerKeyStart >= 0 ? block.content.slice(answerKeyStart) : "";
-    const questions = [...questionText.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\s)(\d+)[.)]\s+/gim)];
+    const questions = [...questionText.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\n)\s*(\d{1,2})[.)]\s+/gim)];
     const answerIds = new Set([...block.content.matchAll(/(?:answer\s+guidance|worked\s+solution|solution|answer)\s*#?\s*(\d+)\s*:/gi)]
       .map(match => match[1]));
-    const answerKeyIds = new Set([...answerKeyText.matchAll(/(?:^|\s)(\d+)[.)]\s+/gim)]
+    const answerKeyIds = new Set([...answerKeyText.matchAll(/(?:^|\n)\s*(\d{1,2})[.)]\s+/gim)]
       .map(match => match[1] ?? match[2]));
     const missingGuidance = questions.some((question, index) => {
       const id = question[1] ?? question[2];
@@ -354,7 +354,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // substitute for one.
   const examBlocks = normalized.filter(block => block.normalizedType === "exam");
   const hasAssessmentTask = practiceBlocks.some(block =>
-    /(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*\d+\s*:|(?:^|\s)\d+[.)]\s+/im.test(block.content),
+    /(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*\d+\s*:|(?:^|\n)\s*\d{1,2}[.)]\s+/im.test(block.content),
   ) || checkpointBlocks.some(block =>
     /\bquestion\s*(?:#?\s*\d+)?\s*:/i.test(block.content)
     || /\b(search|draw|calculate|write|balance|explain|name|find|state|describe|trace|compare|evaluate|show|identify)\b/i.test(block.content),
