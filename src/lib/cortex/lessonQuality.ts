@@ -334,7 +334,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
     const questions = [...questionText.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\n)\s*(\d{1,2})[.)]\s+/gim)];
     const answerIds = new Set([...block.content.matchAll(/(?:answer\s+guidance|worked\s+solution|solution|answer)\s*#?\s*(\d+)\s*:/gi)]
       .map(match => match[1]));
-    const answerKeyIds = new Set([...answerKeyText.matchAll(/(?:^|\n)\s*(\d{1,2})[.)]\s+/gim)]
+    const answerKeyIds = new Set([...answerKeyText.matchAll(/(?:^|[:\n])\s*(\d{1,2})[.)]\s+/gim)]
       .map(match => match[1] ?? match[2]));
     const missingGuidance = questions.some((question, index) => {
       const id = question[1] ?? question[2];
