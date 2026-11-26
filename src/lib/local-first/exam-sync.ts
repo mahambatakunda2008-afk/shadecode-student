@@ -44,8 +44,11 @@ export async function syncExamAttempt(
     }).catch(() => null);
 
     if (!response) return "pending" as const;
-    const result = await response.json().catch(() => null) as { status?: string; revision?: number } | null;
-    if (response.status === 409 || result?.status === "conflict") { await setSyncState(userId, attemptId, "conflict", result?.revision); return "conflict" as const; }
+    const result = await response.json().catch(() => null) as { status?: string; revision?: number; deviceId?: string; savedStatus?: "active" | "submitted"; savedPayload?: unknown; updatedAt?: string } | null;
+    if (response.status === 409 || result?.status === "conflict") {
+      await setSyncState(userId, attemptId, "conflict", result?.revision, { deviceId: result?.deviceId, status: result?.savedStatus, payload: result?.savedPayload, updatedAt: result?.updatedAt });
+      return "conflict" as const;
+    }
     if (!response.ok || !result || !["accepted", "already-applied"].includes(result.status ?? "")) return "pending" as const;
 
     await localFirstStore.acknowledgeEntityOperations(userId, "exam_attempt", attemptId, record.version);
@@ -93,4 +96,12 @@ export async function restoreCloudExamAttempts(userId: string): Promise<{ restor
   }
   return { restored, skipped };
 }
-\n\n/** Read the preserved cloud side of a conflict. The local attempt remains untouched. */\nexport async function getExamAttemptConflict(userId: string, attemptId: string): Promise<{ state: string; revision?: number; updatedAt?: number; cloudSnapshot?: { deviceId?: string; status?: "active" | "submitted"; payload?: unknown; updatedAt?: string } } | null> {\n  if (!userId || !attemptId) return null;\n  const meta = await localFirstDB.getMeta(syncStateKey(userId, attemptId));\n  if (typeof meta?.value !== "string") return null;\n  try { const value = JSON.parse(meta.value) as { state: string; revision?: number; updatedAt?: number; cloudSnapshot?: { deviceId?: string; status?: "active" | "submitted"; payload?: unknown; updatedAt?: string } }; return value.state === "conflict" ? value : null; } catch { return null; }\n}\n
+
+
+/** Read the preserved cloud side of a conflict. The local attempt remains untouched. */
+export async function getExamAttemptConflict(userId: string, attemptId: string): Promise<{ state: string; revision?: number; updatedAt?: number; cloudSnapshot?: { deviceId?: string; status?: "active" | "submitted"; payload?: unknown; updatedAt?: string } } | null> {
+  if (!userId || !attemptId) return null;
+  const meta = await localFirstDB.getMeta(syncStateKey(userId, attemptId));
+  if (typeof meta?.value !== "string") return null;
+  try { const value = JSON.parse(meta.value) as { state: string; revision?: number; updatedAt?: number; cloudSnapshot?: { deviceId?: string; status?: "active" | "submitted"; payload?: unknown; updatedAt?: string } }; return value.state === "conflict" ? value : null; } catch { return null; }
+}
