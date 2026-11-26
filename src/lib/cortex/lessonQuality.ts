@@ -338,7 +338,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
       const hasInlineGuidance = /\b(?:answer\s+guidance|worked\s+solution|solution|answer)\s*:/i.test(questionSegment);
       return !hasInlineGuidance && !answerIds.has(id);
     });
-    if (questions.length >= 2 && missingGuidance) {
+    if (questions.length > 0 && missingGuidance) {
       failures.push("practice-answer-guidance-incomplete");
     }
   }
