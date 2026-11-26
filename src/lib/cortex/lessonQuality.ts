@@ -307,7 +307,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // and make an otherwise useful worked example unreadable.
   if (/math|mathematics|physics|chemistry/i.test(request.subject)) {
     const mathBlocks = normalized.filter(block =>
-      /\\$|\\\\(?:frac|int|sqrt|times|cdot|Delta|text)\\b/.test(block.content),
+      /\$|\\(?:frac|int|sqrt|times|cdot|Delta|text)\b/.test(block.content),
     );
     if (mathBlocks.some(block => {
       const delimiterCount = (block.content.match(/\$/g) ?? []).length;
