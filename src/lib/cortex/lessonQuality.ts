@@ -272,8 +272,8 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   if (request.intent === "teach") {
     const practiceBlocks = normalized.filter(block => block.normalizedType === "practice");
     for (const block of practiceBlocks) {
-      const numberedQuestions = (block.content.match(/(?:^|\\n)\\s*(?:Q(?:uestion)?\\s*)?\\d+[.)]\\s+[^\\n]{8,}/gi) ?? []).length;
-      const answerMarkers = (block.content.match(/(?:^|\\n)\\s*(?:answer|solution|guidance)(?:\\s+(?:key|guide|and explanation))?\\s*:/gi) ?? []).length;
+      const numberedQuestions = (block.content.match(/(?:^|\n)\s*(?:Q(?:uestion)?\s*)?\d+[.)]\s+[^\n]{8,}/gi) ?? []).length;
+      const answerMarkers = (block.content.match(/(?:^|\n)\s*(?:answer|solution|guidance)(?:\s+(?:key|guide|and explanation))?\s*:/gi) ?? []).length;
       const hasAnswerSection = /(?:answer key|answers and explanations|worked solutions|answer guidance)/i.test(block.content);
       if (numberedQuestions > 0 && !hasAnswerSection && answerMarkers < numberedQuestions) {
         failures.push("practice-answer-guidance-incomplete");
@@ -281,7 +281,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
       }
     }
     const examBlocks = normalized.filter(block => block.normalizedType === "exam");
-    if (examBlocks.length > 0 && !examBlocks.some(block => /(?:^|\\n)\\s*(?:question|task)\\s*[:.)-]|\\?/.test(block.content))) {
+    if (examBlocks.length > 0 && !examBlocks.some(block => /(?:^|\n)\s*(?:question|task)\s*[:.)-]|\?/.test(block.content))) {
       failures.push("exam-transfer-without-question");
     }
   }
