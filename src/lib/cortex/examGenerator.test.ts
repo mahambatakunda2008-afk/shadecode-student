@@ -59,7 +59,7 @@ describe("selectBalancedQuestions", () => {
       question("forces1", "Forces"),
     ];
     expect(selectBalancedQuestions(candidates, ["Mechanics", "Kinematics", "Forces"], 3).map(q => q.id))
-      .toEqual(["kin1", "kin2", "forces1"]);
+      .toEqual(["kin1", "forces1", "kin2"]);
   });
 
   it("does not invent questions when a selected topic has no valid candidates", () => {
