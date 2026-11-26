@@ -1,4 +1,10 @@
 import { localFirstStore } from "./store";
+import { localFirstDB } from "./db";
+
+const syncStateKey = (userId: string, attemptId: string) => `exam-sync-state:${userId}:${attemptId}`;
+async function setSyncState(userId: string, attemptId: string, state: "conflict" | "synced" | "pending", revision?: number) {
+  await localFirstDB.putMeta({ key: syncStateKey(userId, attemptId), value: JSON.stringify({ state, revision, updatedAt: Date.now() }) });
+}
 
 const inFlight = new Map<string, Promise<"synced" | "pending" | "conflict">>();
 const lastAttemptedAt = new Map<string, number>();
@@ -39,10 +45,11 @@ export async function syncExamAttempt(
 
     if (!response) return "pending" as const;
     const result = await response.json().catch(() => null) as { status?: string; revision?: number } | null;
-    if (response.status === 409 || result?.status === "conflict") return "conflict" as const;
+    if (response.status === 409 || result?.status === "conflict") { await setSyncState(userId, attemptId, "conflict", result?.revision); return "conflict" as const; }
     if (!response.ok || !result || !["accepted", "already-applied"].includes(result.status ?? "")) return "pending" as const;
 
     await localFirstStore.acknowledgeEntityOperations(userId, "exam_attempt", attemptId, record.version);
+    await setSyncState(userId, attemptId, "synced", result.revision);
     if (typeof result.revision === "number") {
       await localFirstStore.markRecordSynced(userId, "exam_attempt", attemptId, result.revision);
     }
