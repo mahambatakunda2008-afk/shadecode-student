@@ -327,7 +327,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   // lesson where Question 3 had no guidance while Questions 1 and 2 did.
   const practiceBlocks = normalized.filter(block => block.normalizedType === "practice");
   for (const block of practiceBlocks) {
-    const answerKeyStart = block.content.search(/\banswers?\s*(?:\([^)]*\))?\s*:/i);
+    const answerKeyStart = block.content.search(/\b(?:answers|answer\s+key)\s*(?:\([^)]*\))?\s*:/i);
     const questionText = answerKeyStart >= 0 ? block.content.slice(0, answerKeyStart) : block.content;
     const answerKeyText = answerKeyStart >= 0 ? block.content.slice(answerKeyStart) : "";
     const questions = [...questionText.matchAll(/(?:practice\s+)?(?:question|problem|exercise)\s*#?\s*(\d+)\s*:|(?:^|\s)(\d+)[.)]\s+/gim)];
