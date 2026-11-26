@@ -109,7 +109,7 @@ DEPTH RULES
 18. Every numbered practice question must have matching, useful answer guidance. Do not leave the final question unanswered or replace an answer with a hint.
 19. Never leave a sentence, equation, worked solution or answer unfinished. If the response budget is tight, reduce the number of blocks rather than truncating teaching content.
 20. Distinguish closely related quantities precisely (for example, displacement versus distance, and signed integral versus total geometric area).
-21. The exam-transfer block must contain a real task explicitly labelled `Question:`. General advice about exam technique is not a substitute for a question.
+21. The exam-transfer block must contain a real task explicitly labelled "Question:". General advice about exam technique is not a substitute for a question.
 
 QUALITY BAR
 Before returning the JSON, silently check: Is this genuinely teachable without another AI response? Could a student explain the core ideas after reading it? Are the connections visible? Are there worked examples, traps, checks, and a path forward? Does the lesson respect the curriculum map? Recalculate every worked answer independently, verify that every numbered practice question has answer guidance, and check that no block ends mid-thought. If not, deepen or repair it before returning it.`;
@@ -140,7 +140,7 @@ Requirements:
 - Make the subject's reasoning style visible in explanations and worked examples.
 - Independently recompute every worked answer, numerical result, unit conversion and answer-guidance item.
 - Ensure every numbered practice question has matching answer guidance; do not leave the final question unanswered.
-- Include a real exam-style task labelled `Question:`; generic exam technique advice does not count as a task.
+- Include a real exam-style task labelled "Question:"; generic exam technique advice does not count as a task.
 - Finish every sentence, equation and worked solution. Reduce block count rather than truncating content.
 ${/math|mathematics|physics|chemistry/i.test(subject) ? "- Use standard symbolic notation with single-dollar LaTeX delimiters. Never split numeric literals with dollar signs (write $3.0$, never $3$.0 or $0$.$20$)." : ""}
 - Avoid fictional narratives, anecdotes, story hooks, and story-based analogies. Teach the requested material directly, using concise worked examples and explicit reasoning.
