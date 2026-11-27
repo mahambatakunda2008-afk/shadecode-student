@@ -1,7 +1,7 @@
 export type LearningMode = "classic" | "ai";
 
 export const LEARNING_MODE_KEY = "shadecode:learning-mode:v1";
-export const DEFAULT_LEARNING_MODE: LearningMode = "classic";
+export const DEFAULT_LEARNING_MODE: LearningMode = "ai";
 
 export function normalizeLearningMode(value: unknown): LearningMode {
   return value === "ai" ? "ai" : "classic";
