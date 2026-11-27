@@ -4,13 +4,16 @@ export const LEARNING_MODE_KEY = "shadecode:learning-mode:v1";
 export const DEFAULT_LEARNING_MODE: LearningMode = "ai";
 
 export function normalizeLearningMode(value: unknown): LearningMode {
-  return value === "ai" ? "ai" : "classic";
+  if (value === "ai") return "ai";
+  if (value === "classic") return "classic";
+  return DEFAULT_LEARNING_MODE;
 }
 
 export function getLearningMode(): LearningMode {
   if (typeof window === "undefined") return DEFAULT_LEARNING_MODE;
   try {
-    return normalizeLearningMode(window.localStorage.getItem(LEARNING_MODE_KEY));
+    const stored = window.localStorage.getItem(LEARNING_MODE_KEY);
+    return stored === null ? DEFAULT_LEARNING_MODE : normalizeLearningMode(stored);
   } catch {
     return DEFAULT_LEARNING_MODE;
   }
