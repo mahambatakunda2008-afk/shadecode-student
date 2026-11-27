@@ -9,14 +9,11 @@ on:
       - "scripts/generate-brand-assets.mjs"
       - ".github/workflows/android.yml"
   push:
+    # Rebuild the native app whenever application code lands on main.
+    # Android behavior changes are not limited to files inside android/.
     branches: [main]
     tags:
       - "android-v*"
-    paths:
-      - "android/**"
-      - "public/brand/**"
-      - "scripts/generate-brand-assets.mjs"
-      - ".github/workflows/android.yml"
 
 permissions:
   contents: write
