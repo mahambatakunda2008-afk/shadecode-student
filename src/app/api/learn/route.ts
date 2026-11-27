@@ -645,6 +645,41 @@ Repair only the defective section. Preserve correct material where possible. Do 
 
         section = safeParseSectionJSON(rawSection);
         if (!section) {
+          sectionFailures = ["invalid-section-json-or-structure"];
+          console.info("[LEARN] section rejected", { generationJobId: durableJobId, sectionIndex: generationSectionIndex, attempt, failures: sectionFailures, responseTail: rawSection.slice(-120) });
+          continue;
+        }
+
+        section = { ...section, blocks: breakUpLongParagraphs(section.blocks) };
+
+        const sectionQuality = lessonQualityFailures({
+          title: section.title,
+          blocks: section.blocks.map((block) => ({
+            type: block.type,
+            title: block.title,
+            content: block.content,
+          })),
+        }, request);
+
+        // Topic drift is judged on the assembled lesson (finalization re-runs lessonQualityFailures on
+        // the whole lesson). A single sub-section of a broad topic, such as "scalars vs vectors" inside
+        // "Kinematics", rarely repeats the topic word, so rejecting it here sent healthy AI sections to
+        // the curated fallback after three attempts (production 2026-11-18).
+        const perSectionIgnored = generationSectionCount > 1 ? ["topic-drift", "concept", "example", "checkpoint", "missing-relevant-diagram"] : [];
+        sectionFailures = sectionQuality.failures.filter((failure) =>
+          !perSectionIgnored.includes(failure) && !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "teach-example", "exam"].includes(failure) && !(failure === "summary" && generationSectionCount > 1 && generationSectionIndex < generationSectionCount - 1)
+        );
+
+        if (isSectionTooThin(section.blocks.length, generationSectionCount)) sectionFailures = [...sectionFailures, "section-too-thin"];
+        for (const missing of missingSectionTypes(section.blocks.map((block) => String(block.type)), generationSectionIndex, generationSectionCount, sectionTypeOptions)) sectionFailures = [...sectionFailures, `missing-type-${missing}`];
+
+        if (sectionFailures.length > 0) {
+          console.info("[LEARN] section rejected", { generationJobId: durableJobId, sectionIndex: generationSectionIndex, attempt, failures: sectionFailures });
+          section = null;
+        }
+      }
+
+      if (!section) {
         return NextResponse.json({
           error: "Cortex could not produce a reliable lesson section after repair. Your completed sections and request are preserved for retry.",
           retryable: true,
@@ -797,10 +832,9 @@ Return only valid JSON.`;
       }
     }
 
-    // An authenticated Cortex AI request must never be silently replaced by authored
+    // Authenticated Cortex AI requests must not be silently replaced by authored
     // curriculum material. Offline/classic recovery is handled by the client policy.
     const usedDeterministicFallback = false;
-
 
     if (!parsed?.blocks.length || (!usedDeterministicFallback && failures.length > 0)) {
       // Failure telemetry must never replace the useful retryable response. A
