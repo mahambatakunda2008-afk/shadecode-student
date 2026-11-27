@@ -127,7 +127,7 @@ describe("generated lesson completeness checks", () => {
       title: "Kinematics",
       blocks: [
         { type: "concept", content: repeated },
-        { type: "concept", content: repeated + " This distinction is essential when interpreting motion graphs." },
+        { type: "concept", content: repeated + " This matters." },
       ],
     }, { ...request, topic: "Kinematics", prompt: "Teach Kinematics" });
     expect(failures.failures).toContain("duplicate-lesson-content");
