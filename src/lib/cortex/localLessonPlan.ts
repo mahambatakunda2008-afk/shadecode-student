@@ -10,8 +10,8 @@ export function buildLocalSectionRequirements(index: number, sectionCount: numbe
   if (position >= 1 && position <= count - 2) required.push("example", "checkpoint");
   if (position === 1) required.push("structure");
   if (count > 2 && position === Math.min(2, count - 2)) required.push("mechanism", ...(opts.formula ? ["formula"] : []));
-  if (count > 2 && position === count - 2) required.push("synthesis");
-  if (position === count - 1) required.push("curiosity", "practice", "mistake", "summary", "application", "checkpoint");
+  if (count > 2 && position === count - 2) required.push("synthesis", "exam", "misconception");
+  if (position === count - 1) required.push("curiosity", "practice", "exam", "mistake", "misconception", "summary", "application", "synthesis", "checkpoint");
 
   const guidance: Record<string, string> = {
     objective: "state concrete learner outcomes",
@@ -23,6 +23,8 @@ export function buildLocalSectionRequirements(index: number, sectionCount: numbe
     formula: "state relevant equations, define symbols and units, and explain conditions",
     synthesis: "connect multiple ideas in a larger chain of reasoning",
     curiosity: "open a grounded next question or consequence",
+    exam: "connect the topic to exam-style reasoning and show how to structure a response",
+    misconception: "identify a likely misconception and correct it with clear reasoning",
     practice: "set progressively harder questions with useful answer guidance",
     mistake: "explain a realistic common mistake and why it fails",
     summary: "give a concise mental model of the lesson",
