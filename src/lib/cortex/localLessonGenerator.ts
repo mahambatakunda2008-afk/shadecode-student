@@ -28,8 +28,8 @@ export function generateLocalLesson(subject: string, prompt: string, curriculumC
   };
 }
 
-export function hasLocalLessonFallback(subject: string, prompt: string, curriculumContext = "", examBoard?: string, level?: string) {
+export function hasLocalLessonFallback(subject: string, prompt: string, curriculumContext = "", scope: { board?: string; level?: string } = {}) {
   const topic = extractTopic(prompt);
-  const pack = readOfflineCurriculumPack(subject, examBoard, level);
+  const pack = readOfflineCurriculumPack(subject, scope.board, scope.level);
   return Boolean((pack && buildOfflineLessonWithPack(subject, prompt, topic, pack)) || buildOfflineLesson(subject, prompt, curriculumContext));
 }
