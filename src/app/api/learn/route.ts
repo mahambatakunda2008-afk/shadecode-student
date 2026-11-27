@@ -14,7 +14,6 @@ import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { breakUpLongParagraphs, isSectionTooThin, missingSectionTypes, needsFormulaBlock, requiredSectionTypes, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure, normalizeGeneratedLessonTitle } from "@/lib/cortex/lessonQuality";
-import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
@@ -635,42 +634,10 @@ Repair only the defective section. Preserve correct material where possible. Do 
         // section merely needs another schema repair. Do not burn another 16-22s
         // retrying the same dead provider chain.
         if (!rawSection) {
-          // Section mode used to exit here immediately when the provider chain
-          // was exhausted. That bypassed the curated deterministic fallback
-          // used by complete-lesson mode, leaving students with a hard failure
-          // even for topics Cortex can teach without any AI provider.
-          const deterministicFallback = buildDeterministicLessonFallback(effectiveSubject, request.topic);
-          if (deterministicFallback) {
-            // Curated lessons are authored and reviewed ahead of time. The deep-generation
-            // quality gate expects a full AI-produced lesson shape (including multiple
-            // checkpoints and continuation blocks), so applying it here rejects valid
-            // curriculum recovery and recreates the 20% -> 24% failure loop.
-            // Subject/topic matching happens inside buildDeterministicLessonFallback;
-            // retain the curated lesson and label its origin honestly.
-            const fallbackQuality = lessonQualityFailures(deterministicFallback, request).failures;
-            if (fallbackQuality.length > 0) {
-              console.info("[LEARN] using curated fallback despite generation-only quality warnings", {
-                topic: request.topic,
-                failures: fallbackQuality,
-              });
-            }
-            return NextResponse.json({
-              sectionIndex: generationSectionCount - 1,
-              sectionCount: generationSectionCount,
-              title: deterministicFallback.title,
-              blocks: deterministicFallback.blocks,
-              partialBlocks: deterministicFallback.blocks,
-              complete: true,
-              deterministicFallback: true,
-              providerUnavailable: true,
-              fallbackReason: "provider_chain_exhausted",
-            });
-          }
-
-          await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "generation_failed", outcome: "provider_chain_exhausted_no_verified_pack", difficulty: validDifficulty });
+          await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "generation_failed", outcome: "provider_chain_exhausted", difficulty: validDifficulty });
           return NextResponse.json({
-            error: "Cortex providers are unavailable and no matching curated lesson is available for this topic. Your request and checkpoint are preserved.",
-            retryable: false,
+            error: "Cortex AI providers did not return a lesson. Your request and checkpoint are preserved. Retry generation or use an available on-device model.",
+            retryable: true,
             providerUnavailable: true,
             fallbackAvailable: false,
           }, { status: 503 });
@@ -678,67 +645,11 @@ Repair only the defective section. Preserve correct material where possible. Do 
 
         section = safeParseSectionJSON(rawSection);
         if (!section) {
-          sectionFailures = ["invalid-section-json-or-structure"];
-          console.info("[LEARN] section rejected", { generationJobId: durableJobId, sectionIndex: generationSectionIndex, attempt, failures: sectionFailures, responseTail: rawSection.slice(-120) });
-          continue;
-        }
-
-        section = { ...section, blocks: breakUpLongParagraphs(section.blocks) };
-
-        const sectionQuality = lessonQualityFailures({
-          title: section.title,
-          blocks: section.blocks.map((block) => ({
-            type: block.type,
-            title: block.title,
-            content: block.content,
-          })),
-        }, request);
-
-        // Topic drift is judged on the assembled lesson (finalization re-runs lessonQualityFailures on
-        // the whole lesson). A single sub-section of a broad topic, such as "scalars vs vectors" inside
-        // "Kinematics", rarely repeats the topic word, so rejecting it here sent healthy AI sections to
-        // the curated fallback after three attempts (production 2026-11-18).
-        const perSectionIgnored = generationSectionCount > 1 ? ["topic-drift", "concept", "example", "checkpoint", "missing-relevant-diagram"] : [];
-        sectionFailures = sectionQuality.failures.filter((failure) =>
-          !perSectionIgnored.includes(failure) && !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "teach-example", "exam"].includes(failure) && !(failure === "summary" && generationSectionCount > 1 && generationSectionIndex < generationSectionCount - 1)
-        );
-
-        if (isSectionTooThin(section.blocks.length, generationSectionCount)) sectionFailures = [...sectionFailures, "section-too-thin"];
-        for (const missing of missingSectionTypes(section.blocks.map((block) => String(block.type)), generationSectionIndex, generationSectionCount, sectionTypeOptions)) sectionFailures = [...sectionFailures, `missing-type-${missing}`];
-
-        if (sectionFailures.length > 0) {
-          console.info("[LEARN] section rejected", { generationJobId: durableJobId, sectionIndex: generationSectionIndex, attempt, failures: sectionFailures });
-          section = null;
-        }
-      }
-
-      if (!section) {
-        // Malformed/low-quality model output can exhaust the section repair loop just
-        // as completely as a provider outage. For known topics, recover with the
-        // authored lesson before returning an error to the learner.
-        const deterministicFallback = buildDeterministicLessonFallback(effectiveSubject, request.topic);
-        if (deterministicFallback) {
-          const fallbackQuality = lessonQualityFailures(deterministicFallback, request).failures;
-          if (fallbackQuality.length > 0) {
-            console.info("[LEARN] using curated fallback after section repair exhaustion", {
-              topic: request.topic,
-              failures: fallbackQuality,
-            });
-          }
-          return NextResponse.json({
-            sectionIndex: generationSectionCount - 1,
-            sectionCount: generationSectionCount,
-            title: deterministicFallback.title,
-            blocks: deterministicFallback.blocks,
-            partialBlocks: deterministicFallback.blocks,
-            complete: true,
-            deterministicFallback: true,
-            fallbackReason: "section_repair_exhausted",
-          });
-        }
         return NextResponse.json({
-          error: "This lesson section could not be made reliable yet. The generation state is preserved for resume/retry.",
+          error: "Cortex could not produce a reliable lesson section after repair. Your completed sections and request are preserved for retry.",
           retryable: true,
+          providerUnavailable: false,
+          fallbackAvailable: false,
         }, { status: 503 });
       }
       const currentBlocks = [...priorBlocks, ...section.blocks];
@@ -886,17 +797,10 @@ Return only valid JSON.`;
       }
     }
 
-    // Curated recovery is the final safety net for known high-traffic topics. It is never
-    // represented as AI output and never pretends to cover unsupported curriculum.
-    let usedDeterministicFallback = false;
-    if (!parsed?.blocks.length || failures.length > 0) {
-      const fallback = buildDeterministicLessonFallback(effectiveSubject, request.topic);
-      if (fallback) {
-        parsed = fallback;
-        usedDeterministicFallback = true;
-        failures = [];
-      }
-    }
+    // An authenticated Cortex AI request must never be silently replaced by authored
+    // curriculum material. Offline/classic recovery is handled by the client policy.
+    const usedDeterministicFallback = false;
+
 
     if (!parsed?.blocks.length || (!usedDeterministicFallback && failures.length > 0)) {
       // Failure telemetry must never replace the useful retryable response. A
