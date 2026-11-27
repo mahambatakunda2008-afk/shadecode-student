@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, RefreshCw, WifiOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import LearnPrefillGuard from "./LearnPrefillGuard";
+import { retryPendingGeneratedLessonSync } from "@/lib/cortex/lessonGenerationClient";
 
 const AUTH_TIMEOUT_MS = 8_000;
 
@@ -56,6 +57,13 @@ export default function ExperienceLearn() {
     void verifySession(signal);
     return () => { signal.cancelled = true; };
   }, [verifySession, attempt]);
+
+  useEffect(() => {
+    if (state !== "ready") return;
+    void retryPendingGeneratedLessonSync().catch((error) => {
+      console.warn("[Learn] pending offline lessons could not sync", error);
+    });
+  }, [state]);
 
   if (state === "error") {
     return (
