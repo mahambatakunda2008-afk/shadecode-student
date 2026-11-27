@@ -1431,7 +1431,7 @@ async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {})
         }
       }
 
-      const response = await fetch("/api/learn", {
+      const response = await fetchPendingLessonSync("/api/learn", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
