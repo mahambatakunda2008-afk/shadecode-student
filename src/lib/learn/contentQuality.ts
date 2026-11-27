@@ -66,7 +66,7 @@ CONTENT ARCHITECTURE
 Return ONLY valid JSON with this shape:
 {"title":"...","blocks":[{"type":"...","title":"...","content":"..."}]}
 
-Use 16-20 blocks for a broad topic and 12-16 blocks for a focused topic. Use these block types in a deliberate order, combining or repeating types when useful:
+Use 16-20 blocks for a broad topic and 14-16 blocks for a focused topic. The lesson parser requires at least 14 usable blocks, so never return fewer than 14 blocks even for a focused request. Use these block types in a deliberate order, combining or repeating types when useful:
 - objective: concrete mastery outcomes
 - map: the big picture and how the parts connect
 - prior: prerequisite knowledge and a quick activation of it
