@@ -188,6 +188,28 @@ function normalizedForSimilarity(content: string) {
   return content.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(word => word.length > 2).join(" ");
 }
 
+function hasNearDuplicateTeachingBlocks(blocks: Array<{ normalizedType: string; content: string }>) {
+  const teachingTypes = new Set(["concept", "definition", "structure", "mechanism", "example", "application", "comparison"]);
+  const candidates = blocks
+    .filter(block => teachingTypes.has(block.normalizedType))
+    .map(block => {
+      const words = new Set(normalizedForSimilarity(block.content).split(" ").filter(word => word.length > 2));
+      return { type: block.normalizedType, words, length: block.content.trim().length };
+    })
+    .filter(block => block.length >= 100 && block.words.size >= 12);
+  for (let i = 0; i < candidates.length; i += 1) {
+    for (let j = i + 1; j < candidates.length; j += 1) {
+      if (candidates[i].type !== candidates[j].type) continue;
+      const a = candidates[i].words;
+      const b = candidates[j].words;
+      const intersection = [...a].filter(word => b.has(word)).length;
+      const union = new Set([...a, ...b]).size;
+      if (union > 0 && intersection / union >= 0.88) return true;
+    }
+  }
+  return false;
+}
+
 function isMostlyGenericFiller(content: string) {
   const normalized = content.toLowerCase().replace(/\s+/g, " ").trim();
   if (!normalized) return true;
@@ -219,6 +241,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const normalized = lesson.blocks.map(block => ({ ...block, normalizedType: normalizeLessonBlockType(block.type), searchable: `${block.title ?? ""} ${block.content}`.trim().toLowerCase() }));
   const types = new Set(normalized.map(block => block.normalizedType));
   const contents = normalized.map(block => block.content.trim().toLowerCase());
+  if (hasNearDuplicateTeachingBlocks(normalized)) failures.push("duplicate-lesson-content");
   const text = contents.join(" ");
   const searchableText = normalized.map(block => block.searchable).join(" ");
   const failures: string[] = [];
