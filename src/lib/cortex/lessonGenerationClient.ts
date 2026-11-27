@@ -1354,8 +1354,15 @@ async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {})
     if (!navigator.onLine) break;
     if (lesson.ownerUserId !== userId || !lesson.generationJobId || !lesson.generationPrompt || !lesson.blocks?.length) continue;
     if (!options.manual && typeof lesson.syncRetryAfter === "number" && lesson.syncRetryAfter > Date.now()) continue;
-    const leaseId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : null;
-    if (!leaseId) continue;
+    // randomUUID is missing in some older embedded browsers even when the
+    // app is otherwise online. Keep the server's UUID validation satisfied
+    // rather than silently leaving this lesson pending forever.
+    const leaseId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (character) => {
+          const value = Math.floor(Math.random() * 16);
+          return (character === "x" ? value : (value & 0x3) | 0x8).toString(16);
+        });
     try {
       // Offline-only generation may never have reached the server to create its
       // durable job. Recreate that owner-scoped identity before canonical save.
