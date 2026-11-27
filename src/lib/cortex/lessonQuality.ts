@@ -241,10 +241,10 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const normalized = lesson.blocks.map(block => ({ ...block, normalizedType: normalizeLessonBlockType(block.type), searchable: `${block.title ?? ""} ${block.content}`.trim().toLowerCase() }));
   const types = new Set(normalized.map(block => block.normalizedType));
   const contents = normalized.map(block => block.content.trim().toLowerCase());
-  if (hasNearDuplicateTeachingBlocks(normalized)) failures.push("duplicate-lesson-content");
   const text = contents.join(" ");
   const searchableText = normalized.map(block => block.searchable).join(" ");
   const failures: string[] = [];
+  if (hasNearDuplicateTeachingBlocks(normalized)) failures.push("duplicate-lesson-content");
   const has = (...names: string[]) => names.some(name => types.has(name));
   const tokens = topicTokens(request);
 
