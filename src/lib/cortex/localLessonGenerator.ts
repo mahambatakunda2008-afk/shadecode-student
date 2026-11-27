@@ -11,9 +11,11 @@ function extractTopic(prompt: string) {
     .trim();
 }
 
-export function generateLocalLesson(subject: string, prompt: string, curriculumContext = ""): LocalLesson {
+export function generateLocalLesson(subject: string, prompt: string, curriculumContext = "", scope: { board?: string; level?: string } = {}): LocalLesson {
   const topic = extractTopic(prompt);
-  const pack = readOfflineCurriculumPack(subject);
+  // Never let a cached pack from another examination board or level silently
+  // become the source of an offline lesson.
+  const pack = readOfflineCurriculumPack(subject, scope.board, scope.level);
   return buildOfflineLessonWithPack(subject, prompt, topic, pack) ?? buildOfflineLesson(subject, prompt, curriculumContext) ?? {
     id: `offline-unavailable-${Date.now().toString(36)}`,
     title: `${topic || prompt.trim()}: offline curriculum unavailable`,
