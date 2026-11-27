@@ -1418,7 +1418,28 @@ async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {})
       });
     }
   }
-  return { synced, pending: (await offlineStorage.getPendingLessonSync(userId)).length };
+  const remaining = await offlineStorage.getPendingLessonSync(userId);
+  scheduleNextPendingLessonSync(remaining);
+  return { synced, pending: remaining.length };
+}
+
+let pendingLessonSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Retry at the earliest persisted backoff deadline even if the tab stays open. */
+function scheduleNextPendingLessonSync(lessons: Awaited<ReturnType<typeof offlineStorage.getPendingLessonSync>>) {
+  if (!isBrowser()) return;
+  if (pendingLessonSyncTimer) clearTimeout(pendingLessonSyncTimer);
+  pendingLessonSyncTimer = null;
+  if (!navigator.onLine) return;
+  const deadlines = lessons
+    .filter((lesson) => lesson.syncStatus !== "synced" && typeof lesson.syncRetryAfter === "number")
+    .map((lesson) => lesson.syncRetryAfter as number);
+  if (!deadlines.length) return;
+  const delay = Math.max(1000, Math.min(...deadlines) - Date.now());
+  pendingLessonSyncTimer = setTimeout(() => {
+    pendingLessonSyncTimer = null;
+    void retryPendingGeneratedLessonSync().catch((error) => console.warn("[LEARN] scheduled lesson sync failed", error));
+  }, delay);
 }
 
 let pendingLessonSyncInFlight: Promise<{ synced: number; pending: number }> | null = null;
