@@ -9,6 +9,7 @@ import { AlertCircle, BookOpen, CheckCircle2, Clock3, RefreshCw, Sparkles, WifiO
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import LearnerPracticeRecommendations from "./components/LearnerPracticeRecommendations";
 import { readVerifyLearnerModel } from "@/lib/cortex/verify/learner-model-store";
+import { getLearningMode } from "@/lib/learningMode";
 
 const REQUEST_TIMEOUT_MS = 12000;
 const GENERATE_TIMEOUT_MS = 65000;
@@ -131,6 +132,7 @@ export default function LearnPageClientV2() {
           subject,
           topic: topic.trim(),
           difficulty,
+          learningMode: getLearningMode(),
           learnerEvidence: userId
             ? { topics: readVerifyLearnerModel(userId).topics.filter(item => item.subject.toLocaleLowerCase("en") === subject.toLocaleLowerCase("en")).slice(0, 6) }
             : { topics: [] },
