@@ -8,8 +8,9 @@ export function buildDeepLessonPrompt(
   topic: string,
   difficulty: LessonDifficulty,
   curriculumContext = "",
+  broadTopicOverride = false,
 ) {
-  const broad = isBroadTopic(topic);
+  const broad = broadTopicOverride || isBroadTopic(topic);
   const depth = broad
     ? "This is a BROAD MASTERCLASS request. Map the subject area first, then teach its major branches in one coherent journey. Do not reduce a broad subject to a definition and a few examples. Cover the canonical subtopics a serious learner would expect, explain how they connect, and finish by opening paths for deeper study."
     : "This is a focused topic. Go deep enough that the learner can explain it, apply it, recognise traps, and connect it to neighbouring ideas.";
