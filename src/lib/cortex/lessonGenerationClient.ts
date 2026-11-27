@@ -220,7 +220,7 @@ async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, genera
   if (!ownerUserId) throw new Error("Sign in on this device before saving a private offline lesson.");
   const context = await localContext(job);
   const request = resolvedRequest(job);
-  const local = generated ?? generateLocalLesson(job.request.subject, job.request.prompt, context, job.request.examBoard, job.request.level);
+  const local = generated ?? generateLocalLesson(job.request.subject, job.request.prompt, context, { board: job.request.examBoard, level: job.request.level });
   const validated = validateResult(local, request);
   if (!validated) throw new Error("Generated lesson failed the learning-quality checks.");
   // This path only writes to IndexedDB. Mark the result device-only so callers never
@@ -912,7 +912,7 @@ async function runJob(
     if (
       isBrowser() &&
       shouldUseFastVerifiedCurriculumRecovery({ online, hasSessionToken: Boolean(token) }) &&
-      hasLocalLessonFallback(job.request.subject, job.request.prompt, fastRecoveryContext, job.request.examBoard, job.request.level)
+      hasLocalLessonFallback(job.request.subject, job.request.prompt, fastRecoveryContext, { board: job.request.examBoard, level: job.request.level })
     ) {
       try {
         updateGenerationJob(job.id, {
@@ -920,7 +920,7 @@ async function runJob(
           progress: 10,
           error: "Cortex is using verified curriculum recovery while online generation is unavailable or warming up.",
         });
-        const local = generateLocalLesson(job.request.subject, job.request.prompt, fastRecoveryContext, job.request.examBoard, job.request.level);
+        const local = generateLocalLesson(job.request.subject, job.request.prompt, fastRecoveryContext, { board: job.request.examBoard, level: job.request.level });
         if (local.blocks.length >= 10) {
           const localFallback: LessonGenerationResult = {
             id: local.id,
@@ -1046,7 +1046,7 @@ async function runJob(
     const context = await localContext(currentJob as GenerationJob<LessonGenerationInput>);
     const failureClass = classifyCortexExecutionFailure(error);
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
-      hasVerifiedData: isBrowser() && (!navigator.onLine || !token) && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context, currentJob.request.examBoard, currentJob.request.level),
+      hasVerifiedData: isBrowser() && (!navigator.onLine || !token) && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context, { board: currentJob.request.examBoard, level: currentJob.request.level }),
       hasWarmLocal: !localModelAttempted && isBrowser() && ["ready", "loading"].includes(getBrowserLocalModelStatus().status),
       hasCheckpoint: hasCompletedLessonCheckpoint(currentJob.partial),
       supportsRepair: false,
@@ -1131,9 +1131,9 @@ async function runJob(
     }
 
     // Execute the selected recovery lane. Never turn an outage into a hidden model download.
-    if (recoveryPolicy.action === "use_verified_data" && isBrowser() && navigator.onLine && hasLocalLessonFallback(job.request.subject, job.request.prompt, context, job.request.examBoard, job.request.level)) {
+    if (recoveryPolicy.action === "use_verified_data" && isBrowser() && navigator.onLine && hasLocalLessonFallback(job.request.subject, job.request.prompt, context, { board: job.request.examBoard, level: job.request.level })) {
       try {
-        const local = generateLocalLesson(job.request.subject, job.request.prompt, context, job.request.examBoard, job.request.level);
+        const local = generateLocalLesson(job.request.subject, job.request.prompt, context, { board: job.request.examBoard, level: job.request.level });
         if (local.blocks.length >= 10) {
           updateGenerationJob(job.id, { status: "generating", progress: Math.max(26, Math.min(40, getGenerationJob(job.id)?.progress ?? 26)), error: "Cloud generation is unavailable. Cortex is switching to verified curriculum recovery." });
           const localFallback: LessonGenerationResult = { id: local.id, title: local.title, blocks: local.blocks, offlineFallback: true, localModel: false };
@@ -1161,14 +1161,14 @@ async function runJob(
       }
     }
 
-    if (recoveryPolicy.action === "use_verified_data" && isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context, job.request.examBoard, job.request.level)) {
+    if (recoveryPolicy.action === "use_verified_data" && isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context, { board: job.request.examBoard, level: job.request.level })) {
       try {
         // An online provider failure is not an offline-storage success.
         // Build from the verified local curriculum lane, then use the same
         // server persistence path so the lesson is not stranded on one device.
         const localFallback = await (async () => {
           const request = resolvedRequest(job);
-          const local = generateLocalLesson(job.request.subject, job.request.prompt, context, job.request.examBoard, job.request.level);
+          const local = generateLocalLesson(job.request.subject, job.request.prompt, context, { board: job.request.examBoard, level: job.request.level });
           const validated = validateResult(
             { id: local.id, title: local.title, blocks: local.blocks },
             request,
