@@ -121,6 +121,29 @@ describe("generated lesson completeness checks", () => {
     expect(failures.failures).not.toContain("exam-transfer-without-question");
   });
 
+  it("rejects near-duplicate teaching blocks across assembled lesson sections", () => {
+    const repeated = "Acceleration is the rate of change of velocity with time. It describes how quickly velocity changes, including changes in speed or direction. A positive acceleration does not always mean an object is speeding up because direction matters.";
+    const failures = lessonQualityFailures({
+      title: "Kinematics",
+      blocks: [
+        { type: "concept", content: repeated },
+        { type: "concept", content: repeated + " This distinction is essential when interpreting motion graphs." },
+      ],
+    }, { ...request, topic: "Kinematics", prompt: "Teach Kinematics" });
+    expect(failures.failures).toContain("duplicate-lesson-content");
+  });
+
+  it("does not flag distinct explanations that share subject vocabulary", () => {
+    const failures = lessonQualityFailures({
+      title: "Kinematics",
+      blocks: [
+        { type: "concept", content: "Displacement is the change in position in a specified direction. It is a vector quantity and depends only on the initial and final positions, not the path taken." },
+        { type: "concept", content: "Velocity is the rate of change of displacement with time. Its direction matches the direction of displacement change and its gradient can be found from a displacement-time graph." },
+      ],
+    }, { ...request, topic: "Kinematics", prompt: "Teach Kinematics" });
+    expect(failures.failures).not.toContain("duplicate-lesson-content");
+  });
+
   it("rejects an exam block that contains no actual question or task", () => {
     const failures = lessonQualityFailures({
       title: "Integration",
