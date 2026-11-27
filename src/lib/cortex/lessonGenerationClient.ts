@@ -23,7 +23,7 @@ import { getLearningMode } from "@/lib/learningMode";
 import { buildResearchMemoryContext } from "@/lib/shadenet/research-memory";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
-interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; }
+interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; source?: "shared-library" | "verified-syllabus-guide" | "authored-local"; }
 function isLocalOnlyCompletion(value: { localOnly?: boolean; result?: unknown }): boolean {
   const result = value.result;
   if (result && typeof result === "object" && "localOnly" in result) {
@@ -80,7 +80,7 @@ async function heartbeatGenerationLease(token: string, jobId: string, leaseId: s
 }
 function isBrowser() { return typeof window !== "undefined"; }
 /** A lesson from the shared library that covers the request, or null. Never throws and never waits long. */
-async function fetchLibraryRecovery(subject: string, topic: string, endpoint = "/api/library/recover", timeoutMs = 6000, token?: string): Promise<{ title: string; blocks: Array<Record<string, unknown>> } | null> {
+async function fetchLibraryRecovery(subject: string, topic: string, endpoint = "/api/library/recover", timeoutMs = 6000, token?: string): Promise<{ title: string; blocks: Array<Record<string, unknown>>; source: "shared-library" | "verified-syllabus-guide" } | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -103,10 +103,10 @@ async function fetchLibraryRecovery(subject: string, topic: string, endpoint = "
       });
       return null;
     }
-    const data = (await response.json()) as { lesson?: { title?: string; blocks?: Array<Record<string, unknown>> } };
+    const data = (await response.json()) as { lesson?: { title?: string; blocks?: Array<Record<string, unknown>>; source?: string } };
     const lesson = data.lesson;
     if (lesson?.title && Array.isArray(lesson.blocks) && lesson.blocks.length >= 4) {
-      return { title: lesson.title, blocks: lesson.blocks };
+      return { title: lesson.title, blocks: lesson.blocks, source: endpoint === "/api/library/guide" ? "verified-syllabus-guide" : "shared-library" };
     }
     console.info("[LEARN] recovery endpoint returned an unusable lesson payload", {
       endpoint,
@@ -859,18 +859,22 @@ async function runJob(
     });
     const online = isBrowser() ? navigator.onLine : false;
 
-    // Classic mode deliberately avoids cloud and browser-local generative models.
-    // It can use authored lessons, verified curriculum recovery, and shared study resources.
+    // Classic is non-generative, not offline-only: retrieve current shared learning
+    // resources over the network first, then fall back to authored device content.
     if (classicMode) {
-      let classicLesson: { title: string; blocks: Array<Record<string, unknown>> } | null = buildDeterministicLessonFallback(job.request.subject, job.request.prompt) as { title: string; blocks: Array<Record<string, unknown>> } | null;
-      if (!classicLesson && online) {
+      let classicLesson: { title: string; blocks: Array<Record<string, unknown>>; source?: "shared-library" | "verified-syllabus-guide" | "authored-local" } | null = null;
+      if (online) {
         classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/library/recover", 6000, token);
       }
       if (!classicLesson && online) {
         classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/library/guide", 9000, token);
       }
       if (!classicLesson) {
-        throw new Error("Classic mode does not use generative AI. No verified lesson or shared study guide is available for this topic yet. Switch to Cortex AI to request a newly generated lesson, or use your curriculum and past papers.");
+        const authored = buildDeterministicLessonFallback(job.request.subject, job.request.prompt) as { title: string; blocks: Array<Record<string, unknown>> } | null;
+        if (authored) classicLesson = { ...authored, source: "authored-local" };
+      }
+      if (!classicLesson) {
+        throw new Error("Classic mode does not use generative AI. Online shared resources and verified syllabus guides were unavailable, and no authored or cached lesson covers this topic. Reconnect and try again, or switch to Cortex AI for a newly generated lesson.");
       }
       const classicResult: LessonGenerationResult = {
         id: job.id,
@@ -878,6 +882,7 @@ async function runJob(
         blocks: classicLesson.blocks,
         offlineFallback: true,
         localModel: false,
+        source: classicLesson.source ?? "authored-local",
       };
       const finished = token && online
         ? await persistGeneratedLesson(job, classicResult, token, generationLeaseId(job.id))
