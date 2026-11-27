@@ -8,7 +8,6 @@ import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/le
 import { lessonQualityFailures, normalizeGeneratedLessonTitle } from "@/lib/cortex/lessonQuality";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt } from "@/lib/learn/contentQuality";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
-import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 import { log } from "@/lib/observability";
 import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
@@ -182,7 +181,6 @@ const MAX_TOTAL_GENERATION_MS = 50_000;
 
 async function generateAndValidate(request: ReturnType<typeof resolveLessonRequest>, curriculumContext: string, userId: string, learnerEvidenceContext = "") {
   const generationStartedAt = Date.now();
-  const fallback = () => buildDeterministicLessonFallback(request.subject, request.topic);
   let raw: string | null = null;
   try {
     raw = await executeCortexText(lessonPrompt(request, curriculumContext, learnerEvidenceContext), 4200, { operation: "lesson.generate_legacy", userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 28000, perProviderMaxMs: 6500, curriculumContext });
@@ -191,8 +189,9 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   }
 
   if (!raw) {
-    const local = fallback();
-    if (local && qualityCheck(local, request).length === 0) return local;
+    // This endpoint is the authenticated Cortex AI path. Returning an authored
+    // fallback here disguises provider failure as a newly generated lesson.
+    // Offline/Classic recovery has its own explicit, labelled execution lanes.
     return null;
   }
 
@@ -217,8 +216,8 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
     }
   }
 
-  const local = fallback();
-  if (local && qualityCheck(local, request).length === 0) return local;
+  // A failed repair is still a failed AI generation. Never substitute a curated
+  // lesson in this endpoint: the learner asked Cortex to create a new lesson.
   return null;
 }
 
