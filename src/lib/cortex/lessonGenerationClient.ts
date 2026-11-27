@@ -712,7 +712,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
         }, 20_000);
         const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
         try {
-          const response = await fetch("/api/learn", {
+          const response = await fetchPendingLessonSync("/api/learn", {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({
@@ -1358,6 +1358,17 @@ async function updatePendingLessonSyncState(
   }
 }
 
+/** Bound sync network waits so a stalled request cannot hold the tab-wide sync lock forever. */
+async function fetchPendingLessonSync(input: RequestInfo | URL, init: RequestInit, timeoutMs = 25_000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Retry locally preserved lessons without running generation again. */
 async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {}): Promise<{ synced: number; pending: number }> {
   if (!isBrowser() || !navigator.onLine) return { synced: 0, pending: 0 };
@@ -1384,7 +1395,7 @@ async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {})
     try {
       // Offline-only generation may never have reached the server to create its
       // durable job. Recreate that owner-scoped identity before canonical save.
-      const durableResponse = await fetch("/api/cortex/generation", {
+      const durableResponse = await fetchPendingLessonSync("/api/cortex/generation", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -1406,7 +1417,7 @@ async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {})
       // A previous persist request may have reached the server and committed
       // successfully even if its response never reached this device. The
       // id-scoped GET reconciles the canonical lesson before returning the job.
-      const recoveryResponse = await fetch(
+      const recoveryResponse = await fetchPendingLessonSync(
         `/api/cortex/generation?id=${encodeURIComponent(lesson.generationJobId)}`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" },
       );
