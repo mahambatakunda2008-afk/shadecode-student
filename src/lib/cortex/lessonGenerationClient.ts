@@ -1352,7 +1352,20 @@ async function fetchPendingLessonSync(input: RequestInfo | URL, init: RequestIni
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(input, { ...init, signal: controller.signal });
+    const response = await fetch(input, { ...init, signal: controller.signal });
+    // Keep the timeout active while the response body is arriving too. Fetch
+    // resolves at headers, so returning the raw Response here would leave a
+    // stalled .json() read able to hold the cross-tab sync lock indefinitely.
+    const body = await response.arrayBuffer();
+    const headers = new Headers(response.headers);
+    headers.delete("content-length");
+    headers.delete("content-encoding");
+    headers.delete("transfer-encoding");
+    return new Response(body.byteLength ? body : null, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
   } finally {
     clearTimeout(timer);
   }
