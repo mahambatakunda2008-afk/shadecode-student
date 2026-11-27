@@ -184,7 +184,7 @@ describe("page navigation", () => {
     vi.useFakeTimers();
     network.set("/dashboard", () => new Promise<Response>(() => undefined));
     const pending = get("/dashboard");
-    await vi.advanceTimersByTimeAsync(6100);
+    await vi.advanceTimersByTimeAsync(1600);
     expect(await text((await pending).response)).toContain("Saved dashboard");
   });
 
