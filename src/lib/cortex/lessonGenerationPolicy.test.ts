@@ -10,7 +10,7 @@ describe("fast verified curriculum recovery policy", () => {
     expect(shouldUseFastVerifiedCurriculumRecovery({ online: false, hasSessionToken: true })).toBe(true);
   });
 
-  it("uses local verified material when no session token is available", () => {
-    expect(shouldUseFastVerifiedCurriculumRecovery({ online: true, hasSessionToken: false })).toBe(true);
+  it("does not substitute curated content for an unauthenticated online learner", () => {
+    expect(shouldUseFastVerifiedCurriculumRecovery({ online: true, hasSessionToken: false })).toBe(false);
   });
 });
