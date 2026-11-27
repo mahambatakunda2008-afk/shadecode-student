@@ -7,8 +7,10 @@ import { ensureRequiredDiagram, hasRequiredLessonStructure, lessonQualityFailure
  * contract. Each production failure so far (summary, continuation, examples, checkpoints, block caps)
  * was a mismatch between these layers that cost one deploy to find.
  */
-const body = (topic: string, type: string, i: number) =>
-  `${topic}: ${type} block ${i}. This explains why pressure, volume and temperature of a gas are linked, with a concrete example and reasoning students can follow step by step.\nKey idea: particles collide with the walls more often when the gas is compressed or heated.\nUse this to predict what happens next.`;
+const body = (topic: string, type: string, i: number) => {
+  const section = ["opening", "foundation", "mechanism", "application", "synthesis", "extension", "review"][Math.floor(i / 10)] ?? "review";
+  return `${topic}: ${type} block ${i} in the ${section} section. This explains why pressure, volume and temperature of a gas are linked, because particles collide with the walls more often when the gas is compressed or heated. The ${section} section uses a distinct example and reasoning students can follow step by step.\nKey idea: particles collide with the walls more often when the gas is compressed or heated.\nUse this to predict what happens next.`;
+};
 
 function simulateSection(subject: string, topic: string, index: number, count: number) {
   const types = [...requiredSectionTypes(index, count, { formula: needsFormulaBlock(subject, topic, topic) })];
