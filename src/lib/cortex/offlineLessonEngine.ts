@@ -65,10 +65,11 @@ export function buildOfflineLessonFromPack(subject: string, prompt: string, topi
   if (practice.length) {
     blocks.push(block("practice", "Verified practice", practice.slice(0, 6).map((x, i) => `${i + 1}. ${x.title}${content(x)}`).join("\n")));
     blocks.push(block("checkpoint", "Checkpoint", "Question: Choose one of the verified practice items and explain which syllabus concept or objective it tests.\nThink: State the relevant concept before attempting the item."));
+  }
   blocks.push(block("summary", "What to retain", [
     `- Explain ${clean(topic)} using the verified knowledge above.`,
     "- Connect the explanation to the mapped syllabus objective.",
-    practice.length ? "- Complete the verified practice before moving on." : "- Verified assessment content is not cached for this topic yet.",
+    "- Complete the verified practice before moving on.",
   ].join("\n")));
 
   if (blocks.filter(x => !["objective", "prior", "summary"].includes(x.type)).length < 2) return null;
