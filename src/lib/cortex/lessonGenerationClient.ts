@@ -1046,7 +1046,7 @@ async function runJob(
     const context = await localContext(currentJob as GenerationJob<LessonGenerationInput>);
     const failureClass = classifyCortexExecutionFailure(error);
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
-      hasVerifiedData: isBrowser() && (!navigator.onLine || !token) && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context, { board: currentJob.request.examBoard, level: currentJob.request.level }),
+      hasVerifiedData: isBrowser() && !navigator.onLine && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context, { board: currentJob.request.examBoard, level: currentJob.request.level }),
       hasWarmLocal: !localModelAttempted && isBrowser() && ["ready", "loading"].includes(getBrowserLocalModelStatus().status),
       hasCheckpoint: hasCompletedLessonCheckpoint(currentJob.partial),
       supportsRepair: false,
@@ -1063,9 +1063,9 @@ async function runJob(
     }
 
     // Authenticated online Cortex AI requests must not be marked complete with curated
-    // material after provider or quality failure. Keep authored recovery for offline and
-    // unauthenticated use; online AI failures proceed through the explicit recovery policy.
-    const allowAuthoredRecovery = !isBrowser() || !navigator.onLine || !token;
+    // material after provider or quality failure. Authored recovery is strictly offline;
+    // a missing session while online must surface as an authentication problem, not a fake lesson.
+    const allowAuthoredRecovery = isBrowser() && !navigator.onLine;
     let curatedFallback: { title: string; blocks: Array<Record<string, unknown>> } | null = allowAuthoredRecovery
       ? buildDeterministicLessonFallback(currentJob.request.subject, currentJob.request.prompt)
       : null;
