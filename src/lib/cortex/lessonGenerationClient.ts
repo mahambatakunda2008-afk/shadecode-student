@@ -1377,6 +1377,35 @@ async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {})
         cache: "no-store",
       });
       if (!durableResponse.ok) throw new Error(`Unable to register lesson for sync (${durableResponse.status}).`);
+
+      // A previous persist request may have reached the server and committed
+      // successfully even if its response never reached this device. The
+      // id-scoped GET reconciles the canonical lesson before returning the job.
+      const recoveryResponse = await fetch(
+        `/api/cortex/generation?id=${encodeURIComponent(lesson.generationJobId)}`,
+        { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" },
+      );
+      if (recoveryResponse.ok) {
+        const recoveryData = await recoveryResponse.json().catch(() => ({}));
+        const recoveredJob = recoveryData?.job;
+        const recoveredResult = recoveredJob?.result;
+        if (
+          recoveredJob?.status === "complete" &&
+          recoveredResult?.id === lesson.generationJobId &&
+          typeof recoveredResult?.title === "string" &&
+          Array.isArray(recoveredResult?.blocks) &&
+          recoveredResult.blocks.length > 0
+        ) {
+          await offlineStorage.updateLesson(lesson.id, userId, {
+            syncStatus: "synced", lastSyncedAt: new Date().toISOString(),
+            syncError: undefined, syncRetryAfter: undefined,
+            description: "Saved to your cloud library and kept on this device for offline study.",
+          });
+          synced += 1;
+          continue;
+        }
+      }
+
       const response = await fetch("/api/learn", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
