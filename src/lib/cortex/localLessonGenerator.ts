@@ -26,8 +26,8 @@ export function generateLocalLesson(subject: string, prompt: string, curriculumC
   };
 }
 
-export function hasLocalLessonFallback(subject: string, prompt: string, curriculumContext = "") {
+export function hasLocalLessonFallback(subject: string, prompt: string, curriculumContext = "", examBoard?: string, level?: string) {
   const topic = extractTopic(prompt);
-  const pack = readOfflineCurriculumPack(subject);
+  const pack = readOfflineCurriculumPack(subject, examBoard, level);
   return Boolean((pack && buildOfflineLessonWithPack(subject, prompt, topic, pack)) || buildOfflineLesson(subject, prompt, curriculumContext));
 }
