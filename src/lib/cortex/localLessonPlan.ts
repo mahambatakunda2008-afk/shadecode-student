@@ -23,7 +23,7 @@ export function buildLocalSectionRequirements(index: number, sectionCount: numbe
     formula: "state relevant equations, define symbols and units, and explain conditions",
     synthesis: "connect multiple ideas in a larger chain of reasoning",
     curiosity: "open a grounded next question or consequence",
-    exam: "connect the topic to exam-style reasoning and show how to structure a response",
+    exam: "provide exam transfer: connect the topic to exam-style reasoning and show how to structure a response",
     misconception: "identify a likely misconception and correct it with clear reasoning",
     practice: "set progressively harder questions with useful answer guidance",
     mistake: "explain a realistic common mistake and why it fails",
