@@ -70,15 +70,16 @@ function normalizePack(value: Partial<OfflineCurriculumPack>): OfflineCurriculum
 export function readOfflineCurriculumPack(subject: string, board?: string, level?: string): OfflineCurriculumPack | null {
   if (typeof window === "undefined") return null;
   try {
-    const exact = localStorage.getItem(key(subject, board, level));
+    const storage = window.localStorage;
+    const exact = storage.getItem(key(subject, board, level));
     const parsed = exact ? normalizePack(JSON.parse(exact) as Partial<OfflineCurriculumPack>) : null;
     if (parsed) return parsed;
     if (board || level) return null;
     const prefix = PREFIX;
-    for (let i = 0; i < localStorage.length; i++) {
-      const storageKey = localStorage.key(i);
+    for (let i = 0; i < storage.length; i++) {
+      const storageKey = storage.key(i);
       if (!storageKey?.startsWith(prefix)) continue;
-      const candidate = normalizePack(JSON.parse(localStorage.getItem(storageKey) || "null") as Partial<OfflineCurriculumPack>);
+      const candidate = normalizePack(JSON.parse(storage.getItem(storageKey) || "null") as Partial<OfflineCurriculumPack>);
       if (candidate?.subject.trim().toLowerCase() === subject.trim().toLowerCase()) return candidate;
     }
     return null;
@@ -94,7 +95,7 @@ export function writeOfflineCurriculumPack(pack: Omit<OfflineCurriculumPack, "ve
       knowledge: pack.knowledge.map(normalizeKnowledge).filter((x): x is OfflineCurriculumKnowledgeItem => Boolean(x)).slice(0, MAX_KNOWLEDGE),
       promptContext: pack.promptContext?.slice(0, MAX_CONTEXT), cachedAt: new Date().toISOString(),
     };
-    localStorage.setItem(key(pack.subject, pack.board, pack.level), JSON.stringify(value));
+    window.localStorage.setItem(key(pack.subject, pack.board, pack.level), JSON.stringify(value));
   } catch {}
 }
 
