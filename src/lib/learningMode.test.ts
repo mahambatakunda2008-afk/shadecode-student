@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_LEARNING_MODE, normalizeLearningMode } from "@/lib/learningMode";
 
 describe("learning mode", () => {
-  it("defaults to Classic so AI is opt-in", () => {
-    expect(DEFAULT_LEARNING_MODE).toBe("classic");
+  it("defaults to Cortex AI", () => {
+    expect(DEFAULT_LEARNING_MODE).toBe("ai");
   });
 
   it("accepts only the explicit AI mode", () => {
