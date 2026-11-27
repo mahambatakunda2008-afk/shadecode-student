@@ -1046,7 +1046,7 @@ async function runJob(
     const context = await localContext(currentJob as GenerationJob<LessonGenerationInput>);
     const failureClass = classifyCortexExecutionFailure(error);
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
-      hasVerifiedData: isBrowser() && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context),
+      hasVerifiedData: isBrowser() && (!navigator.onLine || !token) && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context),
       hasWarmLocal: !localModelAttempted && isBrowser() && ["ready", "loading"].includes(getBrowserLocalModelStatus().status),
       hasCheckpoint: hasCompletedLessonCheckpoint(currentJob.partial),
       supportsRepair: false,
@@ -1062,25 +1062,18 @@ async function runJob(
       return getGenerationJobs().find(item => item.id === job.id) ?? job;
     }
 
-    // If both the cloud and browser-local lanes fail, use only an exact hand-authored
-    // lesson whose subject/topic key matches this request. This recovery is deliberately
-    // after the provider/local attempts, so curated material never replaces successful AI
-    // generation. It also avoids depending on the server section fallback being reachable.
-    let curatedFallback: { title: string; blocks: Array<Record<string, unknown>> } | null = buildDeterministicLessonFallback(
-      currentJob.request.subject,
-      currentJob.request.prompt,
-    );
-    // Next rung: a lesson other students already worked through, when its title covers this topic.
-    // Strict by design; with no match this stays null and the normal failure handling below applies.
-    if (!curatedFallback && isBrowser() && navigator.onLine) {
+    // Authenticated online Cortex AI requests must not be marked complete with curated
+    // material after provider or quality failure. Keep authored recovery for offline and
+    // unauthenticated use; online AI failures proceed through the explicit recovery policy.
+    const allowAuthoredRecovery = !isBrowser() || !navigator.onLine || !token;
+    let curatedFallback: { title: string; blocks: Array<Record<string, unknown>> } | null = allowAuthoredRecovery
+      ? buildDeterministicLessonFallback(currentJob.request.subject, currentJob.request.prompt)
+      : null;
+    if (!curatedFallback && allowAuthoredRecovery && isBrowser()) {
       curatedFallback = await fetchLibraryRecovery(currentJob.request.subject, currentJob.request.prompt, "/api/library/recover", 6000, token);
-      if (curatedFallback) console.info("[LEARN] recovering with a library lesson", { topic: currentJob.request.prompt, failureClass });
     }
-    // Last AI-free rung: an honest study guide built from the learner's own verified syllabus (official
-    // learning outcomes only, no model). Null when the syllabus gives too little for a useful guide.
-    if (!curatedFallback && isBrowser() && navigator.onLine) {
+    if (!curatedFallback && allowAuthoredRecovery && isBrowser()) {
       curatedFallback = await fetchLibraryRecovery(currentJob.request.subject, currentJob.request.prompt, "/api/library/guide", 9000, token);
-      if (curatedFallback) console.info("[LEARN] recovering with a syllabus guide", { topic: currentJob.request.prompt, failureClass });
     }
     if (curatedFallback && isBrowser()) {
       try {
@@ -1093,24 +1086,14 @@ async function runJob(
         };
         const canPersist = Boolean(token && navigator.onLine);
         const finished = canPersist
-          ? await persistGeneratedLesson(
-              currentJob as GenerationJob<LessonGenerationInput>,
-              fallbackResult,
-              token,
-              generationLeaseId(currentJob.id),
-            )
+          ? await persistGeneratedLesson(currentJob as GenerationJob<LessonGenerationInput>, fallbackResult, token, generationLeaseId(currentJob.id))
           : await saveLocalResult(currentJob as GenerationJob<LessonGenerationInput>, fallbackResult);
-
         if (canPersist && !isLocalOnlyCompletion(finished)) {
           await syncCompletedGenerationBestEffort(token, (getGenerationJob(currentJob.id) ?? finished) as GenerationJob);
         }
-        console.info("[LEARN] recovered with exact curated lesson after generation lanes failed", {
-          topic: resolvedRequest(currentJob as GenerationJob<LessonGenerationInput>).topic,
-          failureClass,
-        });
         return getGenerationJobs().find(item => item.id === currentJob.id) ?? finished;
       } catch (curatedRecoveryError) {
-        console.warn("[LEARN] exact curated recovery could not be saved", {
+        console.warn("[LEARN] authored curriculum recovery could not be saved", {
           topic: currentJob.request.prompt,
           error: curatedRecoveryError instanceof Error ? curatedRecoveryError.message : String(curatedRecoveryError),
         });
