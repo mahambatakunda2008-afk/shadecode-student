@@ -183,6 +183,38 @@ function hasBareNumericalResult(content: string) {
   return /(?:^|\n)\s*(?:answer\s*)?[:=]?\s*[-+]?\d+(?:\.\d+)?\s*(?:[A-Za-z%°]+)?\s*(?:$|\n)/i.test(content.trim());
 }
 
+
+function normalizedForSimilarity(content: string) {
+  return content.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(word => word.length > 2).join(" ");
+}
+
+function isMostlyGenericFiller(content: string) {
+  const normalized = content.toLowerCase().replace(/\s+/g, " ").trim();
+  if (!normalized) return true;
+  const boilerplate = [
+    /^in this section we will learn(?: about)?\b/,
+    /^this topic is very important\b/,
+    /^it is important to understand this concept\b/,
+    /^understand the concept(?:s)?\.?$/,
+    /^this is an important concept(?: in this topic)?\.?$/,
+    /^let us explore this topic\.?$/,
+  ];
+  if (boilerplate.some(pattern => pattern.test(normalized)) && normalized.length < 180) return true;
+  const phrases = ["this is important", "understand the concept", "in this section we will learn", "this topic is very important", "let us explore this topic"];
+  const hits = phrases.reduce((count, phrase) => count + (normalized.includes(phrase) ? phrase.length : 0), 0);
+  return normalized.length < 180 && hits >= Math.max(35, normalized.length * 0.35);
+}
+
+function hasWorkedReasoning(content: string, quantitative: boolean) {
+  const text = content.toLowerCase();
+  const reasoningMarkers = /\b(?:because|therefore|hence|so that|this means|which shows|demonstrates|indicates|we can see|the reason|step\s*\d+|first|next|substitut|rearrang|calculat(?:ion|e|ing)|using|method|given|since|thus|consequently|evidence)\b/;
+  if (!reasoningMarkers.test(text)) return false;
+  if (!quantitative) return true;
+  const hasMethod = /\b(?:formula|equation|method|substitut|rearrang|calculat(?:ion|e|ing)|using|solve|step)\b/.test(text);
+  const hasResult = /\b(?:answer|result|therefore|hence|approximately)\b/.test(text) || /=|≈|\d/.test(text);
+  return hasMethod && hasResult;
+}
+
 export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; title?: string }, request: LessonQualityRequest) {
   const normalized = lesson.blocks.map(block => ({ ...block, normalizedType: normalizeLessonBlockType(block.type), searchable: `${block.title ?? ""} ${block.content}`.trim().toLowerCase() }));
   const types = new Set(normalized.map(block => block.normalizedType));
@@ -287,6 +319,20 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
     if (examBlocks.length > 0 && !examBlocks.some(block => /(?:^|\n)\s*(?:question|task)\s*[:.)-]|\?/i.test(block.content))) {
       failures.push("exam-transfer-without-question");
     }
+  }
+
+  // Reject placeholder teaching blocks and shallow worked examples before they reach learners.
+  const proseBlocks = normalized.filter(block => !new Set(["diagram", "formula", "math", "code"]).has(block.normalizedType));
+  if (proseBlocks.some(block => isMostlyGenericFiller(block.content))) failures.push("generic-filler");
+  if (request.intent === "teach") {
+    const exampleBlocks = normalized.filter(block => block.normalizedType === "example");
+    const quantitativeExample = isQuantitativeSubject(request.subject) && isFormulaTopic(request.topic, request.prompt);
+    if (exampleBlocks.some(block => block.content.trim().length < 65)) failures.push("worked-example-too-thin");
+    if (exampleBlocks.some(block => block.content.trim().length >= 65 && !hasWorkedReasoning(block.content, quantitativeExample))) {
+      failures.push("worked-example-without-reasoning");
+    }
+    const exampleKeys = exampleBlocks.map(block => normalizedForSimilarity(block.content)).filter(value => value.length >= 45);
+    if (new Set(exampleKeys).size < exampleKeys.length) failures.push("duplicate-worked-examples");
   }
 
   const applications = normalized.filter(block => block.normalizedType === "application");
