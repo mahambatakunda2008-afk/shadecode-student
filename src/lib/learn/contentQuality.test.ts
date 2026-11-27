@@ -9,6 +9,12 @@ describe("Learn content quality", () => {
     expect(prompt).toContain("16-20 blocks");
   });
 
+  it("honors a resolved broad-topic flag even when the topic label is not in the planner list", () => {
+    const prompt = buildDeepLessonPrompt("Physics", "Waves", "medium", "", true);
+    expect(prompt).toContain("BROAD MASTERCLASS request");
+    expect(prompt).toContain("16-20 blocks");
+  });
+
   it("rewards substantive teaching structure", () => {
     const blocks = [
       { type: "concept", content: "x".repeat(180) },
