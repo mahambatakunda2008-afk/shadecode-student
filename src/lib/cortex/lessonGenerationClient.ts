@@ -375,6 +375,12 @@ TEACHING CONTRACT
 - Do not invent syllabus requirements, facts, numerical answers, or citations.
 - Checkpoints must ask the learner to think. Do not put the answer in the checkpoint itself.
 - Avoid giant paragraphs.
+- Every block must teach one distinct, specific idea from the requested topic. Replace vague filler and repeated topic restatements with the actual principle, mechanism, method, evidence, or consequence.
+- Define specialist terms when first used. Explain why a method works, not only the steps to memorise.
+- Worked examples must include a realistic task, given information, method choice, intermediate steps, final result, and interpretation or check. Preserve correct units and notation.
+- Practice and exam questions must test this exact topic and contain enough information to attempt. Put concise answers or marking guidance in practice/exam blocks, never in checkpoints.
+- Do not repeat an explanation, example, or question with only names or numbers changed. Conceptual topics need specific scenarios, processes, comparisons, or evidence rather than forced calculations.
+- Preserve subject accuracy: terminology, notation, units, significant figures, practical method, controls, observations, and evaluation where relevant.
 
 OUTPUT
 Return ONLY valid JSON:
