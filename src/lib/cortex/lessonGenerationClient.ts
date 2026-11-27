@@ -1340,6 +1340,24 @@ export async function startLessonGeneration(input: LessonGenerationInput, token:
 }
 
 
+/** A local status-write failure must never abort syncing the remaining lessons. */
+async function updatePendingLessonSyncState(
+  lessonId: string,
+  userId: string,
+  patch: Parameters<typeof offlineStorage.updateLesson>[2],
+): Promise<boolean> {
+  try {
+    await offlineStorage.updateLesson(lessonId, userId, patch);
+    return true;
+  } catch (error) {
+    console.warn("[LEARN] could not update local lesson sync state", {
+      lessonId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
 /** Retry locally preserved lessons without running generation again. */
 async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {}): Promise<{ synced: number; pending: number }> {
   if (!isBrowser() || !navigator.onLine) return { synced: 0, pending: 0 };
@@ -1403,7 +1421,7 @@ async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {})
           Array.isArray(recoveredResult?.blocks) &&
           recoveredResult.blocks.length > 0
         ) {
-          await offlineStorage.updateLesson(lesson.id, userId, {
+          await updatePendingLessonSyncState(lesson.id, userId, {
             syncStatus: "synced", lastSyncedAt: new Date().toISOString(),
             syncError: undefined, syncRetryAfter: undefined,
             description: "Saved to your cloud library and kept on this device for offline study.",
@@ -1429,7 +1447,7 @@ async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {})
       });
       const data = await response.json().catch(() => ({}));
       if (response.ok && data?.id === lesson.generationJobId && Array.isArray(data?.blocks)) {
-        await offlineStorage.updateLesson(lesson.id, userId, {
+        await updatePendingLessonSyncState(lesson.id, userId, {
           syncStatus: "synced", lastSyncedAt: new Date().toISOString(),
           syncError: undefined, syncRetryAfter: undefined,
           description: "Saved to your cloud library and kept on this device for offline study.",
@@ -1438,7 +1456,7 @@ async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {})
       } else {
         const retryCount = (lesson.syncRetryCount || 0) + 1;
         const delay = Math.min(6 * 60 * 60 * 1000, 30_000 * (2 ** Math.min(retryCount - 1, 10)));
-        await offlineStorage.updateLesson(lesson.id, userId, {
+        await updatePendingLessonSyncState(lesson.id, userId, {
           syncStatus: "retry-needed", syncRetryCount: retryCount,
           syncRetryAfter: Date.now() + delay,
           syncError: typeof data?.error === "string" ? data.error.slice(0, 240) : `Sync failed (${response.status}).`,
@@ -1447,7 +1465,7 @@ async function runPendingGeneratedLessonSync(options: { manual?: boolean } = {})
     } catch (error) {
       const retryCount = (lesson.syncRetryCount || 0) + 1;
       const delay = Math.min(6 * 60 * 60 * 1000, 30_000 * (2 ** Math.min(retryCount - 1, 10)));
-      await offlineStorage.updateLesson(lesson.id, userId, {
+      await updatePendingLessonSyncState(lesson.id, userId, {
         syncStatus: "retry-needed", syncRetryCount: retryCount,
         syncRetryAfter: Date.now() + delay,
         syncError: error instanceof Error ? error.message.slice(0, 240) : "Network sync failed.",
