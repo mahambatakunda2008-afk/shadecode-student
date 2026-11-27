@@ -13,6 +13,7 @@ import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
+import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 import { breakUpLongParagraphs, isSectionTooThin, missingSectionTypes, needsFormulaBlock, requiredSectionTypes, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure, normalizeGeneratedLessonTitle } from "@/lib/cortex/lessonQuality";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
@@ -213,6 +214,19 @@ export async function POST(req: Request) {
       goal: typeof goal === "string" ? goal : undefined,
       examBoard: typeof body.examBoard === "string" ? body.examBoard : undefined,
     });
+    const curriculumLookupPrompt = `${buildResolvedLessonPrompt(request)}\nmaster this request: "${request.topic}"`;
+    const verifiedCurriculum = await resolveVerifiedCurriculumPromptContext(user.id, curriculumLookupPrompt);
+    if (verifiedCurriculum.status === "blocked") {
+      return NextResponse.json({
+        error: verifiedCurriculum.reason,
+        code: "CURRICULUM_OBJECTIVES_REQUIRED",
+        retryable: false,
+      }, { status: 409 });
+    }
+    const curriculumContext = verifiedCurriculum.status === "resolved"
+      ? verifiedCurriculum.promptContext
+      : "";
+
     const learnerTopicKey = normalizeLearnerTopic(effectiveSubject, request.topic);
     const shouldRecordLearnerRequest =
       body.generationMode !== "persist" &&
@@ -562,7 +576,8 @@ export async function POST(req: Request) {
       const sectionPrompt = [
         `Generate section ${generationSectionIndex + 1} of ${generationSectionCount} for a coherent lesson.`,
         buildResolvedLessonPrompt(request),
-        buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+        buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty, curriculumContext),
+        curriculumContext,
         learnerMemoryContext,
         learnerResearchContext,
         `SECTION JOB: ${sectionJob}`,
@@ -743,7 +758,8 @@ Repair only the defective section. Preserve correct material where possible. Do 
 
     const prompt = [
       buildResolvedLessonPrompt(request),
-      buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+      buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty, curriculumContext),
+      curriculumContext,
       buildPresentationGuidance(effectiveSubject, request.topic),
       learnerMemoryContext,
       learnerResearchContext,
@@ -799,7 +815,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
             effectiveSubject,
             request.topic,
             raw,
-            `Learner level: ${level || "unspecified"}\nExam board: ${body.examBoard || "unspecified"}\nResolved request: ${buildResolvedLessonPrompt(request)}`,
+            `Learner level: ${level || "unspecified"}\nExam board: ${body.examBoard || "unspecified"}\nResolved request: ${buildResolvedLessonPrompt(request)}\n\n${curriculumContext}`,
             validDifficulty,
             failures,
           ) + `
