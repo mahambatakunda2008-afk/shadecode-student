@@ -1472,9 +1472,23 @@ function scheduleNextPendingLessonSync(lessons: Awaited<ReturnType<typeof offlin
 }
 
 let pendingLessonSyncInFlight: Promise<{ synced: number; pending: number }> | null = null;
+const PENDING_LESSON_SYNC_LOCK = "shadecode:pending-generated-lesson-sync:v1";
+
 export function retryPendingGeneratedLessonSync(options: { manual?: boolean } = {}): Promise<{ synced: number; pending: number }> {
   if (pendingLessonSyncInFlight) return pendingLessonSyncInFlight;
-  const task = runPendingGeneratedLessonSync(options);
+
+  // The module-level promise prevents duplicate work in this tab. Web Locks
+  // extends that protection across tabs sharing the same browser profile.
+  // The server-side generation lease remains the final concurrency guard.
+  const lockManager = typeof navigator !== "undefined" ? navigator.locks : undefined;
+  const task = lockManager
+    ? lockManager.request(
+        PENDING_LESSON_SYNC_LOCK,
+        { mode: "exclusive", ifAvailable: true },
+        (lock) => lock ? runPendingGeneratedLessonSync(options) : Promise.resolve({ synced: 0, pending: 0 }),
+      )
+    : runPendingGeneratedLessonSync(options);
+
   pendingLessonSyncInFlight = task;
   const clearFlight = () => { if (pendingLessonSyncInFlight === task) pendingLessonSyncInFlight = null; };
   void task.then(clearFlight, clearFlight);
