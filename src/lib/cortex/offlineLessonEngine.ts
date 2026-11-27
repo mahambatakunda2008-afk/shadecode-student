@@ -44,6 +44,12 @@ export function buildOfflineLessonFromPack(subject: string, prompt: string, topi
   const warnings = byKind(selected, /misconception|mistake|warning|constraint|guidance/i);
   const applications = byKind(selected, /practical_activity|project_requirement|application/i);
 
+  // A cache containing only syllabus headings or descriptive notes is not a lesson.
+  // Do not disguise missing teaching evidence with generic reflection/checkpoint text.
+  // Keep the learner on the honest recovery path until verified examples and assessment
+  // material are available for this exact topic.
+  if (selected.length < 3 || !examples.length || !practice.length) return null;
+
   const blocks: OfflineLessonBlock[] = [
     block("map", "Topic map", `This recovery lesson is assembled only from verified curriculum records mapped to ${clean(topic)}. It does not invent unsupported facts.`),
     block("objective", "Learning target", unique(objectiveList, 8).join("\n")),
@@ -59,9 +65,6 @@ export function buildOfflineLessonFromPack(subject: string, prompt: string, topi
   if (practice.length) {
     blocks.push(block("practice", "Verified practice", practice.slice(0, 6).map((x, i) => `${i + 1}. ${x.title}${content(x)}`).join("\n")));
     blocks.push(block("checkpoint", "Checkpoint", "Question: Choose one of the verified practice items and explain which syllabus concept or objective it tests.\nThink: State the relevant concept before attempting the item."));
-  } else if (examples.length) {
-    blocks.push(block("checkpoint", "Reflection", "Question: What concept or rule does the verified example demonstrate?\nThink: Explain the reasoning in your own words before checking the example again."));
-  }
   blocks.push(block("summary", "What to retain", [
     `- Explain ${clean(topic)} using the verified knowledge above.`,
     "- Connect the explanation to the mapped syllabus objective.",
