@@ -87,7 +87,7 @@ describe("generated lesson completeness checks", () => {
     const failures = lessonQualityFailures({
       title: "Integration",
       blocks: [
-        { type: "practice", content: "1. Evaluate the integral of x squared?\\nAnswer: x cubed over 3 plus C.\\n2. Find the constant of integration?\\nGuidance: Use the initial condition to determine C." },
+        { type: "practice", content: "1. Evaluate the integral of x squared?\nAnswer: x cubed over 3 plus C.\n2. Find the constant of integration?\nGuidance: Use the initial condition to determine C." },
       ],
     }, request);
     expect(failures.failures).not.toContain("practice-answer-guidance-incomplete");
