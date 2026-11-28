@@ -22,6 +22,11 @@ import { useLessonNarration } from "@/hooks/useLessonNarration";
 import { trackEvent } from "@/lib/traction/client";
 
 type LessonBlock = { type: string; title?: string; content: string };
+function isLessonBlock(value: unknown): value is LessonBlock {
+  if (!value || typeof value !== "object") return false;
+  const block = value as Record<string, unknown>;
+  return typeof block.type === "string" && typeof block.content === "string";
+}
 type Lesson = {
   id: string; title: string; subject: string; description: string;
   difficulty: string; progress: number; completed: boolean;
@@ -397,7 +402,14 @@ export default function LessonDetailPage() {
       const { retryPendingGeneratedLessonSync } = await import("@/lib/cortex/lessonGenerationClient");
       const result = await retryPendingGeneratedLessonSync({ manual: true });
       const refreshed = await offlineStorage.getLesson(lesson.id, currentUser);
-      if (refreshed) setLesson((current) => current ? { ...current, ...refreshed, blocks: (refreshed.blocks as unknown as LessonBlock[] | undefined) ?? current.blocks } : current);
+      if (refreshed) {
+        const { blocks: cachedBlocks, ...cachedLesson } = refreshed;
+        setLesson((current) => current ? {
+          ...current,
+          ...cachedLesson,
+          blocks: Array.isArray(cachedBlocks) && cachedBlocks.every(isLessonBlock) ? cachedBlocks : current.blocks,
+        } : current);
+      }
       setGeneratedLessonSyncMessage(result.pending === 0
         ? "Cloud save confirmed. Your lesson is available across your signed-in devices."
         : result.synced > 0
