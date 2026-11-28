@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPublicAddress, rankClassicResearchResults } from "./classicResearch";
+import { isClassicResearchTextRelevant, isPublicAddress, rankClassicResearchResults } from "./classicResearch";
 
 describe("Classic public address validation", () => {
   it.each([
@@ -7,9 +7,10 @@ describe("Classic public address validation", () => {
     "172.16.0.1", "192.0.2.1", "192.168.1.1", "198.18.0.1",
     "198.51.100.2", "203.0.113.8", "224.0.0.1", "240.0.0.1",
     "::1", "fc00::1", "fe80::1", "2001:db8::1", "2002::1",
-  ])("rejects non-public address %s", (address) => expect(isPublicAddress(address)).toBe(false));
+    "::ffff:8.8.8.8", "2001:4860:4860::8888%eth0",
+  ])("rejects non-public or ambiguous address %s", (address) => expect(isPublicAddress(address)).toBe(false));
 
-  it.each(["8.8.8.8", "1.1.1.1", "93.184.216.34", "2606:4700:4700::1111"])(
+  it.each(["8.8.8.8", "1.1.1.1", "93.184.216.34", "2606:4700:4700::1111"] )(
     "accepts public address %s", (address) => expect(isPublicAddress(address)).toBe(true),
   );
 });
@@ -32,5 +33,14 @@ describe("Classic research relevance ranking", () => {
     expect(ranked).toHaveLength(2);
     expect(ranked[0]).toBe(first);
     expect(ranked[1]).toBe(second);
+  });
+});
+
+describe("Fetched Classic research text relevance", () => {
+  it("rejects an extracted page that does not discuss the requested topic", () => {
+    expect(isClassicResearchTextRelevant("A long article about chemical bonding and atomic structure.", "Physics", "wave interference")).toBe(false);
+  });
+  it("accepts page text with meaningful topic coverage", () => {
+    expect(isClassicResearchTextRelevant("Wave interference occurs when waves overlap. Diffraction is the spreading of waves.", "Physics", "wave interference diffraction")).toBe(true);
   });
 });
