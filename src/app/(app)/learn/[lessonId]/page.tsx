@@ -495,7 +495,7 @@ export default function LessonDetailPage() {
               <strong style={{ display: "block", fontSize: 13 }}>{lesson.syncStatus === "retry-needed" ? "Cloud save needs another try" : lesson.syncStatus === "local-only" ? "Saved on this device only" : "Cloud save is pending"}</strong>
               <p style={{ margin: "5px 0 0", color: "var(--muted-foreground)", fontSize: 12, lineHeight: 1.55 }}>{lesson.syncError || "Your generated lesson is safe on this device. It will remain available offline until cloud storage confirms the save."}</p>
             </div>
-            <button type="button" className="lesson-action" onClick={() => void retryGeneratedLessonCloudSync()} disabled={syncingGeneratedLesson} style={{ minHeight: 40, padding: "8px 12px" }}>{syncingGeneratedLesson ? "Retrying…" : "Retry cloud save"}</button>
+            {lesson.syncStatus !== "local-only" ? <button type="button" className="lesson-action" onClick={() => void retryGeneratedLessonCloudSync()} disabled={syncingGeneratedLesson} style={{ minHeight: 40, padding: "8px 12px" }}>{syncingGeneratedLesson ? "Retrying…" : "Retry cloud save"}</button> : <span style={{ color: "var(--muted-foreground)", fontSize: 11 }}>Device-only copy</span>}
           </div>
           {generatedLessonSyncMessage && <p style={{ margin: "9px 0 0", color: "var(--muted-foreground)", fontSize: 12 }} aria-live="polite">{generatedLessonSyncMessage}</p>}
         </section>}
