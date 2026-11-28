@@ -153,15 +153,16 @@ async function findCachedClassicLesson(subject: string, topic: string): Promise<
       return bExact - aExact;
     });
     for (const lesson of matches) {
+      const cachedBlocks = lesson.blocks ?? [];
       const candidate: LessonGenerationResult = {
         id: lesson.id,
         title: lesson.title,
-        blocks: lesson.blocks,
+        blocks: cachedBlocks,
         offlineFallback: true,
         localModel: false,
       };
       if (validateResult(candidate, resolveLessonRequest({ subject, prompt: topic }))) {
-        return { title: lesson.title, blocks: lesson.blocks, source: "cached-local" };
+        return { title: lesson.title, blocks: cachedBlocks, source: "cached-local" };
       }
     }
   } catch (error) {
