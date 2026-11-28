@@ -3,6 +3,7 @@
  * Lesson progress is persisted through the canonical local-first operation log.
  */
 import { localFirstStore } from "@/lib/local-first/store";
+import { requestLessonWarm } from "./warmLesson";
 
 const DB_NAME = "shadecode-offline";
 const DB_VERSION = 8;
@@ -97,7 +98,8 @@ class OfflineStorage {
   async saveLesson(lesson: OfflineLesson): Promise<void> {
     if (!lesson.ownerUserId) throw new Error("Offline lessons require an authenticated owner");
     await this.init();
-    return this.put("lessonsByUser", { ...lesson, key: offlineLessonKey(lesson.ownerUserId, lesson.id) });
+    await this.put("lessonsByUser", { ...lesson, key: offlineLessonKey(lesson.ownerUserId, lesson.id) });
+    void requestLessonWarm(lesson.id);
   }
   async getLesson(id: string, userId?: string): Promise<OfflineLesson | null> {
     if (!userId) return null;
