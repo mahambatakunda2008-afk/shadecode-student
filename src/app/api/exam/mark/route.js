@@ -7,6 +7,9 @@ import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { calculateExamScore, computeTopicScores } from "@/lib/exam/scoring";
 import { markNumeric } from "@/lib/exam/engine/numeric";
 import { verifyExamPaperProof } from "@/lib/exam/paper-provenance";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { randomUUID } from "node:crypto";
+import { hashExamSubmission } from "@/lib/exam/submissionIdentity";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -124,14 +127,105 @@ export async function POST(req) {
 
     const { totalScore, maxScore, percentage, grade } = calculateExamScore(questions, markingData.results);
     const submissionResult = { ...markingData, totalScore, maxScore, percentage, grade, timeTaken };
+    let evidenceRecorded = false;
+    let evidenceReason = paperProvenance.valid ? "attempt_identity_required" : "unverified_paper_provenance";
 
+    // Only a server-signed paper, bound to this authenticated learner and exact
+    // question set, can enter the trusted academic record. The attempt ledger
+    // makes retries idempotent; the outbox projects Cortex/mastery asynchronously.
+    if (paperProvenance.valid && typeof body?.attemptId === "string" && body.attemptId.trim()) {
+      const admin = createSupabaseAdminClient();
+      if (!admin) {
+        evidenceReason = "trusted_submission_storage_unavailable";
+      } else {
+        const attemptId = body.attemptId.trim();
+        const normalizedDifficulty = /o-level/i.test(difficulty) ? "easy" : /a-level/i.test(difficulty) ? "medium" : /university/i.test(difficulty) ? "hard" : difficulty;
+        const payloadHash = hashExamSubmission({
+          userId,
+          attemptId,
+          subject,
+          subjectId: body.subjectId,
+          difficulty: normalizedDifficulty,
+          paperProof: body.paperProof,
+          questions,
+          answers,
+          timeTaken: Number.isFinite(timeTaken) ? timeTaken : 0,
+        });
+        const { data: claims, error: claimError } = await admin.rpc("claim_exam_submission", {
+          p_user_id: userId,
+          p_attempt_id: attemptId,
+          p_payload_hash: payloadHash,
+        });
+
+        if (claimError) {
+          console.error("[exam/mark] Submission claim failed:", claimError.message);
+          evidenceReason = "trusted_submission_claim_failed";
+        } else {
+          const claim = Array.isArray(claims) ? claims[0] : null;
+          if (claim?.state === "completed" && claim.saved_result && typeof claim.saved_result === "object") {
+            return NextResponse.json({
+              ...claim.saved_result,
+              evidenceRecorded: true,
+              paperProvenanceVerified: true,
+              paperSource: paperProvenance.source,
+              evidenceReason: "already_recorded",
+            });
+          }
+
+          if (claim?.state === "claimed" && claim.claim_token) {
+            const topicScores = computeTopicScores(questions, markingData.results).map((item) => ({
+              topic: item.topic,
+              percentage: item.percentage,
+            }));
+            const eventId = randomUUID();
+            const completionEvent = {
+              eventId,
+              examId: attemptId,
+              subject,
+              syllabusId: null,
+              difficulty: normalizedDifficulty,
+              paperSource: paperProvenance.source,
+              score: totalScore,
+              maxScore,
+              percentage,
+              grade,
+              weakAreas: markingData.weakAreas ?? [],
+              strongAreas: markingData.strongAreas ?? [],
+              timeTaken: Number.isFinite(timeTaken) ? Math.max(0, Math.floor(timeTaken)) : 0,
+              topicScores,
+            };
+            const { data: completed, error: completeError } = await admin.rpc("complete_exam_submission", {
+              p_user_id: userId,
+              p_attempt_id: attemptId,
+              p_payload_hash: payloadHash,
+              p_claim_token: claim.claim_token,
+              p_result: submissionResult,
+              p_event: completionEvent,
+            });
+            if (!completeError && completed === true) {
+              evidenceRecorded = true;
+              evidenceReason = "verified_submission_recorded";
+            } else {
+              if (completeError) console.error("[exam/mark] Submission finalization failed:", completeError.message);
+              evidenceReason = "trusted_submission_finalization_pending";
+            }
+          } else if (claim?.state === "processing") {
+            evidenceReason = "submission_already_processing";
+          } else if (claim?.state === "payload_conflict") {
+            evidenceReason = "attempt_id_payload_conflict";
+          } else {
+            evidenceReason = "trusted_submission_claim_unavailable";
+          }
+        }
+      }
+    }
 
     return NextResponse.json({
       ...submissionResult,
-      evidenceRecorded: false,
+      evidenceRecorded,
       paperProvenanceVerified: paperProvenance.valid,
       paperSource: paperProvenance.valid ? paperProvenance.source : null,
-      evidenceReason: paperProvenance.valid ? "trusted_provenance_evidence_pipeline_pending" : "unverified_paper_provenance",
+      evidenceReason,
     });
   } catch (err) {
     console.error("Marking error:", err);
