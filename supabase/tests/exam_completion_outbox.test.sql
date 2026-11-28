@@ -26,6 +26,24 @@ begin
   );
   if not v_finalized then raise exception 'Submission did not finalize'; end if;
 
+  -- Repeating the same completed submission returns the saved result, not a new claim.
+  select * into v_claim
+  from public.claim_exam_submission(v_user,v_attempt,v_hash);
+  if v_claim.state <> 'completed' or v_claim.saved_result->>'percentage' <> '80' then
+    raise exception 'Expected an idempotent completed replay; got %',v_claim.state;
+  end if;
+
+  -- Reusing an attempt ID with different content must never overwrite the first result.
+  select * into v_claim
+  from public.claim_exam_submission(v_user,v_attempt,repeat('c',64));
+  if v_claim.state <> 'payload_conflict' then
+    raise exception 'Expected payload conflict for changed submission; got %',v_claim.state;
+  end if;
+
+  if (select count(*) from public.exam_completion_outbox where user_id=v_user and attempt_id=v_attempt) <> 1 then
+    raise exception 'Idempotent replay created a duplicate outbox event';
+  end if;
+
   select * into v_job
   from public.claim_exam_completion_outbox(10)
   where attempt_id = v_attempt;
