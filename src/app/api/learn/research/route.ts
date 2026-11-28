@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
 import https from "node:https";
 import { createAuthenticatedRequestClient } from "@/lib/supabase/authenticated-request";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
+import { isPublicAddress, rankClassicResearchResults } from "@/lib/cortex/classicResearch";
 
 export const dynamic = "force-dynamic";
 
@@ -12,42 +12,7 @@ function decode(value: string) {
   return value.replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#x([\da-f]+);/gi,(_,n)=>String.fromCharCode(parseInt(n,16))).replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/&lt;/g,"<").replace(/&gt;/g,">");
 }
 function clean(value:string) { return decode(value.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/\s+/g," ")).trim(); }
-function isPublicAddress(address: string): boolean {
-  const version = isIP(address);
-  if (version === 4) {
-    const octets = address.split(".").map(Number);
-    if (octets.length !== 4 || octets.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
-    const value = octets.reduce((result, part) => (result * 256) + part, 0);
-    const inRange = (network: number[], prefix: number) => {
-      const base = network.reduce((result, part) => (result * 256) + part, 0);
-      const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
-      return ((value >>> 0) & mask) === ((base >>> 0) & mask);
-    };
-    // IANA special-purpose, private, loopback, link-local, documentation,
-    // benchmarking, multicast and reserved IPv4 ranges.
-    const denied: Array<[number[], number]> = [
-      [[0,0,0,0],8], [[10,0,0,0],8], [[100,64,0,0],10],
-      [[127,0,0,0],8], [[169,254,0,0],16], [[172,16,0,0],12],
-      [[192,0,0,0],24], [[192,0,2,0],24], [[192,88,99,0],24],
-      [[192,168,0,0],16], [[198,18,0,0],15], [[198,51,100,0],24],
-      [[203,0,113,0],24], [[224,0,0,0],4], [[240,0,0,0],4],
-    ];
-    return !denied.some(([network, prefix]) => inRange(network, prefix));
-  }
-  if (version === 6) {
-    // Only accept globally allocated unicast space (2000::/3). Explicitly
-    // exclude protocol assignments, transition mechanisms and documentation.
-    const parts = address.toLowerCase().split(":");
-    const first = Number.parseInt(parts[0] || "0", 16);
-    const second = Number.parseInt(parts[1] || "0", 16);
-    if (!Number.isFinite(first) || first < 0x2000 || first > 0x3fff) return false;
-    if (first === 0x2001 && (second <= 0x01ff || second === 0x0db8)) return false; // IETF special-purpose and documentation blocks
-    if (first === 0x2002) return false; // 6to4
-    if (first === 0x3fff && second <= 0x0fff) return false; // documentation
-    return true;
-  }
-  return false;
-}
+
 function unwrap(href:string) {
   try {
     const u=new URL(decode(href),"https://duckduckgo.com");
@@ -150,30 +115,16 @@ export async function GET(request:NextRequest) {
   const response=await fetch("https://html.duckduckgo.com/html/?q="+query,{headers:{"user-agent":"Mozilla/5.0 (compatible; ShadecodeStudent/1.0; educational retrieval)","accept":"text/html"},signal:AbortSignal.timeout(7000),cache:"no-store"});
   if(!response.ok)return NextResponse.json({error:"Public search unavailable"},{status:502});
   const html=await readBoundedText(response,750000);
-  const candidates:Array<{title:string;url:string;snippet:string;score:number}>=[];
-  const stopwords=new Set(["about","from","with","that","this","into","lesson","explained","their","there","which","where","what","when","have","will","your","using","used"]);
-  const terms=(value:string)=>Array.from(new Set(value.toLowerCase().split(/[^a-z0-9]+/).filter((term)=>term.length>=3&&!stopwords.has(term))));
-  const topicTerms=terms(topic), subjectTerms=terms(subject);
+  const candidates:Array<{title:string;url:string;snippet:string}>=[];
   const seen=new Set<string>();
   const pattern=/<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>[\s\S]*?(?:<a[^>]*class="result__snippet"[^>]*>(.*?)<\/a>|<td[^>]*class="result__snippet"[^>]*>(.*?)<\/td>)/gi;
-  let match; while((match=pattern.exec(html))&&candidates.length<15){
+  let match; while((match=pattern.exec(html))&&candidates.length<20){
     const url=unwrap(match[1]), title=clean(match[2]), snippet=clean(match[3]||match[4]||"");
-    const searchable=(title+" "+snippet).toLowerCase();
     if(!url||!title||snippet.length<70||seen.has(url))continue;
-    const topicHits=topicTerms.filter((term)=>searchable.includes(term)).length;
-    const subjectHits=subjectTerms.filter((term)=>searchable.includes(term)).length;
-    const topicCoverage=topicTerms.length?topicHits/topicTerms.length:1;
-    const subjectCoverage=subjectTerms.length?subjectHits/subjectTerms.length:1;
-    // Topic match is mandatory. Subject overlap improves ranking without
-    // rejecting sources that use the discipline's conventional terminology.
-    if(topicHits===0 || (topicTerms.length>=3 && topicCoverage<0.34))continue;
-    const titleText=title.toLowerCase();
-    const titleTopicHits=topicTerms.filter((term)=>titleText.includes(term)).length;
-    const score=(topicCoverage*6)+(subjectCoverage*2)+(titleTopicHits*2)+(snippet.length>=180?0.5:0);
     seen.add(url);
-    candidates.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000),score});
+    candidates.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000)});
   }
-  const results=candidates.sort((a,b)=>b.score-a.score).slice(0,5).map(({score,...result})=>result);
+  const results=rankClassicResearchResults(candidates,subject,topic,5);
   if(!results.length)return NextResponse.json({error:"No useful public search results"}, {status:404});
   const fetched=await Promise.all(results.slice(0,3).map(async r=>({...r,pageText:await fetchPage(r.url)})));
   const usable=fetched.filter(r=>r.pageText.length>=500);
