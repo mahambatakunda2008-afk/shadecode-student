@@ -128,7 +128,7 @@ async function fetchLibraryRecovery(subject: string, topic: string, endpoint = "
     clearTimeout(timer);
   }
 }
-async function findCachedClassicLesson(subject: string, topic: string): Promise<{ title: string; blocks: Array<Record<string, unknown>>; source: "cached-local" } | null> {
+async async function findCachedClassicLesson(subject: string, topic: string): Promise<{ title: string; blocks: Array<Record<string, unknown>>; source: "cached-local" } | null> {
   if (!isBrowser()) return null;
   try {
     const { createClient } = await import("@/lib/supabase/client");
@@ -160,7 +160,7 @@ async function findCachedClassicLesson(subject: string, topic: string): Promise<
         offlineFallback: true,
         localModel: false,
       };
-      if (validateResult(candidate, resolveLessonRequest({ subject, prompt: topic } as LessonGenerationInput))) {
+      if (validateResult(candidate, resolveLessonRequest({ subject, prompt: topic }))) {
         return { title: lesson.title, blocks: lesson.blocks, source: "cached-local" };
       }
     }
