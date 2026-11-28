@@ -27,6 +27,9 @@ describe("Classic research relevance ranking", () => {
   it("keeps stable order for equal scores", () => {
     const first = make("Wave basics", "A useful explanation of wave properties and behaviour.");
     const second = make("Wave basics", "A useful explanation of wave properties and behaviour.");
-    expect(rankClassicResearchResults([first, second], "Physics", "wave").map((item) => item.url)).toEqual([first.url, second.url]);
+    const ranked = rankClassicResearchResults([first, second], "Physics", "wave");
+    expect(ranked).toHaveLength(2);
+    expect(ranked[0]).toBe(first);
+    expect(ranked[1]).toBe(second);
   });
 });
