@@ -1,6 +1,8 @@
 import { isIP } from "node:net";
 
 export function isPublicAddress(address: string): boolean {
+  // Zone identifiers are interface-scoped and must never be accepted for outbound fetches.
+  if (address.includes("%")) return false;
   const version = isIP(address);
   if (version === 4) {
     const octets = address.split(".").map(Number);
