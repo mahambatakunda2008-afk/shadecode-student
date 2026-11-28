@@ -211,6 +211,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       setPaperSource(source === "curated-bank" || source === "deterministic-engine" ? source : "live");
       setPaperProof(typeof data?.metadata?.paperProof === "string" ? data.metadata.paperProof : null);
       setPaperSubjectId(typeof data?.metadata?.subjectId === "string" ? data.metadata.subjectId : null);
+      if (typeof data?.metadata?.subject === "string") setSubject(data.metadata.subject);
       setQuestions(data.questions);
       setAnswers([]);
       setFlags([]);
