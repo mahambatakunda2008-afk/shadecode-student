@@ -1,5 +1,20 @@
 import { isIP } from "node:net";
 
+/** Accept only ordinary HTTPS host URLs suitable for server-side public research fetches. */
+export function normalizeClassicResearchUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    const hostname = url.hostname.toLowerCase().replace(/^\\[|\\]$/g, "");
+    if (url.protocol !== "https:" || !hostname || url.username || url.password || url.port ||
+      isIP(hostname) || hostname === "localhost" || hostname.endsWith(".localhost") ||
+      hostname.endsWith(".local") || hostname.endsWith(".internal") ||
+      hostname.includes("%") || !hostname.includes(".")) return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 export function isPublicAddress(address: string): boolean {
   // Zone identifiers are interface-scoped and must never be accepted for outbound fetches.
   if (address.includes("%")) return false;
