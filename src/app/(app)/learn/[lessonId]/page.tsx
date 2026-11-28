@@ -20,7 +20,6 @@ import { localFirstStore } from "@/lib/local-first/store";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { useLessonNarration } from "@/hooks/useLessonNarration";
 import { trackEvent } from "@/lib/traction/client";
-import { retryPendingGeneratedLessonSync } from "@/lib/cortex/lessonGenerationClient";
 
 type LessonBlock = { type: string; title?: string; content: string };
 type Lesson = {
@@ -395,6 +394,7 @@ export default function LessonDetailPage() {
     setSyncingGeneratedLesson(true);
     setGeneratedLessonSyncMessage("");
     try {
+      const { retryPendingGeneratedLessonSync } = await import("@/lib/cortex/lessonGenerationClient");
       const result = await retryPendingGeneratedLessonSync({ manual: true });
       const refreshed = await offlineStorage.getLesson(lesson.id, currentUser);
       if (refreshed) setLesson((current) => current ? { ...current, ...refreshed } : current);
