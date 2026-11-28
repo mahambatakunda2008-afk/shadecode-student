@@ -20,12 +20,15 @@ import { localFirstStore } from "@/lib/local-first/store";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { useLessonNarration } from "@/hooks/useLessonNarration";
 import { trackEvent } from "@/lib/traction/client";
+import { retryPendingGeneratedLessonSync } from "@/lib/cortex/lessonGenerationClient";
 
 type LessonBlock = { type: string; title?: string; content: string };
 type Lesson = {
   id: string; title: string; subject: string; description: string;
   difficulty: string; progress: number; completed: boolean;
   blocks?: LessonBlock[]; updated_at?: string;
+  syncStatus?: "pending" | "retry-needed" | "synced" | "local-only";
+  syncError?: string;
 };
 type Theme = { hex: string; bg: string; border: string; text: string; icon: React.ComponentType<{ size?: number; color?: string }> };
 
@@ -194,6 +197,8 @@ export default function LessonDetailPage() {
   const [notesOwner, setNotesOwner] = useState("");
   const [notesSavedAt, setNotesSavedAt] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState(0);
+  const [syncingGeneratedLesson, setSyncingGeneratedLesson] = useState(false);
+  const [generatedLessonSyncMessage, setGeneratedLessonSyncMessage] = useState("");
   const restoredScrollRef = useRef(false);
   const narration = useLessonNarration(lesson?.blocks ?? []);
 
@@ -381,6 +386,30 @@ export default function LessonDetailPage() {
     }
   }
 
+  async function retryGeneratedLessonCloudSync() {
+    if (!lesson || !currentUser || syncingGeneratedLesson) return;
+    if (!navigator.onLine) {
+      setGeneratedLessonSyncMessage("Reconnect to the internet to save this lesson to your cloud library. It remains available on this device.");
+      return;
+    }
+    setSyncingGeneratedLesson(true);
+    setGeneratedLessonSyncMessage("");
+    try {
+      const result = await retryPendingGeneratedLessonSync({ manual: true });
+      const refreshed = await offlineStorage.getLesson(lesson.id, currentUser);
+      if (refreshed) setLesson((current) => current ? { ...current, ...refreshed } : current);
+      setGeneratedLessonSyncMessage(result.pending === 0
+        ? "Cloud save confirmed. Your lesson is available across your signed-in devices."
+        : result.synced > 0
+          ? "Some lessons synced. This lesson is still waiting for cloud confirmation."
+          : "The lesson is safe on this device, but cloud sync is still unavailable. You can retry later.");
+    } catch (error) {
+      setGeneratedLessonSyncMessage(error instanceof Error ? error.message : "Cloud sync could not complete. Your device copy is safe.");
+    } finally {
+      setSyncingGeneratedLesson(false);
+    }
+  }
+
   async function handleDownload() {
     if (!lesson || !currentUser || downloading) return;
     setDownloading(true); setDownloadProgress(0);
@@ -459,6 +488,17 @@ export default function LessonDetailPage() {
             <div className="progress-track"><div className="progress-fill" style={{ width: `${lesson.progress}%` }} /></div>
           </div>
         </header>
+
+        {lesson.syncStatus && ["pending", "retry-needed", "local-only"].includes(lesson.syncStatus) && <section role="status" aria-label="Lesson cloud sync status" style={{ margin: "0 0 20px", padding: 16, border: "1px solid var(--lesson-border)", borderRadius: 14, background: "var(--lesson-soft)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ minWidth: 0, flex: "1 1 260px" }}>
+              <strong style={{ display: "block", fontSize: 13 }}>{lesson.syncStatus === "retry-needed" ? "Cloud save needs another try" : lesson.syncStatus === "local-only" ? "Saved on this device only" : "Cloud save is pending"}</strong>
+              <p style={{ margin: "5px 0 0", color: "var(--muted-foreground)", fontSize: 12, lineHeight: 1.55 }}>{lesson.syncError || "Your generated lesson is safe on this device. It will remain available offline until cloud storage confirms the save."}</p>
+            </div>
+            <button type="button" className="lesson-action" onClick={() => void retryGeneratedLessonCloudSync()} disabled={syncingGeneratedLesson} style={{ minHeight: 40, padding: "8px 12px" }}>{syncingGeneratedLesson ? "Retrying…" : "Retry cloud save"}</button>
+          </div>
+          {generatedLessonSyncMessage && <p style={{ margin: "9px 0 0", color: "var(--muted-foreground)", fontSize: 12 }} aria-live="polite">{generatedLessonSyncMessage}</p>}
+        </section>}
 
         {blocks.length ? <div className="lesson-layout">
           <nav className="lesson-toc" aria-label="In this lesson">
