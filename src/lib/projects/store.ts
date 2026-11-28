@@ -34,7 +34,7 @@ export async function saveProjectsLocal(projects: StudentProject[]): Promise<voi
   for (const project of projects) {
     await createProjectSnapshot(project, "autosave");
     await atomicallySaveProject(project);
-    void queueProjectUpsert(project);
+    await queueProjectUpsert(project);
   }
   await putLocalRecord({ id: COLLECTION_ID, entity: ENTITY, value: projects, updatedAt: Date.now() });
 }
@@ -44,7 +44,7 @@ export async function deleteProjectLocal(project: StudentProject): Promise<void>
   await atomicallyDeleteProject(project.id);
   const remaining = (await loadProjectsLocalFirst()).filter((item) => item.id !== project.id);
   await putLocalRecord({ id: COLLECTION_ID, entity: ENTITY, value: remaining, updatedAt: Date.now() });
-  void queueProjectDelete(project.id);
+  await queueProjectDelete(project.id);
 }
 
 export function createProject(input: {
