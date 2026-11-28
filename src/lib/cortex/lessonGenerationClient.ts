@@ -23,7 +23,7 @@ import { getLearningMode } from "@/lib/learningMode";
 import { buildResearchMemoryContext } from "@/lib/shadenet/research-memory";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
-interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; source?: "shared-library" | "verified-syllabus-guide" | "authored-local"; }
+interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; source?: "public-web-search" | "shared-library" | "verified-syllabus-guide" | "authored-local"; }
 function isLocalOnlyCompletion(value: { localOnly?: boolean; result?: unknown }): boolean {
   const result = value.result;
   if (result && typeof result === "object" && "localOnly" in result) {
@@ -80,7 +80,7 @@ async function heartbeatGenerationLease(token: string, jobId: string, leaseId: s
 }
 function isBrowser() { return typeof window !== "undefined"; }
 /** A lesson from the shared library that covers the request, or null. Never throws and never waits long. */
-async function fetchLibraryRecovery(subject: string, topic: string, endpoint = "/api/library/recover", timeoutMs = 6000, token?: string): Promise<{ title: string; blocks: Array<Record<string, unknown>>; source: "shared-library" | "verified-syllabus-guide" } | null> {
+async function fetchLibraryRecovery(subject: string, topic: string, endpoint = "/api/library/recover", timeoutMs = 6000, token?: string): Promise<{ title: string; blocks: Array<Record<string, unknown>>; source: "public-web-search" | "shared-library" | "verified-syllabus-guide" } | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -106,7 +106,7 @@ async function fetchLibraryRecovery(subject: string, topic: string, endpoint = "
     const data = (await response.json()) as { lesson?: { title?: string; blocks?: Array<Record<string, unknown>>; source?: string } };
     const lesson = data.lesson;
     if (lesson?.title && Array.isArray(lesson.blocks) && lesson.blocks.length >= 4) {
-      return { title: lesson.title, blocks: lesson.blocks, source: endpoint === "/api/library/guide" ? "verified-syllabus-guide" : "shared-library" };
+      return { title: lesson.title, blocks: lesson.blocks, source: endpoint === "/api/learn/research" ? "public-web-search" : endpoint === "/api/library/guide" ? "verified-syllabus-guide" : "shared-library" };
     }
     console.info("[LEARN] recovery endpoint returned an unusable lesson payload", {
       endpoint,
