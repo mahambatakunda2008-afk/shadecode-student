@@ -21,13 +21,14 @@ export function isPublicAddress(address: string): boolean {
     return !denied.some(([network, prefix]) => inRange(network, prefix));
   }
   if (version === 6) {
+    // Only global-unicast 2000::/3 is eligible. Reject transition,
+    // documentation, and special-purpose allocations conservatively.
     const parts = address.toLowerCase().split(":");
     const first = Number.parseInt(parts[0] || "0", 16);
     const second = Number.parseInt(parts[1] || "0", 16);
     if (!Number.isFinite(first) || first < 0x2000 || first > 0x3fff) return false;
     if (first === 0x2001 && (second <= 0x01ff || second === 0x0db8)) return false;
-    if (first === 0x2002) return false;
-    if (first === 0x3fff && second <= 0x0fff) return false;
+    if (first === 0x2002 || (first === 0x3fff && second <= 0x0fff)) return false;
     return true;
   }
   return false;
@@ -58,21 +59,11 @@ export function rankClassicResearchResults<T extends ClassicResearchCandidate>(
     .slice(0, Math.max(0, limit)).map(({ candidate }) => candidate);
 }
 
-export function matchesCachedClassicLesson(
-  requestedSubject: string,
-  requestedTopic: string,
-  lessonSubject: string,
-  lessonTopic: string,
-  lessonTitle: string,
-): boolean {
-  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const subject = normalize(requestedSubject);
-  const topic = normalize(requestedTopic);
-  const savedSubject = normalize(lessonSubject);
-  const savedTopic = normalize(lessonTopic);
-  const savedTitle = normalize(lessonTitle);
-  if (!subject || !topic || savedSubject !== subject || !savedTitle) return false;
-  return savedTopic === topic ||
-    (savedTopic.length >= 8 && topic.length >= 8 && (savedTopic.includes(topic) || topic.includes(savedTopic))) ||
-    (topic.length >= 12 && savedTitle.includes(topic));
+export function isClassicResearchTextRelevant(text: string, subject: string, topic: string): boolean {
+  const topicTerms = terms(topic);
+  if (!text.trim() || !topicTerms.length) return false;
+  const searchable = text.toLowerCase();
+  const hits = topicTerms.filter((term) => searchable.includes(term)).length;
+  const coverage = hits / topicTerms.length;
+  return hits > 0 && (topicTerms.length < 3 || coverage >= 0.34);
 }
