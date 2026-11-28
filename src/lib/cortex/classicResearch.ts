@@ -1,12 +1,27 @@
 import { isIP } from "node:net";
 
-/** Resolve only the known DuckDuckGo redirect hosts, then validate the destination URL. */
+/** Resolve known search-engine redirect formats, then validate the destination URL. */
 export function unwrapClassicSearchUrl(href: string): string {
   try {
     const url = new URL(href.replace(/&amp;/g, "&"), "https://html.duckduckgo.com");
     const hostname = url.hostname.toLowerCase();
     if (hostname === "duckduckgo.com" || hostname === "html.duckduckgo.com") {
       return normalizeClassicResearchUrl(url.searchParams.get("uddg") ?? "");
+    }
+    // Bing wraps organic destinations in a base64url value prefixed with "a1".
+    if (hostname === "bing.com" || hostname.endsWith(".bing.com")) {
+      const encoded = url.searchParams.get("u") ?? "";
+      if (encoded.startsWith("a1")) {
+        try {
+          const base64 = encoded.slice(2).replace(/-/g, "+").replace(/_/g, "/");
+          const decoded = Buffer.from(base64, "base64").toString("utf8");
+          return normalizeClassicResearchUrl(decoded);
+        } catch {
+          return "";
+        }
+      }
+      // Do not fetch Bing tracking endpoints or unknown redirect formats.
+      return "";
     }
     // Never treat an unrecognised DuckDuckGo subdomain as a destination.
     if (hostname.includes("duckduckgo.com")) return "";
