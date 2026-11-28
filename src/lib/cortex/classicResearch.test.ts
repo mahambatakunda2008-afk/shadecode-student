@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults } from "./classicResearch";
+import { isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, unwrapClassicSearchUrl } from "./classicResearch";
 
 describe("Classic public address validation", () => {
   it.each([
@@ -56,4 +56,21 @@ describe("Classic research URL validation", () => {
     ["https://example.org/resource", "https://example.org/resource"],
     ["https://www.example.org/path?q=waves", "https://www.example.org/path?q=waves"],
   ])("accepts public HTTPS URL %s", (input, expected) => expect(normalizeClassicResearchUrl(input)).toBe(expected));
+});
+
+
+describe("Classic search redirect handling", () => {
+  it("unwraps a DuckDuckGo redirect to a validated HTTPS destination", () => {
+    const target = encodeURIComponent("https://www.example.org/physics/waves");
+    expect(unwrapClassicSearchUrl(`https://html.duckduckgo.com/l/?uddg=${target}`)).toBe("https://www.example.org/physics/waves");
+  });
+  it("accepts direct public HTTPS results", () => {
+    expect(unwrapClassicSearchUrl("https://www.example.org/physics/waves")).toBe("https://www.example.org/physics/waves");
+  });
+  it.each([
+    "https://duckduckgo.com.evil.example/l/?uddg=https%3A%2F%2Fexample.org",
+    "https://search.duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.org",
+    "https://html.duckduckgo.com/l/?uddg=http%3A%2F%2Fexample.org",
+    "https://html.duckduckgo.com/l/?uddg=https%3A%2F%2F127.0.0.1",
+  ])("rejects malformed or unsafe redirect %s", (url) => expect(unwrapClassicSearchUrl(url)).toBe(""));
 });
