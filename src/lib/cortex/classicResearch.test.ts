@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractBingSearchCandidates, extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, unwrapClassicSearchUrl } from "./classicResearch";
+import { extractBingSearchCandidates, extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, resolveClassicResearchRedirect, unwrapClassicSearchUrl } from "./classicResearch";
 
 describe("Classic public address validation", () => {
   it.each([
@@ -66,6 +66,14 @@ describe("Classic search redirect handling", () => {
   });
   it("accepts direct public HTTPS results", () => {
     expect(unwrapClassicSearchUrl("https://www.example.org/physics/waves")).toBe("https://www.example.org/physics/waves");
+  });
+  it("resolves relative HTTPS redirects against the source page", () => {
+    expect(resolveClassicResearchRedirect("https://www.example.org/topic/page", "/topic/full"))
+      .toBe("https://www.example.org/topic/full");
+  });
+  it("rejects protocol downgrade and private-network redirect destinations", () => {
+    expect(resolveClassicResearchRedirect("https://www.example.org/topic", "http://example.org/topic")).toBe("");
+    expect(resolveClassicResearchRedirect("https://www.example.org/topic", "https://127.0.0.1/admin")).toBe("");
   });
   it("unwraps Bing's base64url organic result destination", () => {
     const destination = "https://math.libretexts.org/Courses/Complex_Numbers";
