@@ -333,6 +333,25 @@ describe("saving routes for offline (warm-up)", () => {
     expect(await text((await get("/dashboard")).response)).toContain("new");
   });
 
+  it("reports a stalled route warm-up as failed instead of hanging forever", async () => {
+    vi.useFakeTimers();
+    network.set("/dashboard", () => new Promise<Response>(() => undefined));
+    const pending = fire("message", { data: { type: "WARM_ROUTES", routes: ["/dashboard"] } });
+    await vi.advanceTimersByTimeAsync(6100);
+    await pending;
+    expect(clientMessages[0]).toEqual(expect.objectContaining({ type: "WARM_DONE", pages: 0, failed: 1 }));
+  });
+
+  it("reports a stalled asset warm-up as failed instead of hanging forever", async () => {
+    vi.useFakeTimers();
+    network.set("/dashboard", () => page('<script src="/_next/static/chunks/slow-1.js"></script>'));
+    network.set("/_next/static/chunks/slow-1.js", () => new Promise<Response>(() => undefined));
+    const pending = fire("message", { data: { type: "WARM_ROUTES", routes: ["/dashboard"] } });
+    await vi.advanceTimersByTimeAsync(6100);
+    await pending;
+    expect(clientMessages[0]).toEqual(expect.objectContaining({ type: "WARM_DONE", pages: 1, assets: 0, failed: 1 }));
+  });
+
   it("survives the network dropping halfway through", async () => {
     network.set("/dashboard", () => page(`<script src="/_next/static/chunks/m-1.js"></script>`));
     network.set("/_next/static/chunks/m-1.js", () => { offline = true; throw new TypeError("Failed to fetch"); });
