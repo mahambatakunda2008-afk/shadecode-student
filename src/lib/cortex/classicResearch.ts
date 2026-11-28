@@ -1,3 +1,4 @@
+import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
 /** Resolve known search-engine redirect formats, then validate the destination URL. */
@@ -89,6 +90,31 @@ export function isPublicAddress(address: string): boolean {
     return true;
   }
   return false;
+}
+
+/** Resolve a public DNS answer with a hard timeout to keep Classic retrieval bounded. */
+export async function resolveClassicResearchAddress(
+  hostname: string,
+  lookupHost: (value: string) => Promise<Array<{ address: string; family: number }>> = (value) => lookup(value, { all: true, verbatim: true }),
+  timeoutMs = 2_500,
+): Promise<{ address: string; family: number } | null> {
+  const normalized = hostname.toLowerCase().replace(/^\\[|\\]$/g, "");
+  if (isIP(normalized)) return isPublicAddress(normalized) ? { address: normalized, family: isIP(normalized) } : null;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const addresses = await Promise.race([
+      lookupHost(normalized),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Public research DNS lookup timed out")), timeoutMs);
+      }),
+    ]);
+    if (!addresses.length || addresses.some(({ address }) => !isPublicAddress(address))) return null;
+    return addresses[0];
+  } catch {
+    return null;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 const stopwords = new Set(["about","from","with","that","this","into","lesson","explained","their","there","which","where","what","when","have","will","your","using","used"]);
