@@ -158,7 +158,7 @@ async function warmRoutes(routes) {
         result.skipped += 1;
         html = await existing.clone().text();
       } else {
-        const response = await fetchWithTimeout(new Request(path, { credentials: "same-origin", headers: { accept: "text/html" }, redirect: "follow" }));
+        const response = await fetchWithTimeout(new Request(new URL(path, self.location.origin).href, { credentials: "same-origin", headers: { accept: "text/html" }, redirect: "follow" }));
         if (!isCacheableDocument(response)) { result.failed += 1; continue; }
         html = await response.clone().text();
         await pages.put(pageKey(path), response);
