@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import https from "node:https";
 import { createAuthenticatedRequestClient } from "@/lib/supabase/authenticated-request";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
@@ -40,15 +41,18 @@ function unwrap(href:string) {
     return final.href;
   } catch { return ""; }
 }
-async function safeFetchUrl(raw:string): Promise<URL | null> {
+async function resolvePublicTarget(raw: string): Promise<{ url: URL; address: string; family: number } | null> {
   try {
-    const u=new URL(raw);
-    const hostname=u.hostname.toLowerCase().replace(/^\[|\]$/g,"");
-    if(u.protocol!=="https:" || u.username || u.password || u.port || !hostname ||
-       hostname==="localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local") || isIP(hostname)) return null;
-    const addresses=await lookup(hostname,{all:true,verbatim:true});
-    if(!addresses.length || addresses.some(({address})=>!isPublicAddress(address))) return null;
-    return u;
+    const url = new URL(raw);
+    const hostname = url.hostname.toLowerCase().replace(/^\\[|\\]$/g, "");
+    if (url.protocol !== "https:" || url.username || url.password || url.port || !hostname ||
+      hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local") || isIP(hostname)) return null;
+    const addresses = await lookup(hostname, { all: true, verbatim: true });
+    if (!addresses.length || addresses.some(({ address }) => !isPublicAddress(address))) return null;
+    // Pin the selected public DNS answer into the HTTPS socket. The TLS SNI and
+    // certificate hostname remain the original domain, preventing a second DNS
+    // resolution between validation and connection.
+    return { url, address: addresses[0].address, family: addresses[0].family };
   } catch { return null; }
 }
 function extractPage(html:string) {
@@ -57,7 +61,40 @@ function extractPage(html:string) {
   .replace(/<[^>]+>/g," ");
  return clean(stripped).slice(0,12000);
 }
-async function fetchPage(raw:string) { const url=await safeFetchUrl(raw); if(!url)return ""; try { const r=await fetch(url.href,{redirect:"manual",signal:AbortSignal.timeout(4500),cache:"no-store",headers:{"user-agent":"ShadecodeStudent educational resource extractor","accept":"text/html"}}); if(!r.ok||r.status>=300)return ""; const type=r.headers.get("content-type")||"";if(!type.includes("text/html"))return ""; const html=(await r.text()).slice(0,350000);return extractPage(html); }catch{return "";} }
+async function fetchPage(raw: string): Promise<string> {
+  const target = await resolvePublicTarget(raw);
+  if (!target) return "";
+  return new Promise((resolve) => {
+    const { url, address, family } = target;
+    let settled = false;
+    const finish = (value: string) => { if (!settled) { settled = true; resolve(value); } };
+    const request = https.request({
+      protocol: "https:", hostname: url.hostname, servername: url.hostname,
+      port: 443, path: url.pathname + url.search, method: "GET",
+      headers: { "user-agent": "ShadecodeStudent educational resource extractor", accept: "text/html", "accept-encoding": "identity" },
+      agent: false,
+      lookup: ((_hostname: string, _options: unknown, callback: (error: NodeJS.ErrnoException | null, address: string, family: number) => void) => callback(null, address, family)) as never,
+    }, (response) => {
+      const type = String(response.headers["content-type"] || "");
+      if ((response.statusCode || 0) < 200 || (response.statusCode || 0) >= 300 || !type.toLowerCase().includes("text/html")) {
+        response.destroy(); finish(""); return;
+      }
+      const chunks: Buffer[] = [];
+      let size = 0;
+      response.on("data", (chunk: Buffer | string) => {
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        size += buffer.length;
+        if (size > 350000) { response.destroy(); finish(""); return; }
+        chunks.push(buffer);
+      });
+      response.on("end", () => finish(extractPage(Buffer.concat(chunks).toString("utf8"))));
+      response.on("error", () => finish(""));
+    });
+    request.setTimeout(4500, () => { request.destroy(); finish(""); });
+    request.on("error", () => finish(""));
+    request.end();
+  });
+}
 export async function GET(request:NextRequest) {
  const limited=await applyRateLimit(request,generalApiLimiter); if(limited)return limited;
  const params=request.nextUrl.searchParams; const subject=(params.get("subject")??"").trim().slice(0,60); const topic=(params.get("topic")??"").trim().slice(0,160);
