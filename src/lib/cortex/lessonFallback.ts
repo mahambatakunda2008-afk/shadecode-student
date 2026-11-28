@@ -395,9 +395,9 @@ function normalizeSubject(value: string): string {
 
 function normalizeTopic(value: string): string {
   return normalize(value)
-    .replace(/\b(topic|chapter|unit|notes|lesson|please teach me|teach me|explain)\b/g, " ")
+    .replace(/\\b(topic|chapter|unit|notes|lesson|please teach me|teach me|explain|please)\\b/g, " ")
     .replace(/[,:;.!?]+/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/\\s+/g, " ")
     .trim();
 }
 
@@ -406,9 +406,21 @@ export function buildDeterministicLessonFallback(subject: string, topic: string)
   const normalizedTopic = normalizeTopic(topic);
   if (!normalizedSubject || !normalizedTopic) return null;
 
-  // Curated lessons are deliberately exact-topic recovery only. Substring and
-  // prefix matching caused neighbouring syllabus topics to receive an unrelated
-  // hand-authored lesson (for example, a broad topic matching a narrower key).
-  // Natural-language wrappers are already removed by normalizeTopic above.
-  return ALL_FALLBACK_LESSONS[`${normalizedSubject}|${normalizedTopic}`] ?? null;
+  // First allow exact matches across the full curated library.
+  const exact = ALL_FALLBACK_LESSONS[`${normalizedSubject}|${normalizedTopic}`];
+  if (exact) return exact;
+
+  // The five deeply authored theory lessons have a deliberately explicit alias
+  // map. Allow those known topic phrases inside natural-language requests, but
+  // apply each lesson's neighbouring-topic exclusions before returning it.
+  // Do not fuzzy-match the broader hand-authored fallback catalogue.
+  for (const [key, lesson] of Object.entries(THEORY_LESSONS)) {
+    const separator = key.indexOf("|");
+    if (key.slice(0, separator) !== normalizedSubject) continue;
+    const keyTopic = key.slice(separator + 1);
+    if (!normalizedTopic.includes(keyTopic)) continue;
+    if (THEORY_EXCLUSIONS[key]?.test(normalizedTopic)) continue;
+    return lesson;
+  }
+  return null;
 }
