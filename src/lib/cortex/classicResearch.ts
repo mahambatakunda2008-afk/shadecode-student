@@ -31,6 +31,15 @@ export function unwrapClassicSearchUrl(href: string): string {
   }
 }
 
+/** Resolve a bounded HTTP redirect without allowing protocol downgrade or unsafe destinations. */
+export function resolveClassicResearchRedirect(currentUrl: string, location: string): string {
+  try {
+    return normalizeClassicResearchUrl(new URL(location, currentUrl).href);
+  } catch {
+    return "";
+  }
+}
+
 /** Accept only ordinary HTTPS host URLs suitable for server-side public research fetches. */
 export function normalizeClassicResearchUrl(raw: string): string {
   try {
