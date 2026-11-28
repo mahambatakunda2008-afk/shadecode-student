@@ -1,0 +1,111 @@
+import { localFirstStore } from "./store";
+import { localFirstDB } from "./db";
+
+const syncStateKey = (userId: string, attemptId: string) => `exam-sync-state:${userId}:${attemptId}`;
+async function setSyncState(userId: string, attemptId: string, state: "conflict" | "synced" | "pending", revision?: number, cloudSnapshot?: unknown) {
+  await localFirstDB.putMeta({ key: syncStateKey(userId, attemptId), value: JSON.stringify({ state, revision, updatedAt: Date.now(), ...(cloudSnapshot ? { cloudSnapshot } : {}) }) });
+}
+
+const inFlight = new Map<string, Promise<"synced" | "pending" | "conflict">>();
+const lastAttemptedAt = new Map<string, number>();
+const MIN_RETRY_INTERVAL_MS = 8_000;
+
+export async function syncExamAttempt(
+  userId: string,
+  attemptId: string,
+  options: { force?: boolean } = {},
+): Promise<"synced" | "pending" | "conflict"> {
+  if (!userId || !attemptId || typeof navigator !== "undefined" && !navigator.onLine) return "pending";
+  const key = `${userId}:${attemptId}`;
+  const active = inFlight.get(key);
+  if (active) return active;
+  if (!options.force && Date.now() - (lastAttemptedAt.get(key) ?? 0) < MIN_RETRY_INTERVAL_MS) return "pending";
+
+  const task = (async () => {
+    lastAttemptedAt.set(key, Date.now());
+    const recordId = `exam_attempt:${userId}:${attemptId}`;
+    const record = await localFirstStore.get<{
+      attemptId: string;
+      status: "active" | "submitted";
+    }>(recordId);
+    if (!record || record.userId !== userId || record.deletedAt || record.payload?.attemptId !== attemptId) return "pending" as const;
+
+    const response = await fetch("/api/exam/attempt-sync", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        attemptId,
+        clientRevision: record.version,
+        deviceId: record.deviceId,
+        status: record.payload.status,
+        payload: record.payload,
+      }),
+    }).catch(() => null);
+
+    if (!response) return "pending" as const;
+    const result = await response.json().catch(() => null) as { status?: string; revision?: number; deviceId?: string; savedStatus?: "active" | "submitted"; savedPayload?: unknown; updatedAt?: string } | null;
+    if (response.status === 409 || result?.status === "conflict") {
+      await setSyncState(userId, attemptId, "conflict", result?.revision, { deviceId: result?.deviceId, status: result?.savedStatus, payload: result?.savedPayload, updatedAt: result?.updatedAt });
+      return "conflict" as const;
+    }
+    if (!response.ok || !result || !["accepted", "already-applied"].includes(result.status ?? "")) return "pending" as const;
+
+    await localFirstStore.acknowledgeEntityOperations(userId, "exam_attempt", attemptId, record.version);
+    await setSyncState(userId, attemptId, "synced", result.revision);
+    if (typeof result.revision === "number") {
+      await localFirstStore.markRecordSynced(userId, "exam_attempt", attemptId, result.revision);
+    }
+    return "synced" as const;
+  })().finally(() => inFlight.delete(key));
+
+  inFlight.set(key, task);
+  return task;
+}
+
+export async function syncPendingExamAttempts(userId: string): Promise<void> {
+  if (!userId || typeof navigator !== "undefined" && !navigator.onLine) return;
+  const operations = await localFirstStore.listPendingOperations(userId).catch(() => []);
+  const attemptIds = [...new Set(operations
+    .filter((operation) => operation.entity === "exam_attempt" && operation.userId === userId)
+    .map((operation) => operation.entityId))];
+  for (const attemptId of attemptIds.slice(0, 25)) {
+    try {
+      await syncExamAttempt(userId, attemptId);
+    } catch {
+      // Keep this operation pending; retry after the next reconnect or save.
+    }
+  }
+}
+
+
+/** Restore cloud copies only into missing local slots. Existing local work is never overwritten. */
+export async function restoreCloudExamAttempts(userId: string): Promise<{ restored: number; skipped: number }> {
+  if (!userId || typeof navigator !== "undefined" && !navigator.onLine) return { restored: 0, skipped: 0 };
+  const response = await fetch("/api/exam/attempt-sync", { method: "GET", credentials: "same-origin" }).catch(() => null);
+  if (!response?.ok) return { restored: 0, skipped: 0 };
+  const body = await response.json().catch(() => null) as { attempts?: Array<{ attempt_id: string; client_revision: number; device_id: string; status: "active" | "submitted"; payload: unknown; updated_at: string }> } | null;
+  if (!Array.isArray(body?.attempts)) return { restored: 0, skipped: 0 };
+  let restored = 0, skipped = 0;
+  for (const row of body.attempts) {
+    if (!row || typeof row.attempt_id !== "string" || !Number.isSafeInteger(row.client_revision) || row.client_revision < 1 || !row.payload || typeof row.payload !== "object" || (row.payload as { attemptId?: unknown }).attemptId !== row.attempt_id || (row.payload as { userId?: unknown }).userId !== userId) { skipped++; continue; }
+    const id = `exam_attempt:${userId}:${row.attempt_id}`;
+    const existing = await localFirstStore.get(id);
+    if (existing) { skipped++; continue; }
+    await localFirstStore.hydrate({ id, entity: "exam_attempt", entityId: row.attempt_id, userId, payload: row.payload, updatedAt: Date.parse(row.updated_at) || Date.now(), deviceId: row.device_id, version: row.client_revision, syncVersion: row.client_revision });
+    const clock = await localFirstDB.getMeta("lamport");
+    const clockValue = typeof clock?.value === "number" ? clock.value : 0;
+    if (row.client_revision > clockValue) await localFirstDB.putMeta({ key: "lamport", value: row.client_revision });
+    restored++;
+  }
+  return { restored, skipped };
+}
+
+
+/** Read the preserved cloud side of a conflict. The local attempt remains untouched. */
+export async function getExamAttemptConflict(userId: string, attemptId: string): Promise<{ state: string; revision?: number; updatedAt?: number; cloudSnapshot?: { deviceId?: string; status?: "active" | "submitted"; payload?: unknown; updatedAt?: string } } | null> {
+  if (!userId || !attemptId) return null;
+  const meta = await localFirstDB.getMeta(syncStateKey(userId, attemptId));
+  if (typeof meta?.value !== "string") return null;
+  try { const value = JSON.parse(meta.value) as { state: string; revision?: number; updatedAt?: number; cloudSnapshot?: { deviceId?: string; status?: "active" | "submitted"; payload?: unknown; updatedAt?: string } }; return value.state === "conflict" ? value : null; } catch { return null; }
+}
