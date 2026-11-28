@@ -202,10 +202,13 @@ async function readCrossDeviceLearnerMemory(token: string, subject: string, topi
 }
 function validateResult(result: LessonGenerationResult, request: ReturnType<typeof resolveLessonRequest>) {
   const normalized = normalizeLessonBlocks(result.blocks);
-  // A server-selected curated curriculum lesson has already passed exact subject/topic
-  // matching. Do not apply AI-generation depth heuristics to it: those heuristics require
-  // extra checkpoints/continuation blocks and used to discard valid recovery lessons.
-  if (result.offlineFallback) return { ...result, blocks: normalized };
+  // Only server-labelled library/guide records may skip generative-depth heuristics.
+  // Public-web excerpts and locally authored fallbacks still pass the normal quality gate.
+  // The source is assigned by the recovery endpoint, never accepted from lesson content.
+  if (
+    result.offlineFallback &&
+    (result.source === "shared-library" || result.source === "verified-syllabus-guide")
+  ) return { ...result, blocks: normalized };
   const quality = lessonQualityFailures({ title: result.title, blocks: normalized.map((block) => ({ type: String(block.type), title: typeof block.title === "string" ? block.title : undefined, content: String(block.content ?? "") })) }, request);
   if (quality.failures.length) {
     console.info("[LEARN] lesson rejected by client quality gate", { failures: quality.failures.join(","), topic: request.topic, blocks: normalized.length });
