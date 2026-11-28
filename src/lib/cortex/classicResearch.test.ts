@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractBingSearchCandidates, extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, resolveClassicResearchRedirect, unwrapClassicSearchUrl } from "./classicResearch";
+import { extractBingSearchCandidates, extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, resolveClassicResearchAddress, resolveClassicResearchRedirect, unwrapClassicSearchUrl } from "./classicResearch";
 
 describe("Classic public address validation", () => {
   it.each([
@@ -125,4 +125,24 @@ describe("Classic DuckDuckGo HTML extraction", () => {
     }]);
   });
 
+});
+
+describe("Classic research DNS bounds", () => {
+  it("returns a pinned public address for a hostname", async () => {
+    await expect(resolveClassicResearchAddress("example.org", async () => [
+      { address: "93.184.216.34", family: 4 },
+    ])).resolves.toEqual({ address: "93.184.216.34", family: 4 });
+  });
+
+  it("rejects mixed public and private DNS answers", async () => {
+    await expect(resolveClassicResearchAddress("example.org", async () => [
+      { address: "93.184.216.34", family: 4 },
+      { address: "10.0.0.8", family: 4 },
+    ])).resolves.toBeNull();
+  });
+
+  it("times out a stalled DNS provider instead of hanging Classic retrieval", async () => {
+    const neverResolves = () => new Promise<Array<{ address: string; family: number }>>(() => undefined);
+    await expect(resolveClassicResearchAddress("slow.example.org", neverResolves, 10)).resolves.toBeNull();
+  });
 });
