@@ -1,5 +1,21 @@
 import { isIP } from "node:net";
 
+/** Resolve only the known DuckDuckGo redirect hosts, then validate the destination URL. */
+export function unwrapClassicSearchUrl(href: string): string {
+  try {
+    const url = new URL(href.replace(/&amp;/g, "&"), "https://html.duckduckgo.com");
+    const hostname = url.hostname.toLowerCase();
+    if (hostname === "duckduckgo.com" || hostname === "html.duckduckgo.com") {
+      return normalizeClassicResearchUrl(url.searchParams.get("uddg") ?? "");
+    }
+    // Never treat an unrecognised DuckDuckGo subdomain as a destination.
+    if (hostname.endsWith(".duckduckgo.com")) return "";
+    return normalizeClassicResearchUrl(url.href);
+  } catch {
+    return "";
+  }
+}
+
 /** Accept only ordinary HTTPS host URLs suitable for server-side public research fetches. */
 export function normalizeClassicResearchUrl(raw: string): string {
   try {
