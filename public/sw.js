@@ -12,7 +12,7 @@ const PAGE_CACHE = `shadecode-pages-${VERSION}`;
 const RSC_CACHE = `shadecode-rsc-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 const STATIC_RE = /\.(?:js|css|svg|png|jpg|jpeg|gif|webp|avif|ico|woff2?)$/i;
-const NETWORK_TIMEOUT_MS = 1500;
+const NETWORK_TIMEOUT_MS = 6_000;
 const MAX_PAGES = 80;
 const MAX_RSC = 120;
 const WARM_FRESH_MS = 6 * 60 * 60 * 1000;
@@ -39,8 +39,7 @@ async function offlineFallback() {
   return (await caches.match(OFFLINE_URL)) || Response.error();
 }
 
-function fetchWithTimeout(request, hasFallback) {
-  if (!hasFallback) return fetch(request);
+function fetchWithTimeout(request) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("network timeout")), NETWORK_TIMEOUT_MS);
     fetch(request).then(
@@ -64,7 +63,7 @@ async function matchPage(pathname) {
 async function handleNavigation(event, request, url) {
   if (isPublicEntry(url.pathname)) {
     try {
-      return await fetch(request);
+      return await fetchWithTimeout(request);
     } catch {
       if (url.pathname === "/") {
         const home = await matchPage("/dashboard");
@@ -77,7 +76,7 @@ async function handleNavigation(event, request, url) {
   const cached = await matchPage(url.pathname);
   if (typeof navigator !== "undefined" && navigator.onLine === false) return cached || offlineFallback();
   try {
-    const response = await fetchWithTimeout(request, Boolean(cached));
+    const response = await fetchWithTimeout(request);
     if (isCacheableDocument(response)) event.waitUntil(savePage(url.pathname, response.clone()).catch(() => undefined));
     return response;
   } catch {
@@ -90,7 +89,7 @@ async function handleRsc(event, request) {
   const cached = await cache.match(request);
   if (typeof navigator !== "undefined" && navigator.onLine === false) return cached || Response.error();
   try {
-    const response = await fetchWithTimeout(request, Boolean(cached));
+    const response = await fetchWithTimeout(request);
     if (response && response.ok && !response.redirected) {
       event.waitUntil(cache.put(request, response.clone()).then(() => trim(cache, MAX_RSC)).catch(() => undefined));
     }
@@ -106,7 +105,7 @@ async function handleAsset(event, request, url) {
   const cached = await cache.match(request, immutable ? { ignoreSearch: true } : undefined);
   if (cached && immutable) return cached;
   try {
-    const response = await fetch(request);
+    const response = await fetchWithTimeout(request);
     if (response.ok) event.waitUntil(cache.put(request, response.clone()).catch(() => undefined));
     return response;
   } catch {
