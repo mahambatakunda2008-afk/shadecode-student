@@ -11,7 +11,7 @@ import { awardXPBySource } from "@/lib/xp/manager";
 import { normalizeSubjectKey, normalizeSubjectNames } from "@/lib/academic/subjectContract";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
-import { buildDeepSectionGuidance, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
+import { buildDeepLessonPrompt, buildDeepSectionGuidance, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 import { breakUpLongParagraphs, isSectionTooThin, missingSectionTypes, needsFormulaBlock, requiredSectionTypes, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure, normalizeGeneratedLessonTitle } from "@/lib/cortex/lessonQuality";
