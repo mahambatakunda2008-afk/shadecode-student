@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, unwrapClassicSearchUrl } from "./classicResearch";
+import { extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, unwrapClassicSearchUrl } from "./classicResearch";
 
 describe("Classic public address validation", () => {
   it.each([
@@ -73,4 +73,25 @@ describe("Classic search redirect handling", () => {
     "https://html.duckduckgo.com/l/?uddg=http%3A%2F%2Fexample.org",
     "https://html.duckduckgo.com/l/?uddg=https%3A%2F%2F127.0.0.1",
   ])("rejects malformed or unsafe redirect %s", (url) => expect(unwrapClassicSearchUrl(url)).toBe(""));
+});
+
+
+describe("Classic DuckDuckGo HTML extraction", () => {
+  it("extracts result links when href and class attributes appear in either order", () => {
+    const html = `
+      <div class="result">
+        <a rel="nofollow" class="result__a" href="https://html.duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.org%2Fwaves">Wave interference</a>
+        <div class="result__snippet">Wave interference occurs when waves overlap and combine.</div>
+      </div>
+      <div class="result">
+        <a href="https://example.org/diffraction" class="result__a">Diffraction of waves</a>
+        <a class="result__snippet">Diffraction is the spreading of waves around obstacles.</a>
+      </div>`;
+    const results = extractClassicSearchCandidates(html);
+    expect(results).toHaveLength(2);
+    expect(results[0]).toMatchObject({ title: "Wave interference", url: "https://html.duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.org%2Fwaves" });
+    expect(results[0].snippet).toContain("Wave interference occurs");
+    expect(results[1].title).toBe("Diffraction of waves");
+    expect(results[1].snippet).toContain("Diffraction is the spreading");
+  });
 });
