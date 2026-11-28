@@ -5,6 +5,7 @@ export type ExamPaperSource = "cortex" | "deterministic-engine" | "curated-bank"
 
 export interface ExamPaperProvenanceInput {
   userId: string;
+  subject: string;
   subjectId: string;
   difficulty: string;
   source: ExamPaperSource;
@@ -12,7 +13,7 @@ export interface ExamPaperProvenanceInput {
 }
 
 interface ExamPaperProofPayload {
-  version: 1;
+  version: 2;
   issuer: "shadecode-exam";
   userId: string;
   subjectId: string;
@@ -57,11 +58,12 @@ export function signExamPaper(
   ttlMs = DEFAULT_TTL_MS,
 ): string | null {
   const secret = signingSecret();
-  if (!secret || !input.userId || !input.subjectId || !input.questions.length) return null;
+  if (!secret || !input.userId || !input.subject || !input.subjectId || !input.questions.length) return null;
   const payload: ExamPaperProofPayload = {
-    version: 1,
+    version: 2,
     issuer: "shadecode-exam",
     userId: input.userId,
+    subject: input.subject,
     subjectId: input.subjectId,
     difficulty: input.difficulty,
     source: input.source,
@@ -96,9 +98,10 @@ export function verifyExamPaperProof(
   try {
     const payload = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as ExamPaperProofPayload;
     if (
-      payload.version !== 1 ||
+      payload.version !== 2 ||
       payload.issuer !== "shadecode-exam" ||
       payload.userId !== input.userId ||
+      payload.subject !== input.subject ||
       payload.subjectId !== input.subjectId ||
       payload.difficulty !== input.difficulty ||
       payload.paperDigest !== digestQuestions(input.questions) ||
