@@ -7,6 +7,7 @@ const paper = [
 ];
 const input = {
   userId: "student-1",
+  subject: "Mathematics",
   subjectId: "subject-1",
   difficulty: "easy",
   source: "curated-bank" as const,
@@ -59,6 +60,7 @@ describe("exam paper provenance", () => {
     const token = signExamPaper(input, 1_000_000);
     expect(verifyExamPaperProof(token, { ...input, userId: "student-2" }, 1_000_001).valid).toBe(false);
     expect(verifyExamPaperProof(token, { ...input, subjectId: "subject-2" }, 1_000_001).valid).toBe(false);
+    expect(verifyExamPaperProof(token, { ...input, subject: "Physics" }, 1_000_001).valid).toBe(false);
     expect(verifyExamPaperProof(token, { ...input, difficulty: "hard" }, 1_000_001).valid).toBe(false);
   });
 
