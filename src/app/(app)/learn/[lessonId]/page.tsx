@@ -258,10 +258,17 @@ export default function LessonDetailPage() {
       void offlineStorage.saveLesson({ ...lessonWithLocalProgress, ownerUserId: userId, downloadedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(), size: JSON.stringify(lessonWithLocalProgress).length }).catch(() => undefined);
     } catch (err) {
       const status = (err as Error & { status?: number })?.status;
-      if (userId && (status === undefined || status >= 500)) {
+      if (userId && (status === undefined || status >= 500 || status === 404)) {
       try {
         const cached = await offlineStorage.getLesson(lessonId, userId);
-        if (cached) { const cachedLesson: Lesson = { ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt }; setLesson(userId ? await applyPendingLocalProgress(cachedLesson, userId) : cachedLesson); return; }
+        const isUnsentLocalLesson = cached?.syncStatus === "local-only" || cached?.syncStatus === "pending" || cached?.syncStatus === "retry-needed";
+        // A 404 may be served from the device only when the cached record is
+        // explicitly marked as not yet synced. Never resurrect a cloud-deleted lesson.
+        if (cached && (status !== 404 || isUnsentLocalLesson)) {
+          const cachedLesson: Lesson = { ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt };
+          setLesson(await applyPendingLocalProgress(cachedLesson, userId));
+          return;
+        }
       } catch {}
       }
       setError(err instanceof Error ? err.message : "Lesson unavailable.");
