@@ -129,16 +129,16 @@ export function isClassicResearchTextRelevant(text: string, subject: string, top
 
 /** Parse Bing's organic result cards as a second public-search lane when DuckDuckGo is blocked. */
 export function extractBingSearchCandidates(html: string): ClassicResearchCandidate[] {
-  const cards = Array.from(html.matchAll(/<li\\b(?=[^>]*\\bclass=["'][^"']*\\bb_algo\\b)[^>]*>[\\s\\S]*?<\\/li>/gi));
+  const cards = Array.from(html.matchAll(/<li\b(?=[^>]*\bclass=["'][^"']*\bb_algo\b)[^>]*>[\s\S]*?<\/li>/gi));
   const results: ClassicResearchCandidate[] = [];
   for (const card of cards) {
     const markup = card[0];
-    const heading = markup.match(/<h2\\b[^>]*>[\\s\\S]*?<a\\b([^>]*)>([\\s\\S]*?)<\\/a>[\\s\\S]*?<\\/h2>/i);
+    const heading = markup.match(/<h2\b[^>]*>[\s\S]*?<a\b([^>]*)>([\s\S]*?)<\/a>[\s\S]*?<\/h2>/i);
     if (!heading) continue;
-    const href = heading[1].match(/\\bhref=["']([^"']+)["']/i)?.[1] ?? "";
-    const title = heading[2].replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim();
-    const snippetMatch = markup.match(/<p\\b[^>]*>([\\s\\S]*?)<\\/p>/i);
-    const snippet = (snippetMatch?.[1] ?? title).replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim();
+    const href = heading[1].match(/\bhref=["']([^"']+)["']/i)?.[1] ?? "";
+    const title = heading[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const snippetMatch = markup.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i);
+    const snippet = (snippetMatch?.[1] ?? title).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     if (href && title) results.push({ title, url: href.replace(/&amp;/g, "&"), snippet });
     if (results.length >= 20) break;
   }
