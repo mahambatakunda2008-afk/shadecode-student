@@ -7,6 +7,9 @@ import { withSentryConfig } from "@sentry/nextjs";
  */
 const nextConfig = {
   serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist"],
+  outputFileTracingIncludes: {
+    "/api/learn/paper": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+  },
   turbopack: { root: process.cwd() },
   experimental: {
     optimizePackageImports: ["lucide-react", "@supabase/supabase-js"],
