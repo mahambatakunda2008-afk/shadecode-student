@@ -35,14 +35,16 @@ function extractPage(html:string) {
   .replace(/<[^>]+>/g," ");
  return clean(stripped).slice(0,12000);
 }
-async function fetchPage(raw: string, redirects = 0): Promise<string> {
-  if (redirects > 3) return "";
+type PageFetchResult = { text: string; reason: "ok" | "redirect_limit" | "unsafe_target" | "redirect_rejected" | "http_status" | "content_type" | "body_too_large" | "empty_extraction" | "timeout" | "request_error" };
+
+async function fetchPage(raw: string, redirects = 0): Promise<PageFetchResult> {
+  if (redirects > 3) return { text: "", reason: "redirect_limit" };
   const target = await resolvePublicTarget(raw);
-  if (!target) return "";
+  if (!target) return { text: "", reason: "unsafe_target" };
   return new Promise((resolve) => {
     const { url, address, family } = target;
     let settled = false;
-    const finish = (value: string) => { if (!settled) { settled = true; resolve(value); } };
+    const finish = (result: PageFetchResult) => { if (!settled) { settled = true; resolve(result); } };
     const request = https.request({
       protocol: "https:", hostname: url.hostname, servername: url.hostname,
       port: 443, path: url.pathname + url.search, method: "GET",
@@ -55,27 +57,33 @@ async function fetchPage(raw: string, redirects = 0): Promise<string> {
       if ([301, 302, 303, 307, 308].includes(status) && typeof location === "string") {
         response.destroy();
         const redirected = resolveClassicResearchRedirect(url.href, location);
-        if (!redirected) { finish(""); return; }
-        void fetchPage(redirected, redirects + 1).then(finish).catch(() => finish(""));
+        if (!redirected) { finish({ text: "", reason: "redirect_rejected" }); return; }
+        void fetchPage(redirected, redirects + 1).then(finish).catch(() => finish({ text: "", reason: "request_error" }));
         return;
       }
+      if (status < 200 || status >= 300) {
+        response.destroy(); finish({ text: "", reason: "http_status" }); return;
+      }
       const type = String(response.headers["content-type"] || "");
-      if (status < 200 || status >= 300 || !type.toLowerCase().includes("text/html")) {
-        response.destroy(); finish(""); return;
+      if (!type.toLowerCase().includes("text/html")) {
+        response.destroy(); finish({ text: "", reason: "content_type" }); return;
       }
       const chunks: Buffer[] = [];
       let size = 0;
       response.on("data", (chunk: Buffer | string) => {
         const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
         size += buffer.length;
-        if (size > 350000) { response.destroy(); finish(""); return; }
+        if (size > 350000) { response.destroy(); finish({ text: "", reason: "body_too_large" }); return; }
         chunks.push(buffer);
       });
-      response.on("end", () => finish(extractPage(Buffer.concat(chunks).toString("utf8"))));
-      response.on("error", () => finish(""));
+      response.on("end", () => {
+        const text = extractPage(Buffer.concat(chunks).toString("utf8"));
+        finish(text ? { text, reason: "ok" } : { text: "", reason: "empty_extraction" });
+      });
+      response.on("error", () => finish({ text: "", reason: "request_error" }));
     });
-    request.setTimeout(4500, () => { request.destroy(); finish(""); });
-    request.on("error", () => finish(""));
+    request.setTimeout(4500, () => { request.destroy(); finish({ text: "", reason: "timeout" }); });
+    request.on("error", () => finish({ text: "", reason: "request_error" }));
     request.end();
   });
 }
@@ -139,10 +147,19 @@ export async function GET(request:NextRequest) {
   }
   const results=rankClassicResearchResults(candidates,subject,topic,5);
   if(!results.length)return NextResponse.json({error:"No useful public search results"}, {status:404});
-  const fetched=await Promise.all(results.slice(0,3).map(async r=>({...r,pageText:await fetchPage(r.url)})));
+  const fetched=await Promise.all(results.slice(0,3).map(async r=>({...r,page:await fetchPage(r.url)})));
+  // Log only the failure category and source hostname. Never log full URLs,
+  // query strings, page content, or learner identifiers.
+  for (const result of fetched) {
+    if (result.page.reason !== "ok") {
+      let host = "unknown";
+      try { host = new URL(result.url).hostname; } catch { /* keep generic host */ }
+      console.info("[learn/research] page extraction unavailable", { host, reason: result.page.reason });
+    }
+  }
   // A long page is not automatically a useful page. Only use extracted text
   // when its body independently discusses the requested topic.
-  const checked=fetched.map(r=>({...r,pageText:isClassicResearchTextRelevant(r.pageText,subject,topic)?r.pageText:""}));
+  const checked=fetched.map(r=>({...r,pageText:isClassicResearchTextRelevant(r.page.text,subject,topic)?r.page.text:""}));
   const usable=checked.filter(r=>r.pageText.length>=500);
   const enriched=usable.length?usable:checked;
   const blocks=[
