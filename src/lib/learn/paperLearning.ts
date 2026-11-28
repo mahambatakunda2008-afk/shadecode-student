@@ -49,8 +49,20 @@ function pageTextFromItems(items: Array<Record<string, unknown>>) {
   return lines.map((line) => line.text).join("\n");
 }
 
+export async function installPdfJsCanvasPolyfills() {
+  const canvas = await import("@napi-rs/canvas");
+  const globals = globalThis as unknown as Record<string, unknown>;
+  if (typeof globals.DOMMatrix === "undefined") globals.DOMMatrix = canvas.DOMMatrix;
+  if (typeof globals.ImageData === "undefined") globals.ImageData = canvas.ImageData;
+  if (typeof globals.Path2D === "undefined") globals.Path2D = canvas.Path2D;
+  if (!globals.DOMMatrix || !globals.ImageData || !globals.Path2D) {
+    throw new Error("PDF reading requires the server-side canvas geometry APIs.");
+  }
+}
+
 export async function extractPdfPages(file: File): Promise<PaperPage[]> {
   const data = new Uint8Array(await file.arrayBuffer());
+  await installPdfJsCanvasPolyfills();
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const loadingTask = pdfjs.getDocument({ data });
   const pdf = await loadingTask.promise;
