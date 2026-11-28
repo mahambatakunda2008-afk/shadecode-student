@@ -184,8 +184,16 @@ describe("page navigation", () => {
     vi.useFakeTimers();
     network.set("/dashboard", () => new Promise<Response>(() => undefined));
     const pending = get("/dashboard");
-    await vi.advanceTimersByTimeAsync(1600);
+    await vi.advanceTimersByTimeAsync(6100);
     expect(await text((await pending).response)).toContain("Saved dashboard");
+  });
+
+  it("falls back to the offline page when an uncached route stalls", async () => {
+    vi.useFakeTimers();
+    network.set("/exam-sim", () => new Promise<Response>(() => undefined));
+    const pending = get("/exam-sim");
+    await vi.advanceTimersByTimeAsync(6100);
+    expect(await text((await pending).response)).toContain("OFFLINE PAGE");
   });
 
   it("opens the saved dashboard when the installed app starts at / offline", async () => {
