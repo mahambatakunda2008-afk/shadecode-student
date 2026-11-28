@@ -26,12 +26,12 @@ const project = {
   stages: [],
   evidence: [{
     id: "evidence-1",
-    projectId: "project-1",
     stageId: "problem",
     type: "note",
     title: "Initial observation",
     content: "Recorded offline",
     createdAt: "2026-11-28T10:00:00.000Z",
+    source: "learner",
   }],
   createdAt: "2026-11-28T09:00:00.000Z",
   updatedAt: "2026-11-28T10:00:00.000Z",
