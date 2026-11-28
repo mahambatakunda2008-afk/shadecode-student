@@ -276,9 +276,16 @@ export async function POST(req: Request) {
     if (paperScope?.syllabusId) {
       const { data: syllabus, error: syllabusError } = await auth.supabase.from("syllabi").select("id,subject").eq("id", paperScope.syllabusId).maybeSingle();
       if (syllabusError) return NextResponse.json({ error: "Could not verify this paper syllabus." }, { status: 500 });
-      if (!syllabus?.subject) return NextResponse.json({ error: "The paper syllabus could not be resolved." }, { status: 409 });
-      const access = await resolveLearnerSubject(auth.supabase, auth.user.id, syllabus.subject);
-      if (!access.ok) return NextResponse.json({ error: access.error, code: "SUBJECT_NOT_ALLOWED" }, { status: access.status });
+      // A recognised Cambridge code is useful provenance, but an incomplete
+      // syllabi catalogue must not block reading an otherwise valid paper.
+      // The generated plan's subject is independently checked against the
+      // learner's enrolled subjects below before any session is persisted.
+      if (syllabus?.subject) {
+        const access = await resolveLearnerSubject(auth.supabase, auth.user.id, syllabus.subject);
+        if (!access.ok) return NextResponse.json({ error: access.error, code: "SUBJECT_NOT_ALLOWED" }, { status: access.status });
+      } else {
+        console.warn("[learn/paper] recognised syllabus is not registered; deferring subject access check to extracted learning plan", { syllabusId: paperScope.syllabusId });
+      }
     }
     const questions = extractTopLevelQuestionsFromPages(selectedPages);
     const inspectOnly = String(form.get("inspect") ?? "").toLowerCase() === "1" || String(form.get("inspect") ?? "").toLowerCase() === "true";
