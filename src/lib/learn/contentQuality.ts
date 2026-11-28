@@ -116,6 +116,52 @@ QUALITY BAR
 Before returning the JSON, silently check: Is this genuinely teachable without another AI response? Could a student explain the core ideas after reading it? Are the connections visible? Are there worked examples, traps, checks, and a path forward? Does the lesson respect the curriculum map? Recalculate every worked answer independently, verify that every numbered practice question has answer guidance, and check that no block ends mid-thought. If not, deepen or repair it before returning it.`;
 }
 
+/**
+ * Compact teaching guidance for one section of a multi-request lesson.
+ * Do not reuse buildDeepLessonPrompt here: that prompt specifies whole-lesson
+ * block counts and architecture, which conflict with the section endpoint's
+ * 3-5 block contract and waste the provider's limited response budget.
+ */
+export function buildDeepSectionGuidance(
+  subject: string,
+  topic: string,
+  difficulty: LessonDifficulty,
+  curriculumContext = "",
+  broadTopicOverride = false,
+) {
+  const broad = broadTopicOverride || isBroadTopic(topic);
+  const scope = broad
+    ? "This belongs to a broad topic. Teach the assigned branch as part of the larger subject, make its connections explicit, and do not drift into unrelated branches."
+    : "This is a focused topic. Explain its underlying reasoning, show how to recognise and use it, and connect only directly relevant neighbouring ideas.";
+  const difficultyGuide = {
+    easy: "Use accessible language and build from first principles without becoming shallow.",
+    medium: "Use rigorous terminology, mechanisms or derivations where useful, worked reasoning, and precise subject conventions.",
+    hard: "Include subtle distinctions, edge cases, synthesis, demanding applications, and higher-order reasoning.",
+  }[difficulty];
+  const topicSpecificChecks = /integration/i.test(topic) && /math/i.test(subject)
+    ? `INTEGRATION ACCURACY
+- The power rule excludes exponent -1; integrate x^-1 as ln|x| + C.
+- Distinguish signed integral from total geometric area.
+- Distinguish displacement from total distance when integrating velocity.`
+    : "";
+  const notationGuidance = /math|mathematics|physics|chemistry|economics/i.test(subject)
+    ? "NOTATION: use standard symbolic notation and single-dollar LaTeX delimiters. Define symbols, conditions and units. Never split numeric literals with dollar signs."
+    : "";
+  return [
+    `SECTION DEPTH: ${scope}`,
+    `DIFFICULTY: ${difficultyGuide}`,
+    formatTeachingProfile(subject),
+    formatCurriculumPlan(topic),
+    curriculumContext
+      ? `VERIFIED CURRICULUM CONTEXT (respect its verification status):\n${curriculumContext}`
+      : "No verified curriculum context is available. Teach accurately as general educational material and do not invent exam-board requirements.",
+    topicSpecificChecks,
+    notationGuidance,
+    "SECTION QUALITY: every block must teach one distinct, specific idea. Explain why and how, define specialist terms, use accurate subject reasoning, and avoid filler or repeated restatements. Worked examples must show the method, intermediate steps, result and interpretation. Checkpoints must test the learner without revealing their answer. Do not invent facts, data, syllabus requirements or citations.",
+    "SECTION SCOPE: generate only the assigned section, not a complete lesson. Follow the section-specific block count and required block types supplied separately. Do not impose a whole-lesson block count or repeat content already covered.",
+  ].filter(Boolean).join("\\n\\n");
+}
+
 export function buildLessonRepairPrompt(subject: string, topic: string, raw: string, curriculumContext = "", difficulty: LessonDifficulty = "medium", qualityFailures: string[] = []) {
   return `You are repairing a weak educational lesson for Shadecode Student.
 
