@@ -108,6 +108,7 @@ export async function POST(req) {
 
     const paperProof = signExamPaper({
       userId,
+      subject: canonicalSubject.name,
       subjectId: canonicalSubject.id,
       difficulty,
       source,
