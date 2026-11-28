@@ -906,7 +906,7 @@ async function runJob(
     if (classicMode) {
       let classicLesson: { title: string; blocks: Array<Record<string, unknown>>; source?: "public-web-search" | "shared-library" | "verified-syllabus-guide" | "cached-local" | "authored-local" } | null = null;
       if (online) {
-        classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/learn/research", 15000, token);
+        classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/learn/research", 20000, token);
       }
       if (!classicLesson && online) {
         classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/library/recover", 6000, token);
