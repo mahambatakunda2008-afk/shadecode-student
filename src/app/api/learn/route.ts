@@ -332,7 +332,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Invalid generated lesson payload." }, { status: 400 });
       }
 
-      const verifiedCurriculumFallback = generated.verifiedCurriculumFallback === true;
+      // Never trust a client-supplied flag to bypass lesson quality gates. Verified fallback status must be established by a server-owned curriculum record in a separate recovery path.
+      const verifiedCurriculumFallback = false;
       const candidate = validateLesson(generated);
       const normalizedGeneratedBlocks = Array.isArray(generated.blocks)
         ? generated.blocks.filter((block: unknown): block is LessonBlock =>
