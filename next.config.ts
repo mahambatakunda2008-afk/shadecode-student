@@ -6,6 +6,7 @@ import { withSentryConfig } from "@sentry/nextjs";
  * HTML, RSC, navigation and API requests without a worker in between.
  */
 const nextConfig = {
+  serverExternalPackages: ["@napi-rs/canvas"],
   turbopack: { root: process.cwd() },
   experimental: {
     optimizePackageImports: ["lucide-react", "@supabase/supabase-js"],
