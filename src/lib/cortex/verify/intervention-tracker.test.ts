@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { consumeVerifyIntervention, recordVerifyIntervention } from "./intervention-tracker";
 
 function installStorage() {
@@ -11,7 +11,16 @@ function installStorage() {
 }
 
 describe("Cortex Verify intervention tracking", () => {
-  afterEach(() => vi.unstubAllGlobals());
+  // The tracker drops interventions older than 14 days, and these fixtures use fixed 2026-11-14 timestamps.
+  // Pin the clock so the suite does not start failing as the real date moves on.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-14T12:00:00.000Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 
   it("links one help intervention to a later fresh attempt without storing content", () => {
     installStorage();
