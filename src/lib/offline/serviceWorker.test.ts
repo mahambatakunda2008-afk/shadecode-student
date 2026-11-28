@@ -347,3 +347,71 @@ describe("sign-out", () => {
     expect((await get("/_next/static/chunks/a-1.js", "cors")).response?.type).not.toBe("error");
   });
 });
+
+describe("lesson pages", () => {
+  const LESSON = "/learn/3f9c2a1e-aaaa-bbbb-cccc-1234567890ab";
+  beforeEach(async () => {
+    network.set("/offline.html", () => html("<h1>OFFLINE PAGE</h1>"));
+    await fire("install");
+  });
+
+  it("serves an opened lesson page (and its quiz) offline", async () => {
+    network.set(LESSON, () => html("<h1>Gas laws lesson</h1>"));
+    network.set(`${LESSON}/quiz`, () => html("<h1>Gas laws quiz</h1>"));
+    await get(LESSON);
+    await get(`${LESSON}/quiz`);
+    offline = true;
+    expect(await text((await get(LESSON)).response)).toContain("Gas laws lesson");
+    expect(await text((await get(`${LESSON}/quiz`)).response)).toContain("Gas laws quiz");
+  });
+
+  it("keeps lesson pages in their own cache so lessons can never evict core screens", async () => {
+    network.set("/dashboard", () => html("<h1>Dashboard</h1>"));
+    await get("/dashboard");
+    for (let i = 0; i < 70; i += 1) {
+      network.set(`/learn/lesson-id-${i}`, () => html(`<h1>Lesson ${i}</h1>`));
+      await get(`/learn/lesson-id-${i}`);
+    }
+    offline = true;
+    expect(await text((await get("/dashboard")).response)).toContain("Dashboard");
+    expect(await text((await get("/learn/lesson-id-69")).response)).toContain("Lesson 69");
+    expect(await text((await get("/learn/lesson-id-0")).response)).toContain("OFFLINE PAGE");
+  });
+
+  it("does not treat fixed /learn screens as lessons", async () => {
+    for (const p of ["/learn/history", "/learn/paper", "/learn/subjects", "/learn/tutorials"]) {
+      network.set(p, () => html(`<h1>${p}</h1>`));
+      await get(p);
+    }
+    expect([...cachesMock.stores.keys()].some((k) => k.startsWith("shadecode-lesson-pages"))).toBe(false);
+  });
+
+  it("WARM_LESSON saves one lesson page without announcing a full warm", async () => {
+    network.set(LESSON, () => html("<h1>Warmed lesson</h1>"));
+    await fire("message", { data: { type: "WARM_LESSON", route: LESSON } });
+    expect(clientMessages).toEqual([]);
+    offline = true;
+    expect(await text((await get(LESSON)).response)).toContain("Warmed lesson");
+  });
+
+  it("WARM_LESSON ignores anything that is not a lesson route", async () => {
+    network.set("/dashboard", () => html("<h1>Dashboard</h1>"));
+    network.set("/admin/users", () => html("<h1>Admin</h1>"));
+    fetchCalls.length = 0;
+    await fire("message", { data: { type: "WARM_LESSON", route: "/dashboard" } });
+    await fire("message", { data: { type: "WARM_LESSON", route: "/admin/users" } });
+    await fire("message", { data: { type: "WARM_LESSON", route: "//evil.example/learn/abcdefgh" } });
+    expect(fetchCalls).toEqual([]);
+  });
+
+  it("sign-out clears lesson pages too, and activation keeps the lesson cache", async () => {
+    network.set(LESSON, () => html("<h1>Private lesson</h1>"));
+    await get(LESSON);
+    await fire("activate");
+    expect([...cachesMock.stores.keys()]).toContain("shadecode-lesson-pages-v8");
+    await fire("message", { data: { type: "CLEAR_APP_CACHE" } });
+    expect([...cachesMock.stores.keys()]).not.toContain("shadecode-lesson-pages-v8");
+    offline = true;
+    expect(await text((await get(LESSON)).response)).toContain("OFFLINE PAGE");
+  });
+});

@@ -10,10 +10,12 @@ const VERSION = "v8";
 const STATIC_CACHE = `shadecode-static-${VERSION}`;
 const PAGE_CACHE = `shadecode-pages-${VERSION}`;
 const RSC_CACHE = `shadecode-rsc-${VERSION}`;
+const LESSON_CACHE = `shadecode-lesson-pages-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 const STATIC_RE = /\.(?:js|css|svg|png|jpg|jpeg|gif|webp|avif|ico|woff2?)$/i;
 const NETWORK_TIMEOUT_MS = 1500;
 const MAX_PAGES = 80;
+const MAX_LESSON_PAGES = 60;
 const MAX_RSC = 120;
 const WARM_FRESH_MS = 6 * 60 * 60 * 1000;
 const WARM_ASSET_CONCURRENCY = 4;
@@ -22,6 +24,12 @@ const MAX_WARM_ROUTES = 30;
 const isPublicEntry = (pathname) => pathname === "/" || pathname === "/auth" || pathname.startsWith("/auth/");
 const normalizePath = (pathname) => (pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname);
 const pageKey = (pathname) => self.location.origin + normalizePath(pathname);
+// Individual lesson pages (/learn/<id>, /learn/<id>/quiz) live in their own cache so opening many lessons
+// can never evict the core destinations (Dashboard, Learn, Exam Sim...) from the main page cache.
+const LESSON_ROUTE_RE = /^\/learn\/(?!(?:history|paper|subjects|tutorials|components)(?:\/|$))[^/]+(?:\/quiz)?$/;
+const isLessonRoute = (pathname) => LESSON_ROUTE_RE.test(normalizePath(pathname));
+const pageCacheName = (pathname) => (isLessonRoute(pathname) ? LESSON_CACHE : PAGE_CACHE);
+const pageCacheMax = (name) => (name === LESSON_CACHE ? MAX_LESSON_PAGES : MAX_PAGES);
 const isImmutableAsset = (pathname) => pathname.startsWith("/_next/static/");
 const isStaticAsset = (pathname) => isImmutableAsset(pathname) || pathname.startsWith("/_next/image") || STATIC_RE.test(pathname);
 
@@ -51,13 +59,14 @@ function fetchWithTimeout(request, hasFallback) {
 }
 
 async function savePage(pathname, response) {
-  const cache = await caches.open(PAGE_CACHE);
+  const name = pageCacheName(pathname);
+  const cache = await caches.open(name);
   await cache.put(pageKey(pathname), response);
-  await trim(cache, MAX_PAGES);
+  await trim(cache, pageCacheMax(name));
 }
 
 async function matchPage(pathname) {
-  const cache = await caches.open(PAGE_CACHE);
+  const cache = await caches.open(pageCacheName(pathname));
   return cache.match(pageKey(pathname), { ignoreVary: true });
 }
 
@@ -145,13 +154,15 @@ async function runPool(items, size, task) {
 
 async function warmRoutes(routes) {
   const result = { pages: 0, skipped: 0, assets: 0, failed: 0 };
-  const pages = await caches.open(PAGE_CACHE);
+  const mainPages = await caches.open(PAGE_CACHE);
+  const lessonPages = await caches.open(LESSON_CACHE);
   const statics = await caches.open(STATIC_CACHE);
   const assetUrls = new Set();
 
   for (const raw of routes.slice(0, MAX_WARM_ROUTES)) {
     const path = safeRoute(raw);
     if (!path) continue;
+    const pages = isLessonRoute(path.split("?")[0]) ? lessonPages : mainPages;
     try {
       const existing = await pages.match(pageKey(path), { ignoreVary: true });
       let html;
@@ -170,7 +181,8 @@ async function warmRoutes(routes) {
       result.failed += 1;
     }
   }
-  await trim(pages, MAX_PAGES);
+  await trim(mainPages, MAX_PAGES);
+  await trim(lessonPages, MAX_LESSON_PAGES);
 
   const missing = [];
   for (const asset of assetUrls) if (!(await statics.match(asset, { ignoreSearch: true }))) missing.push(asset);
@@ -197,7 +209,7 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  const keep = new Set([STATIC_CACHE, PAGE_CACHE, RSC_CACHE]);
+  const keep = new Set([STATIC_CACHE, PAGE_CACHE, RSC_CACHE, LESSON_CACHE]);
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(keys.filter((key) => key.startsWith("shadecode-") && !keep.has(key)).map((key) => caches.delete(key))))
@@ -231,7 +243,12 @@ self.addEventListener("message", (event) => {
   const data = event.data || {};
   if (data.type === "SKIP_WAITING") self.skipWaiting();
   if (data.type === "CLEAR_APP_CACHE") {
-    event.waitUntil(Promise.all([caches.delete(PAGE_CACHE), caches.delete(RSC_CACHE)]));
+    event.waitUntil(Promise.all([caches.delete(PAGE_CACHE), caches.delete(RSC_CACHE), caches.delete(LESSON_CACHE)]));
+  }
+  if (data.type === "WARM_LESSON" && typeof data.route === "string") {
+    // Saves one lesson page quietly. No WARM_DONE: the full-warm schedule in the app must not be affected.
+    const route = safeRoute(data.route);
+    if (route && isLessonRoute(route.split("?")[0])) event.waitUntil(warmRoutes([route]).catch(() => undefined));
   }
   if (data.type === "WARM_ROUTES" && Array.isArray(data.routes)) {
     event.waitUntil(
