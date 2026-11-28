@@ -18,6 +18,10 @@ function unwrap(href:string) {
     return final.href;
   } catch { return ""; }
 }
+
+function safeFetchUrl(raw:string) { try { const u=new URL(raw); if(u.protocol!=="https:"||u.username||u.password||u.port||u.hostname==="localhost"||u.hostname.endsWith(".localhost")||u.hostname.endsWith(".local")||/^\\d+(?:\\.\\d+){3}$/.test(u.hostname)||u.hostname.includes(":"))return null; return u; } catch{return null;} }
+function extractPage(html:string) { const stripped=html.replace(/<(script|style|nav|footer|header|aside|form|svg|noscript)[\\s\\S]*?<\\/\\1>/gi," ").replace(/<\\/(p|h[1-6]|li|article|section|div)>/gi,"\\n").replace(/<[^>]+>/g," "); return clean(stripped).slice(0,12000); }
+async function fetchPage(raw:string) { const url=safeFetchUrl(raw); if(!url)return ""; try { const r=await fetch(url.href,{redirect:"manual",signal:AbortSignal.timeout(4500),cache:"no-store",headers:{"user-agent":"ShadecodeStudent educational resource extractor","accept":"text/html"}}); if(!r.ok||r.status>=300)return ""; const type=r.headers.get("content-type")||"";if(!type.includes("text/html"))return ""; const html=(await r.text()).slice(0,350000);return extractPage(html); }catch{return "";} }
 export async function GET(request:NextRequest) {
  const limited=await applyRateLimit(request,generalApiLimiter); if(limited)return limited;
  const params=request.nextUrl.searchParams; const subject=(params.get("subject")??"").trim().slice(0,60); const topic=(params.get("topic")??"").trim().slice(0,160);
@@ -44,6 +48,6 @@ export async function GET(request:NextRequest) {
    ...results.map((r,i)=>({type:"reference",title:"Source "+(i+1)+": "+r.title,content:r.snippet+"\n\nSource URL: "+r.url+"\n\nStatus: search excerpt only. The page has not been fetched or independently verified."})),
    {type:"summary",title:"Cross-check before learning",content:"Compare at least two sources and verify key definitions, explanations, examples and syllabus coverage against your textbook or curriculum. Search excerpts alone are insufficient to establish a complete lesson."}
   ];
-  return NextResponse.json({lesson:{title:"Web research: "+topic,blocks,source:"public-web-search"},sources:results},{headers:{"Cache-Control":"private, no-store"}});
+  return NextResponse.json({lesson:{title:"Web research: "+topic,blocks,source:"public-web-search"},sources:enriched.map(({title,url,snippet,pageText})=>({title,url,snippet,extracted:pageText.length>=500}))},{headers:{"Cache-Control":"private, no-store"}});
  }catch(e){console.warn("[learn/research]",e);return NextResponse.json({error:"Public web retrieval failed"},{status:503});}
 }
