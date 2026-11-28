@@ -5,7 +5,7 @@ import { isIP } from "node:net";
 import { createAuthenticatedRequestClient } from "@/lib/supabase/authenticated-request";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
-import { isClassicResearchTextRelevant, isPublicAddress, rankClassicResearchResults } from "@/lib/cortex/classicResearch";
+import { isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults } from "@/lib/cortex/classicResearch";
 
 export const dynamic = "force-dynamic";
 
@@ -18,17 +18,15 @@ function unwrap(href:string) {
   try {
     const u=new URL(decode(href),"https://duckduckgo.com");
     const target=u.hostname.endsWith("duckduckgo.com") ? u.searchParams.get("uddg") ?? "" : u.href;
-    const final=new URL(target);
-    if(final.protocol!=="https:" || !final.hostname || final.username || final.password || final.port || isIP(final.hostname)) return "";
-    return final.href;
+    return normalizeClassicResearchUrl(target);
   } catch { return ""; }
 }
 async function resolvePublicTarget(raw: string): Promise<{ url: URL; address: string; family: number } | null> {
   try {
-    const url = new URL(raw);
+    const normalized = normalizeClassicResearchUrl(raw);
+    if (!normalized) return null;
+    const url = new URL(normalized);
     const hostname = url.hostname.toLowerCase().replaceAll("[", "").replaceAll("]", "");
-    if (url.protocol !== "https:" || url.username || url.password || url.port || !hostname ||
-      hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local") || isIP(hostname)) return null;
     const addresses = await lookup(hostname, { all: true, verbatim: true });
     if (!addresses.length || addresses.some(({ address }) => !isPublicAddress(address))) return null;
     // Pin the selected public DNS answer into the HTTPS socket. The TLS SNI and
