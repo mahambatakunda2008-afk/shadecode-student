@@ -5,7 +5,7 @@ import { isIP } from "node:net";
 import { createAuthenticatedRequestClient } from "@/lib/supabase/authenticated-request";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
-import { extractBingSearchCandidates, extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, unwrapClassicSearchUrl } from "@/lib/cortex/classicResearch";
+import { extractBingSearchCandidates, extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, resolveClassicResearchRedirect, unwrapClassicSearchUrl } from "@/lib/cortex/classicResearch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -35,7 +35,8 @@ function extractPage(html:string) {
   .replace(/<[^>]+>/g," ");
  return clean(stripped).slice(0,12000);
 }
-async function fetchPage(raw: string): Promise<string> {
+async function fetchPage(raw: string, redirects = 0): Promise<string> {
+  if (redirects > 3) return "";
   const target = await resolvePublicTarget(raw);
   if (!target) return "";
   return new Promise((resolve) => {
@@ -49,8 +50,17 @@ async function fetchPage(raw: string): Promise<string> {
       agent: false,
       lookup: ((_hostname: string, _options: unknown, callback: (error: NodeJS.ErrnoException | null, address: string, family: number) => void) => callback(null, address, family)) as never,
     }, (response) => {
+      const status = response.statusCode || 0;
+      const location = response.headers.location;
+      if ([301, 302, 303, 307, 308].includes(status) && typeof location === "string") {
+        response.destroy();
+        const redirected = resolveClassicResearchRedirect(url.href, location);
+        if (!redirected) { finish(""); return; }
+        void fetchPage(redirected, redirects + 1).then(finish).catch(() => finish(""));
+        return;
+      }
       const type = String(response.headers["content-type"] || "");
-      if ((response.statusCode || 0) < 200 || (response.statusCode || 0) >= 300 || !type.toLowerCase().includes("text/html")) {
+      if (status < 200 || status >= 300 || !type.toLowerCase().includes("text/html")) {
         response.destroy(); finish(""); return;
       }
       const chunks: Buffer[] = [];
