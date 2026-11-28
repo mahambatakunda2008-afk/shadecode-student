@@ -60,8 +60,8 @@ export async function GET(request:NextRequest) {
   const enriched=usable.length?usable:fetched;
   const blocks=[
    {type:"objective",title:"Research the topic",content:"Non-AI web research. Extracted page text is not independently verified; search excerpts are fallback only."},
-   {type:"concept",title:"Research question",content:"Subject: "+subject+"\\nTopic: "+topic+"\\nCheck source authorship, date, evidence and syllabus alignment."},
-   ...enriched.map((r,i)=>({type:"reference",title:"Source "+(i+1)+": "+r.title,content:(r.pageText.length>=500?r.pageText:r.snippet)+"\\n\\nSource URL: "+r.url+"\\n\\nStatus: "+(r.pageText.length>=500?"Page text extracted, not independently verified.":"Search excerpt only; page extraction failed.")})),
+   {type:"concept",title:"Research question",content:"Subject: "+subject+"\nTopic: "+topic+"\nCheck source authorship, date, evidence and syllabus alignment."},
+   ...enriched.map((r,i)=>({type:"reference",title:"Source "+(i+1)+": "+r.title,content:(r.pageText.length>=500?r.pageText:r.snippet)+"\n\nSource URL: "+r.url+"\n\nStatus: "+(r.pageText.length>=500?"Page text extracted, not independently verified.":"Search excerpt only; page extraction failed.")})),
    {type:"summary",title:"Cross-check before learning",content:"Compare sources and confirm information against your textbook or syllabus. These extracted pages are research material, not a generated lesson."}
   ];
   return NextResponse.json({lesson:{title:"Web research: "+topic,blocks,source:"public-web-search"},sources:enriched.map(({title,url,snippet,pageText})=>({title,url,snippet,extracted:pageText.length>=500}))},{headers:{"Cache-Control":"private, no-store"}});
