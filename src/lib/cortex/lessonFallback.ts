@@ -418,7 +418,7 @@ export function buildDeterministicLessonFallback(subject: string, topic: string)
     const separator = key.indexOf("|");
     if (key.slice(0, separator) !== normalizedSubject) continue;
     const keyTopic = key.slice(separator + 1);
-    if (!normalizedTopic.includes(keyTopic)) continue;
+    if (!(` ${normalizedTopic} `).includes(` ${keyTopic} `)) continue;
     if (THEORY_EXCLUSIONS[key]?.test(normalizedTopic)) continue;
     return lesson;
   }
