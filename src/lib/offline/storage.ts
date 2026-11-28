@@ -18,7 +18,7 @@ export interface OfflineLesson {
   generationLevel?: string;
   generationExamBoard?: string;
   generationVerifiedFallback?: boolean;
-  syncStatus?: "pending" | "retry-needed" | "synced";
+  syncStatus?: "pending" | "retry-needed" | "synced" | "local-only";
   syncRetryCount?: number;
   syncRetryAfter?: number;
   syncError?: string;
