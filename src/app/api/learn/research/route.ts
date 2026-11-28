@@ -5,7 +5,7 @@ import { isIP } from "node:net";
 import { createAuthenticatedRequestClient } from "@/lib/supabase/authenticated-request";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
-import { extractBingSearchCandidates, extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, resolveClassicResearchRedirect, unwrapClassicSearchUrl } from "@/lib/cortex/classicResearch";
+import { extractBingSearchCandidates, extractClassicSearchCandidates, isClassicResearchTextRelevant, normalizeClassicResearchUrl, rankClassicResearchResults, resolveClassicResearchAddress, resolveClassicResearchRedirect, unwrapClassicSearchUrl } from "@/lib/cortex/classicResearch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -21,12 +21,12 @@ async function resolvePublicTarget(raw: string): Promise<{ url: URL; address: st
     if (!normalized) return null;
     const url = new URL(normalized);
     const hostname = url.hostname.toLowerCase().replaceAll("[", "").replaceAll("]", "");
-    const addresses = await lookup(hostname, { all: true, verbatim: true });
-    if (!addresses.length || addresses.some(({ address }) => !isPublicAddress(address))) return null;
+    const address = await resolveClassicResearchAddress(hostname);
+    if (!address) return null;
     // Pin the selected public DNS answer into the HTTPS socket. The TLS SNI and
     // certificate hostname remain the original domain, preventing a second DNS
     // resolution between validation and connection.
-    return { url, address: addresses[0].address, family: addresses[0].family };
+    return { url, address: address.address, family: address.family };
   } catch { return null; }
 }
 function extractPage(html:string) {
@@ -130,19 +130,24 @@ export async function GET(request:NextRequest) {
     {name:"duckduckgo",url:"https://html.duckduckgo.com/html/?q="+query,parse:extractClassicSearchCandidates},
     {name:"bing",url:"https://www.bing.com/search?q="+query+"&form=QBLH",parse:extractBingSearchCandidates},
   ] as const;
-  for (const provider of searchProviders) {
+  const providerResults = await Promise.all(searchProviders.map(async (provider) => {
     try {
       const response=await fetch(provider.url,{headers:searchHeaders,signal:AbortSignal.timeout(5000),cache:"no-store"});
-      if(!response.ok) continue;
+      if(!response.ok) return [];
       const html=await readBoundedText(response,750000);
-      for (const candidate of provider.parse(html)) {
-        const url=unwrapClassicSearchUrl(candidate.url), title=clean(candidate.title), snippet=clean(candidate.snippet);
-        if(!url||!title||seen.has(url))continue;
-        seen.add(url);
-        candidates.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000)});
-      }
+      return provider.parse(html);
     } catch (searchError) {
       console.info("[learn/research] search provider unavailable", { provider:provider.name, error:searchError instanceof Error?searchError.message:String(searchError) });
+      return [];
+    }
+  }));
+  // Promise.all preserves provider order, so result ranking remains deterministic.
+  for (const providerCandidates of providerResults) {
+    for (const candidate of providerCandidates) {
+      const url=unwrapClassicSearchUrl(candidate.url), title=clean(candidate.title), snippet=clean(candidate.snippet);
+      if(!url||!title||seen.has(url))continue;
+      seen.add(url);
+      candidates.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000)});
     }
   }
   const results=rankClassicResearchResults(candidates,subject,topic,5);
