@@ -115,6 +115,15 @@ function extractHtmlTitle(html: string, fallback: string): string {
 }
 
 async function extractPdfText(bytes: Uint8Array): Promise<{ text: string; pages: number }> {
+  // PDF.js 6.x expects browser geometry globals in Node when its optional
+  // canvas adapter cannot be resolved by the server bundler. Supply the
+  // already-installed native canvas implementations before loading PDF.js.
+  const canvas = await import("@napi-rs/canvas");
+  const runtime = globalThis as unknown as Record<string, unknown>;
+  runtime.DOMMatrix ??= canvas.DOMMatrix;
+  runtime.ImageData ??= canvas.ImageData;
+  runtime.Path2D ??= canvas.Path2D;
+
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const document = await pdfjs.getDocument({ data: bytes, useSystemFonts: true }).promise;
   const pages = Math.min(document.numPages, MAX_PDF_PAGES);
