@@ -5,7 +5,7 @@ import { isIP } from "node:net";
 import { createAuthenticatedRequestClient } from "@/lib/supabase/authenticated-request";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
-import { isPublicAddress, rankClassicResearchResults } from "@/lib/cortex/classicResearch";
+import { isClassicResearchTextRelevant, isPublicAddress, rankClassicResearchResults } from "@/lib/cortex/classicResearch";
 
 export const dynamic = "force-dynamic";
 
@@ -128,8 +128,11 @@ export async function GET(request:NextRequest) {
   const results=rankClassicResearchResults(candidates,subject,topic,5);
   if(!results.length)return NextResponse.json({error:"No useful public search results"}, {status:404});
   const fetched=await Promise.all(results.slice(0,3).map(async r=>({...r,pageText:await fetchPage(r.url)})));
-  const usable=fetched.filter(r=>r.pageText.length>=500);
-  const enriched=usable.length?usable:fetched;
+  // A long page is not automatically a useful page. Only use extracted text
+  // when its body independently discusses the requested topic.
+  const checked=fetched.map(r=>({...r,pageText:isClassicResearchTextRelevant(r.pageText,subject,topic)?r.pageText:""}));
+  const usable=checked.filter(r=>r.pageText.length>=500);
+  const enriched=usable.length?usable:checked;
   const blocks=[
    {type:"objective",title:"Research the topic",content:"Non-AI web research. Extracted page text is not independently verified; search excerpts are fallback only."},
    {type:"concept",title:"Research question",content:"Subject: "+subject+"\nTopic: "+topic+"\nCheck source authorship, date, evidence and syllabus alignment."},
