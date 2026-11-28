@@ -123,7 +123,6 @@ export async function GET(request:NextRequest) {
         seen.add(url);
         candidates.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000)});
       }
-      if(candidates.length) break;
     } catch (searchError) {
       console.info("[learn/research] search provider unavailable", { provider:provider.name, error:searchError instanceof Error?searchError.message:String(searchError) });
     }
