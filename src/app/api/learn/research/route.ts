@@ -111,6 +111,34 @@ async function fetchPage(raw: string): Promise<string> {
     request.end();
   });
 }
+async function readBoundedText(response: Response, maxBytes: number): Promise<string> {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        throw new Error("Public search response exceeded the size limit");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const combined = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(combined);
+}
+
 export async function GET(request:NextRequest) {
  const limited=await applyRateLimit(request,generalApiLimiter); if(limited)return limited;
  const params=request.nextUrl.searchParams; const subject=(params.get("subject")??"").trim().slice(0,60); const topic=(params.get("topic")??"").trim().slice(0,160);
@@ -121,7 +149,7 @@ export async function GET(request:NextRequest) {
   const query=encodeURIComponent(subject+" "+topic+" lesson explained");
   const response=await fetch("https://html.duckduckgo.com/html/?q="+query,{headers:{"user-agent":"Mozilla/5.0 (compatible; ShadecodeStudent/1.0; educational retrieval)","accept":"text/html"},signal:AbortSignal.timeout(7000),cache:"no-store"});
   if(!response.ok)return NextResponse.json({error:"Public search unavailable"},{status:502});
-  const html=(await response.text()).slice(0,750000);
+  const html=await readBoundedText(response,750000);
   const candidates:Array<{title:string;url:string;snippet:string;score:number}>=[];
   const stopwords=new Set(["about","from","with","that","this","into","lesson","explained","their","there","which","where","what","when","have","will","your","using","used"]);
   const terms=(value:string)=>Array.from(new Set(value.toLowerCase().split(/[^a-z0-9]+/).filter((term)=>term.length>=3&&!stopwords.has(term))));
