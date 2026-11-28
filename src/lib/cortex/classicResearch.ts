@@ -76,24 +76,24 @@ export interface ClassicResearchCandidate { title: string; url: string; snippet:
 
 /** Parse DuckDuckGo HTML result anchors without assuming attribute order or snippet element type. */
 export function extractClassicSearchCandidates(html: string): ClassicResearchCandidate[] {
-  const anchors = Array.from(html.matchAll(/<a\\b[^>]*>[\\s\\S]*?<\\/a>/gi));
+  const anchors = Array.from(html.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/gi));
   const results: ClassicResearchCandidate[] = [];
   for (let index = 0; index < anchors.length && results.length < 20; index += 1) {
     const match = anchors[index];
     const tag = match[0];
-    const className = tag.match(/\\bclass\\s*=\\s*["']([^"']*)["']/i)?.[1] ?? "";
-    if (!className.split(/\\s+/).includes("result__a")) continue;
-    const href = tag.match(/\\bhref\\s*=\\s*["']([^"']+)["']/i)?.[1] ?? "";
-    const title = tag.replace(/^<a\\b[^>]*>/i, "").replace(/<\\/a>$/i, "").replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim();
+    const className = tag.match(/\bclass\s*=\s*["']([^"']*)["']/i)?.[1] ?? "";
+    if (!className.split(/\s+/).includes("result__a")) continue;
+    const href = tag.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1] ?? "";
+    const title = tag.replace(/^<a\b[^>]*>/i, "").replace(/<\/a>$/i, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     const nextAnchor = anchors.slice(index + 1).find((item) => {
-      const nextClass = item[0].match(/\\bclass\\s*=\\s*["']([^"']*)["']/i)?.[1] ?? "";
-      return nextClass.split(/\\s+/).includes("result__a");
+      const nextClass = item[0].match(/\bclass\s*=\s*["']([^"']*)["']/i)?.[1] ?? "";
+      return nextClass.split(/\s+/).includes("result__a");
     });
     const start = (match.index ?? 0) + tag.length;
     const end = nextAnchor?.index ?? Math.min(html.length, start + 6000);
     const region = html.slice(start, end);
-    const snippetMatch = region.match(/<([a-z][\\w:-]*)\\b(?=[^>]*\\bclass\\s*=\\s*["'][^"']*\\bresult__snippet\\b)[^>]*>([\\s\\S]*?)<\\/\\1>/i);
-    const snippet = (snippetMatch?.[2] ?? title).replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim();
+    const snippetMatch = region.match(/<([a-z][\w:-]*)\b(?=[^>]*\bclass\s*=\s*["'][^"']*\bresult__snippet\b)[^>]*>([\s\S]*?)<\/\1>/i);
+    const snippet = (snippetMatch?.[2] ?? title).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     if (href && title) results.push({ title, url: href.replace(/&amp;/g, "&"), snippet });
   }
   return results;
