@@ -94,4 +94,19 @@ describe("Classic DuckDuckGo HTML extraction", () => {
     expect(results[1].title).toBe("Diffraction of waves");
     expect(results[1].snippet).toContain("Diffraction is the spreading");
   });
+  it("extracts Bing organic result cards as a fallback provider", () => {
+    const html = `
+      <ol id="b_results">
+        <li class="b_algo">
+          <h2><a href="https://example.org/complex-numbers">Complex numbers explained</a></h2>
+          <div class="b_caption"><p>Complex numbers combine real and imaginary parts.</p></div>
+        </li>
+      </ol>`;
+    expect(extractBingSearchCandidates(html)).toEqual([{
+      title: "Complex numbers explained",
+      url: "https://example.org/complex-numbers",
+      snippet: "Complex numbers combine real and imaginary parts.",
+    }]);
+  });
+
 });
