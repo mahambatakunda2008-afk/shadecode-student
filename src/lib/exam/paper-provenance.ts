@@ -16,6 +16,7 @@ interface ExamPaperProofPayload {
   version: 2;
   issuer: "shadecode-exam";
   userId: string;
+  subject: string;
   subjectId: string;
   difficulty: string;
   source: ExamPaperSource;
