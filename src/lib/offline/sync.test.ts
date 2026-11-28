@@ -16,7 +16,7 @@ describe("offline sync adapter routing", () => {
 
   it("runs the dedicated project adapter before the generic revision relay", () => {
     const source = readFileSync(path.join(process.cwd(), "src/lib/offline/sync.ts"), "utf8");
-    expect(source).toMatch(/await this\\.bridgeLocalOperations\\(\\);\\s*await syncProjectMutations\\(\\);\\s*await this\\.syncMutations\\(\\)/);
-    expect(source).toMatch(/listReady\\(user\\.id\\)\\)\\.filter\\(\\(item\\) => isServerRelayStore\\(item\\.store\\)\\)/);
+    expect(source).toContain("await this.bridgeLocalOperations(); await syncProjectMutations(); await this.syncMutations();");
+    expect(source).toContain("mutationQueue.listReady(user.id)).filter((item) => isServerRelayStore(item.store))");
   });
 });
