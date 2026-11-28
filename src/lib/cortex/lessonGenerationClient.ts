@@ -891,12 +891,11 @@ async function runJob(
         localModel: false,
         source: classicLesson.source ?? "authored-local",
       };
-      const finished = token && online
-        ? await persistGeneratedLesson(job, classicResult, token, generationLeaseId(job.id))
-        : await saveLocalResult(job, classicResult);
-      if (token && online && !isLocalOnlyCompletion(finished)) {
-        await syncCompletedGenerationBestEffort(token, (getGenerationJob(job.id) ?? finished) as GenerationJob);
-      }
+      // Public-web research is source material, not a fully authored lesson that
+      // satisfies the server's generated-lesson persistence contract. Keep retrieved
+      // Classic material in the learner's private device library instead of sending it
+      // through the AI lesson persistence endpoint or falsely marking it cloud-synced.
+      const finished = await saveLocalResult(job, classicResult);
       return getGenerationJobs().find(item => item.id === job.id) ?? finished;
     }
 
