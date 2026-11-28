@@ -4,9 +4,11 @@ import type { StudentProject } from "./types";
 
 async function currentOwnerId(): Promise<string | null> {
   try {
+    // Read the locally persisted session. getUser() performs a server validation
+    // request and can fail precisely when this queue must accept offline work.
     const supabase = createClient();
-    const { data } = await supabase.auth.getUser();
-    return data.user?.id ?? null;
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user?.id ?? null;
   } catch {
     return null;
   }
