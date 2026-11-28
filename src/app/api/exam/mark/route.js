@@ -94,6 +94,7 @@ export async function POST(req) {
     const { subject, difficulty, questions, answers, timeTaken } = validation.data;
     const paperProvenance = verifyExamPaperProof(body?.paperProof, {
       userId: user.id,
+      subject,
       subjectId: typeof body?.subjectId === "string" ? body.subjectId : "",
       difficulty: /o-level/i.test(difficulty) ? "easy" : /a-level/i.test(difficulty) ? "medium" : /university/i.test(difficulty) ? "hard" : difficulty,
       source: "cortex",
