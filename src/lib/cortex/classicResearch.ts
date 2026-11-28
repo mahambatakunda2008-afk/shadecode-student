@@ -127,21 +127,49 @@ export function isClassicResearchTextRelevant(text: string, subject: string, top
   return hits > 0 && (topicTerms.length < 3 || coverage >= 0.34);
 }
 
-/** Parse Bing's organic result cards as a second public-search lane when DuckDuckGo is blocked. */
+/** Parse Bing organic result cards without depending on brittle markup attributes or regex escaping. */
 export function extractBingSearchCandidates(html: string): ClassicResearchCandidate[] {
-  const cards = Array.from(html.matchAll(/<li\b(?=[^>]*\bclass=["'][^"']*\bb_algo\b)[^>]*>[\s\S]*?<\/li>/gi));
+  const lower = html.toLowerCase();
   const results: ClassicResearchCandidate[] = [];
-  for (const card of cards) {
-    const markup = card[0];
-    const heading = markup.match(/<h2\b[^>]*>[\s\S]*?<a\b([^>]*)>([\s\S]*?)<\/a>[\s\S]*?<\/h2>/i);
-    if (!heading) continue;
-    const href = heading[1].match(/\bhref=["']([^"']+)["']/i)?.[1] ?? "";
-    const title = heading[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-    const snippetMatch = markup.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i);
-    const snippet = (snippetMatch?.[1] ?? title).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  let cursor = 0;
+  while (results.length < 20) {
+    const cardStart = lower.indexOf("<li", cursor);
+    if (cardStart < 0) break;
+    const cardOpenEnd = lower.indexOf(">", cardStart);
+    const cardEnd = lower.indexOf("</li>", cardOpenEnd + 1);
+    if (cardOpenEnd < 0 || cardEnd < 0) break;
+    const openingTag = lower.slice(cardStart, cardOpenEnd + 1);
+    const markup = html.slice(cardStart, cardEnd + 5);
+    cursor = cardEnd + 5;
+    if (!openingTag.includes("b_algo")) continue;
+
+    const headingStart = lower.indexOf("<h2", cardStart);
+    const headingOpenEnd = lower.indexOf(">", headingStart);
+    const headingEnd = lower.indexOf("</h2>", headingOpenEnd + 1);
+    if (headingStart < 0 || headingOpenEnd < 0 || headingEnd < 0 || headingEnd > cardEnd) continue;
+    const anchorStart = lower.indexOf("<a", headingOpenEnd);
+    const anchorOpenEnd = lower.indexOf(">", anchorStart);
+    const anchorEnd = lower.indexOf("</a>", anchorOpenEnd + 1);
+    if (anchorStart < 0 || anchorOpenEnd < 0 || anchorEnd < 0 || anchorEnd > headingEnd) continue;
+
+    const anchorTag = html.slice(anchorStart, anchorOpenEnd + 1);
+    const hrefPosition = anchorTag.toLowerCase().indexOf("href=");
+    if (hrefPosition < 0) continue;
+    const hrefValue = anchorTag.slice(hrefPosition + 5).trim();
+    const quote = hrefValue[0];
+    const hrefEnd = quote === '"' || quote === "'" ? hrefValue.indexOf(quote, 1) : hrefValue.search(/[ >]/);
+    const href = hrefEnd > 0 ? hrefValue.slice(1, hrefEnd) : "";
+    const title = html.slice(anchorOpenEnd + 1, anchorEnd)
+      .replace(/<[^>]*>/g, " ").replaceAll("\n", " ").replaceAll("\r", " ").replaceAll("\t", " ")
+      .split(" ").filter(Boolean).join(" ");
+
+    const paragraphStart = lower.indexOf("<p", anchorEnd);
+    const paragraphOpenEnd = lower.indexOf(">", paragraphStart);
+    const paragraphEnd = lower.indexOf("</p>", paragraphOpenEnd + 1);
+    const snippet = paragraphStart >= 0 && paragraphOpenEnd >= 0 && paragraphEnd >= 0 && paragraphEnd < cardEnd
+      ? html.slice(paragraphOpenEnd + 1, paragraphEnd).replace(/<[^>]*>/g, " ").replaceAll("\n", " ").replaceAll("\r", " ").replaceAll("\t", " ").split(" ").filter(Boolean).join(" ")
+      : title;
     if (href && title) results.push({ title, url: href.replace(/&amp;/g, "&"), snippet });
-    if (results.length >= 20) break;
   }
   return results;
 }
-
