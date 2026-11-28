@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMutationReady, retryDelayMs, type OfflineMutation } from "./mutationQueue";
+import { assertMutationOwner, isMutationReady, retryDelayMs, type OfflineMutation } from "./mutationQueue";
 
 const mutation = (overrides: Partial<OfflineMutation> = {}): OfflineMutation => ({
   id: "m1",
@@ -39,5 +39,18 @@ describe("offline mutation retry policy", () => {
 
   it("treats an invalid timestamp as immediately retryable", () => {
     expect(isMutationReady(mutation({ attempts: 1, lastAttemptAt: "not-a-date" }), Date.now())).toBe(true);
+  });
+});
+
+
+describe("offline mutation ownership", () => {
+  it("accepts payloads owned by the queue account or without a redundant owner field", () => {
+    expect(() => assertMutationOwner("u1", { id: "task-1", user_id: "u1" })).not.toThrow();
+    expect(() => assertMutationOwner("u1", { id: "task-1" })).not.toThrow();
+  });
+
+  it("rejects a payload owned by a different account before it can be queued", () => {
+    expect(() => assertMutationOwner("u1", { id: "task-1", user_id: "u2" })).toThrow("Offline mutation payload owner does not match its queue owner");
+    expect(() => assertMutationOwner("", { id: "task-1" })).toThrow("Offline mutation requires an authenticated owner");
   });
 });
