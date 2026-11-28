@@ -83,7 +83,12 @@ function normalizeDifficulty(v: string | null): LessonDifficulty { return v === 
 function clampProgress(v: number | null): number { return typeof v === "number" && Number.isFinite(v) ? Math.min(100, Math.max(0, Math.round(v))) : 0; }
 function toLearnLesson(row: LearnLessonRow, subjectById: Map<string, string>) {
   const progress = clampProgress(row.progress);
-  return { id: row.id, subjectId: row.subject_id, topic: row.topic ?? undefined, subject: subjectById.get(row.subject_id) ?? "Unknown subject", title: normalizeGeneratedLessonTitle(row.title, row.topic ?? "Learning"), description: row.description ?? "", difficulty: normalizeDifficulty(row.difficulty), progress, completed: progress >= 100, updated_at: row.updated_at ?? undefined, blocks: row.blocks ?? undefined } as LearnLesson;
+  const hasSavedSections = Array.isArray(row.blocks) && row.blocks.length > 0;
+  const isEmptyGenerationDraft = progress === 0 && !hasSavedSections && /generation is resumable/i.test(row.description ?? "");
+  const description = isEmptyGenerationDraft
+    ? "Generation has not saved any lesson sections yet. Retry the lesson to start again."
+    : row.description ?? "";
+  return { id: row.id, subjectId: row.subject_id, topic: row.topic ?? undefined, subject: subjectById.get(row.subject_id) ?? "Unknown subject", title: normalizeGeneratedLessonTitle(row.title, row.topic ?? "Learning"), description, difficulty: normalizeDifficulty(row.difficulty), progress, completed: progress >= 100, updated_at: row.updated_at ?? undefined, blocks: row.blocks ?? undefined } as LearnLesson;
 }
 function buildSubjectTabs(subjects: SubjectRow[], lessons: LearnLessonRow[]): LearnSubject[] {
   const counts = lessons.reduce<Record<string, number>>((acc, l) => { acc[l.subject_id] = (acc[l.subject_id] ?? 0) + 1; return acc; }, {});
@@ -539,7 +544,7 @@ export async function POST(req: Request) {
               subject_id: resolvedSubject.id,
               topic: sanitizeLessonText(request.topic.slice(0, 500)),
               title: sanitizeLessonText(`Cortex is building ${request.topic}`.slice(0, 255)),
-              description: "Generation is resumable. Partial sections are saved as they complete.",
+              description: "Generation has started. No lesson sections have been saved yet.",
               difficulty: validDifficulty,
               progress: 0,
               blocks: [],
@@ -787,7 +792,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
           id: durableJobId, user_id: user.id, subject_id: resolvedSubject.id,
           topic: sanitizeLessonText(request.topic.slice(0, 500)),
           title: sanitizeLessonText(`Cortex is building ${request.topic}`.slice(0, 255)),
-          description: "Generation is resumable. This draft is not yet complete.",
+          description: "Generation has started. No lesson sections have been saved yet.",
           difficulty: validDifficulty, progress: 0, blocks: [],
         });
       }
