@@ -118,9 +118,11 @@ jobs:
 
       - name: Install and launch APK on Android emulator
         id: android_emulator
-        # Emulator boot on hosted runners can fail when hardware acceleration is unavailable.
-        # Keep the smoke test visible, but do not block signed APK/AAB production on it.
+        # Run this optional smoke test only when the repository variable is enabled.
+        # Hosted runners may lack hardware acceleration; release signing must not wait on QEMU.
+        if: vars.RUN_ANDROID_EMULATOR_SMOKE_TEST == 'true'
         continue-on-error: true
+        timeout-minutes: 5
         uses: reactivecircus/android-emulator-runner@v2
         env:
           # GitHub's Linux hosted runners may lack KVM. Explicitly enable QEMU TCG.
@@ -131,7 +133,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           working-directory: android
-          emulator-boot-timeout: 900
+          emulator-boot-timeout: 180
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: |
             adb install -r app/build/outputs/apk/debug/app-debug.apk
