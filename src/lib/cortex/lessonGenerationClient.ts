@@ -23,7 +23,7 @@ import { getLearningMode } from "@/lib/learningMode";
 import { buildResearchMemoryContext } from "@/lib/shadenet/research-memory";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
-interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; source?: "public-web-search" | "shared-library" | "verified-syllabus-guide" | "authored-local"; }
+interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; source?: "public-web-search" | "shared-library" | "verified-syllabus-guide" | "cached-local" | "authored-local"; }
 function isLocalOnlyCompletion(value: { localOnly?: boolean; result?: unknown }): boolean {
   const result = value.result;
   if (result && typeof result === "object" && "localOnly" in result) {
@@ -128,6 +128,47 @@ async function fetchLibraryRecovery(subject: string, topic: string, endpoint = "
     clearTimeout(timer);
   }
 }
+async function findCachedClassicLesson(subject: string, topic: string): Promise<{ title: string; blocks: Array<Record<string, unknown>>; source: "cached-local" } | null> {
+  if (!isBrowser()) return null;
+  try {
+    const { createClient } = await import("@/lib/supabase/client");
+    const { data } = await createClient().auth.getSession();
+    const userId = data.session?.user.id;
+    if (!userId) return null;
+    const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const requestedSubject = normalize(subject);
+    const requestedTopic = normalize(topic);
+    if (!requestedSubject || !requestedTopic) return null;
+    const lessons = await offlineStorage.getAllLessons(userId);
+    const matches = lessons.filter((lesson) => {
+      if (normalize(lesson.subject || "") !== requestedSubject || !lesson.title || !Array.isArray(lesson.blocks) || !lesson.blocks.length) return false;
+      const savedTopic = normalize(lesson.topic || "");
+      const savedTitle = normalize(lesson.title);
+      return savedTopic === requestedTopic ||
+        (requestedTopic.length >= 8 && (savedTopic.includes(requestedTopic) || requestedTopic.includes(savedTopic))) ||
+        (requestedTopic.length >= 12 && savedTitle.includes(requestedTopic));
+    }).sort((a, b) => {
+      const aExact = normalize(a.topic || "") === requestedTopic ? 1 : 0;
+      const bExact = normalize(b.topic || "") === requestedTopic ? 1 : 0;
+      return bExact - aExact;
+    });
+    for (const lesson of matches) {
+      const candidate: LessonGenerationResult = {
+        id: lesson.id,
+        title: lesson.title,
+        blocks: lesson.blocks,
+        offlineFallback: true,
+        localModel: false,
+      };
+      if (validateResult(candidate, resolveLessonRequest({ subject, prompt: topic } as LessonGenerationInput))) {
+        return { title: lesson.title, blocks: lesson.blocks, source: "cached-local" };
+      }
+    }
+  } catch (error) {
+    console.info("[LEARN] Classic local-cache lookup skipped", error instanceof Error ? error.message : String(error));
+  }
+  return null;
+}
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
 function getActiveId() { if (!isBrowser()) return null; try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; } }
 function errorMessage(value: unknown) { return value instanceof Error ? value.message : "Lesson generation failed."; }
@@ -231,7 +272,7 @@ async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, genera
   // mistake a local save for durable server persistence or complete the cloud job.
   const result: LessonGenerationResult = { id: job.id, title: validated.title, blocks: validated.blocks, offlineFallback: generated?.offlineFallback === true, localModel: !!generated?.localModel, localOnly: true };
   const now = new Date().toISOString();
-  await offlineStorage.saveLesson({ id: result.id, ownerUserId, title: result.title, subject: job.request.subject, topic: job.request.prompt, description: generated?.source === "public-web-search" ? `Retrieved from public web sources for ${job.request.prompt}. Source excerpts are unverified research material and are saved on this device.` : `Prepared locally for ${job.request.prompt}. Saved on this device.`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: undefined, generationJobId: job.id, generationPrompt: job.request.prompt, generationGoal: job.request.goal, generationLevel: job.request.level, generationExamBoard: job.request.examBoard, generationVerifiedFallback: generated?.source === "verified-syllabus-guide", syncStatus: "local-only", syncRetryCount: 0, size: JSON.stringify(result).length });
+  await offlineStorage.saveLesson({ id: result.id, ownerUserId, title: result.title, subject: job.request.subject, topic: job.request.prompt, description: generated?.source === "public-web-search" ? `Retrieved from public web sources for ${job.request.prompt}. Source excerpts are unverified research material and are saved on this device.` : generated?.source === "cached-local" ? `Previously saved lesson matching ${job.request.prompt}. Reused from this device library.` : `Prepared locally for ${job.request.prompt}. Saved on this device.`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: undefined, generationJobId: job.id, generationPrompt: job.request.prompt, generationGoal: job.request.goal, generationLevel: job.request.level, generationExamBoard: job.request.examBoard, generationVerifiedFallback: generated?.source === "verified-syllabus-guide", syncStatus: "local-only", syncRetryCount: 0, size: JSON.stringify(result).length });
   updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
   if (getActiveId() === job.id) saveActiveId(null); openCompletedLesson(result);
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
@@ -875,6 +916,9 @@ async function runJob(
       }
       if (!classicLesson && online) {
         classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/library/guide", 9000, token);
+      }
+      if (!classicLesson) {
+        classicLesson = await findCachedClassicLesson(job.request.subject, job.request.prompt);
       }
       if (!classicLesson) {
         const authored = buildDeterministicLessonFallback(job.request.subject, job.request.prompt) as { title: string; blocks: Array<Record<string, unknown>> } | null;
