@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  installPdfJsCanvasPolyfills,
   applyQuestionCorrections,
   buildPaperSourceText,
   extractTopLevelQuestionsFromPages,
@@ -7,6 +8,16 @@ import {
   selectPaperQuestions,
   type PaperQuestion,
 } from "./paperLearning";
+
+describe("paper learning PDF runtime", () => {
+  it("installs the geometry APIs PDF.js needs before loading documents", async () => {
+    await installPdfJsCanvasPolyfills();
+    const globals = globalThis as unknown as Record<string, unknown>;
+    expect(globals.DOMMatrix).toBeTruthy();
+    expect(globals.ImageData).toBeTruthy();
+    expect(globals.Path2D).toBeTruthy();
+  });
+});
 
 describe("paper learning page scope", () => {
   it("keeps a valid inclusive page range inside the document", () => {
