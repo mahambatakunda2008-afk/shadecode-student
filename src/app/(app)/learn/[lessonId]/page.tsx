@@ -397,7 +397,7 @@ export default function LessonDetailPage() {
       const { retryPendingGeneratedLessonSync } = await import("@/lib/cortex/lessonGenerationClient");
       const result = await retryPendingGeneratedLessonSync({ manual: true });
       const refreshed = await offlineStorage.getLesson(lesson.id, currentUser);
-      if (refreshed) setLesson((current) => current ? { ...current, ...refreshed } : current);
+      if (refreshed) setLesson((current) => current ? { ...current, ...refreshed, blocks: (refreshed.blocks as unknown as LessonBlock[] | undefined) ?? current.blocks } : current);
       setGeneratedLessonSyncMessage(result.pending === 0
         ? "Cloud save confirmed. Your lesson is available across your signed-in devices."
         : result.synced > 0
