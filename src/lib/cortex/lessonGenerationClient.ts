@@ -202,12 +202,13 @@ async function readCrossDeviceLearnerMemory(token: string, subject: string, topi
 }
 function validateResult(result: LessonGenerationResult, request: ReturnType<typeof resolveLessonRequest>) {
   const normalized = normalizeLessonBlocks(result.blocks);
-  // Only server-labelled library/guide records may skip generative-depth heuristics.
-  // Public-web excerpts and locally authored fallbacks still pass the normal quality gate.
-  // The source is assigned by the recovery endpoint, never accepted from lesson content.
+  // Classic retrieval is not generative output: public-web research is explicitly
+  // labelled as unverified source material, so it must not be judged by generative
+  // lesson-depth heuristics. Library and syllabus-guide records are server-labelled
+  // trusted fallbacks; authored-local content still passes the normal quality gate.
   if (
     result.offlineFallback &&
-    (result.source === "shared-library" || result.source === "verified-syllabus-guide")
+    (result.source === "public-web-search" || result.source === "shared-library" || result.source === "verified-syllabus-guide")
   ) return { ...result, blocks: normalized };
   const quality = lessonQualityFailures({ title: result.title, blocks: normalized.map((block) => ({ type: String(block.type), title: typeof block.title === "string" ? block.title : undefined, content: String(block.content ?? "") })) }, request);
   if (quality.failures.length) {
