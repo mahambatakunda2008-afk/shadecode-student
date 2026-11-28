@@ -5,7 +5,7 @@ import { isIP } from "node:net";
 import { createAuthenticatedRequestClient } from "@/lib/supabase/authenticated-request";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
-import { extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, unwrapClassicSearchUrl } from "@/lib/cortex/classicResearch";
+import { extractBingSearchCandidates, extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, unwrapClassicSearchUrl } from "@/lib/cortex/classicResearch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -105,16 +105,28 @@ export async function GET(request:NextRequest) {
   const auth=await createAuthenticatedRequestClient(request); if(!auth)return NextResponse.json({error:"Sign in to search learning resources"},{status:401});
   const access=await resolveLearnerSubject(auth.supabase,auth.user.id,subject); if(!access.ok)return NextResponse.json({error:access.error,code:"SUBJECT_NOT_ALLOWED"},{status:access.status});
   const query=encodeURIComponent(subject+" "+topic+" lesson explained");
-  const response=await fetch("https://html.duckduckgo.com/html/?q="+query,{headers:{"user-agent":"Mozilla/5.0 (compatible; ShadecodeStudent/1.0; educational retrieval)","accept":"text/html"},signal:AbortSignal.timeout(7000),cache:"no-store"});
-  if(!response.ok)return NextResponse.json({error:"Public search unavailable"},{status:502});
-  const html=await readBoundedText(response,750000);
+  const searchHeaders={"user-agent":"Mozilla/5.0 (compatible; ShadecodeStudent/1.0; educational retrieval)","accept":"text/html"};
   const candidates:Array<{title:string;url:string;snippet:string}>=[];
   const seen=new Set<string>();
-  for (const candidate of extractClassicSearchCandidates(html)) {
-    const url=unwrapClassicSearchUrl(candidate.url), title=clean(candidate.title), snippet=clean(candidate.snippet);
-    if(!url||!title||seen.has(url))continue;
-    seen.add(url);
-    candidates.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000)});
+  const searchProviders=[
+    {name:"duckduckgo",url:"https://html.duckduckgo.com/html/?q="+query,parse:extractClassicSearchCandidates},
+    {name:"bing",url:"https://www.bing.com/search?q="+query+"&form=QBLH",parse:extractBingSearchCandidates},
+  ] as const;
+  for (const provider of searchProviders) {
+    try {
+      const response=await fetch(provider.url,{headers:searchHeaders,signal:AbortSignal.timeout(5000),cache:"no-store"});
+      if(!response.ok) continue;
+      const html=await readBoundedText(response,750000);
+      for (const candidate of provider.parse(html)) {
+        const url=unwrapClassicSearchUrl(candidate.url), title=clean(candidate.title), snippet=clean(candidate.snippet);
+        if(!url||!title||seen.has(url))continue;
+        seen.add(url);
+        candidates.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000)});
+      }
+      if(candidates.length) break;
+    } catch (searchError) {
+      console.info("[learn/research] search provider unavailable", { provider:provider.name, error:searchError instanceof Error?searchError.message:String(searchError) });
+    }
   }
   const results=rankClassicResearchResults(candidates,subject,topic,5);
   if(!results.length)return NextResponse.json({error:"No useful public search results"}, {status:404});
