@@ -17,7 +17,7 @@ function clean(value:string) { return decode(value.replace(/<script[\s\S]*?<\/sc
 function unwrap(href:string) {
   try {
     const u=new URL(decode(href),"https://duckduckgo.com");
-    const target=u.hostname.endsWith("duckduckgo.com") ? u.searchParams.get("uddg") ?? "" : u.href;
+    const target=(u.hostname === "duckduckgo.com" || u.hostname.endsWith(".duckduckgo.com")) ? u.searchParams.get("uddg") ?? "" : u.href;
     return normalizeClassicResearchUrl(target);
   } catch { return ""; }
 }
