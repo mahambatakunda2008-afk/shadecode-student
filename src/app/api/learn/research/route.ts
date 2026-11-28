@@ -26,7 +26,7 @@ function unwrap(href:string) {
 async function resolvePublicTarget(raw: string): Promise<{ url: URL; address: string; family: number } | null> {
   try {
     const url = new URL(raw);
-    const hostname = url.hostname.toLowerCase().replace(/^\\[|\\]$/g, "");
+    const hostname = url.hostname.toLowerCase().replaceAll("[", "").replaceAll("]", "");
     if (url.protocol !== "https:" || url.username || url.password || url.port || !hostname ||
       hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local") || isIP(hostname)) return null;
     const addresses = await lookup(hostname, { all: true, verbatim: true });
