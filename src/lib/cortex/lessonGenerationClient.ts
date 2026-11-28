@@ -862,7 +862,8 @@ async function runJob(
     // Classic is non-generative, not offline-only: retrieve current shared learning
     // resources over the network first, then fall back to authored device content.
     if (classicMode) {
-      let classicLesson: { title: string; blocks: Array<Record<string, unknown>>; source?: "public-web-search" | "shared-library" | "verified-syllabus-guide" | "authored-local" } | null = null;\n      if (online) {\n        classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/learn/research", 7000, token);\n      }\n      if (!classicLesson && online) {\n        classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/library/recover", 6000, token);\n      }\n      if (!classicLesson && online) {
+      let classicLesson: { title: string; blocks: Array<Record<string, unknown>>; source?: "public-web-search" | "shared-library" | "verified-syllabus-guide" | "authored-local" } | null = null;
+      if (online) {\n        classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/learn/research", 7000, token);\n      }\n      if (!classicLesson && online) {\n        classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/library/recover", 6000, token);\n      }\n      if (!classicLesson && online) {
         classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/library/guide", 9000, token);
       }
       if (!classicLesson) {
