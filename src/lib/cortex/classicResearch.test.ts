@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isClassicResearchTextRelevant, isPublicAddress, rankClassicResearchResults } from "./classicResearch";
+import { isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults } from "./classicResearch";
 
 describe("Classic public address validation", () => {
   it.each([
@@ -43,4 +43,17 @@ describe("Fetched Classic research text relevance", () => {
   it("accepts page text with meaningful topic coverage", () => {
     expect(isClassicResearchTextRelevant("Wave interference occurs when waves overlap. Diffraction is the spreading of waves.", "Physics", "wave interference diffraction")).toBe(true);
   });
+});
+
+describe("Classic research URL validation", () => {
+  it.each([
+    "http://example.org/resource", "https://user:pass@example.org/", "https://example.org:8443/",
+    "https://localhost/", "https://app.localhost/", "https://printer.local/", "https://service.internal/",
+    "https://127.0.0.1/", "https://[::1]/", "https://192.168.1.10/", "not a URL",
+  ])("rejects unsafe research URL %s", (url) => expect(normalizeClassicResearchUrl(url)).toBe(""));
+
+  it.each([
+    ["https://example.org/resource", "https://example.org/resource"],
+    ["https://www.example.org/path?q=waves", "https://www.example.org/path?q=waves"],
+  ])("accepts public HTTPS URL %s", (input, expected) => expect(normalizeClassicResearchUrl(input)).toBe(expected));
 });
