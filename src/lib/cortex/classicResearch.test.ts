@@ -67,6 +67,14 @@ describe("Classic search redirect handling", () => {
   it("accepts direct public HTTPS results", () => {
     expect(unwrapClassicSearchUrl("https://www.example.org/physics/waves")).toBe("https://www.example.org/physics/waves");
   });
+  it("unwraps Bing's base64url organic result destination", () => {
+    const destination = "https://math.libretexts.org/Courses/Complex_Numbers";
+    const encoded = Buffer.from(destination, "utf8").toString("base64").replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/g, "");
+    expect(unwrapClassicSearchUrl(`https://www.bing.com/ck/a?u=a1${encoded}&ntb=1`)).toBe(destination);
+  });
+  it("rejects Bing tracking URLs with unknown redirect formats", () => {
+    expect(unwrapClassicSearchUrl("https://www.bing.com/ck/a?u=unknown")).toBe("");
+  });
   it.each([
     "https://duckduckgo.com.evil.example/l/?uddg=https%3A%2F%2Fexample.org",
     "https://search.duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.org",
