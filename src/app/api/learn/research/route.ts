@@ -42,11 +42,14 @@ export async function GET(request:NextRequest) {
     seen.add(url);results.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000)});
   }
   if(!results.length)return NextResponse.json({error:"No useful public search results"}, {status:404});
+  const fetched=await Promise.all(results.slice(0,3).map(async r=>({...r,pageText:await fetchPage(r.url)})));
+  const usable=fetched.filter(r=>r.pageText.length>=500);
+  const enriched=usable.length?usable:fetched;
   const blocks=[
-   {type:"objective",title:"Research the topic",content:"This is a non-AI web research collection. These excerpts are discovery aids, not a complete lesson or independently verified teaching material."},
-   {type:"concept",title:"Research question",content:"Subject: "+subject+"\nTopic: "+topic+"\nUse the linked sources to investigate the topic. Check the source's author, publication date, evidence and alignment with your syllabus."},
-   ...results.map((r,i)=>({type:"reference",title:"Source "+(i+1)+": "+r.title,content:r.snippet+"\n\nSource URL: "+r.url+"\n\nStatus: search excerpt only. The page has not been fetched or independently verified."})),
-   {type:"summary",title:"Cross-check before learning",content:"Compare at least two sources and verify key definitions, explanations, examples and syllabus coverage against your textbook or curriculum. Search excerpts alone are insufficient to establish a complete lesson."}
+   {type:"objective",title:"Research the topic",content:"Non-AI web research. Extracted page text is not independently verified; search excerpts are fallback only."},
+   {type:"concept",title:"Research question",content:"Subject: "+subject+"\\nTopic: "+topic+"\\nCheck source authorship, date, evidence and syllabus alignment."},
+   ...enriched.map((r,i)=>({type:"reference",title:"Source "+(i+1)+": "+r.title,content:(r.pageText.length>=500?r.pageText:r.snippet)+"\\n\\nSource URL: "+r.url+"\\n\\nStatus: "+(r.pageText.length>=500?"Page text extracted, not independently verified.":"Search excerpt only; page extraction failed.")})),
+   {type:"summary",title:"Cross-check before learning",content:"Compare sources and confirm information against your textbook or syllabus. These extracted pages are research material, not a generated lesson."}
   ];
   return NextResponse.json({lesson:{title:"Web research: "+topic,blocks,source:"public-web-search"},sources:enriched.map(({title,url,snippet,pageText})=>({title,url,snippet,extracted:pageText.length>=500}))},{headers:{"Cache-Control":"private, no-store"}});
  }catch(e){console.warn("[learn/research]",e);return NextResponse.json({error:"Public web retrieval failed"},{status:503});}
