@@ -21,6 +21,7 @@ import { shouldUseFastVerifiedCurriculumRecovery } from "@/lib/cortex/lessonGene
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 import { getLearningMode } from "@/lib/learningMode";
 import { buildResearchMemoryContext } from "@/lib/shadenet/research-memory";
+import { matchesCachedClassicLesson } from "@/lib/cortex/classicResearch";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; source?: "public-web-search" | "shared-library" | "verified-syllabus-guide" | "cached-local" | "authored-local"; }
@@ -136,18 +137,13 @@ async function findCachedClassicLesson(subject: string, topic: string): Promise<
     const userId = data.session?.user.id;
     if (!userId) return null;
     const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-    const requestedSubject = normalize(subject);
     const requestedTopic = normalize(topic);
-    if (!requestedSubject || !requestedTopic) return null;
+    if (!normalize(subject) || !requestedTopic) return null;
     const lessons = await offlineStorage.getAllLessons(userId);
-    const matches = lessons.filter((lesson) => {
-      if (normalize(lesson.subject || "") !== requestedSubject || !lesson.title || !Array.isArray(lesson.blocks) || !lesson.blocks.length) return false;
-      const savedTopic = normalize(lesson.topic || "");
-      const savedTitle = normalize(lesson.title);
-      return savedTopic === requestedTopic ||
-        (savedTopic.length >= 8 && requestedTopic.length >= 8 && (savedTopic.includes(requestedTopic) || requestedTopic.includes(savedTopic))) ||
-        (requestedTopic.length >= 12 && savedTitle.includes(requestedTopic));
-    }).sort((a, b) => {
+    const matches = lessons.filter((lesson) =>
+      lesson.title && Array.isArray(lesson.blocks) && lesson.blocks.length > 0 &&
+      matchesCachedClassicLesson(subject, topic, lesson.subject || "", lesson.topic || "", lesson.title)
+    ).sort((a, b) => {
       const aExact = normalize(a.topic || "") === requestedTopic ? 1 : 0;
       const bExact = normalize(b.topic || "") === requestedTopic ? 1 : 0;
       return bExact - aExact;
