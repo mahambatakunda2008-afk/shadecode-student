@@ -19,6 +19,12 @@ describe("buildDeterministicLessonFallback", () => {
       .toBeNull();
   });
 
+
+  it("does not match a theory alias embedded inside a different word", () => {
+    expect(buildDeterministicLessonFallback("Computer Science", "prebinary search algorithm"))
+      .toBeNull();
+  });
+
   it("does not cross subject boundaries", () => {
     expect(buildDeterministicLessonFallback("Physics", "Coordinate geometry"))
       .toBeNull();
