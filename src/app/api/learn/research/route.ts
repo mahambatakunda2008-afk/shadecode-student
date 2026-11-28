@@ -15,20 +15,36 @@ function clean(value:string) { return decode(value.replace(/<script[\s\S]*?<\/sc
 function isPublicAddress(address: string): boolean {
   const version = isIP(address);
   if (version === 4) {
-    const [a,b] = address.split(".").map(Number);
-    if (a === 0 || a === 10 || a === 127 || a >= 224) return false;
-    if (a === 100 && b >= 64 && b <= 127) return false;
-    if (a === 169 && b === 254) return false;
-    if (a === 172 && b >= 16 && b <= 31) return false;
-    if (a === 192 && (b === 0 || b === 168)) return false;
-    if (a === 198 && (b === 18 || b === 19 || b === 51)) return false;
-    if (a === 203 && b === 0) return false;
-    return true;
+    const octets = address.split(".").map(Number);
+    if (octets.length !== 4 || octets.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+    const value = octets.reduce((result, part) => (result * 256) + part, 0);
+    const inRange = (network: number[], prefix: number) => {
+      const base = network.reduce((result, part) => (result * 256) + part, 0);
+      const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
+      return ((value >>> 0) & mask) === ((base >>> 0) & mask);
+    };
+    // IANA special-purpose, private, loopback, link-local, documentation,
+    // benchmarking, multicast and reserved IPv4 ranges.
+    const denied: Array<[number[], number]> = [
+      [[0,0,0,0],8], [[10,0,0,0],8], [[100,64,0,0],10],
+      [[127,0,0,0],8], [[169,254,0,0],16], [[172,16,0,0],12],
+      [[192,0,0,0],24], [[192,0,2,0],24], [[192,88,99,0],24],
+      [[192,168,0,0],16], [[198,18,0,0],15], [[198,51,100,0],24],
+      [[203,0,113,0],24], [[224,0,0,0],4], [[240,0,0,0],4],
+    ];
+    return !denied.some(([network, prefix]) => inRange(network, prefix));
   }
   if (version === 6) {
-    const ip = address.toLowerCase();
-    return (ip.startsWith("2") || ip.startsWith("3")) &&
-      !ip.startsWith("2001:db8:") && !ip.startsWith("2001:10:") && !ip.startsWith("2001:20:");
+    // Only accept globally allocated unicast space (2000::/3). Explicitly
+    // exclude protocol assignments, transition mechanisms and documentation.
+    const parts = address.toLowerCase().split(":");
+    const first = Number.parseInt(parts[0] || "0", 16);
+    const second = Number.parseInt(parts[1] || "0", 16);
+    if (!Number.isFinite(first) || first < 0x2000 || first > 0x3fff) return false;
+    if (first === 0x2001 && second <= 0x01ff) return false; // IETF special-purpose block
+    if (first === 0x2002) return false; // 6to4
+    if (first === 0x3fff && second <= 0x0fff) return false; // documentation
+    return true;
   }
   return false;
 }
