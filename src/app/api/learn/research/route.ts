@@ -5,7 +5,7 @@ import { isIP } from "node:net";
 import { createAuthenticatedRequestClient } from "@/lib/supabase/authenticated-request";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
-import { isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults } from "@/lib/cortex/classicResearch";
+import { isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, unwrapClassicSearchUrl } from "@/lib/cortex/classicResearch";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +14,6 @@ function decode(value: string) {
 }
 function clean(value:string) { return decode(value.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/\s+/g," ")).trim(); }
 
-function unwrap(href:string) {
-  try {
-    const u=new URL(decode(href),"https://duckduckgo.com");
-    const target=(u.hostname === "duckduckgo.com" || u.hostname.endsWith(".duckduckgo.com")) ? u.searchParams.get("uddg") ?? "" : u.href;
-    return normalizeClassicResearchUrl(target);
-  } catch { return ""; }
-}
 async function resolvePublicTarget(raw: string): Promise<{ url: URL; address: string; family: number } | null> {
   try {
     const normalized = normalizeClassicResearchUrl(raw);
@@ -118,7 +111,7 @@ export async function GET(request:NextRequest) {
   const seen=new Set<string>();
   const pattern=/<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>[\s\S]*?(?:<a[^>]*class="result__snippet"[^>]*>(.*?)<\/a>|<td[^>]*class="result__snippet"[^>]*>(.*?)<\/td>)/gi;
   let match; while((match=pattern.exec(html))&&candidates.length<20){
-    const url=unwrap(match[1]), title=clean(match[2]), snippet=clean(match[3]||match[4]||"");
+    const url=unwrapClassicSearchUrl(match[1]), title=clean(match[2]), snippet=clean(match[3]||match[4]||"");
     if(!url||!title||snippet.length<70||seen.has(url))continue;
     seen.add(url);
     candidates.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000)});
