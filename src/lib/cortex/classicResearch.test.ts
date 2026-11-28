@@ -15,7 +15,8 @@ describe("Classic public address validation", () => {
 });
 
 describe("Classic research relevance ranking", () => {
-  const make = (title: string, snippet: string) => ({ title, snippet, url: "https://example.org/" + title.replace(/\s+/g, "-") });
+  let candidateId = 0;
+  const make = (title: string, snippet: string) => ({ title, snippet, url: "https://example.org/" + (++candidateId) });
   it("ranks strong topic/title matches above weak mentions", () => {
     const weak = make("General science", "A broad introduction that briefly mentions waves among many other science topics.");
     const strong = make("Wave interference and diffraction", "Wave interference occurs when two or more waves overlap. Diffraction describes spreading around obstacles.");
