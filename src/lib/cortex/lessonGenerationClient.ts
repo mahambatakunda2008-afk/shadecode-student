@@ -21,7 +21,7 @@ import { shouldUseFastVerifiedCurriculumRecovery } from "@/lib/cortex/lessonGene
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 import { getLearningMode } from "@/lib/learningMode";
 import { buildResearchMemoryContext } from "@/lib/shadenet/research-memory";
-import { matchesCachedClassicLesson } from "@/lib/cortex/classicResearch";
+import { matchesCachedClassicLesson } from "@/lib/cortex/classicLessonCache";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; source?: "public-web-search" | "shared-library" | "verified-syllabus-guide" | "cached-local" | "authored-local"; }
