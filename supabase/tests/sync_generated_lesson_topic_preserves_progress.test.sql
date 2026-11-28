@@ -8,6 +8,7 @@ declare
   v_lesson uuid := gen_random_uuid();
   v_result jsonb;
   v_difficulty text;
+  v_progress integer;
 begin
   if exists (
     select 1
@@ -27,6 +28,14 @@ begin
   values (v_user, 'authenticated', 'authenticated', 'sync-contract-' || v_user::text || '@example.invalid', '', now(), now(), now());
   insert into public.subjects(id, user_id, name)
   values (v_subject, v_user, 'Sync contract subject');
+
+  -- Simulate a recovered lesson whose progress already exists in the cloud.
+  insert into public.learn_lessons(id,user_id,subject_id,topic,title,description,difficulty,progress,blocks)
+  values (
+    v_lesson,v_user,v_subject,'Original topic','Original lesson title',
+    'Previously saved lesson','hard',63,
+    '[{"type":"explanation","content":"Previously saved content"}]'::jsonb
+  );
 
   perform set_config('request.jwt.claim.sub', v_user::text, true);
   perform set_config('request.jwt.claims', jsonb_build_object('sub',v_user::text,'role','authenticated')::text, true);
@@ -48,13 +57,16 @@ begin
   if v_result->>'status' <> 'accepted' then
     raise exception 'Generated lesson sync was not accepted: %',v_result;
   end if;
-  select difficulty into v_difficulty
+  select difficulty, progress into v_difficulty, v_progress
   from public.learn_lessons
   where id=v_lesson and user_id=v_user and subject_id=v_subject
     and topic='Quadratic inequalities'
     and title='Quadratic inequalities: a complete lesson';
   if not found then
     raise exception 'Generated lesson sync did not persist its topic and metadata';
+  end if;
+  if v_progress <> 63 then
+    raise exception 'Recovered lesson sync regressed existing progress: %',v_progress;
   end if;
   if v_difficulty <> 'medium' then
     raise exception 'Unsupported difficulty was not normalized to medium: %',v_difficulty;
