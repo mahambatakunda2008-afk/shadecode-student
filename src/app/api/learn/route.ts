@@ -11,7 +11,7 @@ import { awardXPBySource } from "@/lib/xp/manager";
 import { normalizeSubjectKey, normalizeSubjectNames } from "@/lib/academic/subjectContract";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
-import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
+import { buildDeepSectionGuidance, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 import { breakUpLongParagraphs, isSectionTooThin, missingSectionTypes, needsFormulaBlock, requiredSectionTypes, lessonQualityFailures, normalizeLessonBlockType, hasRequiredLessonStructure, normalizeGeneratedLessonTitle } from "@/lib/cortex/lessonQuality";
@@ -577,7 +577,7 @@ export async function POST(req: Request) {
       const sectionPrompt = [
         `Generate section ${generationSectionIndex + 1} of ${generationSectionCount} for a coherent lesson.`,
         buildResolvedLessonPrompt(request),
-        buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty, curriculumContext),
+        buildDeepSectionGuidance(effectiveSubject, request.topic, validDifficulty, curriculumContext, request.broadTopic),
         curriculumContext,
         learnerMemoryContext,
         learnerResearchContext,
