@@ -145,7 +145,7 @@ async function findCachedClassicLesson(subject: string, topic: string): Promise<
       const savedTopic = normalize(lesson.topic || "");
       const savedTitle = normalize(lesson.title);
       return savedTopic === requestedTopic ||
-        (requestedTopic.length >= 8 && (savedTopic.includes(requestedTopic) || requestedTopic.includes(savedTopic))) ||
+        (savedTopic.length >= 8 && requestedTopic.length >= 8 && (savedTopic.includes(requestedTopic) || requestedTopic.includes(savedTopic))) ||
         (requestedTopic.length >= 12 && savedTitle.includes(requestedTopic));
     }).sort((a, b) => {
       const aExact = normalize(a.topic || "") === requestedTopic ? 1 : 0;
