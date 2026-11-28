@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertMutationOwner, isMutationReady, retryDelayMs, type OfflineMutation } from "./mutationQueue";
+import { assertMutationOwner, isMutationReady, retryDelayMs, waitForMutationTransaction, type OfflineMutation } from "./mutationQueue";
 
 const mutation = (overrides: Partial<OfflineMutation> = {}): OfflineMutation => ({
   id: "m1",
@@ -52,5 +52,23 @@ describe("offline mutation ownership", () => {
   it("rejects a payload owned by a different account before it can be queued", () => {
     expect(() => assertMutationOwner("u1", { id: "task-1", user_id: "u2" })).toThrow("Offline mutation payload owner does not match its queue owner");
     expect(() => assertMutationOwner("", { id: "task-1" })).toThrow("Offline mutation requires an authenticated owner");
+  });
+});
+
+
+describe("offline mutation transaction durability", () => {
+  it("resolves only when the IndexedDB transaction completes", async () => {
+    const transaction = new EventTarget() as IDBTransaction;
+    const committed = waitForMutationTransaction(transaction);
+    transaction.dispatchEvent(new Event("complete"));
+    await expect(committed).resolves.toBeUndefined();
+  });
+
+  it("rejects when the IndexedDB transaction aborts", async () => {
+    const transaction = new EventTarget() as IDBTransaction;
+    Object.defineProperty(transaction, "error", { value: new DOMException("disk full") });
+    const committed = waitForMutationTransaction(transaction);
+    transaction.dispatchEvent(new Event("abort"));
+    await expect(committed).rejects.toThrow("disk full");
   });
 });
