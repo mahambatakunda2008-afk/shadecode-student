@@ -41,7 +41,7 @@ function isPublicAddress(address: string): boolean {
     const first = Number.parseInt(parts[0] || "0", 16);
     const second = Number.parseInt(parts[1] || "0", 16);
     if (!Number.isFinite(first) || first < 0x2000 || first > 0x3fff) return false;
-    if (first === 0x2001 && second <= 0x01ff) return false; // IETF special-purpose block
+    if (first === 0x2001 && (second <= 0x01ff || second === 0x0db8)) return false; // IETF special-purpose and documentation blocks
     if (first === 0x2002) return false; // 6to4
     if (first === 0x3fff && second <= 0x0fff) return false; // documentation
     return true;
@@ -122,16 +122,30 @@ export async function GET(request:NextRequest) {
   const response=await fetch("https://html.duckduckgo.com/html/?q="+query,{headers:{"user-agent":"Mozilla/5.0 (compatible; ShadecodeStudent/1.0; educational retrieval)","accept":"text/html"},signal:AbortSignal.timeout(7000),cache:"no-store"});
   if(!response.ok)return NextResponse.json({error:"Public search unavailable"},{status:502});
   const html=(await response.text()).slice(0,750000);
-  const results:Array<{title:string;url:string;snippet:string}>=[];
-  const topicTerms=topic.toLowerCase().split(/[^a-z0-9]+/).filter(t=>t.length>=4 && !["about","from","with","that","this","into","lesson","explained"].includes(t));
+  const candidates:Array<{title:string;url:string;snippet:string;score:number}>=[];
+  const stopwords=new Set(["about","from","with","that","this","into","lesson","explained","their","there","which","where","what","when","have","will","your","using","used"]);
+  const terms=(value:string)=>Array.from(new Set(value.toLowerCase().split(/[^a-z0-9]+/).filter((term)=>term.length>=3&&!stopwords.has(term))));
+  const topicTerms=terms(topic), subjectTerms=terms(subject);
   const seen=new Set<string>();
   const pattern=/<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>[\s\S]*?(?:<a[^>]*class="result__snippet"[^>]*>(.*?)<\/a>|<td[^>]*class="result__snippet"[^>]*>(.*?)<\/td>)/gi;
-  let match; while((match=pattern.exec(html))&&results.length<5){
+  let match; while((match=pattern.exec(html))&&candidates.length<15){
     const url=unwrap(match[1]), title=clean(match[2]), snippet=clean(match[3]||match[4]||"");
-    const searchable=(title+" "+snippet+" "+url).toLowerCase();
-    if(!url||!title||snippet.length<70||seen.has(url)||!topicTerms.some(term=>searchable.includes(term)))continue;
-    seen.add(url);results.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000)});
+    const searchable=(title+" "+snippet).toLowerCase();
+    if(!url||!title||snippet.length<70||seen.has(url))continue;
+    const topicHits=topicTerms.filter((term)=>searchable.includes(term)).length;
+    const subjectHits=subjectTerms.filter((term)=>searchable.includes(term)).length;
+    const topicCoverage=topicTerms.length?topicHits/topicTerms.length:1;
+    const subjectCoverage=subjectTerms.length?subjectHits/subjectTerms.length:1;
+    // Topic match is mandatory. Subject overlap improves ranking without
+    // rejecting sources that use the discipline's conventional terminology.
+    if(topicHits===0 || (topicTerms.length>=3 && topicCoverage<0.34))continue;
+    const titleText=title.toLowerCase();
+    const titleTopicHits=topicTerms.filter((term)=>titleText.includes(term)).length;
+    const score=(topicCoverage*6)+(subjectCoverage*2)+(titleTopicHits*2)+(snippet.length>=180?0.5:0);
+    seen.add(url);
+    candidates.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000),score});
   }
+  const results=candidates.sort((a,b)=>b.score-a.score).slice(0,5).map(({score,...result})=>result);
   if(!results.length)return NextResponse.json({error:"No useful public search results"}, {status:404});
   const fetched=await Promise.all(results.slice(0,3).map(async r=>({...r,pageText:await fetchPage(r.url)})));
   const usable=fetched.filter(r=>r.pageText.length>=500);
