@@ -189,16 +189,22 @@ export default function LearnPageResilient() {
 
   useEffect(() => {
     if (generationJob?.status !== "complete" || !generationJob.result || typeof generationJob.result !== "object" || !("id" in generationJob.result)) return;
-    const result = generationJob.result as { id: string; title: string };
+    const result = generationJob.result as { id: string; title: string; localOnly?: boolean };
     setLessons(current => current.some(item => item.id === result.id) ? current : [{
       id: result.id, title: result.title, subject: generationJob.request.subject, subjectId: "",
-      topic: generationJob.request.prompt, description: `A complete ${generationJob.request.difficulty} lesson on ${generationJob.request.prompt}`,
+      topic: generationJob.request.prompt, description: result.localOnly
+        ? "Saved on this device. Cloud sync has not been confirmed yet."
+        : `A complete ${generationJob.request.difficulty} lesson on ${generationJob.request.prompt}`,
       difficulty: generationJob.request.difficulty, progress: 0, completed: false,
     }, ...current]);
     if (openedJobRef.current !== generationJob.id) {
       openedJobRef.current = generationJob.id;
-      void lessonViewedEvent(result.id, generationJob.request.subject, generationJob.request.prompt);
-      router.replace(`/learn/${result.id}`);
+      // Only cloud-confirmed lessons have a guaranteed /learn/[id] record.
+      // Device-only completions stay in the Learn library until their sync succeeds.
+      if (result.localOnly !== true) {
+        void lessonViewedEvent(result.id, generationJob.request.subject, generationJob.request.prompt);
+        router.replace(`/learn/${result.id}`);
+      }
     }
   }, [generationJob, router]);
 
