@@ -9,7 +9,7 @@ export function unwrapClassicSearchUrl(href: string): string {
       return normalizeClassicResearchUrl(url.searchParams.get("uddg") ?? "");
     }
     // Never treat an unrecognised DuckDuckGo subdomain as a destination.
-    if (hostname.endsWith(".duckduckgo.com")) return "";
+    if (hostname.includes("duckduckgo.com")) return "";
     return normalizeClassicResearchUrl(url.href);
   } catch {
     return "";
