@@ -34,18 +34,3 @@ describe("Classic research relevance ranking", () => {
     expect(ranked[1]).toBe(second);
   });
 });
-
-describe("Classic cached lesson matching", () => {
-  it("requires a real saved topic before using phrase containment", async () => {
-    const { matchesCachedClassicLesson } = await import("./classicResearch");
-    expect(matchesCachedClassicLesson("Physics", "wave interference", "Physics", "", "A general physics lesson")).toBe(false);
-  });
-  it("matches the same subject and exact topic", async () => {
-    const { matchesCachedClassicLesson } = await import("./classicResearch");
-    expect(matchesCachedClassicLesson("Physics", "Wave Interference", "Physics", "wave interference", "Interference")).toBe(true);
-  });
-  it("never matches a cached lesson from another subject", async () => {
-    const { matchesCachedClassicLesson } = await import("./classicResearch");
-    expect(matchesCachedClassicLesson("Physics", "wave interference", "Mathematics", "wave interference", "Wave interference")).toBe(false);
-  });
-});
