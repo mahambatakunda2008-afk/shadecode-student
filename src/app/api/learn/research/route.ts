@@ -5,7 +5,7 @@ import { isIP } from "node:net";
 import { createAuthenticatedRequestClient } from "@/lib/supabase/authenticated-request";
 import { applyRateLimit, generalApiLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
-import { isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, unwrapClassicSearchUrl } from "@/lib/cortex/classicResearch";
+import { extractClassicSearchCandidates, isClassicResearchTextRelevant, isPublicAddress, normalizeClassicResearchUrl, rankClassicResearchResults, unwrapClassicSearchUrl } from "@/lib/cortex/classicResearch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -110,10 +110,9 @@ export async function GET(request:NextRequest) {
   const html=await readBoundedText(response,750000);
   const candidates:Array<{title:string;url:string;snippet:string}>=[];
   const seen=new Set<string>();
-  const pattern=/<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>[\s\S]*?(?:<a[^>]*class="result__snippet"[^>]*>(.*?)<\/a>|<td[^>]*class="result__snippet"[^>]*>(.*?)<\/td>)/gi;
-  let match; while((match=pattern.exec(html))&&candidates.length<20){
-    const url=unwrapClassicSearchUrl(match[1]), title=clean(match[2]), snippet=clean(match[3]||match[4]||"");
-    if(!url||!title||snippet.length<70||seen.has(url))continue;
+  for (const candidate of extractClassicSearchCandidates(html)) {
+    const url=unwrapClassicSearchUrl(candidate.url), title=clean(candidate.title), snippet=clean(candidate.snippet);
+    if(!url||!title||seen.has(url))continue;
     seen.add(url);
     candidates.push({title:title.slice(0,240),url,snippet:snippet.slice(0,1000)});
   }
