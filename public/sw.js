@@ -158,7 +158,7 @@ async function warmRoutes(routes) {
         result.skipped += 1;
         html = await existing.clone().text();
       } else {
-        const response = await fetch(path, { credentials: "same-origin", headers: { accept: "text/html" }, redirect: "follow" });
+        const response = await fetchWithTimeout(new Request(path, { credentials: "same-origin", headers: { accept: "text/html" }, redirect: "follow" }));
         if (!isCacheableDocument(response)) { result.failed += 1; continue; }
         html = await response.clone().text();
         await pages.put(pageKey(path), response);
@@ -175,7 +175,7 @@ async function warmRoutes(routes) {
   for (const asset of assetUrls) if (!(await statics.match(asset, { ignoreSearch: true }))) missing.push(asset);
   await runPool(missing, WARM_ASSET_CONCURRENCY, async (asset) => {
     try {
-      const response = await fetch(asset);
+      const response = await fetchWithTimeout(asset);
       if (response.ok) { await statics.put(asset, response); result.assets += 1; } else result.failed += 1;
     } catch {
       result.failed += 1;
