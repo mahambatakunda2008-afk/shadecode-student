@@ -159,7 +159,7 @@ export function buildDeepSectionGuidance(
     notationGuidance,
     "SECTION QUALITY: every block must teach one distinct, specific idea. Explain why and how, define specialist terms, use accurate subject reasoning, and avoid filler or repeated restatements. Worked examples must show the method, intermediate steps, result and interpretation. Checkpoints must test the learner without revealing their answer. Do not invent facts, data, syllabus requirements or citations.",
     "SECTION SCOPE: generate only the assigned section, not a complete lesson. Follow the section-specific block count and required block types supplied separately. Do not impose a whole-lesson block count or repeat content already covered.",
-  ].filter(Boolean).join("\\n\\n");
+  ].filter(Boolean).join("\n\n");
 }
 
 export function buildLessonRepairPrompt(subject: string, topic: string, raw: string, curriculumContext = "", difficulty: LessonDifficulty = "medium", qualityFailures: string[] = []) {
